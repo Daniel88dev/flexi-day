@@ -7,10 +7,6 @@ import { UsersTable } from "@/drizzle/schema";
 const Login = async () => {
   const userClerk = await currentUser();
 
-  console.log(userClerk?.id);
-  console.log(userClerk?.fullName);
-  console.log(userClerk?.primaryEmailAddress?.emailAddress);
-
   let userDrizzle = await getUser(userClerk?.id!);
 
   console.log(userDrizzle);
@@ -34,7 +30,6 @@ const Login = async () => {
   }
 
   /*
-
 
 
   */
