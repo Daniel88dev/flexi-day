@@ -1,9 +1,10 @@
-import { getUsers } from "@/drizzle/db";
+import { currentUser } from "@clerk/nextjs/server";
 
 const Home = async () => {
-  const users = await getUsers();
-  console.log("result");
-  console.log(users);
+  const user = await currentUser();
+
+  console.log(user?.fullName);
+
   return (
     <>
       <h1>Welcome</h1>

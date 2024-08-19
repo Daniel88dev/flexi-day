@@ -27,7 +27,7 @@ export default function RootLayout({
         <body className={inter.className}>
           <header>
             <SignedOut>
-              <SignInButton />
+              <SignInButton forceRedirectUrl={"/login"} />
             </SignedOut>
             <SignedIn>
               <UserButton />
