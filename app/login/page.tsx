@@ -1,8 +1,7 @@
 import { currentUser } from "@clerk/nextjs/server";
 import { db, getUser } from "@/drizzle/db";
 import { redirect } from "next/navigation";
-import { users } from "@/db/schema";
-import { UsersTable } from "@/drizzle/schema";
+import { insertUser, User } from "@/drizzle/users";
 
 const Login = async () => {
   const userClerk = await currentUser();
@@ -12,11 +11,13 @@ const Login = async () => {
   console.log(userDrizzle);
 
   if (!userDrizzle) {
-    await db.insert(UsersTable).values({
-      clerkId: userClerk?.id,
-      name: userClerk?.fullName,
-      email: userClerk?.primaryEmailAddress?.emailAddress,
-    });
+    const newUser: User = {
+      clerkId: userClerk?.id!,
+      name: userClerk?.fullName!,
+      email: userClerk?.primaryEmailAddress?.emailAddress!,
+    };
+
+    await insertUser(newUser);
 
     userDrizzle = await getUser(userClerk?.id!);
 
