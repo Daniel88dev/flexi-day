@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { insertUser, updatedUser, User } from "@/drizzle/users";
+import { deleteUser, insertUser, updatedUser, User } from "@/drizzle/users";
 
 export async function POST(request: Request) {
   const response = await request.json();
@@ -28,6 +28,14 @@ export async function POST(request: Request) {
     console.log(userObject);
     return NextResponse.json(
       { message: "User updated", userId: userObject.clerkId },
+      { status: 202 }
+    );
+  } else if (response.type === "user.deleted") {
+    const clerkId = response.data.id;
+
+    await deleteUser(clerkId);
+    return NextResponse.json(
+      { message: "User deleted", clerkId },
       { status: 202 }
     );
   } else {

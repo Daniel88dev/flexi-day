@@ -14,3 +14,7 @@ export const updatedUser = async (user: User) => {
     .set({ name: user.name, email: user.email })
     .where(eq(UsersTable.clerkId, user.clerkId));
 };
+
+export const deleteUser = async (clerkId: string) => {
+  return db.delete(UsersTable).where(eq(UsersTable.clerkId, clerkId));
+};
