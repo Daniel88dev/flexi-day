@@ -1,10 +1,10 @@
 import { currentUser } from "@clerk/nextjs/server";
-import { db, getUser } from "@/drizzle/db";
+import { getUser } from "@/drizzle/db";
 import { redirect } from "next/navigation";
 import { insertUser, User } from "@/drizzle/users";
 
 const Login = async () => {
-  const userClerk = await currentUser();
+  /*const userClerk = await currentUser();
 
   let userDrizzle = await getUser(userClerk?.id!);
 
@@ -28,7 +28,7 @@ const Login = async () => {
     }
   } else {
     console.log(userDrizzle);
-  }
+  }*/
 
   /*
 
