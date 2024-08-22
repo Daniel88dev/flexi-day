@@ -29,7 +29,8 @@ export async function POST(request: Request) {
     );
   }
 
-  const response = await request.json();
+  const payload = await request.json();
+  const body = JSON.stringify(payload);
 
   const wh = new Webhook(WEBHOOK_SECRET);
 
@@ -37,7 +38,7 @@ export async function POST(request: Request) {
 
   // Verify the payload with the headers
   try {
-    evt = wh.verify(response, {
+    evt = wh.verify(body, {
       "svix-id": svix_id,
       "svix-timestamp": svix_timestamp,
       "svix-signature": svix_signature,
