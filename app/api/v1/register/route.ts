@@ -5,6 +5,7 @@ import { deleteUser, insertUser, updatedUser, User } from "@/drizzle/users";
 import { WebhookEvent, UserJSON } from "@clerk/nextjs/server";
 
 export async function POST(request: Request) {
+  //Below code is security protection for clerk webhook API
   const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET;
 
   if (!WEBHOOK_SECRET) {

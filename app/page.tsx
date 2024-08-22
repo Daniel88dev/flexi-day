@@ -1,14 +1,17 @@
 import { currentUser } from "@clerk/nextjs/server";
+import { redirect } from "next/navigation";
 
 const Home = async () => {
   const user = await currentUser();
 
-  console.log(user?.fullName);
+  if (user) {
+    redirect("/dashboard");
+  }
 
   return (
-    <>
-      <h1>Welcome</h1>
-    </>
+    <main>
+      <h1>Welcome on Home Page</h1>
+    </main>
   );
 };
 

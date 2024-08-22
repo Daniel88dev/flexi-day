@@ -3,6 +3,7 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/.idea/flexi-day.iml" filepath="$PROJECT_DIR$/.idea/flexi-day.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../ots-management-next/.idea/ots-management-next.iml" filepath="$PROJECT_DIR$/../ots-management-next/.idea/ots-management-next.iml" />
     </modules>
   </component>
 </project>
