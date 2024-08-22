@@ -1,14 +1,59 @@
+import { Webhook } from "svix";
+import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import { deleteUser, insertUser, updatedUser, User } from "@/drizzle/users";
+import { WebhookEvent, UserJSON } from "@clerk/nextjs/server";
 
 export async function POST(request: Request) {
+  const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET;
+
+  if (!WEBHOOK_SECRET) {
+    throw new Error(
+      "Please add WEBHOOK_SECRET from Clerk Dashboard to .env or .env.local"
+    );
+  }
+
+  // Get the headers
+  const headerPayload = headers();
+  const svix_id = headerPayload.get("svix-id");
+  const svix_timestamp = headerPayload.get("svix-timestamp");
+  const svix_signature = headerPayload.get("svix-signature");
+
+  // If there are no headers, error out
+  if (!svix_id || !svix_timestamp || !svix_signature) {
+    return NextResponse.json(
+      { message: "Error occured -- no svix headers" },
+      {
+        status: 400,
+      }
+    );
+  }
+
   const response = await request.json();
 
-  if (response.type === "user.created") {
+  const wh = new Webhook(WEBHOOK_SECRET);
+
+  let evt: WebhookEvent;
+
+  // Verify the payload with the headers
+  try {
+    evt = wh.verify(response, {
+      "svix-id": svix_id,
+      "svix-timestamp": svix_timestamp,
+      "svix-signature": svix_signature,
+    }) as WebhookEvent;
+  } catch (err) {
+    console.error("Error verifying webhook:", err);
+    return new Response("Error occured", {
+      status: 400,
+    });
+  }
+
+  if (evt.type === "user.created") {
     const userObject: User = {
-      clerkId: response.data.id,
-      name: response.data.first_name + " " + response.data.last_name,
-      email: response.data.email_addresses[0].email_address,
+      clerkId: evt.data.id,
+      name: evt.data.first_name + " " + evt.data.last_name,
+      email: evt.data.email_addresses[0].email_address,
     };
 
     await insertUser(userObject);
@@ -17,11 +62,11 @@ export async function POST(request: Request) {
       { message: "User Created", userId: userObject.clerkId },
       { status: 201 }
     );
-  } else if (response.type === "user.updated") {
+  } else if (evt.type === "user.updated") {
     const userObject: User = {
-      clerkId: response.data.id,
-      name: response.data.first_name + " " + response.data.last_name,
-      email: response.data.email_addresses[0].email_address,
+      clerkId: evt.data.id,
+      name: evt.data.first_name + " " + evt.data.last_name,
+      email: evt.data.email_addresses[0].email_address,
     };
     await updatedUser(userObject);
 
@@ -30,8 +75,8 @@ export async function POST(request: Request) {
       { message: "User updated", userId: userObject.clerkId },
       { status: 202 }
     );
-  } else if (response.type === "user.deleted") {
-    const clerkId = response.data.id;
+  } else if (evt.type === "user.deleted") {
+    const clerkId = evt.data.id!;
 
     await deleteUser(clerkId);
     return NextResponse.json(
