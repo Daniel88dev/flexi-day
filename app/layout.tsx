@@ -33,12 +33,6 @@ export default function RootLayout({
           )}
         >
           <ThemeProvider attribute="class" defaultTheme="system">
-            <SignedOut>
-              <header>
-                <ModeToggle />
-                <SignInButton />
-              </header>
-            </SignedOut>
             {children}
           </ThemeProvider>
         </body>

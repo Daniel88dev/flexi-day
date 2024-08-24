@@ -1,8 +1,7 @@
 import { currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
-import { SignedIn, UserButton } from "@clerk/nextjs";
 import { ReactNode } from "react";
-import { ModeToggle } from "@/components/ModeToggle";
+import NavigationBar from "@/app/(auth)/_navigateBar/NavigationBar";
 
 const AuthLayout = async ({ children }: { children: ReactNode }) => {
   const user = await currentUser();
@@ -13,12 +12,7 @@ const AuthLayout = async ({ children }: { children: ReactNode }) => {
 
   return (
     <>
-      <SignedIn>
-        <header>
-          <ModeToggle />
-          <UserButton />
-        </header>
-      </SignedIn>
+      <NavigationBar />
       <main>{children}</main>
     </>
   );
