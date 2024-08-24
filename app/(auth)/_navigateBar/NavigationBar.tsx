@@ -28,7 +28,7 @@ const NavigationBar = () => {
       </Link>
       <Link
         className="flex items-center text-sm font-medium hover:underline underline-offset-4"
-        href="/my-calendar"
+        href="/calendar"
       >
         <Calendar className="h-4 w-4 mr-2" />
         My Calendar
