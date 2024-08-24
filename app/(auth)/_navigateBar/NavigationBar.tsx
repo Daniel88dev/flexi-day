@@ -52,7 +52,7 @@ const NavigationBar = () => {
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-14 items-center gap-2">
+      <div className="container flex h-14 items-center gap-4">
         <Link className="flex items-center justify-center" href="/dashboard">
           <CalendarIcon className="h-6 w-6 text-primary" />
           <span className="ml-2 text-xl font-bold text-primary">Flexi Day</span>

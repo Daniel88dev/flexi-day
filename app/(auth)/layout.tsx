@@ -13,7 +13,7 @@ const AuthLayout = async ({ children }: { children: ReactNode }) => {
   return (
     <>
       <NavigationBar />
-      <main>{children}</main>
+      <main className="flex-1 py-6 md:py-8 lg:py-10">{children}</main>
     </>
   );
 };
