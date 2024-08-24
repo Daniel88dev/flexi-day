@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Calendar, Home, UserPlus, LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SignInButton, SignUpButton } from "@clerk/nextjs";
+import Footer from "@/app/_footer/Footer";
 
 const HomePage = async () => {
   const user = await currentUser();
@@ -36,12 +37,14 @@ const HomePage = async () => {
                 </p>
               </div>
               <div className="space-y-2 md:space-y-0 md:space-x-4 md:flex">
-                <Button className="w-full md:w-auto">
-                  <SignUpButton mode={"modal"}>Register</SignUpButton>
-                </Button>
-                <Button variant="outline" className="w-full md:w-auto">
-                  <SignInButton mode={"modal"}>Login</SignInButton>
-                </Button>
+                <SignUpButton mode={"modal"}>
+                  <Button className="w-full md:w-auto">Register</Button>
+                </SignUpButton>
+                <SignInButton mode={"modal"}>
+                  <Button variant="outline" className="w-full md:w-auto">
+                    Login
+                  </Button>
+                </SignInButton>
               </div>
             </div>
           </div>
@@ -77,19 +80,7 @@ const HomePage = async () => {
           </div>
         </section>
       </main>
-      <footer className="flex flex-col gap-2 sm:flex-row py-6 w-full shrink-0 items-center px-4 md:px-6 border-t">
-        <p className="text-xs text-muted-foreground">
-          © 2023 Flexi Day. All rights reserved.
-        </p>
-        <nav className="sm:ml-auto flex gap-4 sm:gap-6">
-          <Link className="text-xs hover:underline underline-offset-4" href="#">
-            Terms of Service
-          </Link>
-          <Link className="text-xs hover:underline underline-offset-4" href="#">
-            Privacy
-          </Link>
-        </nav>
-      </footer>
+      <Footer />
     </div>
   );
 };
