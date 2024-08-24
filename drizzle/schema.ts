@@ -19,6 +19,8 @@ export const UsersTable = pgTable(
     name: text("name").notNull(),
     email: text("email").notNull(),
     createdAt: timestamp("createdAt").defaultNow().notNull(),
+    isAdmin: boolean("is_admin").default(false),
+    isSuperAdmin: boolean("is_super_admin").default(false),
   },
   (users) => {
     return {
@@ -26,6 +28,17 @@ export const UsersTable = pgTable(
     };
   }
 );
+
+export const Company = pgTable("company", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 50 }).notNull(),
+  companySlug: varchar("company_slug", { length: 40 }).notNull(),
+  vacationDefault: integer("vacation_default").notNull(),
+  homeOfficeDefault: integer("home_office_default").notNull(),
+  managerId: serial("manager_id")
+    .notNull()
+    .references(() => UsersTable.id),
+});
 
 export const WorkingGroup = pgTable(
   "working_group",
@@ -39,6 +52,7 @@ export const WorkingGroup = pgTable(
       .references(() => UsersTable.id),
     vacationDefault: integer("vacation_default").default(0),
     homeOfficeDefault: integer("home_default").default(0),
+    companyId: serial("company_id").references(() => Company.id),
   },
   (workingGroups) => {
     return {
@@ -54,8 +68,24 @@ export const GroupUsers = pgTable("group_users", {
   userId: serial("user_id")
     .notNull()
     .references(() => UsersTable.id),
+  groupId: serial("group_id")
+    .notNull()
+    .references(() => WorkingGroup.id),
   isActive: boolean("is_active").notNull().default(false),
   isAdmin: boolean("is_admin").notNull().default(false),
   canView: boolean("can_view").notNull().default(true),
   canApprove: boolean("can_approve").notNull().default(false),
+});
+
+export const UserQuotas = pgTable("user_quotas", {
+  id: serial("id").primaryKey(),
+  userId: serial("user_id")
+    .notNull()
+    .references(() => UsersTable.id),
+  companyId: serial("company_id").references(() => Company.id),
+  vacationQuota: integer("vacation_quota").notNull().default(0),
+  vacationSpend: integer("vacation_spend").default(0),
+  homeOfficeQuota: integer("home_office_quota").notNull().default(0),
+  homeOfficeSpend: integer("home_office_spend").default(0),
+  activeYear: varchar("active_year", { length: 4 }),
 });

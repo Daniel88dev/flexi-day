@@ -50,6 +50,15 @@ const NavigationBar = () => {
     </>
   );
 
+  const userButtonAppearance = {
+    elements: {
+      userButtonAvatarBox: "w-10 h-10", // Custom width and height
+      userButtonPopoverCard: "bg-blue-100", // Custom background for the popover card
+      userButtonPopoverActionButton: "text-red-600", // Custom text color for action buttons
+      rootBox: "w-10 h-10",
+    },
+  };
+
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-14 items-center gap-4">
@@ -74,7 +83,7 @@ const NavigationBar = () => {
           </SheetContent>
         </Sheet>
         <ModeToggle />
-        <UserButton />
+        <UserButton appearance={userButtonAppearance} />
       </div>
     </header>
   );

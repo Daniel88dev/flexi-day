@@ -13,6 +13,7 @@ const Footer = () => {
         <Link className="text-xs hover:underline underline-offset-4" href="#">
           Privacy
         </Link>
+        <div className={"xsm:w-0 sm:w-[130px]"}></div>
       </nav>
     </footer>
   );

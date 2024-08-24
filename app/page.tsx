@@ -37,10 +37,10 @@ const HomePage = async () => {
                 </p>
               </div>
               <div className="space-y-2 md:space-y-0 md:space-x-4 md:flex">
-                <SignUpButton mode={"modal"}>
+                <SignUpButton mode={"modal"} forceRedirectUrl={"/dashboard"}>
                   <Button className="w-full md:w-auto">Register</Button>
                 </SignUpButton>
-                <SignInButton mode={"modal"}>
+                <SignInButton mode={"modal"} forceRedirectUrl={"/dashboard"}>
                   <Button variant="outline" className="w-full md:w-auto">
                     Login
                   </Button>
