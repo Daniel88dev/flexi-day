@@ -1,4 +1,6 @@
+import TeamExample from "@/app/(auth)/team/TeamExample";
+
 const TeamPage = () => {
-  return <h1>Team</h1>;
+  return <TeamExample />;
 };
 export default TeamPage;
