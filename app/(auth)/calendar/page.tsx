@@ -1,5 +1,7 @@
+import MyCalendar from "@/app/(auth)/calendar/MyCalendar";
+
 const CalendarPage = () => {
-  return <h1>My Calendar</h1>;
+  return <MyCalendar />;
 };
 
 export default CalendarPage;
