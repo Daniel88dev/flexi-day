@@ -89,3 +89,50 @@ export const UserQuotas = pgTable("user_quotas", {
   homeOfficeSpend: integer("home_office_spend").default(0),
   activeYear: varchar("active_year", { length: 4 }),
 });
+
+export const GroupInvitations = pgTable("group_invitations", {
+  id: serial("id").primaryKey(),
+  email: text("email").notNull(),
+  userId: serial("user_id").references(() => UsersTable.id),
+  groupId: serial("group_id").references(() => WorkingGroup.id),
+  invitationLink: varchar("invitation_link", { length: 10 }).notNull(),
+});
+
+export const CalendarTable = pgTable("calendar_table", {
+  id: serial("id").primaryKey(),
+  userId: serial("user_id")
+    .notNull()
+    .references(() => UsersTable.id),
+  companyId: serial("company_id").references(() => Company.id),
+  vacationType: varchar("vacation_type").notNull(),
+  day: timestamp("day").notNull(),
+  isApproved: boolean("is_approved").notNull().default(false),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at"),
+});
+
+export const RequestTable = pgTable("request_table", {
+  id: serial("id").primaryKey(),
+  userId: serial("user_id")
+    .notNull()
+    .references(() => UsersTable.id),
+  calendarConnection: serial("calendar_connection")
+    .notNull()
+    .references(() => CalendarTable.id),
+  isApproved: boolean("is_approved").notNull().default(false),
+  isRejected: boolean("is_rejected").notNull().default(false),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at"),
+});
+
+export const NotificationTable = pgTable("notification_table", {
+  id: serial("id").primaryKey(),
+  userId: serial("user_id").references(() => UsersTable.id),
+  calendarConnection: serial("calendar_connection").references(
+    () => CalendarTable.id
+  ),
+  isDisplayed: boolean("is_displayed").notNull().default(false),
+  message: text("message"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at"),
+});
