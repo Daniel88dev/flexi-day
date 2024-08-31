@@ -31,8 +31,8 @@ export const UsersTable = pgTable(
 
 export const Company = pgTable("company", {
   id: serial("id").primaryKey(),
-  name: varchar("name", { length: 50 }).notNull(),
-  companySlug: varchar("company_slug", { length: 40 }).notNull(),
+  name: varchar("name", { length: 50 }).notNull().unique(),
+  companySlug: varchar("company_slug", { length: 40 }).notNull().unique(),
   vacationDefault: integer("vacation_default").notNull(),
   homeOfficeDefault: integer("home_office_default").notNull(),
   managerId: serial("manager_id")
