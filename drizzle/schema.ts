@@ -136,3 +136,11 @@ export const NotificationTable = pgTable("notification_table", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at"),
 });
+
+export const UserDefaultGroup = pgTable("user_default_group", {
+  id: serial("id").primaryKey(),
+  userId: serial("user_id")
+    .references(() => UsersTable.id)
+    .unique(),
+  groupId: serial("group_id").references(() => WorkingGroup.id),
+});
