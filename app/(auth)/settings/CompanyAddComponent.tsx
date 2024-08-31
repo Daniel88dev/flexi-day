@@ -17,6 +17,7 @@ import {
   submitNewCompany,
   SubmitNewCompanyType,
 } from "@/app/(auth)/settings/addCompanyAction";
+import { toast } from "sonner";
 
 type State = {
   name: string;
@@ -40,12 +41,13 @@ const CompanyAddComponent = () => {
     } as SubmitNewCompanyType
   );
 
-  console.log(newCompanyFormState);
-
   useEffect(() => {
     if (newCompanyFormState.success) {
+      toast("Company successfully created!");
       setNames({ name: "", slug: "", slugLock: false });
       setOpen(false);
+    } else {
+      toast.error("Error creating new company!");
     }
   }, [newCompanyFormState.success]);
 
@@ -81,18 +83,16 @@ const CompanyAddComponent = () => {
             <h3 className={"text-sm py-2"}>
               Generated Company slug: {names.slug}
             </h3>
-            <div className={"flex"}>
-              <InputText
-                type={"number"}
-                id={"vacation"}
-                title={"Enter Vacation Quota"}
-              />
-              <InputText
-                type={"number"}
-                id={"homeOffice"}
-                title={"Enter Home Office Quota"}
-              />
-            </div>
+            <InputText
+              type={"number"}
+              id={"vacation"}
+              title={"Vacation Quota"}
+            />
+            <InputText
+              type={"number"}
+              id={"homeOffice"}
+              title={"Home Office Quota"}
+            />
             <input
               className={"hidden"}
               value={names.slug}

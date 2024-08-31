@@ -5,6 +5,7 @@ import "./globals.css";
 import { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { ThemeProvider } from "@/components/theme-provider";
+import { Toaster } from "@/components/ui/sonner";
 
 const fontSans = FontSans({
   subsets: ["latin"],
@@ -33,6 +34,7 @@ export default function RootLayout({
         >
           <ThemeProvider attribute="class" defaultTheme="system">
             {children}
+            <Toaster richColors />
           </ThemeProvider>
         </body>
       </html>

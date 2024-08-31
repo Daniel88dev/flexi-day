@@ -19,8 +19,8 @@ export const UsersTable = pgTable(
     name: text("name").notNull(),
     email: text("email").notNull(),
     createdAt: timestamp("createdAt").defaultNow().notNull(),
-    isAdmin: boolean("is_admin").default(false),
-    isSuperAdmin: boolean("is_super_admin").default(false),
+    isAdmin: boolean("is_admin").default(false).notNull(),
+    isSuperAdmin: boolean("is_super_admin").default(false).notNull(),
   },
   (users) => {
     return {

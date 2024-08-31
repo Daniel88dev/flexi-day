@@ -35,3 +35,18 @@ export const getUserId = async () => {
   }
   return user.id;
 };
+
+export const getUserData = async () => {
+  const clerkUser = await currentUser();
+  if (!clerkUser || !clerkUser.id) {
+    throw new Error("Clerk user not found or missing ID");
+  }
+  const user = await db.query.UsersTable.findFirst({
+    where: eq(UsersTable.clerkId, clerkUser?.id!),
+  });
+
+  if (!user) {
+    throw new Error("User not found");
+  }
+  return user;
+};

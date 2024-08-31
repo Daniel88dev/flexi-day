@@ -1,6 +1,7 @@
 "use server";
 
 import { getUserId } from "@/drizzle/users";
+import xss from "xss";
 
 export type SubmitNewCompanyType = {
   success: boolean;
@@ -14,9 +15,10 @@ export const submitNewCompany = async (
   formData: FormData
 ) => {
   const userId = await getUserId();
-
-  console.log(formData);
-  console.log(userId);
+  const companyName = xss(formData.get("companyName") as string);
+  const companySlug = xss(formData.get("slug") as string);
+  const vacation = +formData.get("vacation")!;
+  const homeOffice = +formData.get("homeOffice")!;
 
   return { ...prevState, success: true };
 };
