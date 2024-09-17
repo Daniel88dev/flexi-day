@@ -41,6 +41,8 @@ const CompanyAddComponent = () => {
     } as SubmitNewCompanyType
   );
 
+  console.log(newCompanyFormState);
+
   useEffect(() => {
     if (newCompanyFormState.success) {
       toast("Company successfully created!");
@@ -97,7 +99,7 @@ const CompanyAddComponent = () => {
               className={"hidden"}
               value={names.slug}
               readOnly
-              id={"slug"}
+              name={"slug"}
             />
             <Button type={"submit"}>Submit</Button>
           </form>
