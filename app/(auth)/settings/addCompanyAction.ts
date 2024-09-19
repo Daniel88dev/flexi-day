@@ -3,6 +3,7 @@
 import { getUserId } from "@/drizzle/users";
 import xss from "xss";
 import { CompanyType, insertCompany } from "@/drizzle/company";
+import { CompanyUsersType, insertCompanyUser } from "@/drizzle/companyUsers";
 
 export type SubmitNewCompanyType = {
   success: boolean;
@@ -66,13 +67,28 @@ export const submitNewCompany = async (
     managerId: userId,
   };
 
-  console.table(companyData);
-
   const companyId = await insertCompany(companyData);
 
-  console.log(companyId);
-
   if (!companyId || isNaN(companyId[0].insertedId)) {
+    errors.server = "Error on making change in DB";
+  }
+
+  if (Object.keys(errors).length > 0) {
+    return {
+      ...prevState,
+      errors,
+    };
+  }
+
+  const companyUserData: CompanyUsersType = {
+    userId: userId,
+    companyId: companyId[0].insertedId,
+    isAdmin: true,
+  };
+
+  const companyUserId = await insertCompanyUser(companyUserData);
+
+  if (!companyUserId || isNaN(companyUserId[0].insertedId)) {
     errors.server = "Error on making change in DB";
   }
 

@@ -10,6 +10,7 @@ import {
   varchar,
   integer,
 } from "drizzle-orm/pg-core";
+import { User } from "lucide-react";
 
 export const UsersTable = pgTable(
   "users",
@@ -40,6 +41,17 @@ export const Company = pgTable("company", {
     .references(() => UsersTable.id),
 });
 
+export const CompanyUsers = pgTable("company_users", {
+  id: serial("id").primaryKey(),
+  companyId: integer("company_id")
+    .notNull()
+    .references(() => Company.id),
+  userId: integer("user_id")
+    .notNull()
+    .references(() => UsersTable.id),
+  isAdmin: boolean("is_admin").default(false),
+});
+
 export const WorkingGroup = pgTable(
   "working_group",
   {
@@ -52,7 +64,9 @@ export const WorkingGroup = pgTable(
       .references(() => UsersTable.id),
     vacationDefault: integer("vacation_default").default(0),
     homeOfficeDefault: integer("home_default").default(0),
-    companyId: serial("company_id").references(() => Company.id),
+    companyId: serial("company_id")
+      .notNull()
+      .references(() => Company.id),
   },
   (workingGroups) => {
     return {
@@ -68,9 +82,7 @@ export const GroupUsers = pgTable("group_users", {
   userId: serial("user_id")
     .notNull()
     .references(() => UsersTable.id),
-  groupId: serial("group_id")
-    .notNull()
-    .references(() => WorkingGroup.id),
+  groupId: serial("group_id").references(() => WorkingGroup.id),
   isActive: boolean("is_active").notNull().default(false),
   isAdmin: boolean("is_admin").notNull().default(false),
   canView: boolean("can_view").notNull().default(true),
@@ -82,7 +94,9 @@ export const UserQuotas = pgTable("user_quotas", {
   userId: serial("user_id")
     .notNull()
     .references(() => UsersTable.id),
-  companyId: serial("company_id").references(() => Company.id),
+  companyId: serial("company_id")
+    .notNull()
+    .references(() => Company.id),
   vacationQuota: integer("vacation_quota").notNull().default(0),
   vacationSpend: integer("vacation_spend").default(0),
   homeOfficeQuota: integer("home_office_quota").notNull().default(0),
