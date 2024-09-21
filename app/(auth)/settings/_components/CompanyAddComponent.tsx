@@ -4,6 +4,7 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -16,21 +17,19 @@ import { useFormState } from "react-dom";
 import {
   submitNewCompany,
   SubmitNewCompanyType,
-} from "@/app/(auth)/settings/addCompanyAction";
+} from "@/app/(auth)/settings/settingActions";
 import { toast } from "sonner";
 
 type State = {
   name: string;
   slug: string;
-  slugLock: boolean;
 };
 
 const CompanyAddComponent = () => {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState<boolean>(false);
   const [names, setNames] = useState<State>({
     name: "",
     slug: "",
-    slugLock: false,
   });
 
   const [newCompanyFormState, newCompanyFormAction] = useFormState(
@@ -41,17 +40,19 @@ const CompanyAddComponent = () => {
     } as SubmitNewCompanyType
   );
 
-  console.log(newCompanyFormState);
-
   useEffect(() => {
-    if (newCompanyFormState.success) {
+    if (newCompanyFormState.success && open) {
       toast("Company successfully created!");
-      setNames({ name: "", slug: "", slugLock: false });
+      setNames({ name: "", slug: "" });
       setOpen(false);
-    } else {
+    } else if (
+      !newCompanyFormState.success &&
+      newCompanyFormState.errors &&
+      open
+    ) {
       toast.error("Error creating new company!");
     }
-  }, [newCompanyFormState.success]);
+  }, [newCompanyFormState, open]);
 
   const onNameChange = (event: ChangeEvent<HTMLInputElement>) => {
     const value = event.target.value;
@@ -76,34 +77,38 @@ const CompanyAddComponent = () => {
           <DialogDescription>
             New Company should be registered by Manager.
           </DialogDescription>
-          <form action={newCompanyFormAction}>
-            <InputText
-              id={"companyName"}
-              title={"Enter Company Name"}
-              onChange={onNameChange}
-            />
-            <h3 className={"text-sm py-2"}>
-              Generated Company slug: {names.slug}
-            </h3>
-            <InputText
-              type={"number"}
-              id={"vacation"}
-              title={"Vacation Quota"}
-            />
-            <InputText
-              type={"number"}
-              id={"homeOffice"}
-              title={"Home Office Quota"}
-            />
-            <input
-              className={"hidden"}
-              value={names.slug}
-              readOnly
-              name={"slug"}
-            />
-            <Button type={"submit"}>Submit</Button>
-          </form>
         </DialogHeader>
+        <form action={newCompanyFormAction}>
+          <InputText
+            id={"companyName"}
+            title={"Enter Company Name"}
+            onChange={onNameChange}
+          />
+          <h3 className={"text-sm py-2"}>
+            Generated Company slug: {names.slug}
+          </h3>
+          <InputText type={"number"} id={"vacation"} title={"Vacation Quota"} />
+          <InputText
+            type={"number"}
+            id={"homeOffice"}
+            title={"Home Office Quota"}
+          />
+          <input
+            className={"hidden"}
+            value={names.slug}
+            readOnly
+            name={"slug"}
+          />
+          <ul>
+            {newCompanyFormState.errors &&
+              Object.keys(newCompanyFormState.errors!).map((error) => (
+                <li key={error}>{newCompanyFormState.errors![error]}</li>
+              ))}
+          </ul>
+          <DialogFooter className="flex p-2 gap-2">
+            <Button type={"submit"}>Submit</Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );

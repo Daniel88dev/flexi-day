@@ -1,5 +1,6 @@
 import { CompanyUsers } from "@/drizzle/schema";
 import { db } from "@/drizzle/db";
+import { and, eq } from "drizzle-orm";
 
 export type CompanyUsersType = typeof CompanyUsers.$inferInsert;
 
@@ -9,4 +10,32 @@ export const insertCompanyUser = async (companyUser: CompanyUsersType) => {
     .values(companyUser)
     .returning({ insertedId: CompanyUsers.id })
     .onConflictDoNothing();
+};
+
+export const getCompaniesForUser = async (userId: number) => {
+  return db
+    .select({
+      companyId: CompanyUsers.companyId,
+      isAdmin: CompanyUsers.isAdmin,
+    })
+    .from(CompanyUsers)
+    .where(eq(CompanyUsers.userId, userId));
+};
+
+export const checkUserCompanyPermission = async (
+  companyId: number,
+  userId: number
+) => {
+  const permission = await db
+    .select({
+      permission: CompanyUsers.isAdmin,
+    })
+    .from(CompanyUsers)
+    .where(
+      and(
+        eq(CompanyUsers.userId, userId),
+        eq(CompanyUsers.companyId, companyId)
+      )
+    );
+  return permission[0];
 };
