@@ -1,6 +1,6 @@
 "use client";
 
-import { ChangeEvent, useState } from "react";
+import { ChangeEvent, useEffect, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -12,11 +12,16 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import InputText from "@/components/custom/InputText";
-import { CompanyDetailType } from "@/app/(auth)/settings/settingActions";
+import {
+  CompanyDetailType,
+  submitNewGroup,
+  SubmitNewGroupType,
+} from "@/app/(auth)/settings/settingActions";
 import { slugifyText } from "@/lib/utils";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
 import CheckboxWithLabel from "@/components/custom/CheckboxWithLabel";
+import { useFormState } from "react-dom";
+import { toast } from "sonner";
+import FormSubmitButton from "@/components/custom/FormSubmitButton";
 
 type State = {
   name: string;
@@ -29,6 +34,22 @@ const GroupAddComponent = ({ company }: { company: CompanyDetailType }) => {
     name: "",
     slug: "",
   });
+
+  const [newGroupFormState, newGroupFormAction] = useFormState(submitNewGroup, {
+    errors: null,
+    success: false,
+    companyId: company.companyId,
+  } as SubmitNewGroupType);
+
+  useEffect(() => {
+    if (newGroupFormState.success && open) {
+      toast("Group successfully created!");
+      setData({ name: "", slug: "" });
+      setOpen(false);
+    } else if (!newGroupFormState.success && newGroupFormState.errors && open) {
+      toast.error("Error creating new group!");
+    }
+  }, [newGroupFormState, open]);
 
   const onNameChange = (event: ChangeEvent<HTMLInputElement>) => {
     const value = event.target.value;
@@ -56,7 +77,7 @@ const GroupAddComponent = ({ company }: { company: CompanyDetailType }) => {
             not assigned to that group)
           </DialogDescription>
         </DialogHeader>
-        <form>
+        <form action={newGroupFormAction}>
           {/*groupName*/}
           <InputText
             id={"groupName"}
@@ -80,26 +101,48 @@ const GroupAddComponent = ({ company }: { company: CompanyDetailType }) => {
             defaultValue={company.homeOfficeDefault}
           />
           {/*isActive as isVisible*/}
-          <div className="flex items-center space-x-2">
-            <Checkbox id={"isActive"} />
-            <Label
-              htmlFor={"isActive"}
-              className={
-                "text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-              }
-            >
-              Should you be visible user in Group for others?
-            </Label>
-          </div>
           <CheckboxWithLabel
             label={"Should you be visible user in Group for others?"}
             id={"isActive"}
           />
           {/*isAdmin*/}
+          <CheckboxWithLabel
+            label={
+              "Should you be able to manage users (add/remove) in this group?"
+            }
+            id={"isAdmin"}
+            defaultChecked={true}
+          />
           {/*canView*/}
+          <CheckboxWithLabel
+            label={
+              "Should you be able to see this group in your lists of vacations?"
+            }
+            id={"canView"}
+            defaultChecked={true}
+          />
           {/*canApprove*/}
+          <CheckboxWithLabel
+            label={
+              "Should you be able to approve vacation/home office in this group?"
+            }
+            id={"canApprove"}
+            defaultChecked={true}
+          />
+          <input
+            className={"hidden"}
+            value={data.slug}
+            readOnly
+            name={"slug"}
+          />
+          <ul>
+            {newGroupFormState.errors &&
+              Object.keys(newGroupFormState.errors!).map((error) => (
+                <li key={error}>{newGroupFormState.errors![error]}</li>
+              ))}
+          </ul>
           <DialogFooter>
-            <Button type={"submit"}>Submit</Button>
+            <FormSubmitButton>Submit</FormSubmitButton>
           </DialogFooter>
         </form>
       </DialogContent>

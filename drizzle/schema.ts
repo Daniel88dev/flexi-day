@@ -57,7 +57,7 @@ export const WorkingGroup = pgTable(
   {
     id: serial("id").primaryKey(),
     groupSlug: varchar("group_slug", { length: 40 }).notNull(),
-    groupNme: varchar("group_name", { length: 50 }).notNull(),
+    groupName: varchar("group_name", { length: 50 }).notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     groupAdmin: serial("group_admin")
       .notNull()

@@ -13,6 +13,8 @@ import {
   getCompaniesForUser,
   insertCompanyUser,
 } from "@/drizzle/companyUsers";
+import { insertWorkingGroup, WorkingGroupType } from "@/drizzle/workingGroup";
+import { GroupUsersType, insertGroupUser } from "@/drizzle/groupUsers";
 
 export type SubmitNewCompanyType = {
   success: boolean;
@@ -38,9 +40,6 @@ export const submitNewCompany = async (
     vacation?: string;
     homeOffice?: string;
   } = {};
-
-  console.log(formData);
-  console.log(companySlug);
 
   if (!companyName || companyName.length > 50) {
     errors.companyName =
@@ -151,13 +150,25 @@ export const submitNewGroup = async (
   formData: FormData
 ) => {
   const userId = await getUserId();
+  const groupName = xss(formData.get("groupName") as string);
+  const groupSlug = xss(formData.get("slug") as string);
+  const vacation = +formData.get("vacation")!;
+  const homeOffice = +formData.get("homeOffice")!;
+  const isAdminRaw = formData.get("isAdmin") as string;
+  const isAdmin: boolean = isAdminRaw === "on";
+  const isVisibleRaw = formData.get("isActive") as string;
+  const isVisible: boolean = isVisibleRaw === "on";
+  const canViewRaw = formData.get("canView") as string;
+  const canView: boolean = canViewRaw === "on";
+  const canApproveRaw = formData.get("canApprove") as string;
+  const canApprove: boolean = canApproveRaw === "on";
 
   let errors: {
     server?: string;
     groupName?: string;
     groupSlug?: string;
     vacation?: string;
-    homOffice?: string;
+    homeOffice?: string;
     permission?: string;
   } = {};
 
@@ -168,6 +179,65 @@ export const submitNewGroup = async (
 
   if (!userPermission) {
     errors.permission = "You dont have permission to add new group";
+  }
+
+  if (Object.keys(errors).length > 0) {
+    return {
+      ...prevState,
+      errors,
+    };
+  }
+
+  if (!groupName || groupName.length > 50) {
+    errors.groupName =
+      "Incorrect group Name format. Maximum length of characters is 50.";
+  }
+
+  if (!groupSlug || groupSlug.length > 40) {
+    errors.groupSlug =
+      "Incorrect group Slug format. Maximum length of characters is 40.";
+  }
+
+  if (!vacation || isNaN(vacation)) {
+    errors.vacation = "Incorrect vacation format. Vacation needs to be number.";
+  }
+
+  if (!homeOffice || isNaN(homeOffice)) {
+    errors.homeOffice =
+      "Incorrect home office format. Home office needs to be number.";
+  }
+
+  if (Object.keys(errors).length > 0) {
+    return {
+      ...prevState,
+      errors,
+    };
+  }
+
+  const groupData: WorkingGroupType = {
+    groupSlug: groupSlug,
+    groupName: groupName,
+    groupAdmin: userId,
+    vacationDefault: vacation,
+    homeOfficeDefault: homeOffice,
+    companyId: prevState.companyId,
+  };
+
+  const groupId = await insertWorkingGroup(groupData);
+
+  const groupUser: GroupUsersType = {
+    userId: userId,
+    groupId: groupId[0].insertedId,
+    isActive: isVisible,
+    isAdmin: isAdmin,
+    canView: canView,
+    canApprove: canApprove,
+  };
+
+  const groupUserId = await insertGroupUser(groupUser);
+
+  if (!groupUserId || isNaN(groupUserId[0].insertedId)) {
+    errors.server = "Error on making change in DB";
   }
 
   if (Object.keys(errors).length > 0) {

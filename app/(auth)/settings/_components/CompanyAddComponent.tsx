@@ -19,6 +19,7 @@ import {
   SubmitNewCompanyType,
 } from "@/app/(auth)/settings/settingActions";
 import { toast } from "sonner";
+import FormSubmitButton from "@/components/custom/FormSubmitButton";
 
 type State = {
   name: string;
@@ -106,7 +107,7 @@ const CompanyAddComponent = () => {
               ))}
           </ul>
           <DialogFooter className="flex p-2 gap-2">
-            <Button type={"submit"}>Submit</Button>
+            <FormSubmitButton>Submit</FormSubmitButton>
           </DialogFooter>
         </form>
       </DialogContent>
