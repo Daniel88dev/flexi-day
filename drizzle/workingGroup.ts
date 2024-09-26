@@ -1,5 +1,6 @@
 import { WorkingGroup } from "@/drizzle/schema";
 import { db } from "@/drizzle/db";
+import { eq } from "drizzle-orm";
 
 export type WorkingGroupType = typeof WorkingGroup.$inferInsert;
 
@@ -9,4 +10,19 @@ export const insertWorkingGroup = async (group: WorkingGroupType) => {
     .values(group)
     .returning({ insertedId: WorkingGroup.id })
     .onConflictDoNothing();
+};
+
+export const getGroupsForCompany = async (companyId: number) => {
+  const groups = await db
+    .select({
+      groupId: WorkingGroup.id,
+      groupName: WorkingGroup.groupName,
+      groupSlug: WorkingGroup.groupSlug,
+      vacationDefault: WorkingGroup.vacationDefault,
+      homeOfficeDefault: WorkingGroup.homeOfficeDefault,
+    })
+    .from(WorkingGroup)
+    .where(eq(WorkingGroup.companyId, companyId));
+
+  return groups;
 };

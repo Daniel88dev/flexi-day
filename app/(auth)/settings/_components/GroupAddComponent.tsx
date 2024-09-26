@@ -13,7 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import InputText from "@/components/custom/InputText";
 import {
-  CompanyDetailType,
+  SettingCompanyDataType,
   submitNewGroup,
   SubmitNewGroupType,
 } from "@/app/(auth)/settings/settingActions";
@@ -28,7 +28,11 @@ type State = {
   slug: string;
 };
 
-const GroupAddComponent = ({ company }: { company: CompanyDetailType }) => {
+const GroupAddComponent = ({
+  company,
+}: {
+  company: SettingCompanyDataType;
+}) => {
   const [open, setOpen] = useState<boolean>(false);
   const [data, setData] = useState<State>({
     name: "",

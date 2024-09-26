@@ -11,10 +11,20 @@ import {
   checkUserCompanyPermission,
   CompanyUsersType,
   getCompaniesForUser,
+  getCompaniesIdForUser,
   insertCompanyUser,
 } from "@/drizzle/companyUsers";
-import { insertWorkingGroup, WorkingGroupType } from "@/drizzle/workingGroup";
-import { GroupUsersType, insertGroupUser } from "@/drizzle/groupUsers";
+import {
+  getGroupsForCompany,
+  insertWorkingGroup,
+  WorkingGroupType,
+} from "@/drizzle/workingGroup";
+import {
+  checkUserGroupAdmin,
+  getUsersForGroup,
+  GroupUsersType,
+  insertGroupUser,
+} from "@/drizzle/groupUsers";
 
 export type SubmitNewCompanyType = {
   success: boolean;
@@ -248,4 +258,96 @@ export const submitNewGroup = async (
   }
 
   return { ...prevState, success: true };
+};
+
+export type SettingGroupUsersType = {
+  userId: number;
+  userName: string;
+  userEmail: string;
+  companyAdmin: boolean;
+  groupAdmin: boolean;
+  isActive: boolean;
+  canView: boolean;
+  canApprove: boolean;
+};
+
+export type SettingGroupDataType = {
+  groupId: number;
+  groupName: string;
+  groupSlug: string;
+  vacationDefault: number;
+  homeOfficeDefault: number;
+  canEdit: boolean;
+  groupUsers: SettingGroupUsersType[];
+};
+
+export type SettingCompanyDataType = {
+  companyId: number;
+  companyName: string;
+  companySlug: string;
+  vacationDefault: number;
+  homeOfficeDefault: number;
+  isUserAdmin: boolean;
+  companyGroups: SettingGroupDataType[];
+};
+
+export const loadCompanyGroupsAndUserData = async () => {
+  const userId = await getUserId();
+
+  const companies = await getCompaniesIdForUser(userId);
+
+  const companiesData: SettingCompanyDataType[] = [];
+
+  for (let companyIndex = 0; companyIndex < companies.length; companyIndex++) {
+    const groups = await getGroupsForCompany(
+      companies[companyIndex].companyId!
+    );
+
+    const groupArray: SettingGroupDataType[] = [];
+
+    for (let groupIndex = 0; groupIndex < groups.length; groupIndex++) {
+      const groupUsers = await getUsersForGroup(groups[groupIndex].groupId);
+
+      const groupUsersArray: SettingGroupUsersType[] = [];
+
+      for (let userIndex = 0; userIndex < groupUsers.length; userIndex++) {
+        groupUsersArray.push({
+          userId: groupUsers[userIndex].userId!,
+          userName: groupUsers[userIndex].userName!,
+          userEmail: groupUsers[userIndex].userEmail!,
+          companyAdmin: groupUsers[userIndex].companyAdmin!,
+          groupAdmin: groupUsers[userIndex].groupAdmin!,
+          isActive: groupUsers[userIndex].isActive!,
+          canView: groupUsers[userIndex].canView!,
+          canApprove: groupUsers[userIndex].canApprove!,
+        });
+      }
+      const checkPermission = await checkUserGroupAdmin(
+        groups[groupIndex].groupId,
+        userId
+      );
+
+      groupArray.push({
+        groupId: groups[groupIndex].groupId!,
+        groupName: groups[groupIndex].groupName!,
+        groupSlug: groups[groupIndex].groupSlug!,
+        vacationDefault: groups[groupIndex].vacationDefault!,
+        homeOfficeDefault: groups[groupIndex].homeOfficeDefault!,
+        canEdit: checkPermission.isAdmin,
+        groupUsers: groupUsersArray,
+      });
+    }
+
+    companiesData.push({
+      companyId: companies[companyIndex].companyId!,
+      companyName: companies[companyIndex].companyName!,
+      companySlug: companies[companyIndex].companySlug!,
+      vacationDefault: companies[companyIndex].vacationDefault!,
+      homeOfficeDefault: companies[companyIndex].homeOfficeDefault!,
+      isUserAdmin: companies[companyIndex].isUserAdmin!,
+      companyGroups: groupArray,
+    });
+  }
+
+  return companiesData;
 };
