@@ -65,16 +65,26 @@ export async function POST(request: Request) {
       { status: 201 }
     );
   } else if (evt.type === "user.updated") {
+    const defaultEmailId = evt.data.primary_email_address_id;
+
+    const defaultEmailObject = evt.data.email_addresses.find((emailObject) => {
+      return defaultEmailId === emailObject.id;
+    });
+
     const userObject: User = {
       clerkId: evt.data.id,
       name: evt.data.first_name + " " + evt.data.last_name,
-      email: evt.data.email_addresses[0].email_address,
+      email: defaultEmailObject!.email_address,
     };
     await updatedUser(userObject);
 
     console.log(userObject);
     return NextResponse.json(
-      { message: "User updated", userId: userObject.clerkId },
+      {
+        message: "User updated",
+        userId: userObject.clerkId,
+        newEmail: defaultEmailObject!.email_address,
+      },
       { status: 202 }
     );
   } else if (evt.type === "user.deleted") {
