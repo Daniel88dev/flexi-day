@@ -32,7 +32,12 @@ const CompanyWrapper = ({
       </CardHeader>
       <CardContent>
         {companyData.companyGroups.map((group) => (
-          <GroupComponent key={`group-${group.groupId}`} groupData={group} />
+          <GroupComponent
+            key={`group-${group.groupId}`}
+            groupData={group}
+            companyId={companyData.companyId}
+            companyAdmin={companyData.isUserAdmin}
+          />
         ))}
       </CardContent>
       <CardFooter>

@@ -22,12 +22,15 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import SettingUserRow from "@/app/(auth)/settings/_components/SettingUserRow";
+import TableHeadWithHover from "@/components/custom/TableHeadWithHover";
 
 type Props = {
   groupData: SettingGroupDataType;
+  companyId: number;
+  companyAdmin: boolean;
 };
 
-const GroupComponent = ({ groupData }: Props) => {
+const GroupComponent = ({ groupData, companyId, companyAdmin }: Props) => {
   return (
     <Card className={"m-2"}>
       <CardHeader>
@@ -46,11 +49,41 @@ const GroupComponent = ({ groupData }: Props) => {
             <TableRow>
               <TableHead>User Name</TableHead>
               <TableHead>User Email</TableHead>
-              <TableHead>Company Admin</TableHead>
-              <TableHead>Group Admin</TableHead>
-              <TableHead>Active user</TableHead>
-              <TableHead>Can view Group</TableHead>
-              <TableHead>Can Approve</TableHead>
+              <TableHeadWithHover
+                hoverDetail={
+                  "Should be user able to manage permissions of whole Company users? (Only company admin can modify)"
+                }
+              >
+                Company Admin
+              </TableHeadWithHover>
+              <TableHeadWithHover
+                hoverDetail={
+                  "Should be user able to manage users in this Group?"
+                }
+              >
+                Group Admin
+              </TableHeadWithHover>
+              <TableHeadWithHover
+                hoverDetail={
+                  "Should be user visible in Group for others users in Group?"
+                }
+              >
+                Active user
+              </TableHeadWithHover>
+              <TableHeadWithHover
+                hoverDetail={
+                  "Should be user able to see this group in his lists of vacation? (suggested: yes)"
+                }
+              >
+                Can view Group
+              </TableHeadWithHover>
+              <TableHeadWithHover
+                hoverDetail={
+                  "Should be user able to approve vacation/home office and other events?"
+                }
+              >
+                Can Approve
+              </TableHeadWithHover>
               <TableHead>Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -61,6 +94,9 @@ const GroupComponent = ({ groupData }: Props) => {
                 userData={user}
                 editable={groupData.canEdit}
                 groupId={groupData.groupId}
+                companyId={companyId}
+                groupName={groupData.groupName}
+                companyAdmin={companyAdmin}
               />
             ))}
           </TableBody>

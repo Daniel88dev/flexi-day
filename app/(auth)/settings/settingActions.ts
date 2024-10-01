@@ -25,6 +25,7 @@ import {
   GroupUsersType,
   insertGroupUser,
 } from "@/drizzle/groupUsers";
+import { createUserQuotasRecord, UserQuotasType } from "@/drizzle/userQuotas";
 
 export type SubmitNewCompanyType = {
   success: boolean;
@@ -107,6 +108,29 @@ export const submitNewCompany = async (
   const companyUserId = await insertCompanyUser(companyUserData);
 
   if (!companyUserId || isNaN(companyUserId[0].insertedId)) {
+    errors.server = "Error on making change in DB";
+  }
+
+  if (Object.keys(errors).length > 0) {
+    return {
+      ...prevState,
+      errors,
+    };
+  }
+
+  const userQuotaData: UserQuotasType = {
+    userId: userId,
+    companyId: companyId[0].insertedId,
+    vacationQuota: vacation,
+    vacationSpend: 0,
+    homeOfficeQuota: homeOffice,
+    homeOfficeSpend: 0,
+    activeYear: new Date().getFullYear().toString(),
+  };
+
+  const insertedUserQuotas = await createUserQuotasRecord(userQuotaData);
+
+  if (!insertedUserQuotas || isNaN(insertedUserQuotas[0].insertedId)) {
     errors.server = "Error on making change in DB";
   }
 
