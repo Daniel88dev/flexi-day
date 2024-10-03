@@ -95,7 +95,6 @@ const GroupComponent = ({ groupData, companyId, companyAdmin }: Props) => {
                 editable={groupData.canEdit}
                 groupId={groupData.groupId}
                 companyId={companyId}
-                groupName={groupData.groupName}
                 companyAdmin={companyAdmin}
               />
             ))}
