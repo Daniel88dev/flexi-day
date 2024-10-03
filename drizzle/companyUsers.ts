@@ -56,3 +56,28 @@ export const getCompaniesIdForUser = async (userId: number) => {
 
   return companies;
 };
+
+export type UpdateCompanyUserPermissionType = {
+  companyId: number;
+  userId: number;
+  isAdmin: boolean;
+};
+
+export const updateCompanyUserPermission = async (
+  updateData: UpdateCompanyUserPermissionType
+) => {
+  const result = await db
+    .update(CompanyUsers)
+    .set({
+      isAdmin: updateData.isAdmin,
+    })
+    .where(
+      and(
+        eq(CompanyUsers.userId, updateData.userId),
+        eq(CompanyUsers.companyId, updateData.companyId)
+      )
+    )
+    .returning({ updateId: CompanyUsers.id });
+
+  return result;
+};

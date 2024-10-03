@@ -13,6 +13,8 @@ import {
   getCompaniesForUser,
   getCompaniesIdForUser,
   insertCompanyUser,
+  updateCompanyUserPermission,
+  UpdateCompanyUserPermissionType,
 } from "@/drizzle/companyUsers";
 import {
   getGroupsForCompany,
@@ -24,6 +26,8 @@ import {
   getUsersForGroup,
   GroupUsersType,
   insertGroupUser,
+  updateUserGroupPermissions,
+  UpdateUserGroupPermissionsType,
 } from "@/drizzle/groupUsers";
 import { createUserQuotasRecord, UserQuotasType } from "@/drizzle/userQuotas";
 
@@ -374,4 +378,94 @@ export const loadCompanyGroupsAndUserData = async () => {
   }
 
   return companiesData;
+};
+
+export type UpdateUserPermissionType = {
+  userId: number;
+  companyId: number;
+  groupId: number;
+  previousCompanyAdmin: boolean;
+  companyAdmin: boolean;
+  isAdmin: boolean;
+  isActive: boolean;
+  canView: boolean;
+  canApprove: boolean;
+  wasUpdated: boolean;
+};
+
+export const updateUserPermissions = async (
+  userData: UpdateUserPermissionType
+) => {
+  const activeUserId = await getUserId();
+
+  const checkGroupPermission = await checkUserGroupAdmin(
+    userData.groupId,
+    activeUserId
+  );
+
+  if (!checkGroupPermission.isAdmin) {
+    return {
+      success: false,
+      message: "You dont have permission to make changes.",
+    };
+  }
+
+  let companyChangeSuccess: boolean = false;
+
+  if (userData.previousCompanyAdmin !== userData.companyAdmin) {
+    const checkAdminPermission = await checkUserCompanyPermission(
+      userData.companyId,
+      activeUserId
+    );
+
+    if (!checkAdminPermission.permission) {
+      return {
+        success: false,
+        message: "You dont have permission to change company permissions.",
+      };
+    }
+
+    const adminUpdateData: UpdateCompanyUserPermissionType = {
+      companyId: userData.companyId,
+      userId: userData.userId,
+      isAdmin: userData.companyAdmin,
+    };
+
+    const companyUpdate = await updateCompanyUserPermission(adminUpdateData);
+
+    if (
+      typeof companyUpdate[0].updateId === "number" &&
+      !isNaN(companyUpdate[0].updateId)
+    ) {
+      companyChangeSuccess = true;
+    }
+  } else companyChangeSuccess = true;
+
+  const groupUpdateData: UpdateUserGroupPermissionsType = {
+    userId: userData.userId,
+    groupId: userData.groupId,
+    isActive: userData.isActive,
+    isAdmin: userData.isAdmin,
+    canView: userData.canView,
+    canApprove: userData.canApprove,
+  };
+  let groupChangeSuccess: boolean = false;
+
+  const groupUpdate = await updateUserGroupPermissions(groupUpdateData);
+
+  if (
+    typeof groupUpdate[0].updatedId === "number" &&
+    !isNaN(groupUpdate[0].updatedId)
+  ) {
+    groupChangeSuccess = true;
+  }
+
+  if (!companyChangeSuccess || !groupChangeSuccess) {
+    return {
+      success: false,
+      message: "Updating permissions of user was not successful.",
+    };
+  }
+
+  return { success: true, message: "Successfully updated" };
 };

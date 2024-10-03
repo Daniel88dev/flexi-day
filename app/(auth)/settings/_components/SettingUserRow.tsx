@@ -1,16 +1,20 @@
 "use client";
-import { SettingGroupUsersType } from "@/app/(auth)/settings/settingActions";
+import {
+  SettingGroupUsersType,
+  updateUserPermissions,
+  UpdateUserPermissionType,
+} from "@/app/(auth)/settings/settingActions";
 import { TableCell, TableRow } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { ChangeEvent, useState } from "react";
+import { toast } from "sonner";
 
 type Props = {
   userData: SettingGroupUsersType;
   editable: boolean;
   groupId: number;
   companyId: number;
-  groupName: string;
   companyAdmin: boolean;
 };
 
@@ -28,7 +32,6 @@ const SettingUserRow = ({
   editable,
   groupId,
   companyId,
-  groupName,
   companyAdmin,
 }: Props) => {
   const [data, setData] = useState<State>({
@@ -39,6 +42,7 @@ const SettingUserRow = ({
     canApprove: userData.canApprove,
     wasUpdated: false,
   });
+  const [pending, setPending] = useState(false);
 
   const handleCompanyAdminChange = (status: boolean) => {
     setData((prevState) => {
@@ -92,6 +96,28 @@ const SettingUserRow = ({
 
   const style = data.wasUpdated ? "bg-blue-200 dark:bg-blue-600" : "";
 
+  const onSaveButtonClick = async () => {
+    setPending(true);
+
+    const updateDate: UpdateUserPermissionType = {
+      userId: userData.userId,
+      companyId: companyId,
+      groupId: groupId,
+      previousCompanyAdmin: companyAdmin,
+      ...data,
+    };
+
+    const result = await updateUserPermissions(updateDate);
+    console.log(result);
+    if (!result.success) {
+      toast.error(result.message);
+      setPending(false);
+    } else {
+      toast(result.message);
+      setPending(false);
+    }
+  };
+
   return (
     <TableRow className={style}>
       <TableCell>{userData.userName}</TableCell>
@@ -137,7 +163,11 @@ const SettingUserRow = ({
         />
       </TableCell>
       <TableCell>
-        <Button variant={"default"} type={"submit"}>
+        <Button
+          variant={"default"}
+          disabled={pending}
+          onClick={onSaveButtonClick}
+        >
           Save
         </Button>
       </TableCell>

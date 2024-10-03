@@ -40,3 +40,34 @@ export const checkUserGroupAdmin = async (groupId: number, userId: number) => {
 
   return admin[0];
 };
+
+export type UpdateUserGroupPermissionsType = {
+  userId: number;
+  groupId: number;
+  isActive: boolean;
+  isAdmin: boolean;
+  canView: boolean;
+  canApprove: boolean;
+};
+
+export const updateUserGroupPermissions = async (
+  updateData: UpdateUserGroupPermissionsType
+) => {
+  const result = await db
+    .update(GroupUsers)
+    .set({
+      isActive: updateData.isActive,
+      isAdmin: updateData.isAdmin,
+      canView: updateData.canView,
+      canApprove: updateData.canApprove,
+    })
+    .where(
+      and(
+        eq(GroupUsers.userId, updateData.userId),
+        eq(GroupUsers.groupId, updateData.groupId)
+      )
+    )
+    .returning({ updatedId: GroupUsers.id });
+
+  return result;
+};
