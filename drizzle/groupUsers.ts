@@ -71,3 +71,12 @@ export const updateUserGroupPermissions = async (
 
   return result;
 };
+
+export const deleteGroupUser = async (userId: number, groupId: number) => {
+  const result = await db
+    .delete(GroupUsers)
+    .where(and(eq(GroupUsers.userId, userId), eq(GroupUsers.groupId, groupId)))
+    .returning({ deletedId: GroupUsers.userId });
+
+  return result[0].deletedId;
+};

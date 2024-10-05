@@ -9,6 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { ChangeEvent, useState } from "react";
 import { toast } from "sonner";
+import DeleteUser from "@/app/(auth)/settings/_components/DeleteUser";
 
 type Props = {
   userData: SettingGroupUsersType;
@@ -115,6 +116,9 @@ const SettingUserRow = ({
     } else {
       toast(result.message);
       setPending(false);
+      setData((prevState) => {
+        return { ...prevState, wasUpdated: false };
+      });
     }
   };
 
@@ -162,7 +166,7 @@ const SettingUserRow = ({
           onCheckedChange={handleCanApproveChange}
         />
       </TableCell>
-      <TableCell>
+      <TableCell className={"flex gap-2"}>
         <Button
           variant={"default"}
           disabled={pending}
@@ -170,6 +174,14 @@ const SettingUserRow = ({
         >
           Save
         </Button>
+        <DeleteUser
+          key={`delete-${groupId}-${userData.userId}`}
+          userId={userData.userId}
+          userName={userData.userName}
+          groupId={groupId}
+          companyId={companyId}
+          companyAdmin={companyAdmin}
+        />
       </TableCell>
     </TableRow>
   );

@@ -81,3 +81,17 @@ export const updateCompanyUserPermission = async (
 
   return result;
 };
+
+export const deleteCompanyUser = async (userId: number, companyId: number) => {
+  const result = await db
+    .delete(CompanyUsers)
+    .where(
+      and(
+        eq(CompanyUsers.userId, userId),
+        eq(CompanyUsers.companyId, companyId)
+      )
+    )
+    .returning({ deletedId: CompanyUsers.userId });
+
+  return result[0].deletedId;
+};

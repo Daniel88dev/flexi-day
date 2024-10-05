@@ -10,6 +10,7 @@ import {
 import {
   checkUserCompanyPermission,
   CompanyUsersType,
+  deleteCompanyUser,
   getCompaniesForUser,
   getCompaniesIdForUser,
   insertCompanyUser,
@@ -23,6 +24,7 @@ import {
 } from "@/drizzle/workingGroup";
 import {
   checkUserGroupAdmin,
+  deleteGroupUser,
   getUsersForGroup,
   GroupUsersType,
   insertGroupUser,
@@ -471,4 +473,66 @@ export const updateUserPermissions = async (
   revalidatePath("/settings");
 
   return { success: true, message: "Successfully updated" };
+};
+
+export type DeleteUserType = {
+  userId: number;
+  groupId: number;
+  companyId: number;
+  groupDelete: boolean;
+  companyDelete: boolean;
+};
+export const deleteUser = async (userData: DeleteUserType) => {
+  const activeUserId = await getUserId();
+
+  const checkGroupPermission = await checkUserGroupAdmin(
+    userData.groupId,
+    activeUserId
+  );
+
+  const checkCompanyAdminPermission = await checkUserCompanyPermission(
+    userData.companyId,
+    activeUserId
+  );
+
+  if (userData.companyDelete && !checkCompanyAdminPermission.permission) {
+    return {
+      success: false,
+      message: "You dont have permission to remove user from Company",
+    };
+  }
+
+  let groupDeleted: number | null = null;
+  let companyDeleted: number | null = null;
+
+  if (userData.groupDelete && !checkGroupPermission.isAdmin) {
+    return {
+      success: false,
+      message: "You dont have permission to remove user from Group",
+    };
+  } else if (checkGroupPermission.isAdmin) {
+    groupDeleted = await deleteGroupUser(userData.userId, userData.groupId);
+  }
+
+  if (!userData.companyDelete) {
+    companyDeleted = userData.userId;
+  } else if (
+    userData.companyDelete &&
+    checkCompanyAdminPermission.permission &&
+    groupDeleted === userData.userId
+  ) {
+    companyDeleted = await deleteCompanyUser(
+      userData.userId,
+      userData.companyId
+    );
+  } else {
+    return { success: false, message: "Failed to delete user" };
+  }
+
+  if (companyDeleted === userData.userId) {
+    revalidatePath("/settings");
+    return { success: true, message: "User removed successfully." };
+  }
+
+  return { success: false, message: "Unknown error" };
 };
