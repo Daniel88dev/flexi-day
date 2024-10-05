@@ -30,6 +30,7 @@ import {
   UpdateUserGroupPermissionsType,
 } from "@/drizzle/groupUsers";
 import { createUserQuotasRecord, UserQuotasType } from "@/drizzle/userQuotas";
+import { revalidatePath } from "next/cache";
 
 export type SubmitNewCompanyType = {
   success: boolean;
@@ -466,6 +467,8 @@ export const updateUserPermissions = async (
       message: "Updating permissions of user was not successful.",
     };
   }
+
+  revalidatePath("/settings");
 
   return { success: true, message: "Successfully updated" };
 };
