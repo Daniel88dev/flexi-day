@@ -287,7 +287,7 @@ export const submitNewGroup = async (
       errors,
     };
   }
-
+  revalidatePath("/settings");
   return { ...prevState, success: true };
 };
 

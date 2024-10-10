@@ -8,8 +8,10 @@ const QuickActions = () => {
         <CardTitle>Quick Actions</CardTitle>
       </CardHeader>
       <CardContent className="grid gap-4 md:grid-cols-2">
-        <Button>Request Vacation</Button>
-        <Button variant="outline">Request Home Office</Button>
+        <Button id={"requestVacationButton"}>Request Vacation</Button>
+        <Button id={"requestHomeOfficeButton"} variant="outline">
+          Request Home Office
+        </Button>
       </CardContent>
     </Card>
   );

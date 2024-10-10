@@ -1,4 +1,10 @@
-import { CompanyUsers, GroupUsers, UsersTable } from "@/drizzle/schema";
+import {
+  Company,
+  CompanyUsers,
+  GroupUsers,
+  UsersTable,
+  WorkingGroup,
+} from "@/drizzle/schema";
 import { db } from "@/drizzle/db";
 import { and, eq } from "drizzle-orm";
 
@@ -79,4 +85,26 @@ export const deleteGroupUser = async (userId: number, groupId: number) => {
     .returning({ deletedId: GroupUsers.userId });
 
   return result[0].deletedId;
+};
+
+export const getGroupsForUser = async (userId: number) => {
+  const result = await db
+    .select({
+      id: GroupUsers.id,
+      groupId: GroupUsers.groupId,
+      groupName: WorkingGroup.groupName,
+      companyName: Company.name,
+    })
+    .from(GroupUsers)
+    .leftJoin(WorkingGroup, eq(WorkingGroup.id, GroupUsers.groupId))
+    .leftJoin(Company, eq(Company.id, WorkingGroup.companyId))
+    .where(
+      and(
+        eq(GroupUsers.userId, userId),
+        eq(GroupUsers.canView, true),
+        eq(GroupUsers.isActive, true)
+      )
+    );
+
+  return result;
 };

@@ -1,4 +1,4 @@
-import { WorkingGroup } from "@/drizzle/schema";
+import { Company, WorkingGroup } from "@/drizzle/schema";
 import { db } from "@/drizzle/db";
 import { eq } from "drizzle-orm";
 
@@ -25,4 +25,19 @@ export const getGroupsForCompany = async (companyId: number) => {
     .where(eq(WorkingGroup.companyId, companyId));
 
   return groups;
+};
+
+export const getGroupDataForDashboard = async (groupId: number) => {
+  const groupData = await db
+    .select({
+      vacationDefault: WorkingGroup.vacationDefault,
+      homeOfficeDefault: WorkingGroup.homeOfficeDefault,
+      companyName: Company.name,
+      companyId: WorkingGroup.companyId,
+    })
+    .from(WorkingGroup)
+    .leftJoin(Company, eq(Company.id, WorkingGroup.companyId))
+    .where(eq(WorkingGroup.id, groupId));
+
+  return groupData[0];
 };
