@@ -19,21 +19,23 @@ const Dashboard = async () => {
             defaultGroupId={initialData.defaultGroupId}
           />
         </div>
-        <div className="grid gap-4 md:grid-cols-2">
-          <VacationCard
-            type={"vacation"}
-            used={vacationQuota.used}
-            total={vacationQuota.total}
-          />
-          <VacationCard
-            type={"homeOffice"}
-            used={homeOfficeQuota.used}
-            total={homeOfficeQuota.total}
-          />
-        </div>
-        <QuickActions />
+        {initialData.companyUserData && (
+          <div className="grid gap-4 md:grid-cols-2">
+            <VacationCard
+              type={"vacation"}
+              used={initialData.companyUserData.vacationUsed}
+              total={initialData.companyUserData.vacationTotal}
+            />
+            <VacationCard
+              type={"homeOffice"}
+              used={initialData.companyUserData.homeOfficeUsed}
+              total={initialData.companyUserData.homeOfficeTotal}
+            />
+          </div>
+        )}
+        {initialData.companyUserData && <QuickActions />}
       </div>
-      <DashboardCalendar />
+      {initialData.companyUserData && <DashboardCalendar />}
     </div>
   );
 };

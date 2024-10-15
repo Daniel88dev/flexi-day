@@ -44,6 +44,16 @@ export type DashboardGroupArrayType = {
   groupName: string;
 };
 
+export type DashboardGroupDataType = null | {
+  companyName: string;
+  homeOfficeDefault: number;
+  vacationDefault: number;
+  vacationUsed: number;
+  vacationTotal: number;
+  homeOfficeUsed: number;
+  homeOfficeTotal: number;
+};
+
 export const loadDashboardInitialData = async () => {
   const userId = await getUserId();
   const date = new Date();
@@ -64,7 +74,15 @@ export const loadDashboardInitialData = async () => {
     }
   );
 
-  let groupData = null;
+  let groupData: {
+    companyName?: string | undefined;
+    homeOfficeDefault?: number | undefined;
+    vacationDefault?: number | undefined;
+    vacationUsed?: number | undefined;
+    vacationTotal?: number | undefined;
+    homeOfficeUsed?: number | undefined;
+    homeOfficeTotal?: number | undefined;
+  } = {};
 
   if (defaultGroupId) {
     const loadedGroupData = await getGroupDataForDashboard(defaultGroupId);
@@ -75,13 +93,60 @@ export const loadDashboardInitialData = async () => {
     );
 
     groupData = {
-      companyName: loadedGroupData.companyName,
-      homeOfficeDefault: loadedGroupData.homeOfficeDefault,
-      vacationDefault: loadedGroupData.vacationDefault,
+      companyName: loadedGroupData.companyName!,
+      homeOfficeDefault: loadedGroupData.homeOfficeDefault!,
+      vacationDefault: loadedGroupData.vacationDefault!,
     };
+
+    if (getMonth === 11) {
+      const nextYear = (+getYear + 1).toString();
+
+      const loadNextYear = await getUserQuotasForSelectedYear(
+        userId,
+        nextYear,
+        loadedGroupData.companyId
+      );
+
+      groupData = {
+        ...groupData,
+        vacationUsed:
+          loadedUserQuotas.vacationSpend! +
+          (loadNextYear ? loadNextYear.vacationSpend! : 0),
+        vacationTotal:
+          loadedUserQuotas.vacationQuota! + loadedGroupData.vacationDefault!,
+        homeOfficeUsed:
+          loadedUserQuotas.homeOfficeSpend! +
+          (loadNextYear ? loadNextYear.vacationSpend! : 0),
+        homeOfficeTotal:
+          loadedUserQuotas.homeOfficeQuota! +
+          loadedGroupData.homeOfficeDefault!,
+      };
+    } else {
+      groupData = {
+        ...groupData,
+        vacationUsed: loadedUserQuotas.vacationSpend!,
+        vacationTotal: loadedUserQuotas.vacationQuota!,
+        homeOfficeUsed: loadedUserQuotas.homeOfficeSpend!,
+        homeOfficeTotal: loadedUserQuotas.homeOfficeQuota!,
+      };
+    }
   }
 
-  const loadUserQuotas = null;
+  const finalGroupData: DashboardGroupDataType = !defaultGroupId
+    ? null
+    : {
+        companyName: groupData.companyName!,
+        homeOfficeDefault: groupData.homeOfficeDefault!,
+        vacationDefault: groupData.vacationDefault!,
+        vacationUsed: groupData.vacationUsed!,
+        vacationTotal: groupData.vacationTotal!,
+        homeOfficeUsed: groupData.homeOfficeUsed!,
+        homeOfficeTotal: groupData.homeOfficeTotal!,
+      };
 
-  return { groupData: groupsDataArray, defaultGroupId: defaultGroupId };
+  return {
+    groupData: groupsDataArray,
+    defaultGroupId: defaultGroupId,
+    companyUserData: finalGroupData,
+  };
 };
