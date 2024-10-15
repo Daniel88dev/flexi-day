@@ -1,10 +1,10 @@
 "use client";
-
 import { useEffect, useState } from "react";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
+  DialogOverlay,
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
@@ -24,19 +24,29 @@ import { Calendar } from "@/components/ui/calendar";
 
 const VacationRequestModule = () => {
   const [open, setOpen] = useState<boolean>(false);
-  const [singleDate, setSingleDate] = useState<Date>();
-
-  console.log(open);
-  console.log(singleDate);
+  const [singleDate, setSingleDate] = useState<Date | undefined>(undefined);
 
   useEffect(() => {
     if (!open) {
-      setSingleDate(undefined); // Reset any internal states affected
+      setSingleDate(undefined);
+      setTimeout(() => {
+        document.body.style.pointerEvents = "";
+        console.log("executed");
+      }, 200);
     }
   }, [open]);
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog
+      open={open}
+      onOpenChange={(change) => {
+        console.log("change dialog" + change);
+        if (!change) {
+          document.body.style.pointerEvents = "";
+        }
+        setOpen(change);
+      }}
+    >
       <DialogTrigger asChild>
         <Button onClick={() => setOpen(true)}>Request Vacation</Button>
       </DialogTrigger>

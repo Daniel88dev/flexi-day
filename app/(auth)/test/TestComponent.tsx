@@ -55,7 +55,7 @@ const TestComponent = () => {
             <Card>
               <CardContent>
                 <Label>Label</Label>
-                <Popover>
+                <Popover modal>
                   <PopoverTrigger asChild>
                     <Button variant="outline">
                       {date ? format(date, "PPP") : <span>Pick a date</span>}
