@@ -20,6 +20,9 @@
 # production
 /build
 
+# Claude Code personal instructions
+CLAUDE.local.md
+
 # misc
 .DS_Store
 *.pem
@@ -250,3 +253,4 @@ dist
 .yarn/install-state.gz
 .pnp.*
 
+/.claude/
