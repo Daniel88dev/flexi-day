@@ -2,9 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import {
-  TEAM_MEMBERS,
   LEAVE_TYPE_COLORS,
   LEAVE_TYPE_LABELS,
   LeaveRequest,

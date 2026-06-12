@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useStore } from "@/lib/store";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Table,
