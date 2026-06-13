@@ -1,31 +1,34 @@
 import type { Metadata } from "next";
-import { Plus_Jakarta_Sans, Geist_Mono, EB_Garamond } from "next/font/google";
+import { Bricolage_Grotesque, Hanken_Grotesk, Instrument_Serif } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
-import { StoreProvider } from "@/lib/store";
+import { QueryProvider } from "@/components/query-provider";
 import { ThemeProvider } from "@/components/theme-provider";
 
-const jakarta = Plus_Jakarta_Sans({
+const hanken = Hanken_Grotesk({
   subsets: ["latin"],
   variable: "--font-sans",
-  weight: ["300", "400", "500", "600", "700", "800"],
-});
-
-const ebGaramond = EB_Garamond({
-  subsets: ["latin"],
-  variable: "--font-serif",
-  weight: ["400", "500", "600"],
+  weight: ["400", "500", "600", "700"],
   style: ["normal", "italic"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-mono",
+const bricolage = Bricolage_Grotesque({
   subsets: ["latin"],
+  variable: "--font-display",
+  weight: ["400", "500", "600", "700", "800"],
+});
+
+const instrument = Instrument_Serif({
+  subsets: ["latin"],
+  variable: "--font-serif",
+  weight: ["400"],
+  style: ["normal", "italic"],
 });
 
 export const metadata: Metadata = {
-  title: "Flexi Day — Team Vacations",
-  description: "Manage your team's vacations and time off",
+  title: "flexiday — time off, handled with care",
+  description:
+    "The calm, shared calendar for team time off. See who's in, who's away, and approve requests in a click.",
 };
 
 export default function RootLayout({
@@ -37,12 +40,7 @@ export default function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className={cn(
-        "h-full antialiased",
-        jakarta.variable,
-        ebGaramond.variable,
-        geistMono.variable
-      )}
+      className={cn("h-full antialiased", hanken.variable, bricolage.variable, instrument.variable)}
     >
       <body className="bg-background text-foreground flex min-h-full flex-col font-sans">
         <ThemeProvider
@@ -51,7 +49,7 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <StoreProvider>{children}</StoreProvider>
+          <QueryProvider>{children}</QueryProvider>
         </ThemeProvider>
       </body>
     </html>
