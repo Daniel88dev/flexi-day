@@ -1,7 +1,6 @@
 "use client";
 
-import { useState } from "react";
-import { useStore } from "@/lib/store";
+import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -11,19 +10,20 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useApproveVacation, useGroups, useVacations } from "@/lib/api/queries";
+import { useSession } from "@/lib/auth-client";
 import {
-  getMemberById,
-  getInitials,
-  countBusinessDays,
-  LEAVE_TYPE_LABELS,
-  LEAVE_TYPE_COLORS,
-  LeaveRequest,
-} from "@/lib/data";
+  VACATION_KIND_COLORS,
+  VACATION_KIND_LABELS,
+  vacationStatus,
+  type Vacation,
+  type VacationStatus,
+} from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 
-type Filter = "all" | "pending" | "approved" | "rejected";
+type Filter = "all" | VacationStatus | "mine";
 
-const STATUS_BADGE: Record<LeaveRequest["status"], string> = {
+const STATUS_BADGE: Record<VacationStatus, string> = {
   pending: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300",
   approved: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300",
   rejected: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300",
@@ -37,29 +37,118 @@ function formatDate(iso: string) {
   });
 }
 
+function MonthPicker({
+  year,
+  month,
+  onChange,
+}: {
+  year: number;
+  month: number;
+  onChange: (y: number, m: number) => void;
+}) {
+  const months = [
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
+  ];
+  return (
+    <div className="flex items-center gap-1">
+      <Button
+        variant="outline"
+        size="icon-sm"
+        onClick={() => {
+          if (month === 1) onChange(year - 1, 12);
+          else onChange(year, month - 1);
+        }}
+      >
+        ‹
+      </Button>
+      <span className="text-foreground/80 font-heading w-[110px] text-center text-sm font-medium">
+        {months[month - 1]} {year}
+      </span>
+      <Button
+        variant="outline"
+        size="icon-sm"
+        onClick={() => {
+          if (month === 12) onChange(year + 1, 1);
+          else onChange(year, month + 1);
+        }}
+      >
+        ›
+      </Button>
+    </div>
+  );
+}
+
 export default function RequestsPage() {
-  const { requests, updateStatus } = useStore();
+  const now = new Date();
+  const [year, setYear] = useState(now.getFullYear());
+  const [month, setMonth] = useState(now.getMonth() + 1);
   const [filter, setFilter] = useState<Filter>("all");
 
-  const filtered = filter === "all" ? requests : requests.filter((r) => r.status === filter);
+  const { data: session } = useSession();
+  const userId = session?.user?.id;
 
-  const counts = {
-    all: requests.length,
-    pending: requests.filter((r) => r.status === "pending").length,
-    approved: requests.filter((r) => r.status === "approved").length,
-    rejected: requests.filter((r) => r.status === "rejected").length,
+  const groupsQuery = useGroups();
+  const vacationsQuery = useVacations({ year, month });
+  const approve = useApproveVacation();
+
+  const vacations: Vacation[] = vacationsQuery.data ?? [];
+  const groups = groupsQuery.data ?? [];
+
+  const groupName = (id: string) => groups.find((g) => g.id === id)?.groupName ?? id.slice(0, 8);
+
+  const canApproveGroup = (gid: string) => {
+    const g = groups.find((x) => x.id === gid);
+    if (!g || !userId) return false;
+    return g.mainApprovalUser === userId || g.tempApprovalUser === userId;
   };
+
+  const counts = useMemo(() => {
+    const c = { all: vacations.length, pending: 0, approved: 0, rejected: 0, mine: 0 };
+    for (const v of vacations) {
+      c[vacationStatus(v)]++;
+      if (v.userId === userId) c.mine++;
+    }
+    return c;
+  }, [vacations, userId]);
+
+  const filtered = useMemo(() => {
+    if (filter === "all") return vacations;
+    if (filter === "mine") return vacations.filter((v) => v.userId === userId);
+    return vacations.filter((v) => vacationStatus(v) === filter);
+  }, [vacations, filter, userId]);
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="font-heading text-2xl font-bold">Requests</h1>
-        <p className="text-muted-foreground mt-1 text-sm">Review and manage all leave requests.</p>
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h1 className="font-heading text-2xl font-bold">Requests</h1>
+          <p className="text-muted-foreground mt-1 text-sm">
+            Review and approve vacation requests for the selected month.
+          </p>
+        </div>
+        <MonthPicker
+          year={year}
+          month={month}
+          onChange={(y, m) => {
+            setYear(y);
+            setMonth(m);
+          }}
+        />
       </div>
 
-      {/* Filter tabs */}
-      <div className="border-border flex gap-1 border-b pb-0">
-        {(["all", "pending", "approved", "rejected"] as Filter[]).map((f) => (
+      <div className="border-border flex flex-wrap gap-1 border-b pb-0">
+        {(["all", "mine", "pending", "approved", "rejected"] as Filter[]).map((f) => (
           <button
             key={f}
             onClick={() => setFilter(f)}
@@ -78,113 +167,83 @@ export default function RequestsPage() {
         ))}
       </div>
 
-      {filtered.length === 0 ? (
+      {vacationsQuery.isLoading ? (
+        <div className="text-muted-foreground py-16 text-center text-sm">Loading…</div>
+      ) : vacationsQuery.error ? (
+        <div className="text-destructive py-16 text-center text-sm">
+          {vacationsQuery.error.message}
+        </div>
+      ) : filtered.length === 0 ? (
         <div className="text-muted-foreground py-16 text-center text-sm">
-          No {filter !== "all" ? filter : ""} requests found.
+          No requests in this month
+          {filter !== "all" ? ` (${filter})` : ""}.
         </div>
       ) : (
         <div className="border-border overflow-hidden rounded-lg border">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Team Member</TableHead>
+                <TableHead>Group</TableHead>
                 <TableHead>Type</TableHead>
-                <TableHead>Dates</TableHead>
-                <TableHead>Days</TableHead>
+                <TableHead>Day</TableHead>
+                <TableHead>Time</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead>Notes</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filtered.map((req) => {
-                const member = getMemberById(req.memberId);
-                if (!member) return null;
-                const days = countBusinessDays(req.startDate, req.endDate);
-
+              {filtered.map((v) => {
+                const status = vacationStatus(v);
+                const mine = v.userId === userId;
                 return (
-                  <TableRow key={req.id}>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <div
-                          className={cn(
-                            "flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-white",
-                            member.avatarColor
-                          )}
-                        >
-                          {getInitials(member.name)}
-                        </div>
-                        <div>
-                          <div className="text-sm font-medium">{member.name}</div>
-                          <div className="text-muted-foreground text-xs">{member.role}</div>
-                        </div>
+                  <TableRow key={v.id}>
+                    <TableCell className="text-sm">
+                      <div className="font-medium">{groupName(v.groupId)}</div>
+                      <div className="text-muted-foreground text-xs">
+                        {mine ? "You" : `${v.userId.slice(0, 8)}…`}
                       </div>
                     </TableCell>
                     <TableCell>
                       <span
                         className={cn(
                           "rounded-full px-2 py-0.5 text-xs font-medium",
-                          LEAVE_TYPE_COLORS[req.type]
+                          VACATION_KIND_COLORS[v.vacationType]
                         )}
                       >
-                        {LEAVE_TYPE_LABELS[req.type]}
+                        {VACATION_KIND_LABELS[v.vacationType]}
                       </span>
                     </TableCell>
                     <TableCell className="text-sm whitespace-nowrap">
-                      {formatDate(req.startDate)}
-                      {req.startDate !== req.endDate && (
-                        <>
-                          <span className="text-muted-foreground mx-1">→</span>
-                          {formatDate(req.endDate)}
-                        </>
-                      )}
+                      {formatDate(v.requestedDay)}
                     </TableCell>
-                    <TableCell className="text-sm">
-                      {days} {days === 1 ? "day" : "days"}
+                    <TableCell className="text-muted-foreground text-xs">
+                      {v.startTime && v.endTime
+                        ? `${v.startTime.slice(0, 5)} – ${v.endTime.slice(0, 5)}`
+                        : "Full day"}
                     </TableCell>
                     <TableCell>
                       <span
                         className={cn(
                           "rounded-full px-2 py-0.5 text-xs font-medium capitalize",
-                          STATUS_BADGE[req.status]
+                          STATUS_BADGE[status]
                         )}
                       >
-                        {req.status}
+                        {status}
                       </span>
                     </TableCell>
-                    <TableCell className="text-muted-foreground max-w-[160px] truncate text-xs">
-                      {req.notes ?? "—"}
-                    </TableCell>
                     <TableCell className="text-right">
-                      {req.status === "pending" && (
-                        <div className="flex justify-end gap-1.5">
-                          <Button
-                            size="xs"
-                            variant="outline"
-                            className="border-green-300 text-green-700 hover:bg-green-50 dark:border-green-800 dark:text-green-400 dark:hover:bg-green-950/30"
-                            onClick={() => updateStatus(req.id, "approved")}
-                          >
-                            Approve
-                          </Button>
-                          <Button
-                            size="xs"
-                            variant="outline"
-                            className="border-red-300 text-red-700 hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-950/30"
-                            onClick={() => updateStatus(req.id, "rejected")}
-                          >
-                            Reject
-                          </Button>
-                        </div>
-                      )}
-                      {req.status !== "pending" && (
+                      {status === "pending" && canApproveGroup(v.groupId) ? (
                         <Button
                           size="xs"
-                          variant="ghost"
-                          className="text-muted-foreground"
-                          onClick={() => updateStatus(req.id, "pending")}
+                          variant="outline"
+                          className="border-green-300 text-green-700 hover:bg-green-50 dark:border-green-800 dark:text-green-400 dark:hover:bg-green-950/30"
+                          disabled={approve.isPending}
+                          onClick={() => approve.mutate(v.id)}
                         >
-                          Reset
+                          Approve
                         </Button>
+                      ) : (
+                        <span className="text-muted-foreground text-xs">—</span>
                       )}
                     </TableCell>
                   </TableRow>

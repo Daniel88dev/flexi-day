@@ -12,7 +12,6 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -20,68 +19,105 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { TEAM_MEMBERS, LEAVE_TYPE_LABELS, LeaveType, LeaveRequest } from "@/lib/data";
-import { useStore } from "@/lib/store";
+import { useCreateVacation, useGroups } from "@/lib/api/queries";
+
+function todayIso() {
+  return new Date().toISOString().slice(0, 10);
+}
 
 export function NewRequestDialog() {
-  const { addRequest } = useStore();
+  const groupsQuery = useGroups();
+  const createVacation = useCreateVacation();
+
   const [open, setOpen] = useState(false);
-  const [memberId, setMemberId] = useState("");
-  const [type, setType] = useState<LeaveType | "">("");
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
-  const [notes, setNotes] = useState("");
+  const [groupId, setGroupId] = useState("");
+  const [requestedDay, setRequestedDay] = useState(todayIso());
+  const [startTime, setStartTime] = useState("");
+  const [endTime, setEndTime] = useState("");
+  const [error, setError] = useState<string | null>(null);
 
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!memberId || !type || !startDate || !endDate) return;
-
-    const req: LeaveRequest = {
-      id: `r${Date.now()}`,
-      memberId,
-      type: type as LeaveType,
-      startDate,
-      endDate,
-      notes: notes.trim() || undefined,
-      status: "pending",
-      submittedAt: new Date().toISOString().slice(0, 10),
-    };
-
-    addRequest(req);
-    setOpen(false);
-    resetForm();
-  }
+  const groups = groupsQuery.data ?? [];
+  const hasGroups = groups.length > 0;
 
   function resetForm() {
-    setMemberId("");
-    setType("");
-    setStartDate("");
-    setEndDate("");
-    setNotes("");
+    setGroupId("");
+    setRequestedDay(todayIso());
+    setStartTime("");
+    setEndTime("");
+    setError(null);
   }
 
-  const isValid = memberId && type && startDate && endDate && endDate >= startDate;
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    if (!groupId || !requestedDay) return;
+
+    try {
+      await createVacation.mutateAsync({
+        groupId,
+        requestedDay,
+        startTime: startTime || null,
+        endTime: endTime || null,
+      });
+      setOpen(false);
+      resetForm();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Could not create vacation";
+      setError(
+        msg.toLowerCase().includes("failed to create vacation")
+          ? "You already have a request for that day."
+          : msg
+      );
+    }
+  }
+
+  const isValid = !!groupId && !!requestedDay && !createVacation.isPending;
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog
+      open={open}
+      onOpenChange={(o) => {
+        setOpen(o);
+        if (!o) resetForm();
+      }}
+    >
       <DialogTrigger asChild>
-        <Button size="sm">+ New Request</Button>
+        <Button size="sm" disabled={!hasGroups && !groupsQuery.isLoading}>
+          + New Request
+        </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>New Leave Request</DialogTitle>
+          <DialogTitle>New Vacation Request</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 py-2">
+          {error ? (
+            <div
+              role="alert"
+              className="bg-destructive/10 text-destructive border-destructive/30 rounded-2xl border px-3 py-2 text-sm"
+            >
+              {error}
+            </div>
+          ) : null}
+
           <div className="space-y-1.5">
-            <Label htmlFor="member">Team Member</Label>
-            <Select value={memberId} onValueChange={setMemberId}>
-              <SelectTrigger id="member">
-                <SelectValue placeholder="Select member…" />
+            <Label htmlFor="group">Group</Label>
+            <Select value={groupId} onValueChange={setGroupId}>
+              <SelectTrigger id="group">
+                <SelectValue
+                  placeholder={
+                    groupsQuery.isLoading
+                      ? "Loading groups…"
+                      : hasGroups
+                        ? "Select group…"
+                        : "No groups available"
+                  }
+                />
               </SelectTrigger>
               <SelectContent>
-                {TEAM_MEMBERS.map((m) => (
-                  <SelectItem key={m.id} value={m.id}>
-                    {m.name}
+                {groups.map((g) => (
+                  <SelectItem key={g.id} value={g.id}>
+                    {g.groupName}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -89,62 +125,48 @@ export function NewRequestDialog() {
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="type">Leave Type</Label>
-            <Select value={type} onValueChange={(v) => setType(v as LeaveType)}>
-              <SelectTrigger id="type">
-                <SelectValue placeholder="Select type…" />
-              </SelectTrigger>
-              <SelectContent>
-                {(Object.entries(LEAVE_TYPE_LABELS) as [LeaveType, string][]).map(
-                  ([value, label]) => (
-                    <SelectItem key={value} value={value}>
-                      {label}
-                    </SelectItem>
-                  )
-                )}
-              </SelectContent>
-            </Select>
+            <Label htmlFor="day">Date</Label>
+            <Input
+              id="day"
+              type="date"
+              required
+              value={requestedDay}
+              onChange={(e) => setRequestedDay(e.target.value)}
+            />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label htmlFor="start">Start Date</Label>
+              <Label htmlFor="start">Start time (optional)</Label>
               <Input
                 id="start"
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
+                type="time"
+                value={startTime}
+                onChange={(e) => setStartTime(e.target.value)}
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="end">End Date</Label>
+              <Label htmlFor="end">End time (optional)</Label>
               <Input
                 id="end"
-                type="date"
-                value={endDate}
-                min={startDate}
-                onChange={(e) => setEndDate(e.target.value)}
+                type="time"
+                value={endTime}
+                onChange={(e) => setEndTime(e.target.value)}
               />
             </div>
           </div>
 
-          <div className="space-y-1.5">
-            <Label htmlFor="notes">Notes (optional)</Label>
-            <Textarea
-              id="notes"
-              placeholder="Any additional context…"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              rows={2}
-            />
-          </div>
+          <p className="text-muted-foreground text-xs">
+            Submitted as <span className="font-medium">Vacation</span>. Other leave types coming
+            soon.
+          </p>
 
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
               Cancel
             </Button>
             <Button type="submit" disabled={!isValid}>
-              Submit Request
+              {createVacation.isPending ? "Submitting…" : "Submit Request"}
             </Button>
           </DialogFooter>
         </form>
