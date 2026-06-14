@@ -3,13 +3,26 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   approveVacation,
+  approveVacations,
+  cancelVacation,
   createVacation,
   listVacations,
+  rejectVacation,
+  rejectVacations,
   type ListVacationsParams,
 } from "./vacations";
 import { createGroup, listGroups } from "./groups";
 import { joinGroupByCode, listGroupUsers, updateGroupUsers } from "./group-users";
 import { listQuotas, type ListQuotasParams } from "./quotas";
+import { listMyApprovals } from "./approvals";
+import { getDashboardSummary } from "./dashboard";
+import { getMyBalances } from "./balances";
+import {
+  listNotifications,
+  markNotificationRead,
+  type ListNotificationsParams,
+} from "./notifications";
+import { listBankHolidays, type ListBankHolidaysParams } from "./bank-holidays";
 import type { CreateGroupInput, CreateVacationInput, UpdateGroupUsersInput } from "./types";
 
 export const qk = {
@@ -18,7 +31,20 @@ export const qk = {
   groupUsers: (groupId: string) => ["group-users", groupId] as const,
   quotas: (groupId: string, year: number, userId?: string) =>
     ["quotas", groupId, year, userId ?? "all"] as const,
+  myApprovals: () => ["my-approvals"] as const,
+  dashboardSummary: () => ["dashboard-summary"] as const,
+  myBalances: (year: number) => ["my-balances", year] as const,
+  notifications: (unreadOnly: boolean) => ["notifications", unreadOnly] as const,
+  bankHolidays: (year: number, country: string, region?: string) =>
+    ["bank-holidays", year, country, region ?? "*"] as const,
 };
+
+function invalidateVacationDependants(qc: ReturnType<typeof useQueryClient>) {
+  qc.invalidateQueries({ queryKey: ["vacations"] });
+  qc.invalidateQueries({ queryKey: qk.myApprovals() });
+  qc.invalidateQueries({ queryKey: qk.dashboardSummary() });
+  qc.invalidateQueries({ queryKey: ["my-balances"] });
+}
 
 export function useVacations(params: Required<ListVacationsParams>) {
   return useQuery({
@@ -53,15 +79,50 @@ export function useQuotas(
   });
 }
 
+export function useMyApprovals() {
+  return useQuery({
+    queryKey: qk.myApprovals(),
+    queryFn: listMyApprovals,
+  });
+}
+
+export function useDashboardSummary() {
+  return useQuery({
+    queryKey: qk.dashboardSummary(),
+    queryFn: getDashboardSummary,
+  });
+}
+
+export function useMyBalances(year: number) {
+  return useQuery({
+    queryKey: qk.myBalances(year),
+    queryFn: () => getMyBalances(year),
+  });
+}
+
+export function useNotifications(params: ListNotificationsParams = {}) {
+  const unreadOnly = !!params.unreadOnly;
+  return useQuery({
+    queryKey: qk.notifications(unreadOnly),
+    queryFn: () => listNotifications({ unreadOnly }),
+  });
+}
+
+export function useBankHolidays(params: ListBankHolidaysParams & { enabled?: boolean }) {
+  const { enabled = true, year, country, region } = params;
+  const effectiveYear = year ?? new Date().getFullYear();
+  return useQuery({
+    queryKey: qk.bankHolidays(effectiveYear, country, region),
+    queryFn: () => listBankHolidays({ year: effectiveYear, country, region }),
+    enabled: enabled && !!country,
+  });
+}
+
 export function useCreateVacation() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (input: CreateVacationInput) => createVacation(input),
-    onSuccess: (vac) => {
-      const d = new Date(vac.requestedDay);
-      qc.invalidateQueries({ queryKey: ["vacations"] });
-      qc.invalidateQueries({ queryKey: qk.vacations(d.getFullYear(), d.getMonth() + 1) });
-    },
+    onSuccess: () => invalidateVacationDependants(qc),
   });
 }
 
@@ -69,7 +130,48 @@ export function useApproveVacation() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => approveVacation(id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["vacations"] }),
+    onSuccess: () => invalidateVacationDependants(qc),
+  });
+}
+
+export function useRejectVacation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { id: string; reason?: string }) => rejectVacation(input.id, input.reason),
+    onSuccess: () => invalidateVacationDependants(qc),
+  });
+}
+
+export function useApproveVacations() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (ids: string[]) => approveVacations(ids),
+    onSuccess: () => invalidateVacationDependants(qc),
+  });
+}
+
+export function useRejectVacations() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { ids: string[]; reason?: string }) =>
+      rejectVacations(input.ids, input.reason),
+    onSuccess: () => invalidateVacationDependants(qc),
+  });
+}
+
+export function useCancelVacation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => cancelVacation(id),
+    onSuccess: () => invalidateVacationDependants(qc),
+  });
+}
+
+export function useMarkNotificationRead() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => markNotificationRead(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["notifications"] }),
   });
 }
 

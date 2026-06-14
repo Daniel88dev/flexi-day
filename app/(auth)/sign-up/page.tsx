@@ -2,8 +2,10 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { ArrowRight, Lock, Mail, User as UserIcon, Users } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
+import { signUpWithTeam } from "@/lib/api/auth-signup";
 import { Button } from "@/components/ui/button";
 import {
   AuthCard,
@@ -15,8 +17,8 @@ import {
 import { FieldInput } from "@/components/auth/field-input";
 
 export default function SignUpPage() {
+  const router = useRouter();
   const [name, setName] = useState("");
-  // TODO: persist team/company name once group provisioning endpoint exists.
   const [team, setTeam] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -36,13 +38,26 @@ export default function SignUpPage() {
 
     setLoading(true);
     try {
-      const result = await authClient.signUp.email({ name, email, password });
-      if (result.error) {
-        setError(result.error.message ?? "Sign-up failed");
+      const teamName = team.trim();
+      if (teamName) {
+        const result = await signUpWithTeam({ name, email, password, teamName });
+        if (result.token) {
+          router.replace("/dashboard");
+          router.refresh();
+        } else {
+          setSuccess(
+            "Check your inbox for a verification email. You'll be signed in automatically once you verify."
+          );
+        }
       } else {
-        setSuccess(
-          "Check your inbox for a verification email. You'll be signed in automatically once you verify."
-        );
+        const result = await authClient.signUp.email({ name, email, password });
+        if (result.error) {
+          setError(result.error.message ?? "Sign-up failed");
+        } else {
+          setSuccess(
+            "Check your inbox for a verification email. You'll be signed in automatically once you verify."
+          );
+        }
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Sign-up failed");

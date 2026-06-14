@@ -10,13 +10,19 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useApproveVacation, useGroups, useVacations } from "@/lib/api/queries";
+import {
+  useApproveVacation,
+  useCancelVacation,
+  useGroups,
+  useRejectVacation,
+  useVacations,
+} from "@/lib/api/queries";
 import { useSession } from "@/lib/auth-client";
 import {
   VACATION_KIND_COLORS,
   VACATION_KIND_LABELS,
   vacationStatus,
-  type Vacation,
+  type VacationListItem,
   type VacationStatus,
 } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
@@ -101,8 +107,11 @@ export default function RequestsPage() {
   const groupsQuery = useGroups();
   const vacationsQuery = useVacations({ year, month });
   const approve = useApproveVacation();
+  const reject = useRejectVacation();
+  const cancel = useCancelVacation();
+  const isMutating = approve.isPending || reject.isPending || cancel.isPending;
 
-  const vacations: Vacation[] = vacationsQuery.data ?? [];
+  const vacations: VacationListItem[] = vacationsQuery.data ?? [];
   const groups = groupsQuery.data ?? [];
 
   const groupName = (id: string) => groups.find((g) => g.id === id)?.groupName ?? id.slice(0, 8);
@@ -200,7 +209,7 @@ export default function RequestsPage() {
                     <TableCell className="text-sm">
                       <div className="font-medium">{groupName(v.groupId)}</div>
                       <div className="text-muted-foreground text-xs">
-                        {mine ? "You" : `${v.userId.slice(0, 8)}…`}
+                        {mine ? "You" : v.user.name}
                       </div>
                     </TableCell>
                     <TableCell>
@@ -232,19 +241,43 @@ export default function RequestsPage() {
                       </span>
                     </TableCell>
                     <TableCell className="text-right">
-                      {status === "pending" && canApproveGroup(v.groupId) ? (
-                        <Button
-                          size="xs"
-                          variant="outline"
-                          className="border-green-300 text-green-700 hover:bg-green-50 dark:border-green-800 dark:text-green-400 dark:hover:bg-green-950/30"
-                          disabled={approve.isPending}
-                          onClick={() => approve.mutate(v.id)}
-                        >
-                          Approve
-                        </Button>
-                      ) : (
-                        <span className="text-muted-foreground text-xs">—</span>
-                      )}
+                      <div className="flex justify-end gap-2">
+                        {status === "pending" && canApproveGroup(v.groupId) ? (
+                          <>
+                            <Button
+                              size="xs"
+                              variant="outline"
+                              className="border-green-300 text-green-700 hover:bg-green-50 dark:border-green-800 dark:text-green-400 dark:hover:bg-green-950/30"
+                              disabled={isMutating}
+                              onClick={() => approve.mutate(v.id)}
+                            >
+                              Approve
+                            </Button>
+                            <Button
+                              size="xs"
+                              variant="outline"
+                              className="border-red-300 text-red-700 hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-950/30"
+                              disabled={isMutating}
+                              onClick={() => reject.mutate({ id: v.id })}
+                            >
+                              Reject
+                            </Button>
+                          </>
+                        ) : null}
+                        {mine && status === "pending" ? (
+                          <Button
+                            size="xs"
+                            variant="ghost"
+                            disabled={isMutating}
+                            onClick={() => cancel.mutate(v.id)}
+                          >
+                            Cancel
+                          </Button>
+                        ) : null}
+                        {status !== "pending" && !mine ? (
+                          <span className="text-muted-foreground text-xs">—</span>
+                        ) : null}
+                      </div>
                     </TableCell>
                   </TableRow>
                 );

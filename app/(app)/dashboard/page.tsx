@@ -10,7 +10,7 @@ import {
   Plane,
   Users,
 } from "lucide-react";
-import { useGroups, useVacations } from "@/lib/api/queries";
+import { useDashboardSummary, useGroups, useVacations } from "@/lib/api/queries";
 import { useSession } from "@/lib/auth-client";
 import { StatCard } from "@/components/dashboard/stat-card";
 import {
@@ -21,9 +21,7 @@ import {
 import { ApprovalsWidget } from "@/components/dashboard/widgets/approvals-widget";
 import { OutTodayWidget } from "@/components/dashboard/widgets/out-today-widget";
 import { BalanceWidget } from "@/components/dashboard/widgets/balance-widget";
-import { AvatarStack } from "@/components/brand/avatar-bubble";
 import { DEFAULT_LEAVE_TYPES, leaveMetaFor, type LeaveTypeKey } from "@/lib/demo/leave-meta";
-import { DEMO_TEAM } from "@/lib/demo/team";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { vacationStatus } from "@/lib/api/types";
@@ -64,14 +62,15 @@ export default function DashboardPage() {
 
   const vacationsQuery = useVacations({ year, month });
   const groupsQuery = useGroups();
+  const summaryQuery = useDashboardSummary();
   const session = useSession();
 
   const firstName = session.data?.user?.name?.split(" ")[0] ?? "there";
 
   const vacations = vacationsQuery.data ?? [];
   const groups = groupsQuery.data ?? [];
+  const summary = summaryQuery.data;
 
-  // Group consecutive single-day vacation rows into multi-day calendar ranges.
   const ranges: CalendarRange[] = useMemo(() => {
     const live = vacations
       .filter((v) => vacationStatus(v) !== "rejected")
@@ -80,6 +79,8 @@ export default function DashboardPage() {
         userId: v.userId,
         vacationType: v.vacationType as LeaveTypeKey,
         requestedDay: v.requestedDay,
+        user: v.user,
+        note: v.note,
       }));
     return groupConsecutiveByUserType(live);
   }, [vacations]);
@@ -87,18 +88,6 @@ export default function DashboardPage() {
   const today = new Date();
   const todayMatches = today.getFullYear() === year && today.getMonth() + 1 === month;
   const todayDay = todayMatches ? today.getDate() : null;
-
-  const outToday = ranges.filter(
-    (r) => todayDay !== null && r.from <= todayDay && r.to >= todayDay && r.who !== "all"
-  ).length;
-  const coming = new Set(
-    ranges
-      .filter(
-        (r) => todayDay !== null && r.from > todayDay && r.from <= todayDay + 14 && r.who !== "all"
-      )
-      .map((r) => r.who)
-  ).size;
-  const pending = vacations.filter((v) => vacationStatus(v) === "pending").length;
 
   const monthDays = new Date(year, month, 0).getDate();
   const firstDayJs = new Date(year, month - 1, 1).getDay();
@@ -143,13 +132,11 @@ export default function DashboardPage() {
             Here&apos;s who&apos;s in, who&apos;s out, and what&apos;s coming up.
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <AvatarStack people={DEMO_TEAM} size={34} max={6} />
+        {summary ? (
           <span className="text-[13.5px]" style={{ color: "var(--text-muted)" }}>
-            {/* TODO: replace DEMO_TEAM with real teammate count from the user's groups. */}
-            {DEMO_TEAM.length} teammates
+            {summary.teamSize} {summary.teamSize === 1 ? "teammate" : "teammates"}
           </span>
-        </div>
+        ) : null}
       </div>
 
       {noGroups ? (
@@ -174,7 +161,7 @@ export default function DashboardPage() {
           icon={<Clock className="h-5 w-5" />}
           tint="var(--warm)"
           label="Pending approvals"
-          value={pending}
+          value={summary?.pendingApprovalsCount ?? 0}
           sub="need review"
           accentValue
         />
@@ -182,21 +169,21 @@ export default function DashboardPage() {
           icon={<Plane className="h-5 w-5" />}
           tint="var(--c-vacation)"
           label="Out today"
-          value={outToday}
+          value={summary?.outTodayCount ?? 0}
           sub="away from desk"
         />
         <StatCard
           icon={<CalendarIcon className="h-5 w-5" />}
           tint="var(--c-pto)"
           label="Coming up · 14d"
-          value={coming}
+          value={summary?.upcomingNext14DaysCount ?? 0}
           sub="upcoming leaves"
         />
         <StatCard
           icon={<Users className="h-5 w-5" />}
           tint="var(--c-home)"
           label="Working today"
-          value={Math.max(0, DEMO_TEAM.length - outToday)}
+          value={summary?.workingTodayCount ?? 0}
           sub="at their desk"
         />
       </div>
@@ -292,8 +279,8 @@ export default function DashboardPage() {
 
         <aside className="flex flex-col gap-4">
           <ApprovalsWidget />
-          <OutTodayWidget />
-          <BalanceWidget />
+          <OutTodayWidget vacations={vacations} todayDay={todayDay} />
+          <BalanceWidget year={year} />
         </aside>
       </div>
     </div>

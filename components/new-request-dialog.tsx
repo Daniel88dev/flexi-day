@@ -19,11 +19,34 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { useCreateVacation, useGroups } from "@/lib/api/queries";
+import { ApiError } from "@/lib/api/client";
+import { VACATION_KIND_LABELS, VacationKind } from "@/lib/api/types";
 
 function todayIso() {
   return new Date().toISOString().slice(0, 10);
 }
+
+function formatIsoDay(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
+
+function extractConflictingDays(err: ApiError): string[] {
+  const ctx = err.context<{ conflictingDays?: unknown }>();
+  const raw = ctx?.conflictingDays;
+  if (!Array.isArray(raw)) return [];
+  return raw.filter((d): d is string => typeof d === "string");
+}
+
+const REQUESTABLE_KINDS: VacationKind[] = [
+  VacationKind.Vacation,
+  VacationKind.HomeOffice,
+  VacationKind.Sick,
+  VacationKind.PaidTimeOff,
+];
 
 export function NewRequestDialog() {
   const groupsQuery = useGroups();
@@ -31,9 +54,12 @@ export function NewRequestDialog() {
 
   const [open, setOpen] = useState(false);
   const [groupId, setGroupId] = useState("");
-  const [requestedDay, setRequestedDay] = useState(todayIso());
+  const [from, setFrom] = useState(todayIso());
+  const [to, setTo] = useState(todayIso());
+  const [vacationType, setVacationType] = useState<VacationKind>(VacationKind.Vacation);
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
+  const [note, setNote] = useState("");
   const [error, setError] = useState<string | null>(null);
 
   const groups = groupsQuery.data ?? [];
@@ -41,37 +67,58 @@ export function NewRequestDialog() {
 
   function resetForm() {
     setGroupId("");
-    setRequestedDay(todayIso());
+    setFrom(todayIso());
+    setTo(todayIso());
+    setVacationType(VacationKind.Vacation);
     setStartTime("");
     setEndTime("");
+    setNote("");
     setError(null);
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-    if (!groupId || !requestedDay) return;
+    if (!groupId || !from || !to) return;
+    if (to < from) {
+      setError("End date must be on or after start date.");
+      return;
+    }
 
     try {
       await createVacation.mutateAsync({
         groupId,
-        requestedDay,
+        from,
+        to,
+        vacationType,
         startTime: startTime || null,
         endTime: endTime || null,
+        note: note.trim() ? note.trim() : null,
       });
       setOpen(false);
       resetForm();
     } catch (err) {
+      if (err instanceof ApiError && err.status === 409) {
+        const days = extractConflictingDays(err);
+        if (days.length > 0) {
+          const formatted = days.map(formatIsoDay).join(", ");
+          setError(
+            `Some days in that range are already booked: ${formatted}. Please pick different dates.`
+          );
+        } else {
+          setError(
+            err.message ||
+              "Some days in that range are already booked. Please pick different dates."
+          );
+        }
+        return;
+      }
       const msg = err instanceof Error ? err.message : "Could not create vacation";
-      setError(
-        msg.toLowerCase().includes("failed to create vacation")
-          ? "You already have a request for that day."
-          : msg
-      );
+      setError(msg);
     }
   }
 
-  const isValid = !!groupId && !!requestedDay && !createVacation.isPending;
+  const isValid = !!groupId && !!from && !!to && to >= from && !createVacation.isPending;
 
   return (
     <Dialog
@@ -88,7 +135,7 @@ export function NewRequestDialog() {
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>New Vacation Request</DialogTitle>
+          <DialogTitle>New Request</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 py-2">
           {error ? (
@@ -125,14 +172,46 @@ export function NewRequestDialog() {
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="day">Date</Label>
-            <Input
-              id="day"
-              type="date"
-              required
-              value={requestedDay}
-              onChange={(e) => setRequestedDay(e.target.value)}
-            />
+            <Label htmlFor="type">Type</Label>
+            <Select value={vacationType} onValueChange={(v) => setVacationType(v as VacationKind)}>
+              <SelectTrigger id="type">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {REQUESTABLE_KINDS.map((k) => (
+                  <SelectItem key={k} value={k}>
+                    {VACATION_KIND_LABELS[k]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="from">From</Label>
+              <Input
+                id="from"
+                type="date"
+                required
+                value={from}
+                onChange={(e) => {
+                  setFrom(e.target.value);
+                  if (to < e.target.value) setTo(e.target.value);
+                }}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="to">To</Label>
+              <Input
+                id="to"
+                type="date"
+                required
+                min={from}
+                value={to}
+                onChange={(e) => setTo(e.target.value)}
+              />
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
@@ -156,10 +235,16 @@ export function NewRequestDialog() {
             </div>
           </div>
 
-          <p className="text-muted-foreground text-xs">
-            Submitted as <span className="font-medium">Vacation</span>. Other leave types coming
-            soon.
-          </p>
+          <div className="space-y-1.5">
+            <Label htmlFor="note">Note (optional)</Label>
+            <Textarea
+              id="note"
+              rows={2}
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder="Family trip, conference, …"
+            />
+          </div>
 
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={() => setOpen(false)}>

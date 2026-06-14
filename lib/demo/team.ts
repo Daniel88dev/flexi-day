@@ -1,5 +1,5 @@
-// TODO: Replace with real team / group-user data once endpoints exist.
-// Used by landing-page preview, auth brand panel, and dashboard sidebar widgets.
+// Static placeholders used only on the public landing page (avatars + hero calendar preview).
+// Authenticated app surfaces use real API data — do not import this from anywhere under app/(app).
 import { VacationKind } from "@/lib/api/types";
 import type { LeaveTypeKey } from "./leave-meta";
 
@@ -123,12 +123,9 @@ export const DEMO_TEAM: DemoPerson[] = [
 
 export const demoById = (id: string): DemoPerson | undefined => DEMO_TEAM.find((p) => p.id === id);
 
-/* ===== Sidebar / landing preview placeholder leave entries ===== */
-/* TODO: derive from real API once we can list teammate vacations across the org. */
-
 export interface DemoLeave {
   id: string;
-  who: string; // person id or 'all'
+  who: string;
   type: LeaveTypeKey;
   from: number;
   to: number;
@@ -155,60 +152,6 @@ export const DEMO_LEAVE: DemoLeave[] = [
     note: "Spring Bank Holiday",
   },
   { id: "l12", who: "dh", type: VacationKind.HomeOffice, from: 12, to: 12 },
-];
-
-export interface DemoApproval {
-  id: string;
-  who: string;
-  type: LeaveTypeKey;
-  from: number;
-  to: number;
-  days: number;
-  requested: string;
-}
-
-export const DEMO_APPROVALS: DemoApproval[] = [
-  {
-    id: "a1",
-    who: "yt",
-    type: VacationKind.PaidTimeOff,
-    from: 22,
-    to: 23,
-    days: 2,
-    requested: "2 days ago",
-  },
-  {
-    id: "a2",
-    who: "nw",
-    type: VacationKind.Vacation,
-    from: 24,
-    to: 30,
-    days: 5,
-    requested: "3 days ago",
-  },
-  {
-    id: "a3",
-    who: "ep",
-    type: VacationKind.Vacation,
-    from: 29,
-    to: 30,
-    days: 2,
-    requested: "yesterday",
-  },
-];
-
-export interface DemoBalance {
-  id: string;
-  label: string;
-  used: number;
-  total: number;
-  cssVar: string;
-}
-
-export const DEMO_BALANCES: DemoBalance[] = [
-  { id: "vacation", label: "Vacation", used: 9, total: 25, cssVar: "var(--c-vacation)" },
-  { id: "pto", label: "Paid time off", used: 3, total: 10, cssVar: "var(--c-pto)" },
-  { id: "sick", label: "Sick", used: 1, total: 8, cssVar: "var(--c-sick)" },
 ];
 
 export const DEMO_MONTH = { year: 2026, monthIdx: 5, label: "June 2026", today: 13 };

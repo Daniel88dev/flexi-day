@@ -2,12 +2,12 @@
 
 import { AvatarBubble } from "@/components/brand/avatar-bubble";
 import { leaveMetaFor, type LeaveTypeKey } from "@/lib/demo/leave-meta";
-import { demoById } from "@/lib/demo/team";
-import { VacationKind } from "@/lib/api/types";
+import { VacationKind, type UserSummary } from "@/lib/api/types";
 
 export interface CalendarRange {
   id: string;
   who: string; // person id, or 'all' for bank holidays
+  user?: UserSummary; // present when row represents a real user
   type: LeaveTypeKey;
   from: number; // day-of-month, inclusive
   to: number;
@@ -44,6 +44,10 @@ interface PlacedBar {
   lane: number;
 }
 
+function firstName(name: string): string {
+  return name.split(" ")[0] ?? name;
+}
+
 function CalBar({
   range,
   contL,
@@ -56,8 +60,9 @@ function CalBar({
   mini: boolean;
 }) {
   const meta = leaveMetaFor(range.type);
-  const p = range.who === "all" ? null : demoById(range.who);
-  const title = `${p ? p.name : "Everyone"} · ${meta.label}${range.note ? ` · ${range.note}` : ""}`;
+  const u = range.user;
+  const displayName = u ? firstName(u.name) : "Everyone";
+  const title = `${u ? u.name : "Everyone"} · ${meta.label}${range.note ? ` · ${range.note}` : ""}`;
   return (
     <div
       title={title}
@@ -80,12 +85,10 @@ function CalBar({
         marginRight: contR ? -1 : 0,
       }}
     >
-      {p && !mini ? (
-        <AvatarBubble initials={p.initials} background={p.av} name={p.name} size={16} />
+      {u && !mini ? (
+        <AvatarBubble initials={u.initials} background={u.avatarColor} name={u.name} size={16} />
       ) : null}
-      {!contL ? (
-        <span className="overflow-hidden text-ellipsis">{p ? p.first : "Bank Holiday"}</span>
-      ) : null}
+      {!contL ? <span className="overflow-hidden text-ellipsis">{displayName}</span> : null}
     </div>
   );
 }
@@ -326,10 +329,15 @@ export function LeaveCalendar({
 
 // Helper exported so callers can group single-day vacation rows into contiguous ranges.
 export function groupConsecutiveByUserType<
-  T extends { userId: string; vacationType: LeaveTypeKey; requestedDay: string },
+  T extends {
+    userId: string;
+    vacationType: LeaveTypeKey;
+    requestedDay: string;
+    user?: UserSummary;
+    note?: string | null;
+  },
 >(items: T[]): CalendarRange[] {
   if (items.length === 0) return [];
-  // sort then walk
   const sorted = [...items].sort((a, b) => {
     if (a.userId !== b.userId) return a.userId < b.userId ? -1 : 1;
     if (a.vacationType !== b.vacationType) return a.vacationType < b.vacationType ? -1 : 1;
@@ -349,9 +357,11 @@ export function groupConsecutiveByUserType<
       current = {
         id: `r${seq++}`,
         who: item.userId,
+        user: item.user,
         type: item.vacationType,
         from: day,
         to: day,
+        note: item.note ?? undefined,
       };
       ranges.push(current);
     }

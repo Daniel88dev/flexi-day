@@ -1,22 +1,58 @@
-import { describe, expect, it } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { describe, expect, it, vi, beforeEach } from "vitest";
+import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { ApprovalsWidget } from "../approvals-widget";
+import { renderWithClient } from "@/lib/test-utils";
+import { VacationKind, type PendingApproval } from "@/lib/api/types";
+
+const sample: PendingApproval[] = [
+  {
+    vacationIds: ["v-1", "v-2"],
+    user: { id: "u-1", name: "Dana Holt", initials: "DH", avatarColor: "hsl(270 60% 60%)" },
+    groupId: "g-1",
+    groupName: "Product",
+    vacationType: VacationKind.Vacation,
+    from: "2026-06-22",
+    to: "2026-06-23",
+    businessDays: 2,
+    note: null,
+    submittedAt: "2026-06-10T10:00:00.000Z",
+  },
+];
+
+const approveMutate = vi.fn();
+const rejectMutate = vi.fn();
+
+vi.mock("@/lib/api/queries", () => ({
+  useMyApprovals: () => ({ data: sample, isLoading: false, error: null }),
+  useApproveVacations: () => ({ mutate: approveMutate, isPending: false }),
+  useRejectVacations: () => ({ mutate: rejectMutate, isPending: false }),
+}));
 
 describe("ApprovalsWidget", () => {
-  it("renders the heading and seeded approval cards", () => {
-    render(<ApprovalsWidget />);
-    expect(screen.getByText("Pending approvals")).toBeInTheDocument();
-    expect(screen.getAllByRole("button", { name: /Approve/i }).length).toBeGreaterThan(0);
+  beforeEach(() => {
+    approveMutate.mockClear();
+    rejectMutate.mockClear();
   });
 
-  it("removes a row when Approve is clicked", async () => {
+  it("renders pending approval rows", () => {
+    renderWithClient(<ApprovalsWidget />);
+    expect(screen.getByText("Pending approvals")).toBeInTheDocument();
+    expect(screen.getByText("Dana Holt")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Approve/i })).toBeInTheDocument();
+  });
+
+  it("calls approve.mutate with the full vacationIds array when Approve is clicked", async () => {
     const user = userEvent.setup();
-    render(<ApprovalsWidget />);
-    const approveButtons = screen.getAllByRole("button", { name: /Approve/i });
-    const before = approveButtons.length;
-    await user.click(approveButtons[0]);
-    const after = screen.queryAllByRole("button", { name: /Approve/i }).length;
-    expect(after).toBe(before - 1);
+    renderWithClient(<ApprovalsWidget />);
+    await user.click(screen.getByRole("button", { name: /Approve/i }));
+    expect(approveMutate).toHaveBeenCalledWith(["v-1", "v-2"]);
+  });
+
+  it("calls reject.mutate with the full vacationIds array when Decline is clicked", async () => {
+    const user = userEvent.setup();
+    renderWithClient(<ApprovalsWidget />);
+    await user.click(screen.getByRole("button", { name: /Decline/i }));
+    expect(rejectMutate).toHaveBeenCalledWith({ ids: ["v-1", "v-2"] });
   });
 });
