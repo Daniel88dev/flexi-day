@@ -69,7 +69,7 @@ export function NotificationsBell() {
         {query.isLoading ? (
           <p className="text-muted-foreground px-3 py-3 text-sm">Loading…</p>
         ) : items.length === 0 ? (
-          <p className="text-muted-foreground px-3 py-3 text-sm">You're all caught up.</p>
+          <p className="text-muted-foreground px-3 py-3 text-sm">You&apos;re all caught up.</p>
         ) : (
           <ul className="max-h-[360px] overflow-auto py-1">
             {items.slice(0, 12).map((n) => {
