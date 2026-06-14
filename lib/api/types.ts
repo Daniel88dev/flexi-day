@@ -42,6 +42,13 @@ export const VACATION_KIND_COLORS: Record<VacationKind, string> = {
   [VacationKind.Other]: "bg-slate-100 text-slate-800 dark:bg-slate-800/40 dark:text-slate-300",
 };
 
+export type UserSummary = {
+  id: UUID;
+  name: string;
+  initials: string;
+  avatarColor: string; // hsl(...)
+};
+
 export type Vacation = {
   id: UUID;
   userId: UUID;
@@ -50,6 +57,8 @@ export type Vacation = {
   startTime: IsoTime | null;
   endTime: IsoTime | null;
   vacationType: VacationKind;
+  note: string | null;
+  rejectionReason: string | null;
   approvedAt: Iso | null;
   approvedBy: UUID | null;
   rejectedAt: Iso | null;
@@ -57,6 +66,10 @@ export type Vacation = {
   deletedAt: Iso | null;
   createdAt: Iso;
   updatedAt: Iso;
+};
+
+export type VacationListItem = Vacation & {
+  user: UserSummary;
 };
 
 export type VacationStatus = "pending" | "approved" | "rejected";
@@ -105,9 +118,12 @@ export type UserYearQuota = {
 
 export type CreateVacationInput = {
   groupId: UUID;
-  requestedDay: IsoDate;
+  from: IsoDate;
+  to: IsoDate;
+  vacationType?: VacationKind;
   startTime?: IsoTime | null;
   endTime?: IsoTime | null;
+  note?: string | null;
 };
 
 export type CreateGroupInput = {
@@ -125,4 +141,73 @@ export type UpdateGroupUsersInput = {
     adminAccess: boolean;
     controlledUser: boolean;
   }>;
+};
+
+export type PendingApproval = {
+  vacationId: UUID;
+  user: UserSummary;
+  groupId: UUID;
+  groupName: string;
+  vacationType: VacationKind;
+  from: IsoDate;
+  to: IsoDate;
+  businessDays: number;
+  note: string | null;
+  submittedAt: Iso;
+};
+
+export type DashboardSummary = {
+  pendingApprovalsCount: number;
+  outTodayCount: number;
+  workingTodayCount: number;
+  upcomingNext14DaysCount: number;
+  teamSize: number;
+};
+
+export type BalanceBucket = {
+  type: VacationKind;
+  allocated: number;
+  used: number;
+  pending: number;
+};
+
+export type BalanceSummary = {
+  year: string;
+  buckets: BalanceBucket[];
+};
+
+export type BankHoliday = {
+  date: IsoDate;
+  name: string;
+  country: string;
+  region?: string;
+};
+
+export type NotificationKind =
+  | "approval_requested"
+  | "approval_decided"
+  | "calendar_conflict"
+  | "balance_low";
+
+export type AppNotification = {
+  id: UUID;
+  type: NotificationKind;
+  title: string;
+  body: string;
+  href: string | null;
+  readAt: Iso | null;
+  createdAt: Iso;
+};
+
+export type SignUpWithTeamInput = {
+  name: string;
+  email: string;
+  password: string;
+  teamName: string;
+};
+
+export type SignUpWithTeamResponse = {
+  user: { id: UUID; name: string; email: string };
+  token: string | null;
+  group: Group;
 };

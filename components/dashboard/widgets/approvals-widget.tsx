@@ -1,19 +1,44 @@
 "use client";
 
-// TODO(approvals widget): wire to real pending approvals for the manager's groups.
-//   The existing API only exposes `useApproveVacation(id)` plus per-month vacations;
-//   when a "list pending across managed groups" endpoint exists, swap DEMO_APPROVALS
-//   for that query and call useApproveVacation / a reject mutation from `act()`.
-
-import { useState } from "react";
 import { Check, CheckCircle2 } from "lucide-react";
 import { AvatarBubble } from "@/components/brand/avatar-bubble";
-import { DEMO_APPROVALS, demoById } from "@/lib/demo/team";
+import { useApproveVacation, useMyApprovals, useRejectVacation } from "@/lib/api/queries";
 import { leaveMetaFor } from "@/lib/demo/leave-meta";
+import { VACATION_KIND_LABELS } from "@/lib/api/types";
+
+const SHORT_MONTH = [
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
+];
+
+function formatRange(fromIso: string, toIso: string) {
+  const f = new Date(fromIso);
+  const t = new Date(toIso);
+  const fm = SHORT_MONTH[f.getMonth()];
+  const tm = SHORT_MONTH[t.getMonth()];
+  if (fromIso === toIso) return `${fm} ${f.getDate()}`;
+  if (fm === tm) return `${fm} ${f.getDate()}–${t.getDate()}`;
+  return `${fm} ${f.getDate()} – ${tm} ${t.getDate()}`;
+}
 
 export function ApprovalsWidget() {
-  const [items, setItems] = useState(DEMO_APPROVALS);
-  const act = (id: string) => setItems((s) => s.filter((i) => i.id !== id));
+  const query = useMyApprovals();
+  const approve = useApproveVacation();
+  const reject = useRejectVacation();
+
+  const items = query.data ?? [];
+  const isLoading = query.isLoading;
+  const isMutating = approve.isPending || reject.isPending;
 
   return (
     <div
@@ -31,7 +56,16 @@ export function ApprovalsWidget() {
           </span>
         ) : null}
       </div>
-      {items.length === 0 ? (
+
+      {isLoading ? (
+        <p className="text-[14px]" style={{ color: "var(--text-muted)" }}>
+          Loading…
+        </p>
+      ) : query.error ? (
+        <p className="text-[14px]" style={{ color: "var(--destructive)" }}>
+          {query.error.message}
+        </p>
+      ) : items.length === 0 ? (
         <div
           className="flex items-center gap-2.5 px-1 py-3.5 text-[14px]"
           style={{ color: "var(--text-muted)" }}
@@ -42,30 +76,38 @@ export function ApprovalsWidget() {
       ) : (
         <div className="flex flex-col gap-3.5">
           {items.map((a) => {
-            const p = demoById(a.who);
-            if (!p) return null;
-            const meta = leaveMetaFor(a.type);
+            const meta = leaveMetaFor(a.vacationType);
+            const typeLabel =
+              meta.label !== a.vacationType ? meta.label : VACATION_KIND_LABELS[a.vacationType];
             return (
-              <div key={a.id} className="flex items-start gap-3">
-                <AvatarBubble initials={p.initials} background={p.av} size={38} name={p.name} />
+              <div key={a.vacationId} className="flex items-start gap-3">
+                <AvatarBubble
+                  initials={a.user.initials}
+                  background={a.user.avatarColor}
+                  size={38}
+                  name={a.user.name}
+                />
                 <div className="min-w-0 flex-1">
-                  <div className="text-[14.5px] font-semibold">{p.name}</div>
+                  <div className="text-[14.5px] font-semibold">{a.user.name}</div>
                   <div className="mb-2 text-[12.5px]" style={{ color: "var(--text-faint)" }}>
-                    {meta.label} · Jun {a.from}–{a.to} · {a.days} days
+                    {typeLabel} · {formatRange(a.from, a.to)} · {a.businessDays}{" "}
+                    {a.businessDays === 1 ? "day" : "days"}
                   </div>
                   <div className="flex gap-2">
                     <button
                       type="button"
-                      onClick={() => act(a.id)}
-                      className="inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-[13.5px] font-semibold"
+                      onClick={() => approve.mutate(a.vacationId)}
+                      disabled={isMutating}
+                      className="inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-[13.5px] font-semibold disabled:opacity-60"
                       style={{ background: "var(--primary)", color: "var(--primary-fg)" }}
                     >
                       <Check className="h-3.5 w-3.5" /> Approve
                     </button>
                     <button
                       type="button"
-                      onClick={() => act(a.id)}
-                      className="inline-flex items-center rounded-full border px-3 py-1.5 text-[13.5px] font-semibold"
+                      onClick={() => reject.mutate({ id: a.vacationId })}
+                      disabled={isMutating}
+                      className="inline-flex items-center rounded-full border px-3 py-1.5 text-[13.5px] font-semibold disabled:opacity-60"
                       style={{
                         borderColor: "var(--border-strong)",
                         color: "var(--text)",

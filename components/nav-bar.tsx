@@ -2,10 +2,10 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Bell } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Logo } from "@/components/brand/logo";
 import { NewRequestDialog } from "@/components/new-request-dialog";
+import { NotificationsBell } from "@/components/notifications-bell";
 import { ModeToggle } from "@/components/ui/ModeToggle";
 import { UserMenu } from "@/components/user-menu";
 
@@ -61,25 +61,7 @@ export function NavBar() {
         <div className="flex-1" />
 
         <div className="flex items-center gap-3">
-          <button
-            type="button"
-            aria-label="Notifications"
-            className="relative grid h-10 w-10 place-items-center rounded-full border"
-            style={{
-              borderColor: "var(--border-strong)",
-              background: "var(--surface)",
-              color: "var(--text-muted)",
-            }}
-          >
-            <Bell className="h-[18px] w-[18px]" />
-            <span
-              className="absolute top-[9px] right-[10px] h-[7px] w-[7px] rounded-full"
-              style={{
-                background: "var(--warm)",
-                boxShadow: "0 0 0 2px var(--surface)",
-              }}
-            />
-          </button>
+          <NotificationsBell />
           <ModeToggle />
           <UserMenu />
           <NewRequestDialog />

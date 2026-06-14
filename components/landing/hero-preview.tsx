@@ -3,17 +3,21 @@
 import { Lock } from "lucide-react";
 import { LeaveCalendar, type CalendarRange } from "@/components/dashboard/leave-calendar";
 import { DEFAULT_LEAVE_TYPES, leaveMetaFor } from "@/lib/demo/leave-meta";
-import { DEMO_LEAVE, DEMO_MONTH } from "@/lib/demo/team";
+import { DEMO_LEAVE, DEMO_MONTH, demoById } from "@/lib/demo/team";
 
 export function HeroPreview() {
-  const ranges: CalendarRange[] = DEMO_LEAVE.map((l) => ({
-    id: l.id,
-    who: l.who,
-    type: l.type,
-    from: l.from,
-    to: l.to,
-    note: l.note,
-  }));
+  const ranges: CalendarRange[] = DEMO_LEAVE.map((l) => {
+    const p = l.who === "all" ? undefined : demoById(l.who);
+    return {
+      id: l.id,
+      who: l.who,
+      user: p ? { id: p.id, name: p.name, initials: p.initials, avatarColor: p.av } : undefined,
+      type: l.type,
+      from: l.from,
+      to: l.to,
+      note: l.note,
+    };
+  });
   return (
     <div
       className="overflow-hidden"
