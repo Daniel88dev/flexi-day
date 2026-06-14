@@ -29,6 +29,25 @@ export function rejectVacation(id: string, reason?: string): Promise<{ message: 
   });
 }
 
+export function approveVacations(
+  ids: string[]
+): Promise<{ message: string; approvedCount: number }> {
+  return api<{ message: string; approvedCount: number }>(`/api/vacation/approve`, {
+    method: "POST",
+    body: { ids },
+  });
+}
+
+export function rejectVacations(
+  ids: string[],
+  reason?: string
+): Promise<{ message: string; rejectedCount: number }> {
+  return api<{ message: string; rejectedCount: number }>(`/api/vacation/reject`, {
+    method: "POST",
+    body: reason ? { ids, reason } : { ids },
+  });
+}
+
 export function cancelVacation(id: string): Promise<{ message: string }> {
   return api<{ message: string }>(`/api/vacation/${id}`, { method: "DELETE" });
 }

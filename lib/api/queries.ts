@@ -3,10 +3,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   approveVacation,
+  approveVacations,
   cancelVacation,
   createVacation,
   listVacations,
   rejectVacation,
+  rejectVacations,
   type ListVacationsParams,
 } from "./vacations";
 import { createGroup, listGroups } from "./groups";
@@ -136,6 +138,23 @@ export function useRejectVacation() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (input: { id: string; reason?: string }) => rejectVacation(input.id, input.reason),
+    onSuccess: () => invalidateVacationDependants(qc),
+  });
+}
+
+export function useApproveVacations() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (ids: string[]) => approveVacations(ids),
+    onSuccess: () => invalidateVacationDependants(qc),
+  });
+}
+
+export function useRejectVacations() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { ids: string[]; reason?: string }) =>
+      rejectVacations(input.ids, input.reason),
     onSuccess: () => invalidateVacationDependants(qc),
   });
 }

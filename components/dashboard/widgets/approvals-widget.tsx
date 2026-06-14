@@ -2,7 +2,7 @@
 
 import { Check, CheckCircle2 } from "lucide-react";
 import { AvatarBubble } from "@/components/brand/avatar-bubble";
-import { useApproveVacation, useMyApprovals, useRejectVacation } from "@/lib/api/queries";
+import { useApproveVacations, useMyApprovals, useRejectVacations } from "@/lib/api/queries";
 import { leaveMetaFor } from "@/lib/demo/leave-meta";
 import { VACATION_KIND_LABELS } from "@/lib/api/types";
 
@@ -33,8 +33,8 @@ function formatRange(fromIso: string, toIso: string) {
 
 export function ApprovalsWidget() {
   const query = useMyApprovals();
-  const approve = useApproveVacation();
-  const reject = useRejectVacation();
+  const approve = useApproveVacations();
+  const reject = useRejectVacations();
 
   const items = query.data ?? [];
   const isLoading = query.isLoading;
@@ -79,8 +79,9 @@ export function ApprovalsWidget() {
             const meta = leaveMetaFor(a.vacationType);
             const typeLabel =
               meta.label !== a.vacationType ? meta.label : VACATION_KIND_LABELS[a.vacationType];
+            const rowKey = a.vacationIds[0] ?? `${a.user.id}-${a.from}`;
             return (
-              <div key={a.vacationId} className="flex items-start gap-3">
+              <div key={rowKey} className="flex items-start gap-3">
                 <AvatarBubble
                   initials={a.user.initials}
                   background={a.user.avatarColor}
@@ -96,8 +97,8 @@ export function ApprovalsWidget() {
                   <div className="flex gap-2">
                     <button
                       type="button"
-                      onClick={() => approve.mutate(a.vacationId)}
-                      disabled={isMutating}
+                      onClick={() => approve.mutate(a.vacationIds)}
+                      disabled={isMutating || a.vacationIds.length === 0}
                       className="inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-[13.5px] font-semibold disabled:opacity-60"
                       style={{ background: "var(--primary)", color: "var(--primary-fg)" }}
                     >
@@ -105,8 +106,8 @@ export function ApprovalsWidget() {
                     </button>
                     <button
                       type="button"
-                      onClick={() => reject.mutate({ id: a.vacationId })}
-                      disabled={isMutating}
+                      onClick={() => reject.mutate({ ids: a.vacationIds })}
+                      disabled={isMutating || a.vacationIds.length === 0}
                       className="inline-flex items-center rounded-full border px-3 py-1.5 text-[13.5px] font-semibold disabled:opacity-60"
                       style={{
                         borderColor: "var(--border-strong)",

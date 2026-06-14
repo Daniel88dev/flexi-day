@@ -7,7 +7,7 @@ import { VacationKind, type PendingApproval } from "@/lib/api/types";
 
 const sample: PendingApproval[] = [
   {
-    vacationId: "v-1",
+    vacationIds: ["v-1", "v-2"],
     user: { id: "u-1", name: "Dana Holt", initials: "DH", avatarColor: "hsl(270 60% 60%)" },
     groupId: "g-1",
     groupName: "Product",
@@ -25,8 +25,8 @@ const rejectMutate = vi.fn();
 
 vi.mock("@/lib/api/queries", () => ({
   useMyApprovals: () => ({ data: sample, isLoading: false, error: null }),
-  useApproveVacation: () => ({ mutate: approveMutate, isPending: false }),
-  useRejectVacation: () => ({ mutate: rejectMutate, isPending: false }),
+  useApproveVacations: () => ({ mutate: approveMutate, isPending: false }),
+  useRejectVacations: () => ({ mutate: rejectMutate, isPending: false }),
 }));
 
 describe("ApprovalsWidget", () => {
@@ -42,17 +42,17 @@ describe("ApprovalsWidget", () => {
     expect(screen.getByRole("button", { name: /Approve/i })).toBeInTheDocument();
   });
 
-  it("calls approve.mutate with the vacationId when Approve is clicked", async () => {
+  it("calls approve.mutate with the full vacationIds array when Approve is clicked", async () => {
     const user = userEvent.setup();
     renderWithClient(<ApprovalsWidget />);
     await user.click(screen.getByRole("button", { name: /Approve/i }));
-    expect(approveMutate).toHaveBeenCalledWith("v-1");
+    expect(approveMutate).toHaveBeenCalledWith(["v-1", "v-2"]);
   });
 
-  it("calls reject.mutate with the vacationId when Decline is clicked", async () => {
+  it("calls reject.mutate with the full vacationIds array when Decline is clicked", async () => {
     const user = userEvent.setup();
     renderWithClient(<ApprovalsWidget />);
     await user.click(screen.getByRole("button", { name: /Decline/i }));
-    expect(rejectMutate).toHaveBeenCalledWith({ id: "v-1" });
+    expect(rejectMutate).toHaveBeenCalledWith({ ids: ["v-1", "v-2"] });
   });
 });

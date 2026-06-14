@@ -21,10 +21,24 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useCreateVacation, useGroups } from "@/lib/api/queries";
+import { ApiError } from "@/lib/api/client";
 import { VACATION_KIND_LABELS, VacationKind } from "@/lib/api/types";
 
 function todayIso() {
   return new Date().toISOString().slice(0, 10);
+}
+
+function formatIsoDay(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
+
+function extractConflictingDays(err: ApiError): string[] {
+  const ctx = err.context<{ conflictingDays?: unknown }>();
+  const raw = ctx?.conflictingDays;
+  if (!Array.isArray(raw)) return [];
+  return raw.filter((d): d is string => typeof d === "string");
 }
 
 const REQUESTABLE_KINDS: VacationKind[] = [
@@ -84,12 +98,23 @@ export function NewRequestDialog() {
       setOpen(false);
       resetForm();
     } catch (err) {
+      if (err instanceof ApiError && err.status === 409) {
+        const days = extractConflictingDays(err);
+        if (days.length > 0) {
+          const formatted = days.map(formatIsoDay).join(", ");
+          setError(
+            `Some days in that range are already booked: ${formatted}. Please pick different dates.`
+          );
+        } else {
+          setError(
+            err.message ||
+              "Some days in that range are already booked. Please pick different dates."
+          );
+        }
+        return;
+      }
       const msg = err instanceof Error ? err.message : "Could not create vacation";
-      setError(
-        msg.toLowerCase().includes("failed to create vacation")
-          ? "You already have a request covering that range."
-          : msg
-      );
+      setError(msg);
     }
   }
 

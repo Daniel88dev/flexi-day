@@ -144,7 +144,7 @@ export type UpdateGroupUsersInput = {
 };
 
 export type PendingApproval = {
-  vacationId: UUID;
+  vacationIds: UUID[];
   user: UserSummary;
   groupId: UUID;
   groupName: string;
