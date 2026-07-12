@@ -34,13 +34,12 @@ jobs:
   deploy:
     name: Deploy to S3
     needs: test
-    # Only deploy on a real merge/push to main — never on pull requests.
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     environment: production
     permissions:
       contents: read
-      id-token: write # required for AWS OIDC (short-lived credentials)
+      id-token: write
 
     steps:
       - uses: actions/checkout@v4
@@ -56,7 +55,6 @@ jobs:
       - name: Build static export
         run: npm run build
         env:
-          # Baked into the bundle at build time. Set as a repo/environment variable.
           NEXT_PUBLIC_API_URL: ${{ vars.NEXT_PUBLIC_API_URL }}
 
       - name: Configure AWS credentials (OIDC)
@@ -67,13 +65,8 @@ jobs:
 
       - name: Sync to S3
         run: |
-          # 1) Hashed assets (everything except HTML/RSC payloads): upload and
-          #    prune anything no longer in the build. HTML/txt are excluded here
-          #    so this pass never touches them.
           aws s3 sync out/ "s3://${{ vars.AWS_S3_BUCKET }}/" --delete \
             --exclude "*.html" --exclude "*.txt"
-          # 2) HTML + RSC payloads: re-upload with no-cache so browsers always
-          #    fetch the latest shell after a deploy.
           aws s3 sync out/ "s3://${{ vars.AWS_S3_BUCKET }}/" \
             --exclude "*" --include "*.html" --include "*.txt" \
             --cache-control "no-cache"
