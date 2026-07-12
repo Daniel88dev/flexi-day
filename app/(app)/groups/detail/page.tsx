@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -19,9 +19,9 @@ import { cn } from "@/lib/utils";
 
 type Tab = "members" | "quotas";
 
-export default function GroupDetailPage({ params }: { params: Promise<{ groupId: string }> }) {
-  const { groupId } = use(params);
+export default function GroupDetailPage() {
   const search = useSearchParams();
+  const groupId = search.get("groupId") ?? "";
   const initialTab: Tab = search.get("tab") === "quotas" ? "quotas" : "members";
   const [tab, setTab] = useState<Tab>(initialTab);
 

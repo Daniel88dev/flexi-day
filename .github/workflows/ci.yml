@@ -30,3 +30,49 @@ jobs:
 
       - name: Build
         run: npm run build
+
+  deploy:
+    name: Deploy to S3
+    needs: test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: production
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build static export
+        run: npm run build
+        env:
+          NEXT_PUBLIC_API_URL: ${{ vars.NEXT_PUBLIC_API_URL }}
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Sync to S3
+        run: |
+          aws s3 sync out/ "s3://${{ vars.AWS_S3_BUCKET }}/" --delete \
+            --exclude "*.html" --exclude "*.txt"
+          aws s3 sync out/ "s3://${{ vars.AWS_S3_BUCKET }}/" \
+            --exclude "*" --include "*.html" --include "*.txt" \
+            --cache-control "no-cache"
+
+      - name: Invalidate CloudFront cache
+        run: |
+          aws cloudfront create-invalidation \
+            --distribution-id "${{ vars.CLOUDFRONT_DISTRIBUTION_ID }}" \
+            --paths "/*"

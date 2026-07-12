@@ -175,10 +175,10 @@ export default function GroupsPage() {
                   </div>
                   <div className="flex gap-2 pt-1">
                     <Button asChild size="sm" variant="outline">
-                      <Link href={`/groups/${g.id}`}>Members</Link>
+                      <Link href={`/groups/detail?groupId=${g.id}`}>Members</Link>
                     </Button>
                     <Button asChild size="sm" variant="ghost">
-                      <Link href={`/groups/${g.id}?tab=quotas`}>Quotas</Link>
+                      <Link href={`/groups/detail?groupId=${g.id}&tab=quotas`}>Quotas</Link>
                     </Button>
                   </div>
                 </CardContent>
