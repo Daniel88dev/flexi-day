@@ -79,6 +79,10 @@
   --primary-soft: oklch(0.55 var(--accent-c) var(--accent-h) / 0.1);
   --warm: oklch(0.66 0.14 42);
   --warm-soft: oklch(0.66 0.14 42 / 0.12);
+  --danger: oklch(0.58 0.18 25);
+  --danger-soft: oklch(0.58 0.18 25 / 0.12);
+  --ok: oklch(0.58 0.13 155);
+  --ok-soft: oklch(0.58 0.13 155 / 0.14);
 
   --shadow-sm: 0 1px 2px oklch(0.3 0.02 288 / 0.06), 0 1px 1px oklch(0.3 0.02 288 / 0.04);
   --shadow: 0 8px 24px -10px oklch(0.3 0.03 288 / 0.18), 0 2px 6px -2px oklch(0.3 0.03 288 / 0.1);
@@ -143,6 +147,10 @@
   --primary-soft: oklch(0.68 var(--accent-c) var(--accent-h) / 0.16);
   --warm: oklch(0.74 0.13 44);
   --warm-soft: oklch(0.74 0.13 44 / 0.16);
+  --danger: oklch(0.7 0.16 25);
+  --danger-soft: oklch(0.7 0.16 25 / 0.16);
+  --ok: oklch(0.72 0.13 155);
+  --ok-soft: oklch(0.72 0.13 155 / 0.16);
 
   --shadow-sm: 0 1px 2px oklch(0 0 0 / 0.3);
   --shadow: 0 12px 30px -12px oklch(0 0 0 / 0.55), 0 2px 6px -2px oklch(0 0 0 / 0.4);
@@ -236,4 +244,153 @@
     font-style: italic;
     font-weight: 400;
   }
+}
+
+/* Calendar-sync feature animations (ported from the design) */
+@keyframes fx-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes fx-pop {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes fx-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes fx-toast {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  [style*="fx-fade"],
+  [style*="fx-pop"],
+  [style*="fx-spin"],
+  [style*="fx-toast"] {
+    animation-duration: 0.001ms !important;
+  }
+}
+
+/* Calendar-sync primitives (ported from the design's .btn/.label/.input) */
+.cs-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  font-size: 15px;
+  line-height: 1;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  padding: 12px 20px;
+  transition: all 0.18s ease;
+  white-space: nowrap;
+  letter-spacing: -0.01em;
+  cursor: pointer;
+}
+.cs-btn-primary {
+  background: var(--primary);
+  color: var(--primary-fg);
+  box-shadow: 0 1px 2px oklch(0 0 0 / 0.12), inset 0 1px 0 oklch(1 0 0 / 0.15);
+}
+.cs-btn-primary:hover {
+  background: var(--primary-strong);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow);
+}
+.cs-btn-ghost {
+  background: transparent;
+  color: var(--text);
+  border-color: var(--border-strong);
+}
+.cs-btn-ghost:hover {
+  background: var(--surface-2);
+  border-color: var(--text-faint);
+}
+.cs-btn-soft {
+  background: var(--surface-2);
+  color: var(--text);
+}
+.cs-btn-soft:hover {
+  background: var(--border);
+}
+.cs-btn-sm {
+  padding: 9px 15px;
+  font-size: 13.5px;
+}
+.cs-btn-lg {
+  padding: 15px 26px;
+  font-size: 16px;
+}
+.cs-btn-block {
+  width: 100%;
+  justify-content: center;
+}
+.cs-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+.cs-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-bottom: 7px;
+  letter-spacing: 0.01em;
+}
+.cs-input {
+  width: 100%;
+  font-family: inherit;
+  font-size: 15px;
+  padding: 13px 15px;
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border-strong);
+  transition: border 0.15s, box-shadow 0.15s;
+}
+.cs-input::placeholder {
+  color: var(--text-faint);
+}
+.cs-input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 4px var(--ring);
+}
+.cs-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  padding: 5px 11px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+}
+.cs-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
 }
