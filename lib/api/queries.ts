@@ -23,6 +23,14 @@ import {
   type ListNotificationsParams,
 } from "./notifications";
 import { listBankHolidays, type ListBankHolidaysParams } from "./bank-holidays";
+import {
+  createCalendarSync,
+  deleteCalendarSync,
+  listCalendarSyncs,
+  regenerateCalendarSyncToken,
+  updateCalendarSync,
+  type CalendarSyncInput,
+} from "./calendar-sync";
 import type { CreateGroupInput, CreateVacationInput, UpdateGroupUsersInput } from "./types";
 
 export const qk = {
@@ -37,6 +45,7 @@ export const qk = {
   notifications: (unreadOnly: boolean) => ["notifications", unreadOnly] as const,
   bankHolidays: (year: number, country: string, region?: string) =>
     ["bank-holidays", year, country, region ?? "*"] as const,
+  calendarSyncs: () => ["calendar-syncs"] as const,
 };
 
 function invalidateVacationDependants(qc: ReturnType<typeof useQueryClient>) {
@@ -196,5 +205,45 @@ export function useUpdateGroupUsers() {
   return useMutation({
     mutationFn: (input: UpdateGroupUsersInput) => updateGroupUsers(input),
     onSuccess: (_, vars) => qc.invalidateQueries({ queryKey: qk.groupUsers(vars.groupId) }),
+  });
+}
+
+export function useCalendarSyncs() {
+  return useQuery({
+    queryKey: qk.calendarSyncs(),
+    queryFn: listCalendarSyncs,
+  });
+}
+
+export function useCreateCalendarSync() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: CalendarSyncInput) => createCalendarSync(input),
+    onSuccess: () => qc.invalidateQueries({ queryKey: qk.calendarSyncs() }),
+  });
+}
+
+export function useUpdateCalendarSync() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (vars: { id: string; input: CalendarSyncInput }) =>
+      updateCalendarSync(vars.id, vars.input),
+    onSuccess: () => qc.invalidateQueries({ queryKey: qk.calendarSyncs() }),
+  });
+}
+
+export function useDeleteCalendarSync() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => deleteCalendarSync(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: qk.calendarSyncs() }),
+  });
+}
+
+export function useRegenerateCalendarSyncToken() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => regenerateCalendarSyncToken(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: qk.calendarSyncs() }),
   });
 }

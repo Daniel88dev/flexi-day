@@ -13,6 +13,7 @@ const NAV_LINKS = [
   { href: "/dashboard", label: "Dashboard" },
   { href: "/requests", label: "Requests" },
   { href: "/groups", label: "Groups" },
+  { href: "/calendar-sync", label: "Calendar sync" },
 ];
 
 export function NavBar() {
