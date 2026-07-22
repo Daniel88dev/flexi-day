@@ -65,6 +65,10 @@ export function NewRequestDialog() {
   const groups = groupsQuery.data ?? [];
   const hasGroups = groups.length > 0;
 
+  // Default to the first available group until the user explicitly picks one, so the
+  // dialog always opens with a valid selection (derived during render — no effect needed).
+  const selectedGroupId = groupId || (groups[0]?.id ?? "");
+
   function resetForm() {
     setGroupId("");
     setFrom(todayIso());
@@ -79,7 +83,7 @@ export function NewRequestDialog() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-    if (!groupId || !from || !to) return;
+    if (!selectedGroupId || !from || !to) return;
     if (to < from) {
       setError("End date must be on or after start date.");
       return;
@@ -87,7 +91,7 @@ export function NewRequestDialog() {
 
     try {
       await createVacation.mutateAsync({
-        groupId,
+        groupId: selectedGroupId,
         from,
         to,
         vacationType,
@@ -118,7 +122,7 @@ export function NewRequestDialog() {
     }
   }
 
-  const isValid = !!groupId && !!from && !!to && to >= from && !createVacation.isPending;
+  const isValid = !!selectedGroupId && !!from && !!to && to >= from && !createVacation.isPending;
 
   return (
     <Dialog
@@ -149,7 +153,7 @@ export function NewRequestDialog() {
 
           <div className="space-y-1.5">
             <Label htmlFor="group">Group</Label>
-            <Select value={groupId} onValueChange={setGroupId}>
+            <Select value={selectedGroupId} onValueChange={setGroupId}>
               <SelectTrigger id="group">
                 <SelectValue
                   placeholder={
