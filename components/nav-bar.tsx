@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Calendar, LayoutGrid, Menu, RefreshCw, Users, X } from "lucide-react";
@@ -26,11 +26,6 @@ function isLinkActive(pathname: string, href: string): boolean {
 export function NavBar() {
   const pathname = usePathname();
   const [navOpen, setNavOpen] = useState(false);
-
-  // Close the mobile drawer whenever the route changes.
-  useEffect(() => {
-    setNavOpen(false);
-  }, [pathname]);
 
   return (
     <header
@@ -113,6 +108,7 @@ export function NavBar() {
               <Link
                 key={link.href}
                 href={link.href}
+                onClick={() => setNavOpen(false)}
                 className="flex items-center gap-3 rounded-[var(--radius-sm)] px-3.5 py-3 text-base font-semibold transition-colors"
                 style={{
                   background: isActive ? "var(--primary-soft)" : "transparent",
