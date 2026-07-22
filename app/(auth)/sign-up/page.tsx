@@ -99,7 +99,7 @@ export default function SignUpPage() {
         </>
       }
     >
-      <GoogleButton label="Continue with Google" />
+      <GoogleButton label="Continue with Google (not yet ready)" />
       <AuthDivider />
       <form onSubmit={handleSubmit} className="space-y-4">
         <AuthError message={error} />

@@ -237,17 +237,8 @@ export default function LandingPage() {
             className="text-[13px] font-semibold tracking-wide"
             style={{ color: "var(--text-faint)" }}
           >
-            POWERING TIME OFF AT
+            {"Early adopters free access".toUpperCase()}
           </span>
-          {["Northwind", "Lumen", "Atlas Co", "Foundry", "Kestrel", "Marlow"].map((n) => (
-            <span
-              key={n}
-              className="font-display text-[19px] font-semibold opacity-80"
-              style={{ color: "var(--text-faint)" }}
-            >
-              {n}
-            </span>
-          ))}
         </div>
       </section>
       {/* FEATURES */}
@@ -355,146 +346,146 @@ export default function LandingPage() {
         </div>
       </section>
       {/* SOCIAL PROOF */}
-      <section className="mx-auto max-w-6xl px-7 py-[90px]">
-        <div className="mx-auto mb-12 max-w-[600px] text-center">
-          <Eyebrow center>Loved by modern teams</Eyebrow>
-          <h2
-            className="font-display my-4 font-semibold"
-            style={{
-              fontSize: "clamp(30px,4vw,44px)",
-              letterSpacing: "-0.03em",
-            }}
-          >
-            The end of &quot;who&apos;s off today?&quot;
-          </h2>
-        </div>
-        <div className="grid gap-5 md:grid-cols-3">
-          {TESTIMONIALS.map((t) => {
-            const p = demoById(t.personId)!;
-            return (
-              <div
-                key={t.personId}
-                className="flex flex-col gap-4 rounded-2xl border p-6"
-                style={{
-                  background: "var(--surface)",
-                  borderColor: "var(--border)",
-                }}
-              >
-                <div className="flex gap-[3px]" style={{ color: "var(--warm)" }}>
-                  {Array.from({ length: 5 }).map((_, i) => (
-                    <Star key={i} className="h-4 w-4 fill-current" />
-                  ))}
-                </div>
-                <p className="text-[16.5px]" style={{ color: "var(--text)", lineHeight: 1.55 }}>
-                  &ldquo;{t.quote}&rdquo;
-                </p>
-                <div className="mt-auto flex items-center gap-3">
-                  <AvatarBubble initials={p.initials} background={p.av} name={p.name} size={42} />
-                  <div>
-                    <div className="text-[14.5px] font-semibold">{p.name}</div>
-                    <div className="text-[13px]" style={{ color: "var(--text-faint)" }}>
-                      {t.role}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </section>
+      {/*<section className="mx-auto max-w-6xl px-7 py-[90px]">*/}
+      {/*  <div className="mx-auto mb-12 max-w-[600px] text-center">*/}
+      {/*    <Eyebrow center>Loved by modern teams</Eyebrow>*/}
+      {/*    <h2*/}
+      {/*      className="font-display my-4 font-semibold"*/}
+      {/*      style={{*/}
+      {/*        fontSize: "clamp(30px,4vw,44px)",*/}
+      {/*        letterSpacing: "-0.03em",*/}
+      {/*      }}*/}
+      {/*    >*/}
+      {/*      The end of &quot;who&apos;s off today?&quot;*/}
+      {/*    </h2>*/}
+      {/*  </div>*/}
+      {/*  <div className="grid gap-5 md:grid-cols-3">*/}
+      {/*    {TESTIMONIALS.map((t) => {*/}
+      {/*      const p = demoById(t.personId)!;*/}
+      {/*      return (*/}
+      {/*        <div*/}
+      {/*          key={t.personId}*/}
+      {/*          className="flex flex-col gap-4 rounded-2xl border p-6"*/}
+      {/*          style={{*/}
+      {/*            background: "var(--surface)",*/}
+      {/*            borderColor: "var(--border)",*/}
+      {/*          }}*/}
+      {/*        >*/}
+      {/*          <div className="flex gap-[3px]" style={{ color: "var(--warm)" }}>*/}
+      {/*            {Array.from({ length: 5 }).map((_, i) => (*/}
+      {/*              <Star key={i} className="h-4 w-4 fill-current" />*/}
+      {/*            ))}*/}
+      {/*          </div>*/}
+      {/*          <p className="text-[16.5px]" style={{ color: "var(--text)", lineHeight: 1.55 }}>*/}
+      {/*            &ldquo;{t.quote}&rdquo;*/}
+      {/*          </p>*/}
+      {/*          <div className="mt-auto flex items-center gap-3">*/}
+      {/*            <AvatarBubble initials={p.initials} background={p.av} name={p.name} size={42} />*/}
+      {/*            <div>*/}
+      {/*              <div className="text-[14.5px] font-semibold">{p.name}</div>*/}
+      {/*              <div className="text-[13px]" style={{ color: "var(--text-faint)" }}>*/}
+      {/*                {t.role}*/}
+      {/*              </div>*/}
+      {/*            </div>*/}
+      {/*          </div>*/}
+      {/*        </div>*/}
+      {/*      );*/}
+      {/*    })}*/}
+      {/*  </div>*/}
+      {/*</section>*/}
       {/* PRICING */}
-      <section
-        id="pricing"
-        style={{ background: "var(--bg-tint)", borderTop: "1px solid var(--border)" }}
-      >
-        <div className="mx-auto max-w-6xl px-7 py-[90px]">
-          <div className="mx-auto mb-12 max-w-[600px] text-center">
-            <Eyebrow center>Simple pricing</Eyebrow>
-            <h2
-              className="font-display my-4 font-semibold"
-              style={{
-                fontSize: "clamp(30px,4vw,44px)",
-                letterSpacing: "-0.03em",
-              }}
-            >
-              Fair, per person, no surprises
-            </h2>
-            <p className="text-[17px]" style={{ color: "var(--text-muted)" }}>
-              Start free for small teams. Upgrade when you grow.
-            </p>
-          </div>
-          <div className="mx-auto grid max-w-[880px] gap-5 md:grid-cols-3">
-            {PRICING.map((p) => (
-              <div
-                key={p.name}
-                className="relative flex flex-col gap-5 rounded-2xl p-7"
-                style={{
-                  border: p.featured ? "1.5px solid var(--primary)" : "1px solid var(--border)",
-                  background: p.featured
-                    ? "color-mix(in oklch, var(--primary) 5%, var(--surface))"
-                    : "var(--surface)",
-                  boxShadow: p.featured ? "var(--shadow)" : "none",
-                }}
-              >
-                {p.featured ? (
-                  <span
-                    className="absolute -top-[13px] left-7 rounded-full px-3 py-1 text-[12px] font-bold tracking-wide"
-                    style={{ background: "var(--primary)", color: "var(--primary-fg)" }}
-                  >
-                    MOST POPULAR
-                  </span>
-                ) : null}
-                <div>
-                  <div className="text-[16px] font-semibold" style={{ color: "var(--text-muted)" }}>
-                    {p.name}
-                  </div>
-                  <div className="mt-2 flex items-baseline gap-1.5">
-                    <span
-                      className="font-display font-bold"
-                      style={{
-                        fontSize: 44,
-                        letterSpacing: "-0.03em",
-                      }}
-                    >
-                      {p.price}
-                    </span>
-                    <span className="text-[14.5px]" style={{ color: "var(--text-faint)" }}>
-                      {p.per}
-                    </span>
-                  </div>
-                  <p className="mt-2 text-[14px]" style={{ color: "var(--text-muted)" }}>
-                    {p.blurb}
-                  </p>
-                </div>
-                <div className="h-px" style={{ background: "var(--border)" }} />
-                <ul className="flex flex-1 flex-col gap-3">
-                  {p.features.map((f) => (
-                    <li
-                      key={f}
-                      className="flex items-start gap-2.5 text-[14.5px]"
-                      style={{ color: "var(--text-muted)" }}
-                    >
-                      <Check
-                        className="mt-[1px] h-[18px] w-[18px] shrink-0"
-                        style={{ color: "var(--primary)" }}
-                      />
-                      {f}
-                    </li>
-                  ))}
-                </ul>
-                <Button
-                  asChild
-                  variant={p.featured ? "default" : "outline"}
-                  size="lg"
-                  className="w-full rounded-full"
-                >
-                  <Link href="/sign-up">{p.cta}</Link>
-                </Button>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+      {/*<section*/}
+      {/*  id="pricing"*/}
+      {/*  style={{ background: "var(--bg-tint)", borderTop: "1px solid var(--border)" }}*/}
+      {/*>*/}
+      {/*  <div className="mx-auto max-w-6xl px-7 py-[90px]">*/}
+      {/*    <div className="mx-auto mb-12 max-w-[600px] text-center">*/}
+      {/*      <Eyebrow center>Simple pricing</Eyebrow>*/}
+      {/*      <h2*/}
+      {/*        className="font-display my-4 font-semibold"*/}
+      {/*        style={{*/}
+      {/*          fontSize: "clamp(30px,4vw,44px)",*/}
+      {/*          letterSpacing: "-0.03em",*/}
+      {/*        }}*/}
+      {/*      >*/}
+      {/*        Fair, per person, no surprises*/}
+      {/*      </h2>*/}
+      {/*      <p className="text-[17px]" style={{ color: "var(--text-muted)" }}>*/}
+      {/*        Start free for small teams. Upgrade when you grow.*/}
+      {/*      </p>*/}
+      {/*    </div>*/}
+      {/*    <div className="mx-auto grid max-w-[880px] gap-5 md:grid-cols-3">*/}
+      {/*      {PRICING.map((p) => (*/}
+      {/*        <div*/}
+      {/*          key={p.name}*/}
+      {/*          className="relative flex flex-col gap-5 rounded-2xl p-7"*/}
+      {/*          style={{*/}
+      {/*            border: p.featured ? "1.5px solid var(--primary)" : "1px solid var(--border)",*/}
+      {/*            background: p.featured*/}
+      {/*              ? "color-mix(in oklch, var(--primary) 5%, var(--surface))"*/}
+      {/*              : "var(--surface)",*/}
+      {/*            boxShadow: p.featured ? "var(--shadow)" : "none",*/}
+      {/*          }}*/}
+      {/*        >*/}
+      {/*          {p.featured ? (*/}
+      {/*            <span*/}
+      {/*              className="absolute -top-[13px] left-7 rounded-full px-3 py-1 text-[12px] font-bold tracking-wide"*/}
+      {/*              style={{ background: "var(--primary)", color: "var(--primary-fg)" }}*/}
+      {/*            >*/}
+      {/*              MOST POPULAR*/}
+      {/*            </span>*/}
+      {/*          ) : null}*/}
+      {/*          <div>*/}
+      {/*            <div className="text-[16px] font-semibold" style={{ color: "var(--text-muted)" }}>*/}
+      {/*              {p.name}*/}
+      {/*            </div>*/}
+      {/*            <div className="mt-2 flex items-baseline gap-1.5">*/}
+      {/*              <span*/}
+      {/*                className="font-display font-bold"*/}
+      {/*                style={{*/}
+      {/*                  fontSize: 44,*/}
+      {/*                  letterSpacing: "-0.03em",*/}
+      {/*                }}*/}
+      {/*              >*/}
+      {/*                {p.price}*/}
+      {/*              </span>*/}
+      {/*              <span className="text-[14.5px]" style={{ color: "var(--text-faint)" }}>*/}
+      {/*                {p.per}*/}
+      {/*              </span>*/}
+      {/*            </div>*/}
+      {/*            <p className="mt-2 text-[14px]" style={{ color: "var(--text-muted)" }}>*/}
+      {/*              {p.blurb}*/}
+      {/*            </p>*/}
+      {/*          </div>*/}
+      {/*          <div className="h-px" style={{ background: "var(--border)" }} />*/}
+      {/*          <ul className="flex flex-1 flex-col gap-3">*/}
+      {/*            {p.features.map((f) => (*/}
+      {/*              <li*/}
+      {/*                key={f}*/}
+      {/*                className="flex items-start gap-2.5 text-[14.5px]"*/}
+      {/*                style={{ color: "var(--text-muted)" }}*/}
+      {/*              >*/}
+      {/*                <Check*/}
+      {/*                  className="mt-[1px] h-[18px] w-[18px] shrink-0"*/}
+      {/*                  style={{ color: "var(--primary)" }}*/}
+      {/*                />*/}
+      {/*                {f}*/}
+      {/*              </li>*/}
+      {/*            ))}*/}
+      {/*          </ul>*/}
+      {/*          <Button*/}
+      {/*            asChild*/}
+      {/*            variant={p.featured ? "default" : "outline"}*/}
+      {/*            size="lg"*/}
+      {/*            className="w-full rounded-full"*/}
+      {/*          >*/}
+      {/*            <Link href="/sign-up">{p.cta}</Link>*/}
+      {/*          </Button>*/}
+      {/*        </div>*/}
+      {/*      ))}*/}
+      {/*    </div>*/}
+      {/*  </div>*/}
+      {/*</section>*/}
       {/* CTA */}
       <section className="mx-auto max-w-6xl px-7 py-[90px]">
         <div

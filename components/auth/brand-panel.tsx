@@ -51,22 +51,22 @@ export function BrandPanel() {
         >
           {QUOTES[mode]}
         </p>
-        <div className="flex items-center gap-3">
-          <AvatarBubble initials={p.initials} background={p.av} size={44} name={p.name} />
-          <div>
-            <div className="text-[15px] font-semibold">{p.name}</div>
-            <div className="text-[13.5px] opacity-85">People Ops · Northwind</div>
-          </div>
-        </div>
+        {/*<div className="flex items-center gap-3">*/}
+        {/*  <AvatarBubble initials={p.initials} background={p.av} size={44} name={p.name} />*/}
+        {/*  <div>*/}
+        {/*    <div className="text-[15px] font-semibold">{p.name}</div>*/}
+        {/*    <div className="text-[13.5px] opacity-85">People Ops · Northwind</div>*/}
+        {/*  </div>*/}
+        {/*</div>*/}
       </div>
 
       <div className="relative flex flex-wrap gap-6">
-        {STATS.map(([a, b]) => (
-          <div key={b}>
-            <div className="font-display text-[24px] font-bold">{a}</div>
-            <div className="text-[13px] opacity-80">{b}</div>
-          </div>
-        ))}
+        {/*{STATS.map(([a, b]) => (*/}
+        {/*  <div key={b}>*/}
+        {/*    <div className="font-display text-[24px] font-bold">{a}</div>*/}
+        {/*    <div className="text-[13px] opacity-80">{b}</div>*/}
+        {/*  </div>*/}
+        {/*))}*/}
       </div>
     </div>
   );

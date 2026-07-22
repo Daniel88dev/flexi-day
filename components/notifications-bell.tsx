@@ -37,17 +37,17 @@ export function NotificationsBell() {
         <button
           type="button"
           aria-label={`Notifications${unread.length ? ` (${unread.length} unread)` : ""}`}
-          className="relative grid h-10 w-10 place-items-center rounded-full border"
+          className="relative grid h-8 w-8 place-items-center rounded-full border"
           style={{
             borderColor: "var(--border-strong)",
             background: "var(--surface)",
             color: "var(--text-muted)",
           }}
         >
-          <Bell className="h-[18px] w-[18px]" />
+          <Bell className="h-4 w-4" />
           {unread.length > 0 ? (
             <span
-              className="absolute top-[9px] right-[10px] h-[7px] w-[7px] rounded-full"
+              className="absolute top-[6px] right-[7px] h-[6px] w-[6px] rounded-full"
               style={{
                 background: "var(--warm)",
                 boxShadow: "0 0 0 2px var(--surface)",
