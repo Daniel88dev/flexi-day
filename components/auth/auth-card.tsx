@@ -74,11 +74,19 @@ export function GoogleButton({
   async function handleClick() {
     setLoading(true);
     try {
+      // better-auth resolves a RELATIVE callbackURL against its own baseURL
+      // (the backend), which would land the user on api.flexi-day.com/dashboard.
+      // Resolve it to an absolute URL on THIS (frontend) origin so the browser
+      // returns to the SPA. The origin must be in the backend's trustedOrigins.
+      const absoluteCallbackURL = new URL(callbackURL, window.location.origin).toString();
       // Redirects the browser to Google, which returns to the backend at
-      // {API}/api/auth/callback/google; better-auth then sends the browser to
-      // callbackURL on the frontend. On success the page navigates away, so we
-      // only reset loading if the redirect never happens (i.e. an error).
-      const { error } = await authClient.signIn.social({ provider: "google", callbackURL });
+      // {API}/api/auth/callback/google; better-auth sets the session cookie and
+      // then sends the browser to callbackURL. On success the page navigates
+      // away, so we only reset loading if the redirect never happens (an error).
+      const { error } = await authClient.signIn.social({
+        provider: "google",
+        callbackURL: absoluteCallbackURL,
+      });
       if (error) setLoading(false);
     } catch {
       setLoading(false);
