@@ -1,6 +1,7 @@
 import { Logo } from "@/components/brand/logo";
 import { BrandPanel } from "@/components/auth/brand-panel";
 import { ModeToggle } from "@/components/ui/ModeToggle";
+import { Footer } from "@/components/footer";
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -16,6 +17,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         <div className="mx-auto flex w-full max-w-[420px] flex-1 flex-col justify-center py-10">
           {children}
         </div>
+        <Footer minimal />
       </div>
       <BrandPanel />
     </div>

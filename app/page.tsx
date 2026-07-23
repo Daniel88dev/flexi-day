@@ -11,8 +11,8 @@ import {
   Star,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Logo } from "@/components/brand/logo";
 import { AvatarBubble, AvatarStack } from "@/components/brand/avatar-bubble";
+import { Footer } from "@/components/footer";
 import { MarketingNav } from "@/components/landing/marketing-nav";
 import { HeroPreview } from "@/components/landing/hero-preview";
 import { Eyebrow } from "@/components/landing/eyebrow";
@@ -549,21 +549,7 @@ export default function LandingPage() {
         </div>
       </section>
       {/* FOOTER */}
-      <footer style={{ borderTop: "1px solid var(--border)" }}>
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-5 px-7 py-10">
-          <Logo size={24} />
-          <div className="flex flex-wrap gap-6">
-            {["Privacy", "Terms", "Security", "Contact"].map((l) => (
-              <a key={l} href="#" className="text-[14px]" style={{ color: "var(--text-faint)" }}>
-                {l}
-              </a>
-            ))}
-          </div>
-          <span className="text-[13.5px]" style={{ color: "var(--text-faint)" }}>
-            © 2026 flexiday. Rest well.
-          </span>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }
