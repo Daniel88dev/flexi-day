@@ -87,13 +87,13 @@ export default function SignUpPage() {
             style={{ color: "var(--text-faint)", lineHeight: 1.5 }}
           >
             By creating a team you agree to our{" "}
-            <a href="#" className="underline" style={{ color: "var(--text-muted)" }}>
+            <Link href="/terms" className="underline" style={{ color: "var(--text-muted)" }}>
               Terms
-            </a>{" "}
+            </Link>{" "}
             and{" "}
-            <a href="#" className="underline" style={{ color: "var(--text-muted)" }}>
+            <Link href="/privacy" className="underline" style={{ color: "var(--text-muted)" }}>
               Privacy Policy
-            </a>
+            </Link>
             .
           </p>
         </>

@@ -217,6 +217,9 @@
     text-rendering: optimizeLegibility;
     font-size: 16px;
     line-height: 1.5;
+    /* Prevent horizontal panning/rubber-banding on mobile when a child briefly
+       overflows the viewport. `clip` (not `hidden`) keeps the sticky nav working. */
+    overflow-x: clip;
   }
   h1,
   h2,
@@ -244,6 +247,76 @@
     font-style: italic;
     font-weight: 400;
   }
+}
+
+/* ============ Legal / policy pages prose ============ */
+.legal-prose {
+  color: var(--text-muted);
+  font-size: 15.5px;
+  line-height: 1.7;
+}
+.legal-prose h2 {
+  font-family: var(--font-display);
+  color: var(--text);
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  margin-top: 2.2em;
+  margin-bottom: 0.55em;
+}
+.legal-prose h2:first-child {
+  margin-top: 0;
+}
+.legal-prose h3 {
+  color: var(--text);
+  font-size: 16.5px;
+  font-weight: 600;
+  margin-top: 1.5em;
+  margin-bottom: 0.4em;
+}
+.legal-prose p {
+  margin: 0 0 1em;
+}
+.legal-prose ul {
+  margin: 0 0 1em;
+  padding-left: 1.25em;
+  list-style: disc;
+}
+.legal-prose li {
+  margin: 0.35em 0;
+}
+.legal-prose a {
+  color: var(--primary);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.legal-prose strong {
+  color: var(--text);
+  font-weight: 600;
+}
+.legal-prose table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0 0 1.2em;
+  font-size: 14px;
+}
+.legal-prose th,
+.legal-prose td {
+  border: 1px solid var(--border);
+  padding: 8px 11px;
+  text-align: left;
+  vertical-align: top;
+}
+.legal-prose th {
+  background: var(--surface-2);
+  color: var(--text);
+  font-weight: 600;
+}
+/* Opt-out island (e.g. the contact cards): let its own layout control spacing. */
+.legal-prose .not-prose,
+.legal-prose .not-prose * {
+  margin-top: 0;
+  margin-bottom: 0;
 }
 
 /* Calendar-sync feature animations (ported from the design) */
