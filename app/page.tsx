@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { AvatarBubble, AvatarStack } from "@/components/brand/avatar-bubble";
 import { Footer } from "@/components/footer";
 import { MarketingNav } from "@/components/landing/marketing-nav";
+import { GuestRedirect } from "@/components/auth/guest-guard";
 import { HeroPreview } from "@/components/landing/hero-preview";
 import { Eyebrow } from "@/components/landing/eyebrow";
 import { DEMO_TEAM, demoById } from "@/lib/demo/team";
@@ -144,6 +145,10 @@ const PRICING = [
 export default function LandingPage() {
   return (
     <div className="overflow-x-hidden" style={{ background: "var(--bg)" }}>
+      {/* Signed-in visitors belong on the dashboard, not the pitch. Rendered
+          alongside the page rather than gating it so the marketing content
+          stays instantly visible for everyone else. */}
+      <GuestRedirect />
       <MarketingNav />
       {/* HERO */}
       <section className="relative">
