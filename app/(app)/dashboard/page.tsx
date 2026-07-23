@@ -22,6 +22,7 @@ import { ApprovalsWidget } from "@/components/dashboard/widgets/approvals-widget
 import { OutTodayWidget } from "@/components/dashboard/widgets/out-today-widget";
 import { BalanceWidget } from "@/components/dashboard/widgets/balance-widget";
 import { DEFAULT_LEAVE_TYPES, leaveMetaFor, type LeaveTypeKey } from "@/lib/demo/leave-meta";
+import { VacationDetailDialog } from "@/components/vacation-detail-dialog";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { vacationStatus } from "@/lib/api/types";
@@ -59,6 +60,8 @@ export default function DashboardPage() {
   const [year, setYear] = useState(initial.year);
   const [month, setMonth] = useState(initial.month);
   const [filter, setFilter] = useState<Set<LeaveTypeKey>>(new Set(DEFAULT_LEAVE_TYPES));
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [detailOpen, setDetailOpen] = useState(false);
 
   const vacationsQuery = useVacations({ year, month });
   const groupsQuery = useGroups();
@@ -76,6 +79,7 @@ export default function DashboardPage() {
       .filter((v) => vacationStatus(v) !== "rejected")
       .filter((v) => DEFAULT_LEAVE_TYPES.includes(v.vacationType as LeaveTypeKey))
       .map((v) => ({
+        id: v.id,
         userId: v.userId,
         vacationType: v.vacationType as LeaveTypeKey,
         requestedDay: v.requestedDay,
@@ -269,6 +273,10 @@ export default function DashboardPage() {
             todayDay={todayDay}
             ranges={ranges}
             filter={filter}
+            onSelect={(id) => {
+              setSelectedId(id);
+              setDetailOpen(true);
+            }}
           />
           {vacationsQuery.error ? (
             <p className="mt-3 text-sm" style={{ color: "var(--destructive)" }}>
@@ -283,6 +291,12 @@ export default function DashboardPage() {
           <BalanceWidget year={year} />
         </aside>
       </div>
+
+      <VacationDetailDialog
+        vacationId={selectedId}
+        open={detailOpen}
+        onOpenChange={setDetailOpen}
+      />
     </div>
   );
 }

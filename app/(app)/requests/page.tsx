@@ -1,7 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { Suspense, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { VacationDetailDialog } from "@/components/vacation-detail-dialog";
 import {
   Table,
   TableBody,
@@ -96,10 +98,29 @@ function MonthPicker({
 }
 
 export default function RequestsPage() {
+  return (
+    <Suspense fallback={null}>
+      <RequestsTable />
+    </Suspense>
+  );
+}
+
+function RequestsTable() {
   const now = new Date();
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth() + 1);
   const [filter, setFilter] = useState<Filter>("all");
+
+  // Notification emails deep-link here with ?vacationId=…, so a request can be
+  // opened straight from the inbox.
+  const search = useSearchParams();
+  const [selectedId, setSelectedId] = useState<string | null>(search.get("vacationId"));
+  const [detailOpen, setDetailOpen] = useState(Boolean(search.get("vacationId")));
+
+  function openDetail(id: string) {
+    setSelectedId(id);
+    setDetailOpen(true);
+  }
 
   const { data: session } = useSession();
   const userId = session?.user?.id;
@@ -205,7 +226,20 @@ export default function RequestsPage() {
                 const status = vacationStatus(v);
                 const mine = v.userId === userId;
                 return (
-                  <TableRow key={v.id}>
+                  <TableRow
+                    key={v.id}
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`Open request details for ${formatDate(v.requestedDay)}`}
+                    className="hover:bg-muted/50 cursor-pointer"
+                    onClick={() => openDetail(v.id)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        openDetail(v.id);
+                      }
+                    }}
+                  >
                     <TableCell className="text-sm">
                       <div className="font-medium">{groupName(v.groupId)}</div>
                       <div className="text-muted-foreground text-xs">
@@ -241,7 +275,13 @@ export default function RequestsPage() {
                       </span>
                     </TableCell>
                     <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
+                      {/* The row itself opens the detail dialog; the inline
+                          actions must not trigger it as well. */}
+                      <div
+                        className="flex justify-end gap-2"
+                        onClick={(e) => e.stopPropagation()}
+                        role="presentation"
+                      >
                         {status === "pending" && canApproveGroup(v.groupId) ? (
                           <>
                             <Button
@@ -264,7 +304,8 @@ export default function RequestsPage() {
                             </Button>
                           </>
                         ) : null}
-                        {mine && status === "pending" ? (
+                        {/* Approved days can be cancelled too — plans change. */}
+                        {mine ? (
                           <Button
                             size="xs"
                             variant="ghost"
@@ -286,6 +327,12 @@ export default function RequestsPage() {
           </Table>
         </div>
       )}
+
+      <VacationDetailDialog
+        vacationId={selectedId}
+        open={detailOpen}
+        onOpenChange={setDetailOpen}
+      />
     </div>
   );
 }

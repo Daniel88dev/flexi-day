@@ -12,6 +12,8 @@ export interface CalendarRange {
   from: number; // day-of-month, inclusive
   to: number;
   note?: string;
+  /** Ids of the vacation rows this bar collapses, in day order. */
+  vacationIds?: string[];
 }
 
 interface LeaveCalendarProps {
@@ -21,6 +23,8 @@ interface LeaveCalendarProps {
   ranges: CalendarRange[];
   filter?: Set<LeaveTypeKey>;
   mini?: boolean;
+  /** Makes bars clickable; receives the first vacation id of the range. */
+  onSelect?: (vacationId: string) => void;
 }
 
 const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
@@ -53,19 +57,37 @@ function CalBar({
   contL,
   contR,
   mini,
+  onSelect,
 }: {
   range: CalendarRange;
   contL: boolean;
   contR: boolean;
   mini: boolean;
+  onSelect?: (vacationId: string) => void;
 }) {
   const meta = leaveMetaFor(range.type);
   const u = range.user;
   const displayName = u ? firstName(u.name) : "Everyone";
   const title = `${u ? u.name : "Everyone"} · ${meta.label}${range.note ? ` · ${range.note}` : ""}`;
+  const vacationId = range.vacationIds?.[0];
+  const clickable = Boolean(onSelect && vacationId);
   return (
     <div
       title={title}
+      role={clickable ? "button" : undefined}
+      tabIndex={clickable ? 0 : undefined}
+      aria-label={clickable ? `Open request details: ${title}` : undefined}
+      onClick={clickable ? () => onSelect?.(vacationId as string) : undefined}
+      onKeyDown={
+        clickable
+          ? (e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                onSelect?.(vacationId as string);
+              }
+            }
+          : undefined
+      }
       style={{
         height: mini ? 16 : 24,
         display: "flex",
@@ -73,7 +95,7 @@ function CalBar({
         gap: mini ? 4 : 6,
         padding: mini ? "0 4px" : "0 7px 0 5px",
         overflow: "hidden",
-        cursor: "default",
+        cursor: clickable ? "pointer" : "default",
         background: `color-mix(in oklch, ${meta.cssVar} 16%, var(--surface))`,
         color: `color-mix(in oklch, ${meta.cssVar} 72%, var(--text))`,
         borderLeft: `3px solid ${meta.cssVar}`,
@@ -100,6 +122,7 @@ export function LeaveCalendar({
   ranges,
   filter,
   mini = false,
+  onSelect,
 }: LeaveCalendarProps) {
   const weeks = buildWeeks(monthDays, firstWeekdayMondayIdx);
   const active = filter ? ranges.filter((r) => filter.has(r.type)) : ranges;
@@ -301,7 +324,13 @@ export function LeaveCalendar({
                       pointerEvents: "auto",
                     }}
                   >
-                    <CalBar range={b.range} contL={b.contL} contR={b.contR} mini={mini} />
+                    <CalBar
+                      range={b.range}
+                      contL={b.contL}
+                      contR={b.contR}
+                      mini={mini}
+                      onSelect={onSelect}
+                    />
                   </div>
                 ))}
             </div>
@@ -330,6 +359,7 @@ export function LeaveCalendar({
 // Helper exported so callers can group single-day vacation rows into contiguous ranges.
 export function groupConsecutiveByUserType<
   T extends {
+    id?: string;
     userId: string;
     vacationType: LeaveTypeKey;
     requestedDay: string;
@@ -353,6 +383,7 @@ export function groupConsecutiveByUserType<
     const key = `${item.userId}|${item.vacationType}`;
     if (current && key === lastKey && lastIsoDay && isNextDay(lastIsoDay, item.requestedDay)) {
       current.to = day;
+      if (item.id) current.vacationIds?.push(item.id);
     } else {
       current = {
         id: `r${seq++}`,
@@ -362,6 +393,7 @@ export function groupConsecutiveByUserType<
         from: day,
         to: day,
         note: item.note ?? undefined,
+        vacationIds: item.id ? [item.id] : [],
       };
       ranges.push(current);
     }
