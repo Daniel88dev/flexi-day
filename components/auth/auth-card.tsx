@@ -1,4 +1,8 @@
+"use client";
+
+import { useState } from "react";
 import { cn } from "@/lib/utils";
+import { authClient } from "@/lib/auth-client";
 
 interface AuthCardProps {
   title: string;
@@ -58,17 +62,40 @@ export function AuthSuccess({ message }: { message: string | null }) {
   );
 }
 
-export function GoogleButton({ label }: { label: string }) {
+export function GoogleButton({
+  label,
+  callbackURL = "/dashboard",
+}: {
+  label: string;
+  callbackURL?: string;
+}) {
+  const [loading, setLoading] = useState(false);
+
+  async function handleClick() {
+    setLoading(true);
+    try {
+      // Redirects the browser to Google, which returns to the backend at
+      // {API}/api/auth/callback/google; better-auth then sends the browser to
+      // callbackURL on the frontend. On success the page navigates away, so we
+      // only reset loading if the redirect never happens (i.e. an error).
+      const { error } = await authClient.signIn.social({ provider: "google", callbackURL });
+      if (error) setLoading(false);
+    } catch {
+      setLoading(false);
+    }
+  }
+
   return (
     <button
       type="button"
-      className="flex w-full items-center justify-center gap-2.5 rounded-full border px-4 py-3 text-[15px] font-semibold transition-colors"
+      onClick={handleClick}
+      disabled={loading}
+      className="flex w-full items-center justify-center gap-2.5 rounded-full border px-4 py-3 text-[15px] font-semibold transition-colors disabled:opacity-60"
       style={{
         borderColor: "var(--border-strong)",
         background: "var(--surface)",
         color: "var(--text)",
       }}
-      // TODO: wire to authClient.signIn.social({ provider: "google" }) once OAuth is configured.
     >
       <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden>
         <path
