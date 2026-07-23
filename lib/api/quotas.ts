@@ -1,5 +1,5 @@
 import { api } from "./client";
-import type { UserYearQuota } from "./types";
+import type { SetUserQuotaInput, UserYearQuota } from "./types";
 
 export type ListQuotasParams = { year?: number; userId?: string };
 
@@ -12,4 +12,9 @@ export function listQuotas(
   if (params.userId) q.set("userId", params.userId);
   const qs = q.toString();
   return api<UserYearQuota[]>(`/api/quotas/${groupId}${qs ? `?${qs}` : ""}`);
+}
+
+/** Admin-only: create or replace a member's allowance for one year. */
+export function setUserQuota({ groupId, ...body }: SetUserQuotaInput): Promise<UserYearQuota> {
+  return api<UserYearQuota>(`/api/quotas/${groupId}`, { method: "PUT", body });
 }

@@ -72,6 +72,32 @@ export type VacationListItem = Vacation & {
   user: UserSummary;
 };
 
+export type VacationEventKind = "CREATED" | "APPROVED" | "REJECTED" | "CANCELLED";
+
+export type VacationEvent = {
+  id: UUID;
+  vacationId: UUID;
+  eventType: VacationEventKind;
+  /** Null when the actor's account has since been removed. */
+  actor: UserSummary | null;
+  reason: string | null;
+  createdAt: Iso;
+};
+
+/**
+ * One request with its audit trail and what the current user may do with it.
+ * `canApprove` / `canCancel` come from the backend so the UI never offers an
+ * action the API would refuse.
+ */
+export type VacationDetail = VacationListItem & {
+  groupName: string;
+  approvedByUser: UserSummary | null;
+  rejectedByUser: UserSummary | null;
+  canApprove: boolean;
+  canCancel: boolean;
+  history: VacationEvent[];
+};
+
 export type VacationStatus = "pending" | "approved" | "rejected";
 
 export function vacationStatus(v: Vacation): VacationStatus {
@@ -103,6 +129,12 @@ export type GroupUser = {
   deletedAt: Iso | null;
   createdAt: Iso;
   updatedAt: Iso;
+};
+
+/** A membership row as the members endpoint returns it: with the member's identity. */
+export type GroupUserListItem = GroupUser & {
+  user: UserSummary;
+  email: string;
 };
 
 export type UserYearQuota = {
@@ -197,6 +229,24 @@ export type AppNotification = {
   href: string | null;
   readAt: Iso | null;
   createdAt: Iso;
+};
+
+export type SetUserQuotaInput = {
+  groupId: UUID;
+  userId: UUID;
+  year: number;
+  vacationDays: number;
+  homeOfficeDays: number;
+};
+
+export type UpdateGroupQuotasInput = {
+  groupId: UUID;
+  defaultVacationDays: number;
+  defaultHomeOfficeDays: number;
+};
+
+export type UserSettings = {
+  emailNotifications: boolean;
 };
 
 export type SignUpWithTeamInput = {

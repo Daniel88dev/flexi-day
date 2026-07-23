@@ -6,14 +6,16 @@ import {
   approveVacations,
   cancelVacation,
   createVacation,
+  getVacation,
   listVacations,
   rejectVacation,
   rejectVacations,
   type ListVacationsParams,
 } from "./vacations";
-import { createGroup, listGroups } from "./groups";
+import { createGroup, listGroups, updateGroupQuotas } from "./groups";
 import { joinGroupByCode, listGroupUsers, updateGroupUsers } from "./group-users";
-import { listQuotas, type ListQuotasParams } from "./quotas";
+import { listQuotas, setUserQuota, type ListQuotasParams } from "./quotas";
+import { getMySettings, updateMySettings } from "./settings";
 import { listMyApprovals } from "./approvals";
 import { getDashboardSummary } from "./dashboard";
 import { getMyBalances } from "./balances";
@@ -31,10 +33,18 @@ import {
   updateCalendarSync,
   type CalendarSyncInput,
 } from "./calendar-sync";
-import type { CreateGroupInput, CreateVacationInput, UpdateGroupUsersInput } from "./types";
+import type {
+  CreateGroupInput,
+  CreateVacationInput,
+  SetUserQuotaInput,
+  UpdateGroupQuotasInput,
+  UpdateGroupUsersInput,
+  UserSettings,
+} from "./types";
 
 export const qk = {
   vacations: (year: number, month: number) => ["vacations", year, month] as const,
+  vacation: (id: string) => ["vacation", id] as const,
   groups: () => ["groups"] as const,
   groupUsers: (groupId: string) => ["group-users", groupId] as const,
   quotas: (groupId: string, year: number, userId?: string) =>
@@ -46,10 +56,14 @@ export const qk = {
   bankHolidays: (year: number, country: string, region?: string) =>
     ["bank-holidays", year, country, region ?? "*"] as const,
   calendarSyncs: () => ["calendar-syncs"] as const,
+  mySettings: () => ["my-settings"] as const,
 };
 
 function invalidateVacationDependants(qc: ReturnType<typeof useQueryClient>) {
   qc.invalidateQueries({ queryKey: ["vacations"] });
+  // The open detail dialog shows a status and a history that a decision or a
+  // cancellation has just changed.
+  qc.invalidateQueries({ queryKey: ["vacation"] });
   qc.invalidateQueries({ queryKey: qk.myApprovals() });
   qc.invalidateQueries({ queryKey: qk.dashboardSummary() });
   qc.invalidateQueries({ queryKey: ["my-balances"] });
@@ -59,6 +73,14 @@ export function useVacations(params: Required<ListVacationsParams>) {
   return useQuery({
     queryKey: qk.vacations(params.year, params.month),
     queryFn: () => listVacations(params),
+  });
+}
+
+export function useVacation(id: string | null | undefined) {
+  return useQuery({
+    queryKey: qk.vacation(id ?? ""),
+    queryFn: () => getVacation(id!),
+    enabled: !!id,
   });
 }
 
@@ -171,8 +193,40 @@ export function useRejectVacations() {
 export function useCancelVacation() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => cancelVacation(id),
+    mutationFn: (input: string | { id: string; reason?: string }) =>
+      typeof input === "string" ? cancelVacation(input) : cancelVacation(input.id, input.reason),
     onSuccess: () => invalidateVacationDependants(qc),
+  });
+}
+
+export function useSetUserQuota() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: SetUserQuotaInput) => setUserQuota(input),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["quotas"] }),
+  });
+}
+
+export function useUpdateGroupQuotas() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: UpdateGroupQuotasInput) => updateGroupQuotas(input),
+    onSuccess: () => qc.invalidateQueries({ queryKey: qk.groups() }),
+  });
+}
+
+export function useMySettings() {
+  return useQuery({
+    queryKey: qk.mySettings(),
+    queryFn: getMySettings,
+  });
+}
+
+export function useUpdateMySettings() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: UserSettings) => updateMySettings(input),
+    onSuccess: (settings) => qc.setQueryData(qk.mySettings(), settings),
   });
 }
 
