@@ -9,7 +9,7 @@ describe("Legal pages", () => {
   it("Privacy page renders its heading and controller email", () => {
     render(<PrivacyPage />);
     expect(screen.getByRole("heading", { level: 1, name: "Privacy Policy" })).toBeInTheDocument();
-    expect(screen.getAllByRole("link", { name: /support@flexi-day\.com/ }).length).toBeGreaterThan(0);
+    expect(screen.getAllByRole("link", { name: /daniel@hrynusiw\.cz/ }).length).toBeGreaterThan(0);
   });
 
   it("Terms page renders its heading", () => {
@@ -20,9 +20,7 @@ describe("Legal pages", () => {
   it("Security page renders its heading and disclosure guidance", () => {
     render(<SecurityPage />);
     expect(screen.getByRole("heading", { level: 1, name: "Security" })).toBeInTheDocument();
-    expect(
-      screen.getByRole("heading", { name: "Responsible disclosure" })
-    ).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Responsible disclosure" })).toBeInTheDocument();
   });
 
   it("Contact page renders its heading", () => {
