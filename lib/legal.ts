@@ -5,7 +5,7 @@ export const LEGAL = {
   product: "flexiday",
   entity: "Daniel Hrynusiw OSVČ",
   address: "Bořetická 4133/6, 615 00 Brno-Židenice, Czech Republic",
-  email: "support@flexi-day.com",
+  email: "daniel@hrynusiw.cz",
   country: "Czech Republic",
   /** Human-readable last-updated date shown on every legal page. */
   updated: "23 July 2026",
