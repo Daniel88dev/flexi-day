@@ -82,9 +82,11 @@ export function UserMenu() {
               My groups
             </Link>
           </DropdownMenuItem>
-          <DropdownMenuItem disabled className="gap-2 text-sm">
-            <Settings className="h-3.5 w-3.5" />
-            Settings
+          <DropdownMenuItem asChild className="gap-2 text-sm">
+            <Link href="/settings">
+              <Settings className="h-3.5 w-3.5" />
+              Settings
+            </Link>
           </DropdownMenuItem>
         </DropdownMenuGroup>
 
