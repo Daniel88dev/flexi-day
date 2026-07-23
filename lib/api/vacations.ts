@@ -1,5 +1,5 @@
 import { api } from "./client";
-import type { CreateVacationInput, Vacation, VacationListItem } from "./types";
+import type { CreateVacationInput, Vacation, VacationDetail, VacationListItem } from "./types";
 
 export type ListVacationsParams = { year?: number; month?: number };
 
@@ -9,6 +9,11 @@ export function listVacations(params: ListVacationsParams = {}): Promise<Vacatio
   if (params.month !== undefined) q.set("month", String(params.month));
   const qs = q.toString();
   return api<VacationListItem[]>(`/api/vacation${qs ? `?${qs}` : ""}`);
+}
+
+/** One request with its history and the caller's permissions on it. */
+export function getVacation(id: string): Promise<VacationDetail> {
+  return api<VacationDetail>(`/api/vacation/${id}`);
 }
 
 export function createVacation(input: CreateVacationInput): Promise<Vacation[]> {
@@ -48,6 +53,9 @@ export function rejectVacations(
   });
 }
 
-export function cancelVacation(id: string): Promise<{ message: string }> {
-  return api<{ message: string }>(`/api/vacation/${id}`, { method: "DELETE" });
+export function cancelVacation(id: string, reason?: string): Promise<{ message: string }> {
+  return api<{ message: string }>(`/api/vacation/${id}`, {
+    method: "DELETE",
+    body: reason ? { reason } : undefined,
+  });
 }

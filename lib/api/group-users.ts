@@ -1,8 +1,8 @@
 import { api } from "./client";
-import type { GroupUser, UpdateGroupUsersInput } from "./types";
+import type { GroupUser, GroupUserListItem, UpdateGroupUsersInput } from "./types";
 
-export function listGroupUsers(groupId: string): Promise<GroupUser[]> {
-  return api<GroupUser[]>(`/api/group-user/${groupId}`);
+export function listGroupUsers(groupId: string): Promise<GroupUserListItem[]> {
+  return api<GroupUserListItem[]>(`/api/group-user/${groupId}`);
 }
 
 export function joinGroupByCode(validationCode: string): Promise<GroupUser> {
