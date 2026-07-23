@@ -8,12 +8,15 @@ import { authClient } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
 import { AuthCard, AuthDivider, AuthError, GoogleButton } from "@/components/auth/auth-card";
 import { FieldInput } from "@/components/auth/field-input";
+import { GuestGuard } from "@/components/auth/guest-guard";
 
 export default function SignInPage() {
   return (
-    <Suspense fallback={null}>
-      <SignInForm />
-    </Suspense>
+    <GuestGuard>
+      <Suspense fallback={null}>
+        <SignInForm />
+      </Suspense>
+    </GuestGuard>
   );
 }
 

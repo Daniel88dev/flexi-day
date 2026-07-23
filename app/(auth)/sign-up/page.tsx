@@ -15,8 +15,17 @@ import {
   GoogleButton,
 } from "@/components/auth/auth-card";
 import { FieldInput } from "@/components/auth/field-input";
+import { GuestGuard } from "@/components/auth/guest-guard";
 
 export default function SignUpPage() {
+  return (
+    <GuestGuard>
+      <SignUpForm />
+    </GuestGuard>
+  );
+}
+
+function SignUpForm() {
   const router = useRouter();
   const [name, setName] = useState("");
   const [team, setTeam] = useState("");

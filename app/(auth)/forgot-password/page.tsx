@@ -7,8 +7,17 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AuthCard, AuthError, AuthSuccess } from "@/components/auth/auth-card";
+import { GuestGuard } from "@/components/auth/guest-guard";
 
 export default function ForgotPasswordPage() {
+  return (
+    <GuestGuard>
+      <ForgotPasswordForm />
+    </GuestGuard>
+  );
+}
+
+function ForgotPasswordForm() {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
