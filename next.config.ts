@@ -4,6 +4,11 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   output: "export",
   trailingSlash: true,
+  // Pin the workspace root: stray lockfiles higher up (e.g. ~/pnpm-lock.yaml)
+  // make Next infer the wrong root, which mis-anchors the Turbopack cache.
+  turbopack: {
+    root: import.meta.dirname,
+  },
 };
 
 export default withSentryConfig(nextConfig, {

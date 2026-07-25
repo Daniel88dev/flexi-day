@@ -72,7 +72,7 @@ export type VacationListItem = Vacation & {
   user: UserSummary;
 };
 
-export type VacationEventKind = "CREATED" | "APPROVED" | "REJECTED" | "CANCELLED";
+export type VacationEventKind = "CREATED" | "APPROVED" | "REJECTED" | "CANCELLED" | "COMMENT";
 
 export type VacationEvent = {
   id: UUID;

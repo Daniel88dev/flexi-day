@@ -5,6 +5,7 @@ import {
   approveVacation,
   approveVacations,
   cancelVacation,
+  commentVacation,
   createVacation,
   getVacation,
   listVacations,
@@ -160,7 +161,17 @@ export function useCreateVacation() {
 export function useApproveVacation() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => approveVacation(id),
+    mutationFn: (input: string | { id: string; reason?: string }) =>
+      typeof input === "string" ? approveVacation(input) : approveVacation(input.id, input.reason),
+    onSuccess: () => invalidateVacationDependants(qc),
+  });
+}
+
+export function useCommentVacation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { id: string; message: string }) =>
+      commentVacation(input.id, input.message),
     onSuccess: () => invalidateVacationDependants(qc),
   });
 }

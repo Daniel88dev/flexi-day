@@ -23,8 +23,18 @@ export function createVacation(input: CreateVacationInput): Promise<Vacation[]> 
   });
 }
 
-export function approveVacation(id: string): Promise<{ message: string }> {
-  return api<{ message: string }>(`/api/vacation/approve/${id}`, { method: "POST" });
+export function approveVacation(id: string, reason?: string): Promise<{ message: string }> {
+  return api<{ message: string }>(`/api/vacation/approve/${id}`, {
+    method: "POST",
+    body: reason ? { reason } : undefined,
+  });
+}
+
+export function commentVacation(id: string, message: string): Promise<{ message: string }> {
+  return api<{ message: string }>(`/api/vacation/comment/${id}`, {
+    method: "POST",
+    body: { message },
+  });
 }
 
 export function rejectVacation(id: string, reason?: string): Promise<{ message: string }> {

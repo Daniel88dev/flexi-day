@@ -50,6 +50,7 @@ const detail: VacationDetail = {
 
 const cancelMutate = vi.fn().mockResolvedValue({ message: "ok" });
 const approveMutate = vi.fn().mockResolvedValue({ message: "ok" });
+const commentMutate = vi.fn().mockResolvedValue({ message: "ok" });
 let currentDetail: VacationDetail = detail;
 
 vi.mock("@/lib/api/queries", () => ({
@@ -57,6 +58,7 @@ vi.mock("@/lib/api/queries", () => ({
   useApproveVacation: () => ({ mutateAsync: approveMutate, isPending: false }),
   useRejectVacation: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useCancelVacation: () => ({ mutateAsync: cancelMutate, isPending: false }),
+  useCommentVacation: () => ({ mutateAsync: commentMutate, isPending: false }),
 }));
 
 describe("VacationDetailDialog", () => {
@@ -64,6 +66,7 @@ describe("VacationDetailDialog", () => {
     currentDetail = detail;
     cancelMutate.mockClear();
     approveMutate.mockClear();
+    commentMutate.mockClear();
   });
 
   it("renders the request, its status and its history", () => {
@@ -81,10 +84,24 @@ describe("VacationDetailDialog", () => {
     const user = userEvent.setup();
     renderWithClient(<VacationDetailDialog vacationId="v-1" open onOpenChange={() => {}} />);
 
-    await user.type(screen.getByLabelText("Reason"), "Plans changed");
+    await user.type(screen.getByLabelText("Comment or reason"), "Plans changed");
     await user.click(screen.getByRole("button", { name: /Cancel request/i }));
 
     expect(cancelMutate).toHaveBeenCalledWith({ id: "v-1", reason: "Plans changed" });
+  });
+
+  it("posts a comment with the typed message and can comment without approval rights", async () => {
+    const user = userEvent.setup();
+    // detail has canApprove: false, canCancel: true — commenting must still work.
+    renderWithClient(<VacationDetailDialog vacationId="v-1" open onOpenChange={() => {}} />);
+
+    const commentButton = screen.getByRole("button", { name: /^Comment$/i });
+    expect(commentButton).toBeDisabled(); // empty comment is not allowed
+
+    await user.type(screen.getByLabelText("Comment or reason"), "Any update on this?");
+    await user.click(screen.getByRole("button", { name: /^Comment$/i }));
+
+    expect(commentMutate).toHaveBeenCalledWith({ id: "v-1", message: "Any update on this?" });
   });
 
   it("hides the decision buttons when the backend says the user cannot approve", () => {

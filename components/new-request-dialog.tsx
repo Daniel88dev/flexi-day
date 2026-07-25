@@ -48,14 +48,30 @@ const REQUESTABLE_KINDS: VacationKind[] = [
   VacationKind.PaidTimeOff,
 ];
 
-export function NewRequestDialog() {
+interface NewRequestDialogProps {
+  /** Controlled open state. When provided, the built-in trigger button is hidden. */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  /** ISO (YYYY-MM-DD) day to preselect for From/To instead of today. */
+  initialDate?: string;
+}
+
+export function NewRequestDialog({ open, onOpenChange, initialDate }: NewRequestDialogProps = {}) {
   const groupsQuery = useGroups();
   const createVacation = useCreateVacation();
 
-  const [open, setOpen] = useState(false);
+  const baseDate = initialDate ?? todayIso();
+  const controlled = open !== undefined;
+  const [internalOpen, setInternalOpen] = useState(false);
+  const dialogOpen = controlled ? open : internalOpen;
+  const setDialogOpen = (o: boolean) => {
+    if (controlled) onOpenChange?.(o);
+    else setInternalOpen(o);
+  };
+
   const [groupId, setGroupId] = useState("");
-  const [from, setFrom] = useState(todayIso());
-  const [to, setTo] = useState(todayIso());
+  const [from, setFrom] = useState(baseDate);
+  const [to, setTo] = useState(baseDate);
   const [vacationType, setVacationType] = useState<VacationKind>(VacationKind.Vacation);
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
@@ -71,8 +87,8 @@ export function NewRequestDialog() {
 
   function resetForm() {
     setGroupId("");
-    setFrom(todayIso());
-    setTo(todayIso());
+    setFrom(baseDate);
+    setTo(baseDate);
     setVacationType(VacationKind.Vacation);
     setStartTime("");
     setEndTime("");
@@ -99,7 +115,7 @@ export function NewRequestDialog() {
         endTime: endTime || null,
         note: note.trim() ? note.trim() : null,
       });
-      setOpen(false);
+      setDialogOpen(false);
       resetForm();
     } catch (err) {
       if (err instanceof ApiError && err.status === 409) {
@@ -126,17 +142,19 @@ export function NewRequestDialog() {
 
   return (
     <Dialog
-      open={open}
+      open={dialogOpen}
       onOpenChange={(o) => {
-        setOpen(o);
+        setDialogOpen(o);
         if (!o) resetForm();
       }}
     >
-      <DialogTrigger asChild>
-        <Button size="sm" disabled={!hasGroups && !groupsQuery.isLoading}>
-          + New Request
-        </Button>
-      </DialogTrigger>
+      {controlled ? null : (
+        <DialogTrigger asChild>
+          <Button size="sm" disabled={!hasGroups && !groupsQuery.isLoading}>
+            + New Request
+          </Button>
+        </DialogTrigger>
+      )}
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>New Request</DialogTitle>
@@ -251,7 +269,7 @@ export function NewRequestDialog() {
           </div>
 
           <DialogFooter>
-            <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
+            <Button type="button" variant="ghost" onClick={() => setDialogOpen(false)}>
               Cancel
             </Button>
             <Button type="submit" disabled={!isValid}>

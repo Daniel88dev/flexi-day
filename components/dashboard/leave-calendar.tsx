@@ -25,6 +25,8 @@ interface LeaveCalendarProps {
   mini?: boolean;
   /** Makes bars clickable; receives the first vacation id of the range. */
   onSelect?: (vacationId: string) => void;
+  /** Makes empty day cells clickable; receives the day-of-month clicked. */
+  onDayClick?: (day: number) => void;
 }
 
 const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
@@ -123,6 +125,7 @@ export function LeaveCalendar({
   filter,
   mini = false,
   onSelect,
+  onDayClick,
 }: LeaveCalendarProps) {
   const weeks = buildWeeks(monthDays, firstWeekdayMondayIdx);
   const active = filter ? ranges.filter((r) => filter.has(r.type)) : ranges;
@@ -225,13 +228,29 @@ export function LeaveCalendar({
               {week.map((d, di) => {
                 const isToday = d !== null && d === todayDay;
                 const isWeekend = di >= 5;
+                const dayClickable = d !== null && Boolean(onDayClick);
                 return (
                   <div
                     key={di}
                     className={d ? "transition-colors hover:bg-[var(--surface-2)]" : ""}
+                    role={dayClickable ? "button" : undefined}
+                    tabIndex={dayClickable ? 0 : undefined}
+                    aria-label={dayClickable ? `Create request for day ${d}` : undefined}
+                    onClick={dayClickable ? () => onDayClick?.(d as number) : undefined}
+                    onKeyDown={
+                      dayClickable
+                        ? (e) => {
+                            if (e.key === "Enter" || e.key === " ") {
+                              e.preventDefault();
+                              onDayClick?.(d as number);
+                            }
+                          }
+                        : undefined
+                    }
                     style={{
                       borderRight: di < 6 ? "1px solid var(--border)" : "none",
                       padding: mini ? "4px 5px" : "8px 10px",
+                      cursor: dayClickable ? "pointer" : undefined,
                       background:
                         d === null
                           ? "color-mix(in oklch, var(--surface-2) 50%, transparent)"
