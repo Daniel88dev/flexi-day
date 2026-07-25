@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Check, Clock, Plus, X } from "lucide-react";
+import { Check, Clock, MessageSquare, Plus, X } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -15,6 +15,7 @@ import { AvatarBubble } from "@/components/brand/avatar-bubble";
 import {
   useApproveVacation,
   useCancelVacation,
+  useCommentVacation,
   useRejectVacation,
   useVacation,
 } from "@/lib/api/queries";
@@ -41,6 +42,7 @@ const EVENT_META: Record<VacationEventKind, { label: string; icon: typeof Check;
   APPROVED: { label: "Approved", icon: Check, tint: "var(--c-home)" },
   REJECTED: { label: "Declined", icon: X, tint: "var(--destructive)" },
   CANCELLED: { label: "Cancelled", icon: Clock, tint: "var(--warm)" },
+  COMMENT: { label: "Commented", icon: MessageSquare, tint: "var(--text-muted)" },
 };
 
 /** A cancelled request keeps its approved/rejected stamps, so check deletion first. */
@@ -86,12 +88,14 @@ export function VacationDetailDialog({
   const approve = useApproveVacation();
   const reject = useRejectVacation();
   const cancel = useCancelVacation();
+  const comment = useCommentVacation();
 
   const [reason, setReason] = useState("");
   const [actionError, setActionError] = useState<string | null>(null);
 
   const detail = detailQuery.data;
-  const isMutating = approve.isPending || reject.isPending || cancel.isPending;
+  const isMutating =
+    approve.isPending || reject.isPending || cancel.isPending || comment.isPending;
 
   function close(nextOpen: boolean) {
     if (!nextOpen) {
@@ -172,15 +176,25 @@ export function VacationDetailDialog({
 
             {actionError ? <p className="text-destructive text-sm">{actionError}</p> : null}
 
-            {detail.canApprove || detail.canCancel ? (
-              <div className="space-y-2 border-t pt-4">
-                <Textarea
-                  rows={2}
-                  value={reason}
-                  onChange={(e) => setReason(e.target.value)}
-                  placeholder="Reason (optional) — shown in the request history"
-                  aria-label="Reason"
-                />
+            <div className="space-y-2 border-t pt-4">
+              <Textarea
+                rows={2}
+                value={reason}
+                onChange={(e) => setReason(e.target.value)}
+                placeholder="Write a comment, or add a reason for your decision — shown in the request history"
+                aria-label="Comment or reason"
+              />
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  disabled={isMutating || reason.trim().length === 0}
+                  onClick={() =>
+                    run(() => comment.mutateAsync({ id: detail.id, message: reason.trim() }))
+                  }
+                >
+                  {comment.isPending ? "Sending…" : "Comment"}
+                </Button>
                 <div className="flex flex-wrap justify-end gap-2">
                   {detail.canApprove ? (
                     <>
@@ -189,7 +203,14 @@ export function VacationDetailDialog({
                         variant="outline"
                         className="border-green-300 text-green-700 hover:bg-green-50 dark:border-green-800 dark:text-green-400 dark:hover:bg-green-950/30"
                         disabled={isMutating}
-                        onClick={() => run(() => approve.mutateAsync(detail.id))}
+                        onClick={() =>
+                          run(() =>
+                            approve.mutateAsync({
+                              id: detail.id,
+                              reason: reason.trim() || undefined,
+                            })
+                          )
+                        }
                       >
                         Approve
                       </Button>
@@ -224,7 +245,7 @@ export function VacationDetailDialog({
                   ) : null}
                 </div>
               </div>
-            ) : null}
+            </div>
           </div>
         ) : null}
       </DialogContent>

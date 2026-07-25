@@ -23,6 +23,7 @@ import { OutTodayWidget } from "@/components/dashboard/widgets/out-today-widget"
 import { BalanceWidget } from "@/components/dashboard/widgets/balance-widget";
 import { DEFAULT_LEAVE_TYPES, leaveMetaFor, type LeaveTypeKey } from "@/lib/demo/leave-meta";
 import { VacationDetailDialog } from "@/components/vacation-detail-dialog";
+import { NewRequestDialog } from "@/components/new-request-dialog";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { vacationStatus } from "@/lib/api/types";
@@ -62,6 +63,8 @@ export default function DashboardPage() {
   const [filter, setFilter] = useState<Set<LeaveTypeKey>>(new Set(DEFAULT_LEAVE_TYPES));
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
+  const [presetDate, setPresetDate] = useState<string | null>(null);
+  const [newRequestOpen, setNewRequestOpen] = useState(false);
 
   const vacationsQuery = useVacations({ year, month });
   const groupsQuery = useGroups();
@@ -117,6 +120,12 @@ export default function DashboardPage() {
     }
     setMonth(nm);
     setYear(ny);
+  }
+
+  function openNewRequestForDay(day: number) {
+    const iso = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+    setPresetDate(iso);
+    setNewRequestOpen(true);
   }
 
   const noGroups = groups.length === 0 && !groupsQuery.isLoading;
@@ -277,6 +286,7 @@ export default function DashboardPage() {
               setSelectedId(id);
               setDetailOpen(true);
             }}
+            onDayClick={openNewRequestForDay}
           />
           {vacationsQuery.error ? (
             <p className="mt-3 text-sm" style={{ color: "var(--destructive)" }}>
@@ -296,6 +306,13 @@ export default function DashboardPage() {
         vacationId={selectedId}
         open={detailOpen}
         onOpenChange={setDetailOpen}
+      />
+
+      <NewRequestDialog
+        key={presetDate ?? "new"}
+        open={newRequestOpen}
+        onOpenChange={setNewRequestOpen}
+        initialDate={presetDate ?? undefined}
       />
     </div>
   );
