@@ -1,5 +1,8 @@
-import { VACATION_KIND_LABELS, type VacationKind } from "@/lib/api/types";
+"use client";
+
+import { type VacationKind } from "@/lib/api/types";
 import { swatch, TYPE_META } from "@/lib/calendar-sync/meta";
+import { useTranslation } from "@/lib/i18n/use-translation";
 
 /** A pill showing a record type's icon + label, tinted with its feed color. */
 export function TypeBadge({
@@ -11,6 +14,7 @@ export function TypeBadge({
   color?: string; // resolved CSS color; defaults to the type's default swatch
   small?: boolean;
 }) {
+  const { t } = useTranslation();
   const Icon = TYPE_META[type].icon;
   const c = color ?? swatch(TYPE_META[type].def);
   return (
@@ -25,7 +29,7 @@ export function TypeBadge({
       }}
     >
       <Icon size={small ? 12 : 13} style={{ color: c }} />
-      {VACATION_KIND_LABELS[type]}
+      {t.leaveTypes[type].label}
     </span>
   );
 }

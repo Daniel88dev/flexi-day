@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AuthCard, AuthError, AuthSuccess } from "@/components/auth/auth-card";
 import { GuestGuard } from "@/components/auth/guest-guard";
+import { useTranslation } from "@/lib/i18n/use-translation";
 
 export default function ForgotPasswordPage() {
   return (
@@ -18,6 +19,7 @@ export default function ForgotPasswordPage() {
 }
 
 function ForgotPasswordForm() {
+  const { t } = useTranslation();
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -34,12 +36,12 @@ function ForgotPasswordForm() {
         redirectTo: `${window.location.origin}/reset-password`,
       });
       if (result.error) {
-        setError(result.error.message ?? "Could not send reset email");
+        setError(result.error.message ?? t.auth.forgot.sendFailed);
       } else {
-        setSuccess("If an account exists for that email, a reset link is on the way.");
+        setSuccess(t.auth.forgot.sent);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not send reset email");
+      setError(err instanceof Error ? err.message : t.auth.forgot.sendFailed);
     } finally {
       setLoading(false);
     }
@@ -47,11 +49,11 @@ function ForgotPasswordForm() {
 
   return (
     <AuthCard
-      title="Forgot password"
-      description="We'll send you a link to set a new one."
+      title={t.auth.forgot.title}
+      description={t.auth.forgot.description}
       footer={
         <Link href="/sign-in" className="text-primary font-medium hover:underline">
-          Back to sign in
+          {t.auth.forgot.backToSignIn}
         </Link>
       }
     >
@@ -59,7 +61,7 @@ function ForgotPasswordForm() {
         <AuthError message={error} />
         <AuthSuccess message={success} />
         <div className="space-y-1.5">
-          <Label htmlFor="email">Email</Label>
+          <Label htmlFor="email">{t.auth.forgot.email}</Label>
           <Input
             id="email"
             type="email"
@@ -70,7 +72,7 @@ function ForgotPasswordForm() {
           />
         </div>
         <Button type="submit" size="lg" className="w-full" disabled={loading}>
-          {loading ? "Sending…" : "Send reset link"}
+          {loading ? t.auth.forgot.submitting : t.auth.forgot.submit}
         </Button>
       </form>
     </AuthCard>

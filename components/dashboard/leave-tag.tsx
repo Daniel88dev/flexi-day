@@ -1,5 +1,8 @@
+"use client";
+
 import { leaveMetaFor } from "@/lib/demo/leave-meta";
 import type { VacationKind } from "@/lib/api/types";
+import { useTranslation } from "@/lib/i18n/use-translation";
 
 interface LeaveTagProps {
   type: VacationKind;
@@ -7,7 +10,9 @@ interface LeaveTagProps {
 }
 
 export function LeaveTag({ type, small }: LeaveTagProps) {
+  const { t } = useTranslation();
   const meta = leaveMetaFor(type);
+  const label = t.leaveTypes[type].label;
   return (
     <span
       className="inline-flex items-center gap-1.5 rounded-full font-semibold"
@@ -20,7 +25,7 @@ export function LeaveTag({ type, small }: LeaveTagProps) {
       }}
     >
       <span className="h-[7px] w-[7px] shrink-0 rounded-full" style={{ background: meta.cssVar }} />
-      {meta.label}
+      {label}
     </span>
   );
 }

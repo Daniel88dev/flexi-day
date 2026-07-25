@@ -1,6 +1,9 @@
+"use client";
+
 import Link from "next/link";
 import { Logo } from "@/components/brand/logo";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "@/lib/i18n/use-translation";
 
 export const FOOTER_LINKS = [
   { href: "/privacy", label: "Privacy" },
@@ -17,13 +20,20 @@ interface FooterProps {
 }
 
 export function Footer({ minimal = false, containerClassName }: FooterProps) {
+  const { t } = useTranslation();
   const year = new Date().getFullYear();
+  const links = [
+    { href: "/privacy", label: t.footer.privacy },
+    { href: "/terms", label: t.footer.terms },
+    { href: "/security", label: t.footer.security },
+    { href: "/contact", label: t.footer.contact },
+  ];
 
   if (minimal) {
     return (
       <footer className="mt-10 flex flex-col items-center gap-3 text-center">
         <nav className="flex flex-wrap justify-center gap-x-5 gap-y-2">
-          {FOOTER_LINKS.map((l) => (
+          {links.map((l) => (
             <Link
               key={l.href}
               href={l.href}
@@ -35,7 +45,7 @@ export function Footer({ minimal = false, containerClassName }: FooterProps) {
           ))}
         </nav>
         <span className="text-[12.5px]" style={{ color: "var(--text-faint)" }}>
-          © {year} flexiday
+          {t.footer.copyright(year)}
         </span>
       </footer>
     );
@@ -51,7 +61,7 @@ export function Footer({ minimal = false, containerClassName }: FooterProps) {
       >
         <Logo size={24} />
         <nav className="flex flex-wrap justify-center gap-x-6 gap-y-3">
-          {FOOTER_LINKS.map((l) => (
+          {links.map((l) => (
             <Link
               key={l.href}
               href={l.href}
@@ -63,7 +73,7 @@ export function Footer({ minimal = false, containerClassName }: FooterProps) {
           ))}
         </nav>
         <span className="text-[13.5px]" style={{ color: "var(--text-faint)" }}>
-          © {year} flexiday. Rest well.
+          {t.footer.copyrightRest(year)}
         </span>
       </div>
     </footer>

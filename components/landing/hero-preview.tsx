@@ -4,8 +4,10 @@ import { Lock } from "lucide-react";
 import { LeaveCalendar, type CalendarRange } from "@/components/dashboard/leave-calendar";
 import { DEFAULT_LEAVE_TYPES, leaveMetaFor } from "@/lib/demo/leave-meta";
 import { DEMO_LEAVE, DEMO_MONTH, demoById } from "@/lib/demo/team";
+import { useTranslation } from "@/lib/i18n/use-translation";
 
 export function HeroPreview() {
+  const { t } = useTranslation();
   const ranges: CalendarRange[] = DEMO_LEAVE.map((l) => {
     const p = l.who === "all" ? undefined : demoById(l.who);
     return {
@@ -56,18 +58,20 @@ export function HeroPreview() {
       <div className="p-5">
         <div className="mb-3 flex items-center justify-between">
           <div>
-            <div className="font-display text-[17px] font-semibold">{DEMO_MONTH.label}</div>
+            <div className="font-display text-[17px] font-semibold">
+              {t.calendar.months[DEMO_MONTH.monthIdx]} {DEMO_MONTH.year}
+            </div>
             <div className="text-[11.5px]" style={{ color: "var(--text-faint)" }}>
-              Northwind · 10 teammates
+              {t.landing.heroPreviewTeam(10)}
             </div>
           </div>
           <div className="flex gap-1.5">
-            {DEFAULT_LEAVE_TYPES.slice(0, 4).map((t) => {
-              const m = leaveMetaFor(t);
+            {DEFAULT_LEAVE_TYPES.slice(0, 4).map((kind) => {
+              const m = leaveMetaFor(kind);
               return (
                 <span
-                  key={t}
-                  title={m.label}
+                  key={kind}
+                  title={t.leaveTypes[kind].label}
                   className="block h-[9px] w-[9px] rounded-full"
                   style={{ background: m.cssVar }}
                 />

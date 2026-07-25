@@ -3,8 +3,10 @@
 import { useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useSession } from "@/lib/auth-client";
+import { useTranslation } from "@/lib/i18n/use-translation";
 
 export function AuthGuard({ children }: { children: React.ReactNode }) {
+  const { t } = useTranslation();
   const router = useRouter();
   const pathname = usePathname();
   const { data: session, isPending } = useSession();
@@ -21,7 +23,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     return (
       <div className="text-muted-foreground flex min-h-screen items-center justify-center text-sm">
         <span className="bg-primary mr-2 inline-block size-2 animate-pulse rounded-full" />
-        Loading…
+        {t.auth.loading}
       </div>
     );
   }

@@ -27,10 +27,12 @@ import {
 import { useSession } from "@/lib/auth-client";
 import type { Group, GroupUserListItem } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "@/lib/i18n/use-translation";
 
 type Tab = "members" | "quotas";
 
 export default function GroupDetailPage() {
+  const { t } = useTranslation();
   const search = useSearchParams();
   const groupId = search.get("groupId") ?? "";
   const initialTab: Tab = search.get("tab") === "quotas" ? "quotas" : "members";
@@ -55,32 +57,36 @@ export default function GroupDetailPage() {
         <div>
           <p className="text-muted-foreground text-xs">
             <Link href="/groups" className="hover:text-foreground hover:underline">
-              ← All groups
+              {t.groupDetail.allGroups}
             </Link>
           </p>
-          <h1 className="font-heading text-2xl font-bold">{group?.groupName ?? "Group"}</h1>
+          <h1 className="font-heading text-2xl font-bold">
+            {group?.groupName ?? t.groupDetail.fallbackName}
+          </h1>
           {group ? (
             <p className="text-muted-foreground mt-1 text-sm">
-              Default vacation {group.defaultVacationDays} d · Default home office{" "}
-              {group.defaultHomeOfficeDays} d
+              {t.groupDetail.defaultsSummary(
+                group.defaultVacationDays,
+                group.defaultHomeOfficeDays
+              )}
             </p>
           ) : null}
         </div>
       </div>
 
       <div className="border-border flex gap-1 border-b">
-        {(["members", "quotas"] as Tab[]).map((t) => (
+        {(["members", "quotas"] as Tab[]).map((tb) => (
           <button
-            key={t}
-            onClick={() => setTab(t)}
+            key={tb}
+            onClick={() => setTab(tb)}
             className={cn(
-              "-mb-px border-b-2 px-3 py-2 text-sm font-medium capitalize transition-colors",
-              tab === t
+              "-mb-px border-b-2 px-3 py-2 text-sm font-medium transition-colors",
+              tab === tb
                 ? "border-primary text-primary"
                 : "text-muted-foreground hover:text-foreground border-transparent"
             )}
           >
-            {t}
+            {t.groupDetail.tabs[tb]}
           </button>
         ))}
       </div>
@@ -95,6 +101,7 @@ export default function GroupDetailPage() {
 }
 
 function MembersTab({ groupId, isAdmin }: { groupId: string; isAdmin: boolean }) {
+  const { t } = useTranslation();
   const membersQuery = useGroupUsers(groupId);
   const updateMembers = useUpdateGroupUsers();
 
@@ -135,7 +142,7 @@ function MembersTab({ groupId, isAdmin }: { groupId: string; isAdmin: boolean })
       });
       setDraft(null);
     } catch (err) {
-      setSaveError(err instanceof Error ? err.message : "Save failed");
+      setSaveError(err instanceof Error ? err.message : t.groupDetail.saveFailed);
     }
   }
 
@@ -145,23 +152,21 @@ function MembersTab({ groupId, isAdmin }: { groupId: string; isAdmin: boolean })
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <p className="text-muted-foreground text-sm">
-          {membersQuery.isLoading
-            ? "Loading…"
-            : `${members.length} member${members.length === 1 ? "" : "s"}`}
+          {membersQuery.isLoading ? t.common.loading : t.groupDetail.membersCount(members.length)}
         </p>
         {isAdmin ? (
           editing ? (
             <div className="flex gap-2">
               <Button size="sm" variant="ghost" onClick={cancelEdit}>
-                Cancel
+                {t.common.cancel}
               </Button>
               <Button size="sm" onClick={save} disabled={updateMembers.isPending}>
-                {updateMembers.isPending ? "Saving…" : "Save"}
+                {updateMembers.isPending ? t.common.saving : t.common.save}
               </Button>
             </div>
           ) : (
             <Button size="sm" variant="outline" onClick={startEdit}>
-              Edit permissions
+              {t.groupDetail.editPermissions}
             </Button>
           )
         ) : null}
@@ -172,17 +177,17 @@ function MembersTab({ groupId, isAdmin }: { groupId: string; isAdmin: boolean })
       {membersQuery.error ? (
         <p className="text-destructive text-sm">{membersQuery.error.message}</p>
       ) : members.length === 0 && !membersQuery.isLoading ? (
-        <p className="text-muted-foreground text-sm">No members yet.</p>
+        <p className="text-muted-foreground text-sm">{t.groupDetail.noMembers}</p>
       ) : (
         <div className="border-border overflow-hidden rounded-lg border">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Member</TableHead>
-                <TableHead>View</TableHead>
-                <TableHead>Admin</TableHead>
-                <TableHead>Tracked</TableHead>
-                <TableHead>Joined</TableHead>
+                <TableHead>{t.groupDetail.columns.member}</TableHead>
+                <TableHead>{t.groupDetail.columns.view}</TableHead>
+                <TableHead>{t.groupDetail.columns.admin}</TableHead>
+                <TableHead>{t.groupDetail.columns.tracked}</TableHead>
+                <TableHead>{t.groupDetail.columns.joined}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -224,7 +229,7 @@ function MembersTab({ groupId, isAdmin }: { groupId: string; isAdmin: boolean })
                     />
                   </TableCell>
                   <TableCell className="text-muted-foreground text-xs">
-                    {new Date(m.createdAt).toLocaleDateString("en-GB")}
+                    {new Date(m.createdAt).toLocaleDateString(t.common.dateLocale)}
                   </TableCell>
                 </TableRow>
               ))}
@@ -245,20 +250,22 @@ function PermBadge({
   editing: boolean;
   onToggle: () => void;
 }) {
+  const { t } = useTranslation();
+  const text = value ? t.groupDetail.yes : t.groupDetail.no;
   const className = cn(
     "rounded-full px-2 py-0.5 text-xs font-medium transition-colors",
     value
       ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"
       : "bg-muted text-muted-foreground"
   );
-  if (!editing) return <span className={className}>{value ? "Yes" : "No"}</span>;
+  if (!editing) return <span className={className}>{text}</span>;
   return (
     <button
       type="button"
       onClick={onToggle}
       className={cn(className, "hover:ring-foreground/30 hover:ring-1")}
     >
-      {value ? "Yes" : "No"}
+      {text}
     </button>
   );
 }
@@ -269,7 +276,16 @@ function PermBadge({
  * shows the group defaults for anyone without a row yet — that way an admin
  * can grant the first allowance from the same place.
  */
-function QuotasTab({ groupId, group, isAdmin }: { groupId: string; group?: Group; isAdmin: boolean }) {
+function QuotasTab({
+  groupId,
+  group,
+  isAdmin,
+}: {
+  groupId: string;
+  group?: Group;
+  isAdmin: boolean;
+}) {
+  const { t } = useTranslation();
   const currentYear = new Date().getFullYear();
   const [year, setYear] = useState(currentYear);
 
@@ -312,7 +328,7 @@ function QuotasTab({ groupId, group, isAdmin }: { groupId: string; group?: Group
       });
       setEditing(null);
     } catch (err) {
-      setSaveError(err instanceof Error ? err.message : "Could not save quota");
+      setSaveError(err instanceof Error ? err.message : t.groupDetail.saveQuotaFailed);
     }
   }
 
@@ -335,18 +351,20 @@ function QuotasTab({ groupId, group, isAdmin }: { groupId: string; group?: Group
       {quotasQuery.error ? (
         <p className="text-destructive text-sm">{quotasQuery.error.message}</p>
       ) : quotasQuery.isLoading || membersQuery.isLoading ? (
-        <p className="text-muted-foreground text-sm">Loading…</p>
+        <p className="text-muted-foreground text-sm">{t.common.loading}</p>
       ) : members.length === 0 ? (
-        <p className="text-muted-foreground text-sm">No members yet.</p>
+        <p className="text-muted-foreground text-sm">{t.groupDetail.noMembers}</p>
       ) : (
         <div className="border-border overflow-hidden rounded-lg border">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Member</TableHead>
-                <TableHead>Vacation days</TableHead>
-                <TableHead>Home office days</TableHead>
-                {isAdmin ? <TableHead className="text-right">Actions</TableHead> : null}
+                <TableHead>{t.groupDetail.columns.member}</TableHead>
+                <TableHead>{t.groupDetail.columns.vacationDays}</TableHead>
+                <TableHead>{t.groupDetail.columns.homeOfficeDays}</TableHead>
+                {isAdmin ? (
+                  <TableHead className="text-right">{t.groupDetail.columns.actions}</TableHead>
+                ) : null}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -369,18 +387,21 @@ function QuotasTab({ groupId, group, isAdmin }: { groupId: string; group?: Group
                     <TableCell>
                       {isEditingRow ? (
                         <QuotaInput
-                          label={`Vacation days for ${m.user.name}`}
+                          label={t.groupDetail.vacationDaysFor(m.user.name)}
                           value={draft.vacationDays}
                           onChange={(vacationDays) => setDraft((d) => ({ ...d, vacationDays }))}
                         />
                       ) : (
-                        <QuotaValue value={quota?.vacationDays} fallback={group?.defaultVacationDays} />
+                        <QuotaValue
+                          value={quota?.vacationDays}
+                          fallback={group?.defaultVacationDays}
+                        />
                       )}
                     </TableCell>
                     <TableCell>
                       {isEditingRow ? (
                         <QuotaInput
-                          label={`Home office days for ${m.user.name}`}
+                          label={t.groupDetail.homeOfficeDaysFor(m.user.name)}
                           value={draft.homeOfficeDays}
                           onChange={(homeOfficeDays) => setDraft((d) => ({ ...d, homeOfficeDays }))}
                         />
@@ -396,14 +417,14 @@ function QuotasTab({ groupId, group, isAdmin }: { groupId: string; group?: Group
                         {isEditingRow ? (
                           <div className="flex justify-end gap-2">
                             <Button size="xs" variant="ghost" onClick={() => setEditing(null)}>
-                              Cancel
+                              {t.common.cancel}
                             </Button>
                             <Button
                               size="xs"
                               disabled={setQuota.isPending}
                               onClick={() => save(m.userId)}
                             >
-                              {setQuota.isPending ? "Saving…" : "Save"}
+                              {setQuota.isPending ? t.common.saving : t.common.save}
                             </Button>
                           </div>
                         ) : (
@@ -413,7 +434,7 @@ function QuotasTab({ groupId, group, isAdmin }: { groupId: string; group?: Group
                             onClick={() => startEdit(m.userId)}
                             disabled={editing !== null}
                           >
-                            Edit
+                            {t.common.edit}
                           </Button>
                         )}
                       </TableCell>
@@ -430,10 +451,11 @@ function QuotasTab({ groupId, group, isAdmin }: { groupId: string; group?: Group
 }
 
 function QuotaValue({ value, fallback }: { value?: number; fallback?: number }) {
+  const { t } = useTranslation();
   if (value !== undefined) return <span className="text-sm">{value}</span>;
   return (
     <span className="text-muted-foreground text-sm">
-      {fallback ?? 0} <span className="text-xs">(default)</span>
+      {fallback ?? 0} <span className="text-xs">{t.groupDetail.default}</span>
     </span>
   );
 }
@@ -462,6 +484,7 @@ function QuotaInput({
 
 /** Group-wide defaults: what a member gets before anyone sets their allowance. */
 function GroupDefaultsCard({ group }: { group?: Group }) {
+  const { t } = useTranslation();
   const updateQuotas = useUpdateGroupQuotas();
   const [vacation, setVacation] = useState<number | "">(group?.defaultVacationDays ?? 20);
   const [homeOffice, setHomeOffice] = useState<number | "">(group?.defaultHomeOfficeDays ?? 0);
@@ -483,19 +506,19 @@ function GroupDefaultsCard({ group }: { group?: Group }) {
       });
       setSaved(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not save defaults");
+      setError(err instanceof Error ? err.message : t.groupDetail.saveDefaultsFailed);
     }
   }
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Group defaults</CardTitle>
+        <CardTitle>{t.groupDetail.groupDefaults}</CardTitle>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="flex flex-wrap items-end gap-3">
           <div className="space-y-1.5">
-            <Label htmlFor="defaultVacation">Vacation days</Label>
+            <Label htmlFor="defaultVacation">{t.groupDetail.vacationDays}</Label>
             <Input
               id="defaultVacation"
               type="number"
@@ -507,7 +530,7 @@ function GroupDefaultsCard({ group }: { group?: Group }) {
             />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="defaultHomeOffice">Home office days</Label>
+            <Label htmlFor="defaultHomeOffice">{t.groupDetail.homeOfficeDays}</Label>
             <Input
               id="defaultHomeOffice"
               type="number"
@@ -519,17 +542,16 @@ function GroupDefaultsCard({ group }: { group?: Group }) {
             />
           </div>
           <Button type="submit" disabled={updateQuotas.isPending}>
-            {updateQuotas.isPending ? "Saving…" : "Save defaults"}
+            {updateQuotas.isPending ? t.common.saving : t.groupDetail.saveDefaults}
           </Button>
           {error ? <p className="text-destructive w-full text-sm">{error}</p> : null}
           {saved && !error ? (
-            <p className="w-full text-sm text-green-700 dark:text-green-400">Defaults updated.</p>
+            <p className="w-full text-sm text-green-700 dark:text-green-400">
+              {t.groupDetail.defaultsUpdated}
+            </p>
           ) : null}
         </form>
-        <p className="text-muted-foreground mt-3 text-xs">
-          Applies to members who have no allowance set for a year. Existing allowances are not
-          changed.
-        </p>
+        <p className="text-muted-foreground mt-3 text-xs">{t.groupDetail.defaultsNote}</p>
       </CardContent>
     </Card>
   );

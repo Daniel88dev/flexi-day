@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "@/lib/auth-client";
+import { useTranslation } from "@/lib/i18n/use-translation";
 
 /**
  * Sends an already-signed-in visitor to the dashboard. The session lives in a
@@ -30,13 +31,14 @@ function useRedirectWhenAuthenticated() {
  * which a signed-in user can legitimately land on.
  */
 export function GuestGuard({ children }: { children: React.ReactNode }) {
+  const { t } = useTranslation();
   const { session, isPending } = useRedirectWhenAuthenticated();
 
   if (isPending || session) {
     return (
       <div className="text-muted-foreground flex min-h-[40vh] items-center justify-center text-sm">
         <span className="bg-primary mr-2 inline-block size-2 animate-pulse rounded-full" />
-        Loading…
+        {t.auth.loading}
       </div>
     );
   }

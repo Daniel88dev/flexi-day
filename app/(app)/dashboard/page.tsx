@@ -27,36 +27,25 @@ import { NewRequestDialog } from "@/components/new-request-dialog";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { vacationStatus } from "@/lib/api/types";
+import { useTranslation } from "@/lib/i18n/use-translation";
 
 function todayParts() {
   const d = new Date();
   return { year: d.getFullYear(), month: d.getMonth() + 1 };
 }
 
-const MONTH_NAMES = [
-  "January",
-  "February",
-  "March",
-  "April",
-  "May",
-  "June",
-  "July",
-  "August",
-  "September",
-  "October",
-  "November",
-  "December",
-];
+type GreetingKey = "night" | "morning" | "afternoon" | "evening";
 
-function greeting() {
+function greetingKey(): GreetingKey {
   const h = new Date().getHours();
-  if (h < 5) return "Good night";
-  if (h < 12) return "Good morning";
-  if (h < 18) return "Good afternoon";
-  return "Good evening";
+  if (h < 5) return "night";
+  if (h < 12) return "morning";
+  if (h < 18) return "afternoon";
+  return "evening";
 }
 
 export default function DashboardPage() {
+  const { t } = useTranslation();
   const initial = todayParts();
   const [year, setYear] = useState(initial.year);
   const [month, setMonth] = useState(initial.month);
@@ -71,7 +60,7 @@ export default function DashboardPage() {
   const summaryQuery = useDashboardSummary();
   const session = useSession();
 
-  const firstName = session.data?.user?.name?.split(" ")[0] ?? "there";
+  const firstName = session.data?.user?.name?.split(" ")[0] ?? t.dashboard.fallbackName;
 
   const vacations = vacationsQuery.data ?? [];
   const groups = groupsQuery.data ?? [];
@@ -139,15 +128,13 @@ export default function DashboardPage() {
             className="font-display font-semibold"
             style={{ fontSize: 34, letterSpacing: "-0.02em", marginBottom: 4 }}
           >
-            {greeting()}, {firstName}
+            {t.dashboard.greeting(t.dashboard.greetings[greetingKey()], firstName)}
           </h1>
-          <p style={{ color: "var(--text-muted)", fontSize: 16 }}>
-            Here&apos;s who&apos;s in, who&apos;s out, and what&apos;s coming up.
-          </p>
+          <p style={{ color: "var(--text-muted)", fontSize: 16 }}>{t.dashboard.subtitle}</p>
         </div>
         {summary ? (
           <span className="text-[13.5px]" style={{ color: "var(--text-muted)" }}>
-            {summary.teamSize} {summary.teamSize === 1 ? "teammate" : "teammates"}
+            {t.dashboard.teammates(summary.teamSize)}
           </span>
         ) : null}
       </div>
@@ -155,13 +142,11 @@ export default function DashboardPage() {
       {noGroups ? (
         <Card>
           <CardContent className="space-y-3 py-8 text-center">
-            <p className="font-display text-lg font-semibold">No groups yet</p>
-            <p className="text-muted-foreground text-sm">
-              Create a group or join one with an invite code to start tracking time off.
-            </p>
+            <p className="font-display text-lg font-semibold">{t.dashboard.noGroupsTitle}</p>
+            <p className="text-muted-foreground text-sm">{t.dashboard.noGroupsBody}</p>
             <div className="flex justify-center gap-2 pt-2">
               <Button asChild>
-                <Link href="/groups">Manage groups</Link>
+                <Link href="/groups">{t.dashboard.manageGroups}</Link>
               </Button>
             </div>
           </CardContent>
@@ -173,31 +158,31 @@ export default function DashboardPage() {
         <StatCard
           icon={<Clock className="h-5 w-5" />}
           tint="var(--warm)"
-          label="Pending approvals"
+          label={t.dashboard.stats.pendingApprovals}
           value={summary?.pendingApprovalsCount ?? 0}
-          sub="need review"
+          sub={t.dashboard.stats.pendingApprovalsSub}
           accentValue
         />
         <StatCard
           icon={<Plane className="h-5 w-5" />}
           tint="var(--c-vacation)"
-          label="Out today"
+          label={t.dashboard.stats.outToday}
           value={summary?.outTodayCount ?? 0}
-          sub="away from desk"
+          sub={t.dashboard.stats.outTodaySub}
         />
         <StatCard
           icon={<CalendarIcon className="h-5 w-5" />}
           tint="var(--c-pto)"
-          label="Coming up · 14d"
+          label={t.dashboard.stats.comingUp}
           value={summary?.upcomingNext14DaysCount ?? 0}
-          sub="upcoming leaves"
+          sub={t.dashboard.stats.comingUpSub}
         />
         <StatCard
           icon={<Users className="h-5 w-5" />}
           tint="var(--c-home)"
-          label="Working today"
+          label={t.dashboard.stats.workingToday}
           value={summary?.workingTodayCount ?? 0}
-          sub="at their desk"
+          sub={t.dashboard.stats.workingTodaySub}
         />
       </div>
 
@@ -207,13 +192,13 @@ export default function DashboardPage() {
           <div className="mb-3.5 flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-3">
               <h2 className="font-display text-[22px] font-semibold">
-                {MONTH_NAMES[month - 1]} {year}
+                {t.calendar.months[month - 1]} {year}
               </h2>
               <div className="flex gap-1">
                 <button
                   type="button"
                   onClick={() => shiftMonth(-1)}
-                  aria-label="Previous month"
+                  aria-label={t.dashboard.prevMonth}
                   className="grid h-8 w-8 place-items-center rounded-[9px] border"
                   style={{
                     background: "var(--surface)",
@@ -226,7 +211,7 @@ export default function DashboardPage() {
                 <button
                   type="button"
                   onClick={() => shiftMonth(1)}
-                  aria-label="Next month"
+                  aria-label={t.dashboard.nextMonth}
                   className="grid h-8 w-8 place-items-center rounded-[9px] border"
                   style={{
                     background: "var(--surface)",
@@ -239,7 +224,7 @@ export default function DashboardPage() {
               </div>
               {vacationsQuery.isLoading ? (
                 <span className="text-xs" style={{ color: "var(--text-faint)" }}>
-                  Loading…
+                  {t.common.loading}
                 </span>
               ) : null}
             </div>
@@ -270,7 +255,7 @@ export default function DashboardPage() {
                         background: on ? meta.cssVar : "var(--text-faint)",
                       }}
                     />
-                    {meta.label}
+                    {t.leaveTypes[id].label}
                   </button>
                 );
               })}

@@ -1,6 +1,7 @@
 "use client";
 
 import { RefreshCw, Trash2 } from "lucide-react";
+import { useTranslation } from "@/lib/i18n/use-translation";
 
 export type ConfirmKind = "delete" | "regen";
 
@@ -17,6 +18,7 @@ export function ConfirmDialog({
   onClose: () => void;
   onConfirm: () => void;
 }) {
+  const { t } = useTranslation();
   const del = kind === "delete";
   return (
     <div
@@ -52,21 +54,14 @@ export function ConfirmDialog({
           {del ? <Trash2 size={22} /> : <RefreshCw size={22} />}
         </span>
         <h3 className="mb-2 text-xl">
-          {del ? "Delete this calendar?" : "Regenerate the token?"}
+          {del ? t.calSync.confirm.deleteTitle : t.calSync.confirm.regenTitle}
         </h3>
         <p className="mb-5 text-[14.5px]" style={{ color: "var(--text-muted)" }}>
-          {del ? (
-            <>“{name}” will stop updating for anyone subscribed. This can&apos;t be undone.</>
-          ) : (
-            <>
-              The current link stops working immediately. Anyone subscribed will need the new link to
-              keep seeing updates.
-            </>
-          )}
+          {del ? t.calSync.confirm.deleteBody(name) : t.calSync.confirm.regenBody}
         </p>
         <div className="flex justify-end gap-2.5">
           <button type="button" className="cs-btn cs-btn-ghost" onClick={onClose} disabled={busy}>
-            Cancel
+            {t.common.cancel}
           </button>
           <button
             type="button"
@@ -75,7 +70,11 @@ export function ConfirmDialog({
             disabled={busy}
             style={del ? { background: "var(--danger)" } : undefined}
           >
-            {busy ? "Working…" : del ? "Delete" : "Regenerate"}
+            {busy
+              ? t.calSync.confirm.working
+              : del
+                ? t.calSync.confirm.delete
+                : t.calSync.confirm.regenerate}
           </button>
         </div>
       </div>

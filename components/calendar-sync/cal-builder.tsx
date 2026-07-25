@@ -1,10 +1,20 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { ArrowRight, Calendar, Check, ShieldCheck, TriangleAlert, User, Users, X } from "lucide-react";
+import {
+  ArrowRight,
+  Calendar,
+  Check,
+  ShieldCheck,
+  TriangleAlert,
+  User,
+  Users,
+  X,
+} from "lucide-react";
 import type { CalendarSyncConfig, CalendarSyncInput } from "@/lib/api/calendar-sync";
 import type { Group, VacationListItem } from "@/lib/api/types";
-import { VACATION_KIND_LABELS, VacationKind } from "@/lib/api/types";
+import { VacationKind } from "@/lib/api/types";
+import { useTranslation } from "@/lib/i18n/use-translation";
 import {
   builderToInput,
   swatch,
@@ -38,10 +48,12 @@ function TypeRow({
   onToggle: (t: VacationKind) => void;
   onColor: (key: string, v: SwatchKey) => void;
 }) {
+  const { t } = useTranslation();
   const Icon = TYPE_META[type].icon;
   const on = config.types.includes(type);
   const split = config.distinguishMine && config.scope === "TEAM";
   const baseColor = swatch(config.colors[type]);
+  const typeLabel = t.leaveTypes[type].label;
   return (
     <div
       className="flex items-center gap-3 rounded-xl"
@@ -80,7 +92,7 @@ function TypeRow({
       >
         <Icon size={16} />
       </span>
-      <span className="flex-1 text-[14.5px] font-semibold">{VACATION_KIND_LABELS[type]}</span>
+      <span className="flex-1 text-[14.5px] font-semibold">{typeLabel}</span>
       {on ? (
         split ? (
           <div className="flex gap-1.5">
@@ -89,10 +101,10 @@ function TypeRow({
                 className="mb-[3px] text-[9.5px] font-bold uppercase"
                 style={{ letterSpacing: ".05em", color: "var(--text-faint)" }}
               >
-                Mine
+                {t.calSync.builder.mine}
               </div>
               <SwatchPicker
-                label={`${VACATION_KIND_LABELS[type]} — mine`}
+                label={t.calSync.builder.colorLabelMine(typeLabel)}
                 value={config.colors[`${type}_mine`] ?? config.colors[type]}
                 onChange={(v) => onColor(`${type}_mine`, v)}
               />
@@ -102,10 +114,10 @@ function TypeRow({
                 className="mb-[3px] text-[9.5px] font-bold uppercase"
                 style={{ letterSpacing: ".05em", color: "var(--text-faint)" }}
               >
-                Team
+                {t.calSync.builder.team}
               </div>
               <SwatchPicker
-                label={`${VACATION_KIND_LABELS[type]} — team`}
+                label={t.calSync.builder.colorLabelTeam(typeLabel)}
                 value={config.colors[type]}
                 onChange={(v) => onColor(type, v)}
               />
@@ -113,7 +125,7 @@ function TypeRow({
           </div>
         ) : (
           <SwatchPicker
-            label={VACATION_KIND_LABELS[type]}
+            label={typeLabel}
             value={config.colors[type]}
             onChange={(v) => onColor(type, v)}
           />
@@ -142,6 +154,7 @@ export function CalBuilder({
   onClose: () => void;
   onSubmit: (input: CalendarSyncInput) => Promise<CalendarSyncConfig>;
 }) {
+  const { t } = useTranslation();
   const [config, setConfig] = useState<BuilderConfig>(initial);
   const [step, setStep] = useState<"form" | "loading" | "done">("form");
   const [previewMode, setPreviewMode] = useState<PreviewMode>("month");
@@ -174,7 +187,7 @@ export function CalBuilder({
     setTouched(true);
     if (!config.name.trim()) return;
     if (config.types.length === 0) {
-      pushToast("Pick at least one record type", "danger");
+      pushToast(t.calSync.toasts.pickType, "danger");
       return;
     }
     if (config.scope === "TEAM" && config.teamIds.length === 0) return;
@@ -185,7 +198,7 @@ export function CalBuilder({
       setStep("done");
     } catch (e) {
       setStep("form");
-      pushToast(e instanceof Error ? e.message : "Couldn’t save the calendar", "danger");
+      pushToast(e instanceof Error ? e.message : t.calSync.toasts.saveFailed, "danger");
     }
   };
 
@@ -227,7 +240,12 @@ export function CalBuilder({
         >
           <span
             className="grid flex-none place-items-center rounded-lg"
-            style={{ width: 34, height: 34, color: "var(--primary)", background: "var(--primary-soft)" }}
+            style={{
+              width: 34,
+              height: 34,
+              color: "var(--primary)",
+              background: "var(--primary-soft)",
+            }}
           >
             <Calendar size={18} />
           </span>
@@ -236,18 +254,20 @@ export function CalBuilder({
               className="text-[17px] font-semibold"
               style={{ fontFamily: "var(--font-display)", letterSpacing: "-0.02em" }}
             >
-              {step === "done" ? "Subscribe" : isNew ? "New calendar" : "Edit calendar"}
+              {step === "done"
+                ? t.calSync.builder.subscribeTitle
+                : isNew
+                  ? t.calSync.builder.newTitle
+                  : t.calSync.builder.editTitle}
             </div>
             <div className="text-[12.5px]" style={{ color: "var(--text-faint)" }}>
-              {step === "done"
-                ? "Add it to your calendar app"
-                : "Choose what to include and how it looks"}
+              {step === "done" ? t.calSync.builder.subDone : t.calSync.builder.subForm}
             </div>
           </div>
           <button
             type="button"
             onClick={onClose}
-            aria-label="Close"
+            aria-label={t.calSync.builder.close}
             className="grid place-items-center rounded-lg"
             style={{
               width: 36,
@@ -283,14 +303,17 @@ export function CalBuilder({
                   animation: "fx-spin .8s linear infinite",
                 }}
               />
-              <p className="text-[15px] font-semibold">Generating your secure link…</p>
+              <p className="text-[15px] font-semibold">{t.calSync.builder.generating}</p>
               <p className="mt-1 text-[13px]" style={{ color: "var(--text-faint)" }}>
-                Creating a private token for this feed.
+                {t.calSync.builder.generatingSub}
               </p>
             </div>
           </div>
         ) : (
-          <div className="cs-cb-grid grid min-h-0 flex-1" style={{ gridTemplateColumns: "1fr 1fr" }}>
+          <div
+            className="cs-cb-grid grid min-h-0 flex-1"
+            style={{ gridTemplateColumns: "1fr 1fr" }}
+          >
             {/* LEFT: form */}
             <div
               className="flex flex-col gap-[22px] overflow-auto"
@@ -299,12 +322,12 @@ export function CalBuilder({
               {/* name */}
               <div>
                 <label className="cs-label" htmlFor="cal-name">
-                  Calendar name
+                  {t.calSync.builder.nameLabel}
                 </label>
                 <input
                   id="cal-name"
                   className="cs-input"
-                  placeholder="e.g. My time off, Design team absences"
+                  placeholder={t.calSync.builder.namePlaceholder}
                   value={config.name}
                   onChange={(e) => patch({ name: e.target.value })}
                   style={nameError ? { borderColor: "var(--danger)" } : undefined}
@@ -315,19 +338,19 @@ export function CalBuilder({
                     style={{ color: "var(--danger)" }}
                   >
                     <TriangleAlert size={13} />
-                    Give your calendar a name.
+                    {t.calSync.builder.nameError}
                   </p>
                 ) : null}
               </div>
 
               {/* scope */}
               <div>
-                <span className="cs-label">Whose records to include</span>
+                <span className="cs-label">{t.calSync.builder.scopeLabel}</span>
                 <div className="grid grid-cols-2 gap-2">
                   {(
                     [
-                      ["ME", "Only my records", User],
-                      ["TEAM", "My team’s records", Users],
+                      ["ME", t.calSync.builder.scopeMe, User],
+                      ["TEAM", t.calSync.builder.scopeTeam, Users],
                     ] as const
                   ).map(([v, l, Ic]) => {
                     const on = config.scope === v;
@@ -362,22 +385,20 @@ export function CalBuilder({
               >
                 <div className="mb-1.5 flex items-center justify-between">
                   <span className="cs-label" style={{ margin: 0 }}>
-                    Teams to include
+                    {t.calSync.builder.teamsLabel}
                   </span>
                   <button
                     type="button"
-                    onClick={() =>
-                      patch({ teamIds: allTeams ? [] : groups.map((g) => g.id) })
-                    }
+                    onClick={() => patch({ teamIds: allTeams ? [] : groups.map((g) => g.id) })}
                     className="text-[12.5px] font-semibold"
                     style={{ color: "var(--primary)", background: "none", border: "none" }}
                   >
-                    {allTeams ? "Clear all" : "Select all"}
+                    {allTeams ? t.calSync.builder.clearAll : t.calSync.builder.selectAll}
                   </button>
                 </div>
                 {groups.length === 0 ? (
                   <p className="text-xs" style={{ color: "var(--text-faint)" }}>
-                    You’re not a member of any team yet.
+                    {t.calSync.builder.noTeams}
                   </p>
                 ) : (
                   <div className="flex flex-wrap gap-[7px]">
@@ -420,11 +441,11 @@ export function CalBuilder({
                     style={{ color: "var(--danger)" }}
                   >
                     <TriangleAlert size={13} />
-                    Pick at least one team.
+                    {t.calSync.builder.teamError}
                   </p>
                 ) : config.scope === "ME" ? (
                   <p className="mt-2 text-xs" style={{ color: "var(--text-faint)" }}>
-                    Only your own records are included — team choice doesn’t apply.
+                    {t.calSync.builder.meNote}
                   </p>
                 ) : null}
               </div>
@@ -433,7 +454,7 @@ export function CalBuilder({
               <div>
                 <div className="mb-2 flex items-center justify-between">
                   <span className="cs-label" style={{ margin: 0 }}>
-                    Record types &amp; colors
+                    {t.calSync.builder.recordTypes}
                   </span>
                 </div>
                 <div className="flex flex-col gap-2">
@@ -463,21 +484,28 @@ export function CalBuilder({
                         height: 23,
                         borderRadius: 999,
                         border: "none",
-                        background: config.distinguishMine ? "var(--primary)" : "var(--border-strong)",
+                        background: config.distinguishMine
+                          ? "var(--primary)"
+                          : "var(--border-strong)",
                         justifyContent: config.distinguishMine ? "flex-end" : "flex-start",
                         transition: "background .18s",
                       }}
                     >
                       <span
                         className="rounded-full"
-                        style={{ width: 19, height: 19, background: "#fff", boxShadow: "var(--shadow-sm)" }}
+                        style={{
+                          width: 19,
+                          height: 19,
+                          background: "#fff",
+                          boxShadow: "var(--shadow-sm)",
+                        }}
                       />
                     </button>
                     <span className="text-[13.5px] font-semibold">
-                      Give my own records a distinct color
+                      {t.calSync.builder.distinguishTitle}
                       <br />
                       <span className="text-xs font-normal" style={{ color: "var(--text-faint)" }}>
-                        Tell your vacation apart from the team’s at a glance.
+                        {t.calSync.builder.distinguishSub}
                       </span>
                     </span>
                   </div>
@@ -509,21 +537,25 @@ export function CalBuilder({
         {step === "form" ? (
           <div
             className="flex flex-none items-center justify-between gap-3"
-            style={{ padding: "14px 20px", borderTop: "1px solid var(--border)", background: "var(--surface)" }}
+            style={{
+              padding: "14px 20px",
+              borderTop: "1px solid var(--border)",
+              background: "var(--surface)",
+            }}
           >
             <span
               className="flex items-center gap-1.5 text-[12.5px]"
               style={{ color: "var(--text-faint)" }}
             >
               <ShieldCheck size={14} />
-              Read-only feed · a private link is generated on save
+              {t.calSync.builder.footerNote}
             </span>
             <div className="flex gap-2.5">
               <button type="button" className="cs-btn cs-btn-ghost" onClick={onClose}>
-                Cancel
+                {t.common.cancel}
               </button>
               <button type="button" className="cs-btn cs-btn-primary" onClick={submit}>
-                {isNew ? "Save & get link" : "Save changes"}
+                {isNew ? t.calSync.builder.saveNew : t.calSync.builder.saveEdit}
                 <ArrowRight size={16} />
               </button>
             </div>

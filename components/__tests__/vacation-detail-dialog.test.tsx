@@ -24,7 +24,12 @@ const detail: VacationDetail = {
   createdAt: "2026-07-20T09:00:00.000Z",
   updatedAt: "2026-08-01T09:00:00.000Z",
   user: { id: "u-1", name: "Dana Holt", initials: "DH", avatarColor: "hsl(270 60% 60%)" },
-  approvedByUser: { id: "u-2", name: "Ada Lovelace", initials: "AL", avatarColor: "hsl(10 60% 60%)" },
+  approvedByUser: {
+    id: "u-2",
+    name: "Ada Lovelace",
+    initials: "AL",
+    avatarColor: "hsl(10 60% 60%)",
+  },
   rejectedByUser: null,
   canApprove: false,
   canCancel: true,
@@ -75,9 +80,9 @@ describe("VacationDetailDialog", () => {
     expect(screen.getByText("Request details")).toBeInTheDocument();
     expect(screen.getByText("Dana Holt")).toBeInTheDocument();
     expect(screen.getByText("Family trip")).toBeInTheDocument();
-    expect(screen.getByText("approved")).toBeInTheDocument();
     expect(screen.getByText("Requested")).toBeInTheDocument();
-    expect(screen.getByText("Approved")).toBeInTheDocument();
+    // The status badge and the "Approved" history event both read "Approved".
+    expect(screen.getAllByText("Approved").length).toBeGreaterThanOrEqual(2);
   });
 
   it("cancels with the typed reason", async () => {
@@ -122,6 +127,6 @@ describe("VacationDetailDialog", () => {
     currentDetail = { ...detail, deletedAt: "2026-08-02T09:00:00.000Z" };
     renderWithClient(<VacationDetailDialog vacationId="v-1" open onOpenChange={() => {}} />);
 
-    expect(screen.getByText("cancelled")).toBeInTheDocument();
+    expect(screen.getByText("Cancelled")).toBeInTheDocument();
   });
 });

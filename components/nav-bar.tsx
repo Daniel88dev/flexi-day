@@ -10,14 +10,9 @@ import { Logo } from "@/components/brand/logo";
 import { NewRequestDialog } from "@/components/new-request-dialog";
 import { NotificationsBell } from "@/components/notifications-bell";
 import { ModeToggle } from "@/components/ui/ModeToggle";
+import { LocaleToggle } from "@/components/ui/LocaleToggle";
 import { UserMenu } from "@/components/user-menu";
-
-const NAV_LINKS: { href: string; label: string; icon: LucideIcon }[] = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutGrid },
-  { href: "/requests", label: "Requests", icon: Calendar },
-  { href: "/groups", label: "Groups", icon: Users },
-  { href: "/calendar-sync", label: "Calendar sync", icon: RefreshCw },
-];
+import { useTranslation } from "@/lib/i18n/use-translation";
 
 function isLinkActive(pathname: string, href: string): boolean {
   return pathname === href || (href !== "/dashboard" && pathname.startsWith(href));
@@ -25,7 +20,15 @@ function isLinkActive(pathname: string, href: string): boolean {
 
 export function NavBar() {
   const pathname = usePathname();
+  const { t } = useTranslation();
   const [navOpen, setNavOpen] = useState(false);
+
+  const NAV_LINKS: { href: string; label: string; icon: LucideIcon }[] = [
+    { href: "/dashboard", label: t.nav.dashboard, icon: LayoutGrid },
+    { href: "/requests", label: t.nav.requests, icon: Calendar },
+    { href: "/groups", label: t.nav.groups, icon: Users },
+    { href: "/calendar-sync", label: t.nav.calendarSync, icon: RefreshCw },
+  ];
 
   return (
     <header
@@ -39,7 +42,7 @@ export function NavBar() {
       <div className="mx-auto flex h-[66px] max-w-[1340px] items-center gap-7 px-7 max-[820px]:gap-3 max-[820px]:px-4">
         <button
           type="button"
-          aria-label="Menu"
+          aria-label={t.nav.menu}
           aria-expanded={navOpen}
           onClick={() => setNavOpen((o) => !o)}
           className="grid h-10 w-10 flex-none place-items-center rounded-[11px] border min-[821px]:hidden"
@@ -84,6 +87,7 @@ export function NavBar() {
             <NotificationsBell />
           </div>
           <ModeToggle />
+          <LocaleToggle />
           <UserMenu />
           <div className="max-[820px]:hidden">
             <NewRequestDialog />

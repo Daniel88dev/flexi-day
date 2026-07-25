@@ -16,6 +16,7 @@ import {
 } from "@/components/auth/auth-card";
 import { FieldInput } from "@/components/auth/field-input";
 import { GuestGuard } from "@/components/auth/guest-guard";
+import { useTranslation } from "@/lib/i18n/use-translation";
 
 export default function SignUpPage() {
   return (
@@ -26,6 +27,7 @@ export default function SignUpPage() {
 }
 
 function SignUpForm() {
+  const { t } = useTranslation();
   const router = useRouter();
   const [name, setName] = useState("");
   const [team, setTeam] = useState("");
@@ -42,12 +44,12 @@ function SignUpForm() {
     setSuccess(null);
 
     if (password.length < 8) {
-      setError("Password must be at least 8 characters.");
+      setError(t.auth.signUp.passwordTooShort);
       return;
     }
 
     if (password !== confirmPassword) {
-      setError("Passwords do not match.");
+      setError(t.auth.signUp.passwordMismatch);
       return;
     }
 
@@ -60,22 +62,18 @@ function SignUpForm() {
           router.replace("/dashboard");
           router.refresh();
         } else {
-          setSuccess(
-            "Check your inbox for a verification email. You'll be signed in automatically once you verify."
-          );
+          setSuccess(t.auth.signUp.checkInbox);
         }
       } else {
         const result = await authClient.signUp.email({ name, email, password });
         if (result.error) {
-          setError(result.error.message ?? "Sign-up failed");
+          setError(result.error.message ?? t.auth.signUp.failed);
         } else {
-          setSuccess(
-            "Check your inbox for a verification email. You'll be signed in automatically once you verify."
-          );
+          setSuccess(t.auth.signUp.checkInbox);
         }
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Sign-up failed");
+      setError(err instanceof Error ? err.message : t.auth.signUp.failed);
     } finally {
       setLoading(false);
     }
@@ -83,48 +81,48 @@ function SignUpForm() {
 
   return (
     <AuthCard
-      title="Create your team"
-      description="Free for up to 10 people. No credit card needed."
+      title={t.auth.signUp.title}
+      description={t.auth.signUp.description}
       footer={
         <>
           <span>
-            Already have an account?{" "}
+            {t.auth.signUp.haveAccount}{" "}
             <Link
               href="/sign-in"
               className="font-bold hover:underline"
               style={{ color: "var(--primary)" }}
             >
-              Sign in
+              {t.auth.signUp.signIn}
             </Link>
           </span>
           <p
             className="mt-4 text-center text-[12.5px]"
             style={{ color: "var(--text-faint)", lineHeight: 1.5 }}
           >
-            By creating a team you agree to our{" "}
+            {t.auth.signUp.agreePrefix}{" "}
             <Link href="/terms" className="underline" style={{ color: "var(--text-muted)" }}>
-              Terms
+              {t.auth.signUp.terms}
             </Link>{" "}
-            and{" "}
+            {t.auth.signUp.and}{" "}
             <Link href="/privacy" className="underline" style={{ color: "var(--text-muted)" }}>
-              Privacy Policy
+              {t.auth.signUp.privacy}
             </Link>
             .
           </p>
         </>
       }
     >
-      <GoogleButton label="Continue with Google (not yet ready)" />
+      <GoogleButton label={t.auth.continueWithGoogleNotReady} />
       <AuthDivider />
       <form onSubmit={handleSubmit} className="space-y-4">
         <AuthError message={error} />
         <AuthSuccess message={success} />
         <FieldInput
           id="name"
-          label="Your name"
+          label={t.auth.signUp.yourName}
           type="text"
           icon={<UserIcon className="h-[17px] w-[17px]" />}
-          placeholder="Dana Holt"
+          placeholder={t.auth.signUp.namePlaceholder}
           value={name}
           onChange={(e) => setName(e.target.value)}
           autoComplete="name"
@@ -132,20 +130,20 @@ function SignUpForm() {
         />
         <FieldInput
           id="team"
-          label="Team / company"
+          label={t.auth.signUp.teamCompany}
           type="text"
           icon={<Users className="h-[17px] w-[17px]" />}
-          placeholder="Northwind"
+          placeholder={t.auth.signUp.teamPlaceholder}
           value={team}
           onChange={(e) => setTeam(e.target.value)}
           autoComplete="organization"
         />
         <FieldInput
           id="email"
-          label="Work email"
+          label={t.auth.workEmail}
           type="email"
           icon={<Mail className="h-[17px] w-[17px]" />}
-          placeholder="dana@northwind.co"
+          placeholder={t.auth.emailPlaceholder}
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           autoComplete="email"
@@ -153,10 +151,10 @@ function SignUpForm() {
         />
         <FieldInput
           id="password"
-          label="Password"
+          label={t.auth.signUp.password}
           type="password"
           icon={<Lock className="h-[17px] w-[17px]" />}
-          placeholder="At least 8 characters"
+          placeholder={t.auth.signUp.passwordPlaceholder}
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           autoComplete="new-password"
@@ -165,10 +163,10 @@ function SignUpForm() {
         />
         <FieldInput
           id="confirmPassword"
-          label="Confirm password"
+          label={t.auth.signUp.confirmPassword}
           type="password"
           icon={<Lock className="h-[17px] w-[17px]" />}
-          placeholder="Re-enter your password"
+          placeholder={t.auth.signUp.confirmPlaceholder}
           value={confirmPassword}
           onChange={(e) => setConfirmPassword(e.target.value)}
           autoComplete="new-password"
@@ -181,7 +179,7 @@ function SignUpForm() {
           className="mt-1 w-full gap-2 rounded-full"
           disabled={loading}
         >
-          {loading ? "Creating…" : "Create team & continue"}{" "}
+          {loading ? t.auth.signUp.submitting : t.auth.signUp.submit}{" "}
           <ArrowRight className="h-[18px] w-[18px]" />
         </Button>
       </form>

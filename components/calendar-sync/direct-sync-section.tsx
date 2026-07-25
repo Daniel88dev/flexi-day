@@ -2,6 +2,7 @@
 
 import { useState, type ReactNode } from "react";
 import { Info, Lock, RefreshCw, Sparkles } from "lucide-react";
+import { useTranslation } from "@/lib/i18n/use-translation";
 import { GoogleMark, MicrosoftMark } from "./service-marks";
 
 function LockedProvider({
@@ -17,8 +18,14 @@ function LockedProvider({
   onEnter: () => void;
   onLeave: () => void;
 }) {
+  const { t } = useTranslation();
   return (
-    <div className="relative" style={{ flex: "1 1 200px" }} onMouseEnter={onEnter} onMouseLeave={onLeave}>
+    <div
+      className="relative"
+      style={{ flex: "1 1 200px" }}
+      onMouseEnter={onEnter}
+      onMouseLeave={onLeave}
+    >
       <button
         disabled
         className="cs-btn cs-btn-ghost cs-btn-block"
@@ -27,13 +34,13 @@ function LockedProvider({
         <span className="grid place-items-center" style={{ filter: "grayscale(1)", opacity: 0.8 }}>
           {mark}
         </span>
-        <span className="flex-1 text-left">Connect {label}</span>
+        <span className="flex-1 text-left">{t.calSync.direct.connect(label)}</span>
         <Lock size={15} style={{ color: "var(--text-faint)" }} />
       </button>
       {active ? (
         <div
           role="tooltip"
-          className="absolute z-[5] rounded-lg text-xs font-medium leading-snug"
+          className="absolute z-[5] rounded-lg text-xs leading-snug font-medium"
           style={{
             bottom: "calc(100% + 8px)",
             left: 0,
@@ -44,7 +51,7 @@ function LockedProvider({
             boxShadow: "var(--shadow-lg)",
           }}
         >
-          Direct two-way sync is coming soon. For now, use a subscription link above.
+          {t.calSync.direct.tooltip}
         </div>
       ) : null}
     </div>
@@ -52,6 +59,7 @@ function LockedProvider({
 }
 
 export function DirectSyncSection() {
+  const { t } = useTranslation();
   const [tip, setTip] = useState<string | null>(null);
   return (
     <div
@@ -73,19 +81,21 @@ export function DirectSyncSection() {
         </span>
         <div className="min-w-[220px] flex-1">
           <div className="flex flex-wrap items-center gap-2.5">
-            <h3 className="text-lg">Direct sync</h3>
+            <h3 className="text-lg">{t.calSync.direct.title}</h3>
             <span
               className="cs-chip"
-              style={{ color: "var(--warm)", background: "var(--warm-soft)", borderColor: "transparent" }}
+              style={{
+                color: "var(--warm)",
+                background: "var(--warm-soft)",
+                borderColor: "transparent",
+              }}
             >
               <Sparkles size={13} />
-              Coming soon
+              {t.calSync.direct.comingSoon}
             </span>
           </div>
           <p className="mt-1.5 text-[14.5px]" style={{ color: "var(--text-muted)", maxWidth: 560 }}>
-            Connect your account and we&apos;ll write events straight into a dedicated{" "}
-            <b>“Flexi-Day — Team Vacations”</b> calendar, with near real-time updates. No links to
-            manage.
+            {t.calSync.direct.body}
           </p>
         </div>
       </div>
@@ -109,7 +119,7 @@ export function DirectSyncSection() {
         className="mt-3.5 flex items-center gap-1.5 text-xs"
         style={{ color: "var(--text-faint)" }}
       >
-        <Info size={14} /> We&apos;ll email you when direct sync is available on your plan.
+        <Info size={14} /> {t.calSync.direct.emailNotice}
       </p>
     </div>
   );

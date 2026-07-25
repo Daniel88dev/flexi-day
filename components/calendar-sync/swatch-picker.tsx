@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Check, ChevronDown } from "lucide-react";
 import { PALETTE, type SwatchKey } from "@/lib/calendar-sync/meta";
+import { useTranslation } from "@/lib/i18n/use-translation";
 
 /** A compact popover for picking one of the shared palette swatches. */
 export function SwatchPicker({
@@ -14,6 +15,8 @@ export function SwatchPicker({
   onChange: (key: SwatchKey) => void;
   label: string;
 }) {
+  const { t } = useTranslation();
+  const paletteName = (key: string) => t.calSync.palette[key] ?? key;
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -32,8 +35,8 @@ export function SwatchPicker({
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        aria-label={`${label}: ${cur.name}`}
-        title={`${label}: ${cur.name}`}
+        aria-label={`${label}: ${paletteName(cur.key)}`}
+        title={`${label}: ${paletteName(cur.key)}`}
         className="flex items-center gap-1.5 rounded-full"
         style={{
           padding: "4px 8px 4px 5px",
@@ -51,13 +54,13 @@ export function SwatchPicker({
           }}
         />
         <span className="text-xs font-semibold" style={{ color: "var(--text-muted)" }}>
-          {cur.name}
+          {paletteName(cur.key)}
         </span>
         <ChevronDown size={13} style={{ color: "var(--text-faint)" }} />
       </button>
       {open ? (
         <div
-          className="absolute right-0 top-9 z-40 rounded-2xl p-2.5"
+          className="absolute top-9 right-0 z-40 rounded-2xl p-2.5"
           style={{
             width: 172,
             background: "var(--surface)",
@@ -76,8 +79,8 @@ export function SwatchPicker({
                     onChange(p.key);
                     setOpen(false);
                   }}
-                  title={p.name}
-                  aria-label={p.name}
+                  title={paletteName(p.key)}
+                  aria-label={paletteName(p.key)}
                   className="grid place-items-center rounded-full"
                   style={{
                     width: 26,

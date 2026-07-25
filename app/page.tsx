@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import {
   ArrowRight,
@@ -18,62 +20,16 @@ import { GuestRedirect } from "@/components/auth/guest-guard";
 import { HeroPreview } from "@/components/landing/hero-preview";
 import { Eyebrow } from "@/components/landing/eyebrow";
 import { DEMO_TEAM, demoById } from "@/lib/demo/team";
+import { useTranslation } from "@/lib/i18n/use-translation";
 
-const FEATURES = [
-  {
-    icon: CalendarIcon,
-    tint: "var(--c-vacation)",
-    title: "Shared team calendar",
-    body: "A single colour-coded view of who's off and when. Filter by leave type or group and spot clashes before they happen.",
-  },
-  {
-    icon: CheckCircle2,
-    tint: "var(--c-home)",
-    title: "One-click approvals",
-    body: "Requests land in your queue with the context you need. Approve or decline in a tap — everyone's notified instantly.",
-  },
-  {
-    icon: Users,
-    tint: "var(--c-pto)",
-    title: "Groups & coverage",
-    body: "Organise by team, office or project. Set minimum coverage so a squad is never caught short-staffed.",
-  },
-  {
-    icon: TrendingUp,
-    tint: "var(--warm)",
-    title: "Balances that add up",
-    body: "Allowances, carry-over and accruals tracked automatically. No spreadsheets, no guesswork at year-end.",
-  },
-  {
-    icon: Globe,
-    tint: "var(--c-bank)",
-    title: "Holidays, localised",
-    body: "Public holidays for every country are built in, so distributed teams always see the right days off.",
-  },
-  {
-    icon: Shield,
-    tint: "var(--c-sick)",
-    title: "Private by default",
-    body: "Sensitive leave stays discreet. Granular permissions keep the right details with the right people.",
-  },
-];
-
-const STEPS = [
-  {
-    n: 1,
-    title: "Invite your team",
-    body: "Add teammates by email or connect your directory. Everyone gets their allowance and lands on the same calendar.",
-  },
-  {
-    n: 2,
-    title: "Request in seconds",
-    body: "Pick dates, choose a leave type, add a note. flexiday checks balances and coverage as you go.",
-  },
-  {
-    n: 3,
-    title: "Approve & relax",
-    body: "Managers approve in a click. The calendar updates for everyone — no chasing, no double-booking.",
-  },
+/** Icon + accent per feature card; copy comes from the dictionary, matched by index. */
+const FEATURE_ICONS = [
+  { icon: CalendarIcon, tint: "var(--c-vacation)" },
+  { icon: CheckCircle2, tint: "var(--c-home)" },
+  { icon: Users, tint: "var(--c-pto)" },
+  { icon: TrendingUp, tint: "var(--warm)" },
+  { icon: Globe, tint: "var(--c-bank)" },
+  { icon: Shield, tint: "var(--c-sick)" },
 ];
 
 const TESTIMONIALS = [
@@ -143,6 +99,7 @@ const PRICING = [
 ];
 
 export default function LandingPage() {
+  const { t } = useTranslation();
   return (
     <div className="overflow-x-hidden" style={{ background: "var(--bg)" }}>
       {/* Signed-in visitors belong on the dashboard, not the pitch. Rendered
@@ -177,7 +134,7 @@ export default function LandingPage() {
                 className="block h-2 w-2 rounded-full"
                 style={{ background: "var(--c-home)" }}
               />
-              Trusted by 2,400+ teams worldwide
+              {t.landing.trustedBadge}
             </span>
             <h1
               className="font-display mb-5 font-semibold"
@@ -187,11 +144,11 @@ export default function LandingPage() {
                 letterSpacing: "-0.035em",
               }}
             >
-              Time off, handled
+              {t.landing.heroTitleLine1}
               <br />
-              with{" "}
+              {t.landing.heroTitlePrefix}{" "}
               <span className="font-serif-italic" style={{ color: "var(--primary)" }}>
-                care
+                {t.landing.heroTitleAccent}
               </span>
               .
             </h1>
@@ -203,24 +160,22 @@ export default function LandingPage() {
                 color: "var(--text-muted)",
               }}
             >
-              flexiday is the calm, shared calendar for team time off. See who&apos;s in, who&apos;s
-              away, and approve requests in a click — so your team can rest without the
-              back-and-forth.
+              {t.landing.heroSubtitle}
             </p>
             <div className="flex flex-wrap justify-center gap-3">
               <Button asChild size="lg" className="gap-2 rounded-full px-6">
                 <Link href="/sign-up">
-                  Start free — no card <ArrowRight className="h-4 w-4" />
+                  {t.landing.startFree} <ArrowRight className="h-4 w-4" />
                 </Link>
               </Button>
               <Button asChild variant="outline" size="lg" className="rounded-full px-6">
-                <Link href="/sign-in">Sign in</Link>
+                <Link href="/sign-in">{t.landing.signIn}</Link>
               </Button>
             </div>
             <div className="mt-6 flex items-center justify-center gap-3">
               <AvatarStack people={DEMO_TEAM} size={32} max={5} />
               <span className="text-[13.5px]" style={{ color: "var(--text-faint)" }}>
-                Set up your team in under 5 minutes
+                {t.landing.setupUnder5}
               </span>
             </div>
           </div>
@@ -242,14 +197,14 @@ export default function LandingPage() {
             className="text-[13px] font-semibold tracking-wide"
             style={{ color: "var(--text-faint)" }}
           >
-            {"Early adopters free access".toUpperCase()}
+            {t.landing.earlyAccess.toUpperCase()}
           </span>
         </div>
       </section>
       {/* FEATURES */}
       <section id="features" className="mx-auto max-w-6xl px-7 py-[90px]">
         <div className="mx-auto mb-12 max-w-[600px] text-center">
-          <Eyebrow center>Everything in one place</Eyebrow>
+          <Eyebrow center>{t.landing.featuresEyebrow}</Eyebrow>
           <h2
             className="font-display my-4 font-semibold"
             style={{
@@ -257,38 +212,40 @@ export default function LandingPage() {
               letterSpacing: "-0.03em",
             }}
           >
-            One calendar your whole team trusts
+            {t.landing.featuresTitle}
           </h2>
           <p className="text-[17px]" style={{ color: "var(--text-muted)", lineHeight: 1.55 }}>
-            Vacations, sick days, home-office and holidays — tracked together, visible to everyone,
-            never double-booked.
+            {t.landing.featuresSubtitle}
           </p>
         </div>
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {FEATURES.map((f) => (
-            <div
-              key={f.title}
-              className="flex flex-col gap-3 rounded-2xl border p-6"
-              style={{
-                borderColor: "var(--border)",
-                background: "var(--surface)",
-              }}
-            >
-              <span
-                className="grid h-[46px] w-[46px] place-items-center rounded-[13px]"
+          {t.landing.features.map((f, i) => {
+            const { icon: Icon, tint } = FEATURE_ICONS[i];
+            return (
+              <div
+                key={f.title}
+                className="flex flex-col gap-3 rounded-2xl border p-6"
                 style={{
-                  color: f.tint,
-                  background: `color-mix(in oklch, ${f.tint} 14%, transparent)`,
+                  borderColor: "var(--border)",
+                  background: "var(--surface)",
                 }}
               >
-                <f.icon className="h-[23px] w-[23px]" />
-              </span>
-              <h3 className="font-display text-[19px] font-semibold">{f.title}</h3>
-              <p className="text-[15px]" style={{ color: "var(--text-muted)", lineHeight: 1.55 }}>
-                {f.body}
-              </p>
-            </div>
-          ))}
+                <span
+                  className="grid h-[46px] w-[46px] place-items-center rounded-[13px]"
+                  style={{
+                    color: tint,
+                    background: `color-mix(in oklch, ${tint} 14%, transparent)`,
+                  }}
+                >
+                  <Icon className="h-[23px] w-[23px]" />
+                </span>
+                <h3 className="font-display text-[19px] font-semibold">{f.title}</h3>
+                <p className="text-[15px]" style={{ color: "var(--text-muted)", lineHeight: 1.55 }}>
+                  {f.body}
+                </p>
+              </div>
+            );
+          })}
         </div>
       </section>
       {/* HOW IT WORKS */}
@@ -302,7 +259,7 @@ export default function LandingPage() {
       >
         <div className="mx-auto max-w-6xl px-7 py-[90px]">
           <div className="mx-auto mb-14 max-w-[600px] text-center">
-            <Eyebrow center>Up and running fast</Eyebrow>
+            <Eyebrow center>{t.landing.stepsEyebrow}</Eyebrow>
             <h2
               className="font-display my-4 font-semibold"
               style={{
@@ -310,12 +267,12 @@ export default function LandingPage() {
                 letterSpacing: "-0.03em",
               }}
             >
-              Three steps to a happier team
+              {t.landing.stepsTitle}
             </h2>
           </div>
           <div className="flex flex-col gap-10 md:flex-row">
-            {STEPS.map((s, i) => (
-              <div key={s.n} className="relative flex-1">
+            {t.landing.steps.map((s, i) => (
+              <div key={s.title} className="relative flex-1">
                 <div className="flex flex-col gap-3">
                   <div className="flex items-center gap-3.5">
                     <span
@@ -325,9 +282,9 @@ export default function LandingPage() {
                         color: "var(--primary-fg)",
                       }}
                     >
-                      {s.n}
+                      {i + 1}
                     </span>
-                    {i < STEPS.length - 1 ? (
+                    {i < t.landing.steps.length - 1 ? (
                       <span
                         className="hidden h-[2px] flex-1 md:block"
                         style={{
@@ -517,10 +474,10 @@ export default function LandingPage() {
                 letterSpacing: "-0.03em",
               }}
             >
-              Give your team a calmer year.
+              {t.landing.ctaTitle}
             </h2>
             <p className="mx-auto mb-7 max-w-[480px] text-[18px] opacity-90">
-              Set up flexiday in five minutes. Free for up to 10 people, forever.
+              {t.landing.ctaSubtitle}
             </p>
             <div className="flex flex-wrap justify-center gap-3">
               <Button
@@ -533,7 +490,7 @@ export default function LandingPage() {
                 }}
               >
                 <Link href="/sign-up">
-                  Create your team <ArrowRight className="h-4 w-4" />
+                  {t.landing.createTeam} <ArrowRight className="h-4 w-4" />
                 </Link>
               </Button>
               <Button
@@ -547,7 +504,7 @@ export default function LandingPage() {
                   borderColor: "oklch(1 0 0 / .25)",
                 }}
               >
-                <Link href="/sign-in">Sign in</Link>
+                <Link href="/sign-in">{t.landing.signIn}</Link>
               </Button>
             </div>
           </div>

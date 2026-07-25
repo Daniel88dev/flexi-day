@@ -14,21 +14,23 @@ import {
 } from "lucide-react";
 import type { CalendarSyncConfig } from "@/lib/api/calendar-sync";
 import { colorFor, configToBuilder } from "@/lib/calendar-sync/meta";
+import { useTranslation } from "@/lib/i18n/use-translation";
+import type { Dictionary } from "@/lib/i18n";
 import { TypeBadge } from "./type-badge";
 import { copyText, pushToast } from "./toast";
 
-function relativeTime(iso: string): string {
+function relativeTime(iso: string, t: Dictionary): string {
   const then = new Date(iso).getTime();
   const diff = Date.now() - then;
   const mins = Math.round(diff / 60000);
-  if (mins < 1) return "just now";
-  if (mins < 60) return `${mins} min ago`;
+  if (mins < 1) return t.calSync.rel.justNow;
+  if (mins < 60) return t.calSync.rel.minAgo(mins);
   const hrs = Math.round(mins / 60);
-  if (hrs < 24) return `${hrs} hour${hrs === 1 ? "" : "s"} ago`;
+  if (hrs < 24) return t.calSync.rel.hoursAgo(hrs);
   const days = Math.round(hrs / 24);
-  if (days === 1) return "yesterday";
-  if (days < 30) return `${days} days ago`;
-  return new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+  if (days === 1) return t.calSync.rel.yesterday;
+  if (days < 30) return t.calSync.rel.daysAgo(days);
+  return new Date(iso).toLocaleDateString(t.common.dateLocale, { day: "numeric", month: "short" });
 }
 
 export function CalCard({
@@ -46,6 +48,7 @@ export function CalCard({
   onRegen: (c: CalendarSyncConfig) => void;
   resolveFeedUrl: (id: string) => Promise<string>;
 }) {
+  const { t } = useTranslation();
   const [menu, setMenu] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -62,9 +65,9 @@ export function CalCard({
     try {
       const url = await resolveFeedUrl(config.id);
       await copyText(url);
-      pushToast("Feed URL copied");
+      pushToast(t.calSync.toasts.feedCopied);
     } catch {
-      pushToast("Couldn’t copy the feed URL", "danger");
+      pushToast(t.calSync.toasts.feedCopyFailed, "danger");
     }
   };
 
@@ -75,7 +78,12 @@ export function CalCard({
       <div className="flex items-start gap-3.5">
         <span
           className="grid flex-none place-items-center rounded-xl"
-          style={{ width: 44, height: 44, color: "var(--primary)", background: "var(--primary-soft)" }}
+          style={{
+            width: 44,
+            height: 44,
+            color: "var(--primary)",
+            background: "var(--primary-soft)",
+          }}
         >
           <Calendar size={22} />
         </span>
@@ -87,12 +95,14 @@ export function CalCard({
           >
             <span className="inline-flex items-center gap-1.5">
               <ScopeIcon size={14} />
-              {config.scope === "ME" ? "My records" : `Team records · ${teamsLabel}`}
+              {config.scope === "ME"
+                ? t.calSync.card.myRecords
+                : t.calSync.card.teamRecords(teamsLabel)}
             </span>
             {config.lastFetchedAt ? (
               <>
                 <span style={{ opacity: 0.4 }}>•</span>
-                <span>Last fetched {relativeTime(config.lastFetchedAt)}</span>
+                <span>{t.calSync.card.lastFetched(relativeTime(config.lastFetchedAt, t))}</span>
               </>
             ) : null}
           </div>
@@ -100,7 +110,7 @@ export function CalCard({
         <div className="relative" ref={ref}>
           <button
             onClick={() => setMenu((m) => !m)}
-            aria-label="More actions"
+            aria-label={t.calSync.card.moreActions}
             className="grid place-items-center rounded-lg"
             style={{
               width: 36,
@@ -114,14 +124,18 @@ export function CalCard({
           </button>
           {menu ? (
             <div
-              className="cs-card absolute right-0 top-[42px] z-30 p-1.5"
+              className="cs-card absolute top-[42px] right-0 z-30 p-1.5"
               style={{ width: 200, boxShadow: "var(--shadow-lg)" }}
             >
               {(
                 [
-                  ["Edit", <Pencil key="i" size={16} />, () => onEdit(config)],
-                  ["Copy feed URL", <Copy key="i" size={16} />, copyUrl],
-                  ["Regenerate token", <RefreshCw key="i" size={16} />, () => onRegen(config)],
+                  [t.calSync.card.edit, <Pencil key="i" size={16} />, () => onEdit(config)],
+                  [t.calSync.card.copyFeedUrl, <Copy key="i" size={16} />, copyUrl],
+                  [
+                    t.calSync.card.regenerateToken,
+                    <RefreshCw key="i" size={16} />,
+                    () => onRegen(config),
+                  ],
                 ] as const
               ).map(([label, icon, fn]) => (
                 <button
@@ -154,7 +168,7 @@ export function CalCard({
                 onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
               >
                 <Trash2 size={16} />
-                Delete
+                {t.calSync.card.delete}
               </button>
             </div>
           ) : null}
@@ -182,7 +196,7 @@ export function CalCard({
       >
         <LinkIcon size={16} style={{ color: "var(--text-faint)", flex: "none" }} />
         <span
-          className="tnum min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap text-[12.5px]"
+          className="tnum min-w-0 flex-1 overflow-hidden text-[12.5px] text-ellipsis whitespace-nowrap"
           style={{ fontFamily: "var(--font-mono)", color: "var(--text-muted)" }}
         >
           {config.feedUrl}
@@ -193,7 +207,7 @@ export function CalCard({
           style={{ padding: "7px 12px" }}
         >
           <Copy size={15} />
-          Copy
+          {t.calSync.card.copy}
         </button>
       </div>
     </div>

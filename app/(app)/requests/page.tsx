@@ -22,12 +22,12 @@ import {
 import { useSession } from "@/lib/auth-client";
 import {
   VACATION_KIND_COLORS,
-  VACATION_KIND_LABELS,
   vacationStatus,
   type VacationListItem,
   type VacationStatus,
 } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "@/lib/i18n/use-translation";
 
 type Filter = "all" | VacationStatus | "mine";
 
@@ -37,8 +37,8 @@ const STATUS_BADGE: Record<VacationStatus, string> = {
   rejected: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300",
 };
 
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString("en-GB", {
+function formatDate(iso: string, locale: string) {
+  return new Date(iso).toLocaleDateString(locale, {
     day: "numeric",
     month: "short",
     year: "numeric",
@@ -49,25 +49,13 @@ function MonthPicker({
   year,
   month,
   onChange,
+  months,
 }: {
   year: number;
   month: number;
   onChange: (y: number, m: number) => void;
+  months: string[];
 }) {
-  const months = [
-    "Jan",
-    "Feb",
-    "Mar",
-    "Apr",
-    "May",
-    "Jun",
-    "Jul",
-    "Aug",
-    "Sep",
-    "Oct",
-    "Nov",
-    "Dec",
-  ];
   return (
     <div className="flex items-center gap-1">
       <Button
@@ -106,6 +94,7 @@ export default function RequestsPage() {
 }
 
 function RequestsTable() {
+  const { t } = useTranslation();
   const now = new Date();
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth() + 1);
@@ -162,14 +151,13 @@ function RequestsTable() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="font-heading text-2xl font-bold">Requests</h1>
-          <p className="text-muted-foreground mt-1 text-sm">
-            Review and approve vacation requests for the selected month.
-          </p>
+          <h1 className="font-heading text-2xl font-bold">{t.requests.title}</h1>
+          <p className="text-muted-foreground mt-1 text-sm">{t.requests.subtitle}</p>
         </div>
         <MonthPicker
           year={year}
           month={month}
+          months={t.calendar.monthsShort}
           onChange={(y, m) => {
             setYear(y);
             setMonth(m);
@@ -189,7 +177,7 @@ function RequestsTable() {
                 : "text-muted-foreground hover:text-foreground border-transparent"
             )}
           >
-            {f}
+            {t.requests.filters[f]}
             <span className="bg-muted text-muted-foreground ml-1.5 rounded-full px-1.5 py-0.5 text-xs">
               {counts[f]}
             </span>
@@ -198,27 +186,28 @@ function RequestsTable() {
       </div>
 
       {vacationsQuery.isLoading ? (
-        <div className="text-muted-foreground py-16 text-center text-sm">Loading…</div>
+        <div className="text-muted-foreground py-16 text-center text-sm">{t.common.loading}</div>
       ) : vacationsQuery.error ? (
         <div className="text-destructive py-16 text-center text-sm">
           {vacationsQuery.error.message}
         </div>
       ) : filtered.length === 0 ? (
         <div className="text-muted-foreground py-16 text-center text-sm">
-          No requests in this month
-          {filter !== "all" ? ` (${filter})` : ""}.
+          {filter !== "all"
+            ? t.requests.emptyFiltered(t.requests.filters[filter])
+            : `${t.requests.empty}.`}
         </div>
       ) : (
         <div className="border-border overflow-hidden rounded-lg border">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Group</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Day</TableHead>
-                <TableHead>Time</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+                <TableHead>{t.requests.columns.group}</TableHead>
+                <TableHead>{t.requests.columns.type}</TableHead>
+                <TableHead>{t.requests.columns.day}</TableHead>
+                <TableHead>{t.requests.columns.time}</TableHead>
+                <TableHead>{t.requests.columns.status}</TableHead>
+                <TableHead className="text-right">{t.requests.columns.actions}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -230,7 +219,9 @@ function RequestsTable() {
                     key={v.id}
                     role="button"
                     tabIndex={0}
-                    aria-label={`Open request details for ${formatDate(v.requestedDay)}`}
+                    aria-label={t.requests.openDetails(
+                      formatDate(v.requestedDay, t.common.dateLocale)
+                    )}
                     className="hover:bg-muted/50 cursor-pointer"
                     onClick={() => openDetail(v.id)}
                     onKeyDown={(e) => {
@@ -243,7 +234,7 @@ function RequestsTable() {
                     <TableCell className="text-sm">
                       <div className="font-medium">{groupName(v.groupId)}</div>
                       <div className="text-muted-foreground text-xs">
-                        {mine ? "You" : v.user.name}
+                        {mine ? t.requests.you : v.user.name}
                       </div>
                     </TableCell>
                     <TableCell>
@@ -253,25 +244,25 @@ function RequestsTable() {
                           VACATION_KIND_COLORS[v.vacationType]
                         )}
                       >
-                        {VACATION_KIND_LABELS[v.vacationType]}
+                        {t.leaveTypes[v.vacationType].label}
                       </span>
                     </TableCell>
                     <TableCell className="text-sm whitespace-nowrap">
-                      {formatDate(v.requestedDay)}
+                      {formatDate(v.requestedDay, t.common.dateLocale)}
                     </TableCell>
                     <TableCell className="text-muted-foreground text-xs">
                       {v.startTime && v.endTime
                         ? `${v.startTime.slice(0, 5)} – ${v.endTime.slice(0, 5)}`
-                        : "Full day"}
+                        : t.common.fullDay}
                     </TableCell>
                     <TableCell>
                       <span
                         className={cn(
-                          "rounded-full px-2 py-0.5 text-xs font-medium capitalize",
+                          "rounded-full px-2 py-0.5 text-xs font-medium",
                           STATUS_BADGE[status]
                         )}
                       >
-                        {status}
+                        {t.status[status]}
                       </span>
                     </TableCell>
                     <TableCell className="text-right">
@@ -291,7 +282,7 @@ function RequestsTable() {
                               disabled={isMutating}
                               onClick={() => approve.mutate(v.id)}
                             >
-                              Approve
+                              {t.requests.approve}
                             </Button>
                             <Button
                               size="xs"
@@ -300,7 +291,7 @@ function RequestsTable() {
                               disabled={isMutating}
                               onClick={() => reject.mutate({ id: v.id })}
                             >
-                              Reject
+                              {t.requests.reject}
                             </Button>
                           </>
                         ) : null}
@@ -312,7 +303,7 @@ function RequestsTable() {
                             disabled={isMutating}
                             onClick={() => cancel.mutate(v.id)}
                           >
-                            Cancel
+                            {t.requests.cancel}
                           </Button>
                         ) : null}
                         {status !== "pending" && !mine ? (
