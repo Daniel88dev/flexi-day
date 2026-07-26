@@ -18,11 +18,11 @@ export default function TermsPage() {
     >
       <h2>1. Agreement</h2>
       <p>
-        These Terms of Service (&ldquo;Terms&rdquo;) govern your access to and use of {LEGAL.product}{" "}
-        (the &ldquo;Service&rdquo;), operated by <strong>{LEGAL.entity}</strong> (&ldquo;we&rdquo;,
-        &ldquo;us&rdquo;), {LEGAL.address}. By creating an account or using the Service you agree to
-        these Terms. If you use the Service on behalf of an organisation, you confirm you are
-        authorised to accept these Terms on its behalf.
+        These Terms of Service (&ldquo;Terms&rdquo;) govern your access to and use of{" "}
+        {LEGAL.product} (the &ldquo;Service&rdquo;), operated by <strong>{LEGAL.entity}</strong>{" "}
+        (&ldquo;we&rdquo;, &ldquo;us&rdquo;), {LEGAL.address}. By creating an account or using the
+        Service you agree to these Terms. If you use the Service on behalf of an organisation, you
+        confirm you are authorised to accept these Terms on its behalf.
       </p>
 
       <h2>2. Definitions</h2>
@@ -88,17 +88,17 @@ export default function TermsPage() {
       <h2>9. Intellectual property</h2>
       <p>
         The Service, including its software, design and trademarks, is owned by {LEGAL.entity} and
-        protected by law. These Terms do not grant you any rights in the Service other than the right
-        to use it in accordance with these Terms.
+        protected by law. These Terms do not grant you any rights in the Service other than the
+        right to use it in accordance with these Terms.
       </p>
 
       <h2>10. Termination</h2>
       <p>
         You may stop using the Service and delete your Account at any time. We may suspend or
         terminate your access if you breach these Terms or if we discontinue the Service. On
-        termination, your right to use the Service ends; sections that by their nature should survive
-        (such as intellectual property, disclaimers and limitation of liability) will remain in
-        effect.
+        termination, your right to use the Service ends; sections that by their nature should
+        survive (such as intellectual property, disclaimers and limitation of liability) will remain
+        in effect.
       </p>
 
       <h2>11. Disclaimers</h2>
@@ -111,16 +111,16 @@ export default function TermsPage() {
       <h2>12. Limitation of liability</h2>
       <p>
         To the extent permitted by law, we will not be liable for any indirect, incidental or
-        consequential damages, or for loss of data, profits or business, arising from your use of the
-        Service. Nothing in these Terms limits liability that cannot be limited under applicable law,
-        including your statutory rights as a consumer.
+        consequential damages, or for loss of data, profits or business, arising from your use of
+        the Service. Nothing in these Terms limits liability that cannot be limited under applicable
+        law, including your statutory rights as a consumer.
       </p>
 
       <h2>13. Changes to these Terms</h2>
       <p>
         We may update these Terms from time to time. We will update the &ldquo;last updated&rdquo;
-        date above and, for material changes, provide additional notice. Continued use of the Service
-        after changes take effect means you accept the updated Terms.
+        date above and, for material changes, provide additional notice. Continued use of the
+        Service after changes take effect means you accept the updated Terms.
       </p>
 
       <h2>14. Governing law</h2>

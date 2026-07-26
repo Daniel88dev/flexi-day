@@ -30,7 +30,13 @@ describe("PreviewPanel", () => {
 
   it("shows an empty hint when there are no entries", () => {
     render(
-      <PreviewPanel name="My feed" entries={[]} mode="month" setMode={vi.fn()} geometry={geometry} />
+      <PreviewPanel
+        name="My feed"
+        entries={[]}
+        mode="month"
+        setMode={vi.fn()}
+        geometry={geometry}
+      />
     );
     expect(screen.getByText(/Nothing matches/)).toBeInTheDocument();
   });

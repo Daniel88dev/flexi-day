@@ -27,9 +27,7 @@ describe("EmptyState", () => {
 describe("ConfirmDialog", () => {
   it("shows the delete copy and confirms", () => {
     const onConfirm = vi.fn();
-    render(
-      <ConfirmDialog kind="delete" name="My feed" onClose={vi.fn()} onConfirm={onConfirm} />
-    );
+    render(<ConfirmDialog kind="delete" name="My feed" onClose={vi.fn()} onConfirm={onConfirm} />);
     expect(screen.getByText("Delete this calendar?")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Delete" }));
     expect(onConfirm).toHaveBeenCalledOnce();
