@@ -32,6 +32,19 @@ describe("NavBar", () => {
     expect(screen.getAllByRole("link", { name: "Calendar sync" }).length).toBeGreaterThan(0);
   });
 
+  it("places Report directly after Dashboard", () => {
+    renderWithClient(<NavBar />);
+    const labels = screen.getAllByRole("navigation")[0]?.querySelectorAll("a") ?? new NodeList();
+
+    expect(Array.from(labels).map((a) => a.textContent)).toEqual([
+      "Dashboard",
+      "Report",
+      "Requests",
+      "Groups",
+      "Calendar sync",
+    ]);
+  });
+
   it("toggles the mobile menu button state", () => {
     renderWithClient(<NavBar />);
     const burger = screen.getByRole("button", { name: "Menu" });

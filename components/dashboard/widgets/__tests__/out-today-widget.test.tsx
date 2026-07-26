@@ -12,6 +12,7 @@ function buildVacation(overrides: Partial<VacationListItem>): VacationListItem {
     startTime: null,
     endTime: null,
     vacationType: VacationKind.Vacation,
+    halfDay: false,
     note: null,
     rejectionReason: null,
     approvedAt: "2026-06-10T00:00:00Z",

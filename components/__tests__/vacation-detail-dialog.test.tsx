@@ -17,6 +17,7 @@ const detail: VacationDetail = {
   startTime: null,
   endTime: null,
   vacationType: VacationKind.Vacation,
+  halfDay: false,
   note: "Family trip",
   rejectionReason: null,
   approvedAt: "2026-08-01T09:00:00.000Z",

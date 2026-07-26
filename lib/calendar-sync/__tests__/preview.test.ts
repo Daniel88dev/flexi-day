@@ -15,6 +15,7 @@ function vac(over: Partial<VacationListItem> & { requestedDay: string }): Vacati
     startTime: null,
     endTime: null,
     vacationType: over.vacationType ?? VacationKind.Vacation,
+    halfDay: over.halfDay ?? false,
     note: over.note ?? null,
     rejectionReason: null,
     approvedAt: "2026-07-01T00:00:00.000Z",

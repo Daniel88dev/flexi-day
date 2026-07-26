@@ -16,7 +16,14 @@ import {
 } from "./vacations";
 import { createGroup, listGroups, updateGroupQuotas, updateGroupWorkingDays } from "./groups";
 import { joinGroupByCode, listGroupUsers, updateGroupUsers } from "./group-users";
-import { listQuotas, setUserQuota, type ListQuotasParams } from "./quotas";
+import { getCarryOverSuggestion, listQuotas, setUserQuota, type ListQuotasParams } from "./quotas";
+import {
+  getMemberReport,
+  getReportOverview,
+  getReportScope,
+  reportFiltersToQuery,
+} from "./reports";
+import type { ReportFilters } from "./report-types";
 import { getMySettings, updateMySettings } from "./settings";
 import { listMyApprovals } from "./approvals";
 import { getDashboardSummary } from "./dashboard";
@@ -60,6 +67,14 @@ export const qk = {
     ["bank-holidays", year, country, region ?? "*"] as const,
   calendarSyncs: () => ["calendar-syncs"] as const,
   mySettings: () => ["my-settings"] as const,
+  reportScope: () => ["report-scope"] as const,
+  // Keyed on the serialised filters so every filter combination caches on its
+  // own instead of thrashing a single entry.
+  reportOverview: (filters: ReportFilters) =>
+    ["report-overview", reportFiltersToQuery(filters)] as const,
+  memberReport: (userId: string, year: number) => ["member-report", userId, year] as const,
+  carryOverSuggestion: (groupId: string, userId: string, year: number) =>
+    ["carryover-suggestion", groupId, userId, year] as const,
 };
 
 function invalidateVacationDependants(qc: ReturnType<typeof useQueryClient>) {
@@ -225,7 +240,53 @@ export function useSetUserQuota() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (input: SetUserQuotaInput) => setUserQuota(input),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["quotas"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["quotas"] });
+      // The report reads the same allowances, and the member detail also
+      // shows the audit entry this write just created.
+      qc.invalidateQueries({ queryKey: ["report-overview"] });
+      qc.invalidateQueries({ queryKey: ["member-report"] });
+      qc.invalidateQueries({ queryKey: ["carryover-suggestion"] });
+    },
+  });
+}
+
+/**
+ * Enabled only once an admin opens the quota dialog — the endpoint is
+ * admin-only and would 403 for anyone else.
+ */
+export function useCarryOverSuggestion(
+  groupId: string | null | undefined,
+  userId: string | null | undefined,
+  year: number,
+  enabled = true
+) {
+  return useQuery({
+    queryKey: qk.carryOverSuggestion(groupId ?? "", userId ?? "", year),
+    queryFn: () => getCarryOverSuggestion(groupId!, userId!, year),
+    enabled: enabled && !!groupId && !!userId,
+  });
+}
+
+export function useReportScope() {
+  return useQuery({
+    queryKey: qk.reportScope(),
+    queryFn: getReportScope,
+  });
+}
+
+export function useReportOverview(filters: ReportFilters) {
+  return useQuery({
+    queryKey: qk.reportOverview(filters),
+    queryFn: () => getReportOverview(filters),
+  });
+}
+
+export function useMemberReport(userId: string | null | undefined, year: number) {
+  return useQuery({
+    queryKey: qk.memberReport(userId ?? "", year),
+    queryFn: () => getMemberReport(userId!, year),
+    enabled: !!userId,
   });
 }
 
