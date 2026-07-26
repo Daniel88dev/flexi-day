@@ -69,3 +69,13 @@ export function cancelVacation(id: string, reason?: string): Promise<{ message: 
     body: reason ? { reason } : undefined,
   });
 }
+
+export function cancelVacations(
+  ids: string[],
+  reason?: string
+): Promise<{ message: string; cancelledCount: number }> {
+  return api<{ message: string; cancelledCount: number }>(`/api/vacation/cancel`, {
+    method: "POST",
+    body: reason ? { ids, reason } : { ids },
+  });
+}

@@ -11,6 +11,9 @@ const detail: VacationDetail = {
   groupId: "g-1",
   groupName: "Platform",
   requestedDay: "2026-08-12",
+  rangeStart: "2026-08-12",
+  rangeEnd: "2026-08-12",
+  vacationIds: ["v-1"],
   startTime: null,
   endTime: null,
   vacationType: VacationKind.Vacation,
@@ -55,14 +58,15 @@ const detail: VacationDetail = {
 
 const cancelMutate = vi.fn().mockResolvedValue({ message: "ok" });
 const approveMutate = vi.fn().mockResolvedValue({ message: "ok" });
+const rejectMutate = vi.fn().mockResolvedValue({ message: "ok" });
 const commentMutate = vi.fn().mockResolvedValue({ message: "ok" });
 let currentDetail: VacationDetail = detail;
 
 vi.mock("@/lib/api/queries", () => ({
   useVacation: () => ({ data: currentDetail, isLoading: false, error: null }),
-  useApproveVacation: () => ({ mutateAsync: approveMutate, isPending: false }),
-  useRejectVacation: () => ({ mutateAsync: vi.fn(), isPending: false }),
-  useCancelVacation: () => ({ mutateAsync: cancelMutate, isPending: false }),
+  useApproveVacations: () => ({ mutateAsync: approveMutate, isPending: false }),
+  useRejectVacations: () => ({ mutateAsync: rejectMutate, isPending: false }),
+  useCancelVacations: () => ({ mutateAsync: cancelMutate, isPending: false }),
   useCommentVacation: () => ({ mutateAsync: commentMutate, isPending: false }),
 }));
 
@@ -71,6 +75,7 @@ describe("VacationDetailDialog", () => {
     currentDetail = detail;
     cancelMutate.mockClear();
     approveMutate.mockClear();
+    rejectMutate.mockClear();
     commentMutate.mockClear();
   });
 
@@ -92,7 +97,30 @@ describe("VacationDetailDialog", () => {
     await user.type(screen.getByLabelText("Comment or reason"), "Plans changed");
     await user.click(screen.getByRole("button", { name: /Cancel request/i }));
 
-    expect(cancelMutate).toHaveBeenCalledWith({ id: "v-1", reason: "Plans changed" });
+    expect(cancelMutate).toHaveBeenCalledWith({ ids: ["v-1"], reason: "Plans changed" });
+  });
+
+  it("shows the full span for a multi-day request", () => {
+    currentDetail = {
+      ...detail,
+      rangeStart: "2026-08-10",
+      rangeEnd: "2026-08-11",
+      vacationIds: ["v-1", "v-2"],
+    };
+    renderWithClient(<VacationDetailDialog vacationId="v-1" open onOpenChange={() => {}} />);
+
+    // The header description spans both days rather than a single date.
+    expect(screen.getByText(/10 Aug 2026 –.*11 Aug 2026/)).toBeInTheDocument();
+  });
+
+  it("approves every day of the range in one call", async () => {
+    currentDetail = { ...detail, canApprove: true, vacationIds: ["v-1", "v-2"] };
+    const user = userEvent.setup();
+    renderWithClient(<VacationDetailDialog vacationId="v-1" open onOpenChange={() => {}} />);
+
+    await user.click(screen.getByRole("button", { name: /^Approve$/i }));
+
+    expect(approveMutate).toHaveBeenCalledWith(["v-1", "v-2"]);
   });
 
   it("posts a comment with the typed message and can comment without approval rights", async () => {

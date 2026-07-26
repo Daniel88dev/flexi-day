@@ -194,6 +194,7 @@ export const cs: Dictionary = {
     },
     you: "Vy",
     openDetails: (date: string) => `Otevřít detail žádosti pro ${date}`,
+    dayCount: (n: number) => `(${n} ${n >= 2 && n <= 4 ? "dny" : "dní"})`,
     approve: "Schválit",
     reject: "Zamítnout",
     cancel: "Zrušit",
@@ -260,6 +261,13 @@ export const cs: Dictionary = {
     saveDefaultsFailed: "Nepodařilo se uložit výchozí hodnoty",
     defaultsNote:
       "Platí pro členy, kteří nemají pro daný rok nastavený příděl. Stávající příděly se nemění.",
+    workingDays: "Pracovní dny",
+    saveWorkingDays: "Uložit pracovní dny",
+    workingDaysUpdated: "Pracovní dny uloženy.",
+    saveWorkingDaysFailed: "Nepodařilo se uložit pracovní dny",
+    workingDaysError: "Vyberte alespoň jeden pracovní den.",
+    workingDaysNote:
+      "Žádosti se evidují — a započítávají do přídělů — jen v tyto dny. Ostatní dny v rozsahu se přeskočí.",
   },
 
   settings: {

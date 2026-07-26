@@ -5,6 +5,7 @@ import {
   approveVacation,
   approveVacations,
   cancelVacation,
+  cancelVacations,
   commentVacation,
   createVacation,
   getVacation,
@@ -13,7 +14,7 @@ import {
   rejectVacations,
   type ListVacationsParams,
 } from "./vacations";
-import { createGroup, listGroups, updateGroupQuotas } from "./groups";
+import { createGroup, listGroups, updateGroupQuotas, updateGroupWorkingDays } from "./groups";
 import { joinGroupByCode, listGroupUsers, updateGroupUsers } from "./group-users";
 import { listQuotas, setUserQuota, type ListQuotasParams } from "./quotas";
 import { getMySettings, updateMySettings } from "./settings";
@@ -40,6 +41,7 @@ import type {
   SetUserQuotaInput,
   UpdateGroupQuotasInput,
   UpdateGroupUsersInput,
+  UpdateGroupWorkingDaysInput,
   UserSettings,
 } from "./types";
 
@@ -210,6 +212,15 @@ export function useCancelVacation() {
   });
 }
 
+export function useCancelVacations() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { ids: string[]; reason?: string }) =>
+      cancelVacations(input.ids, input.reason),
+    onSuccess: () => invalidateVacationDependants(qc),
+  });
+}
+
 export function useSetUserQuota() {
   const qc = useQueryClient();
   return useMutation({
@@ -222,6 +233,14 @@ export function useUpdateGroupQuotas() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (input: UpdateGroupQuotasInput) => updateGroupQuotas(input),
+    onSuccess: () => qc.invalidateQueries({ queryKey: qk.groups() }),
+  });
+}
+
+export function useUpdateGroupWorkingDays() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: UpdateGroupWorkingDaysInput) => updateGroupWorkingDays(input),
     onSuccess: () => qc.invalidateQueries({ queryKey: qk.groups() }),
   });
 }

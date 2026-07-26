@@ -23,6 +23,7 @@ import {
   useSetUserQuota,
   useUpdateGroupQuotas,
   useUpdateGroupUsers,
+  useUpdateGroupWorkingDays,
 } from "@/lib/api/queries";
 import { useSession } from "@/lib/auth-client";
 import type { Group, GroupUserListItem } from "@/lib/api/types";
@@ -335,6 +336,7 @@ function QuotasTab({
   return (
     <div className="space-y-4">
       {isAdmin ? <GroupDefaultsCard group={group} /> : null}
+      {isAdmin ? <GroupWorkingDaysCard group={group} /> : null}
 
       <div className="flex items-center gap-2">
         <Button variant="outline" size="icon-sm" onClick={() => setYear((y) => y - 1)}>
@@ -552,6 +554,99 @@ function GroupDefaultsCard({ group }: { group?: Group }) {
           ) : null}
         </form>
         <p className="text-muted-foreground mt-3 text-xs">{t.groupDetail.defaultsNote}</p>
+      </CardContent>
+    </Card>
+  );
+}
+
+// Display order is Monday-first (matching `weekdaysShort`); the stored values
+// are `Date.getDay()` numbers (0=Sun … 6=Sat), so index i maps to (i + 1) % 7.
+const displayIndexToWeekday = (i: number) => (i + 1) % 7;
+
+function GroupWorkingDaysCard({ group }: { group?: Group }) {
+  const { t } = useTranslation();
+  const updateWorkingDays = useUpdateGroupWorkingDays();
+  const [selected, setSelected] = useState<Set<number>>(
+    () => new Set(group?.workingDays ?? [1, 2, 3, 4, 5])
+  );
+  const [error, setError] = useState<string | null>(null);
+  const [saved, setSaved] = useState(false);
+
+  if (!group) return null;
+
+  function toggle(weekday: number) {
+    setSaved(false);
+    setError(null);
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(weekday)) next.delete(weekday);
+      else next.add(weekday);
+      return next;
+    });
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!group) return;
+    setError(null);
+    setSaved(false);
+    if (selected.size === 0) {
+      setError(t.groupDetail.workingDaysError);
+      return;
+    }
+    try {
+      await updateWorkingDays.mutateAsync({
+        groupId: group.id,
+        workingDays: Array.from(selected).sort((a, b) => a - b),
+      });
+      setSaved(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t.groupDetail.saveWorkingDaysFailed);
+    }
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>{t.groupDetail.workingDays}</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleSubmit} className="space-y-3">
+          <div className="flex flex-wrap gap-2">
+            {t.calendar.weekdaysShort.map((label, i) => {
+              const weekday = displayIndexToWeekday(i);
+              const active = selected.has(weekday);
+              return (
+                <button
+                  key={weekday}
+                  type="button"
+                  aria-pressed={active}
+                  onClick={() => toggle(weekday)}
+                  className={cn(
+                    "rounded-full px-3 py-1 text-sm font-medium transition-colors",
+                    active
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted text-muted-foreground hover:ring-foreground/30 hover:ring-1"
+                  )}
+                >
+                  {label}
+                </button>
+              );
+            })}
+          </div>
+          <div className="flex flex-wrap items-center gap-3">
+            <Button type="submit" disabled={updateWorkingDays.isPending}>
+              {updateWorkingDays.isPending ? t.common.saving : t.groupDetail.saveWorkingDays}
+            </Button>
+            {error ? <p className="text-destructive text-sm">{error}</p> : null}
+            {saved && !error ? (
+              <p className="text-sm text-green-700 dark:text-green-400">
+                {t.groupDetail.workingDaysUpdated}
+              </p>
+            ) : null}
+          </div>
+        </form>
+        <p className="text-muted-foreground mt-3 text-xs">{t.groupDetail.workingDaysNote}</p>
       </CardContent>
     </Card>
   );

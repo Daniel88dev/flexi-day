@@ -4,7 +4,12 @@
 
 import * as Sentry from "@sentry/nextjs";
 
+// On in production only; opt in elsewhere with NEXT_PUBLIC_SENTRY_ENABLE=true.
+const enabled =
+  process.env.NODE_ENV === "production" || process.env.NEXT_PUBLIC_SENTRY_ENABLE === "true";
+
 Sentry.init({
+  enabled,
   dsn: "https://74640af9c7fc240bda9756dda54946ec@o4507832619237376.ingest.de.sentry.io/4511795855753296",
 
   // Add optional integrations for additional features
