@@ -66,11 +66,15 @@ describe("colorFor", () => {
   });
   it("ignores the mine color when not distinguishing", () => {
     const cfg = { distinguishMine: false, scope: "TEAM" as const, colors: base.colors };
-    expect(colorFor(cfg, VacationKind.Vacation, true)).toBe(swatch(base.colors[VacationKind.Vacation]));
+    expect(colorFor(cfg, VacationKind.Vacation, true)).toBe(
+      swatch(base.colors[VacationKind.Vacation])
+    );
   });
   it("ignores the mine color in ME scope", () => {
     const cfg = { distinguishMine: true, scope: "ME" as const, colors: base.colors };
-    expect(colorFor(cfg, VacationKind.Vacation, true)).toBe(swatch(base.colors[VacationKind.Vacation]));
+    expect(colorFor(cfg, VacationKind.Vacation, true)).toBe(
+      swatch(base.colors[VacationKind.Vacation])
+    );
   });
 });
 

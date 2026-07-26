@@ -24,7 +24,12 @@ function vac(over: Partial<VacationListItem> & { requestedDay: string }): Vacati
     deletedAt: null,
     createdAt: "2026-07-01T00:00:00.000Z",
     updatedAt: "2026-07-01T00:00:00.000Z",
-    user: over.user ?? { id: over.userId ?? ME, name: "Jane Doe", initials: "JD", avatarColor: "hsl(1 1% 1%)" },
+    user: over.user ?? {
+      id: over.userId ?? ME,
+      name: "Jane Doe",
+      initials: "JD",
+      avatarColor: "hsl(1 1% 1%)",
+    },
   };
 }
 
@@ -71,7 +76,12 @@ describe("feedVacations", () => {
     cfg.scope = "ME";
     cfg.types = [VacationKind.BankHoliday];
     const items = [
-      vac({ requestedDay: "2026-07-04", userId: OTHER, groupId: "team-x", vacationType: VacationKind.BankHoliday }),
+      vac({
+        requestedDay: "2026-07-04",
+        userId: OTHER,
+        groupId: "team-x",
+        vacationType: VacationKind.BankHoliday,
+      }),
     ];
     expect(feedVacations(cfg, items, ME, july.year, july.month)).toHaveLength(1);
   });

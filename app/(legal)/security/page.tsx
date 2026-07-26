@@ -4,7 +4,8 @@ import { LEGAL } from "@/lib/legal";
 
 export const metadata: Metadata = {
   title: "Security — flexiday",
-  description: "How flexiday protects your data: encryption, authentication, hosting and disclosure.",
+  description:
+    "How flexiday protects your data: encryption, authentication, hosting and disclosure.",
 };
 
 export default function SecurityPage() {
@@ -17,8 +18,8 @@ export default function SecurityPage() {
       <h2>Encryption</h2>
       <ul>
         <li>
-          <strong>In transit</strong> — all traffic between your browser and the Service is encrypted
-          using TLS (HTTPS).
+          <strong>In transit</strong> — all traffic between your browser and the Service is
+          encrypted using TLS (HTTPS).
         </li>
         <li>
           <strong>At rest</strong> — data stored in our database and backups is encrypted at rest by
@@ -37,8 +38,8 @@ export default function SecurityPage() {
       <h2>Infrastructure and hosting</h2>
       <p>
         The Service is hosted on {LEGAL.hosting}. We rely on managed, industry-standard cloud
-        infrastructure with physical and network security maintained by our provider. Your data stays
-        within the European Union.
+        infrastructure with physical and network security maintained by our provider. Your data
+        stays within the European Union.
       </p>
 
       <h2>Access control and data isolation</h2>
@@ -65,11 +66,13 @@ export default function SecurityPage() {
       <h2>Responsible disclosure</h2>
       <p>
         We welcome reports from security researchers. If you believe you have found a vulnerability,
-        please email <a href={`mailto:${LEGAL.email}`}>{LEGAL.email}</a> with the details and steps to
-        reproduce. Please:
+        please email <a href={`mailto:${LEGAL.email}`}>{LEGAL.email}</a> with the details and steps
+        to reproduce. Please:
       </p>
       <ul>
-        <li>give us a reasonable opportunity to investigate and fix the issue before disclosing it;</li>
+        <li>
+          give us a reasonable opportunity to investigate and fix the issue before disclosing it;
+        </li>
         <li>avoid accessing or modifying other users&rsquo; data, and avoid service disruption;</li>
         <li>act in good faith and within the law.</li>
       </ul>

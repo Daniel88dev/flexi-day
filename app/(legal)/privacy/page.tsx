@@ -142,8 +142,8 @@ export default function PrivacyPage() {
       <p>
         We keep your personal data for as long as your account is active. If you delete your account
         or ask us to erase your data, we remove it from our live systems and delete it from backups
-        within a reasonable period, unless we are legally required to keep it longer. Server logs are
-        retained for a limited period for security purposes.
+        within a reasonable period, unless we are legally required to keep it longer. Server logs
+        are retained for a limited period for security purposes.
       </p>
 
       <h2>8. Your rights</h2>
@@ -165,7 +165,8 @@ export default function PrivacyPage() {
       <h2>9. Cookies and local storage</h2>
       <p>
         We use only strictly necessary cookies and browser local storage to keep you signed in and
-        to operate the Service. We do not use third-party advertising or cross-site tracking cookies.
+        to operate the Service. We do not use third-party advertising or cross-site tracking
+        cookies.
       </p>
 
       <h2>10. Children</h2>
