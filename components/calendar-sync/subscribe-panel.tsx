@@ -13,6 +13,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { maskFeedUrl } from "@/lib/calendar-sync/meta";
+import { useTranslation } from "@/lib/i18n/use-translation";
 import { AppleMark, GoogleMark, MicrosoftMark } from "./service-marks";
 import { copyText, pushToast } from "./toast";
 
@@ -27,6 +28,7 @@ function ProviderRow({
   href: string;
   steps: string[];
 }) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   return (
     <div className="overflow-hidden rounded-xl" style={{ border: "1px solid var(--border)" }}>
@@ -38,16 +40,16 @@ function ProviderRow({
           className="cs-btn cs-btn-soft cs-btn-sm"
           onClick={() => setOpen((o) => !o)}
         >
-          How
+          {t.calSync.subscribe.how}
         </button>
         <a
           className="cs-btn cs-btn-primary cs-btn-sm"
           href={href}
           target="_blank"
           rel="noopener noreferrer"
-          onClick={() => pushToast(`Opening ${name}…`)}
+          onClick={() => pushToast(t.calSync.toasts.opening(name))}
         >
-          Add
+          {t.calSync.subscribe.add}
           <ExternalLink size={14} />
         </a>
       </div>
@@ -83,6 +85,7 @@ export function SubscribePanel({
   onBack: () => void;
   onClose: () => void;
 }) {
+  const { t } = useTranslation();
   const [revealed, setRevealed] = useState(false);
   const webcal = feedUrl.replace(/^https?:/, "webcal:");
   const enc = encodeURIComponent(feedUrl);
@@ -103,15 +106,17 @@ export function SubscribePanel({
         >
           <CircleCheckBig size={30} />
         </span>
-        <h2 className="mb-1.5 text-[26px]">“{name || "Your calendar"}” is ready</h2>
+        <h2 className="mb-1.5 text-[26px]">
+          {t.calSync.subscribe.readyTitle(name || t.calSync.subscribe.fallbackName)}
+        </h2>
         <p className="text-[15px]" style={{ color: "var(--text-muted)" }}>
-          Add the link to your calendar app once. New time off shows up on its own — no re-importing.
+          {t.calSync.subscribe.readySub}
         </p>
       </div>
 
       <div className="cs-label flex items-center gap-1.5">
         <LinkIcon size={14} />
-        Your private subscription link
+        {t.calSync.subscribe.linkLabel}
       </div>
       <div
         className="flex items-center gap-2 rounded-xl"
@@ -122,7 +127,7 @@ export function SubscribePanel({
         }}
       >
         <span
-          className="min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap text-[13px]"
+          className="min-w-0 flex-1 overflow-hidden text-[13px] text-ellipsis whitespace-nowrap"
           style={{ fontFamily: "var(--font-mono)", color: "var(--text)" }}
         >
           {revealed ? feedUrl : maskFeedUrl(feedUrl)}
@@ -132,7 +137,7 @@ export function SubscribePanel({
           className="cs-btn cs-btn-soft cs-btn-sm"
           style={{ padding: "8px 10px" }}
           onClick={() => setRevealed((r) => !r)}
-          aria-label={revealed ? "Hide link" : "Reveal link"}
+          aria-label={revealed ? t.calSync.subscribe.hideLink : t.calSync.subscribe.revealLink}
         >
           {revealed ? <EyeOff size={15} /> : <Eye size={15} />}
         </button>
@@ -142,52 +147,36 @@ export function SubscribePanel({
           style={{ padding: "8px 13px" }}
           onClick={() => {
             copyText(feedUrl);
-            pushToast("Link copied to clipboard");
+            pushToast(t.calSync.toasts.linkCopied);
           }}
         >
           <Copy size={15} />
-          Copy
+          {t.calSync.subscribe.copy}
         </button>
       </div>
-      <p
-        className="mt-2.5 flex items-start gap-2 text-xs"
-        style={{ color: "var(--warm)" }}
-      >
+      <p className="mt-2.5 flex items-start gap-2 text-xs" style={{ color: "var(--warm)" }}>
         <ShieldCheck size={15} style={{ flex: "none", marginTop: 1 }} />
-        Treat this like a password. Anyone with the link can see every record in the feed. Regenerate
-        it any time to revoke access.
+        {t.calSync.subscribe.warning}
       </p>
 
       <div className="mt-5 flex flex-col gap-2.5">
         <ProviderRow
           mark={<GoogleMark size={22} />}
-          name="Google Calendar"
+          name={t.calSync.subscribe.google}
           href={google}
-          steps={[
-            "Click Add — Google opens “Add calendar from URL”.",
-            "The link is filled in for you. Click “Add calendar”.",
-            "Find it under “Other calendars”. Updates arrive automatically.",
-          ]}
+          steps={t.calSync.subscribe.googleSteps}
         />
         <ProviderRow
           mark={<MicrosoftMark size={22} />}
-          name="Outlook / Microsoft 365"
+          name={t.calSync.subscribe.outlook}
           href={outlook}
-          steps={[
-            "Click Add — Outlook opens “Subscribe from web”.",
-            "Give it a name and click Import.",
-            "It appears in your calendar list and refreshes on its own.",
-          ]}
+          steps={t.calSync.subscribe.outlookSteps}
         />
         <ProviderRow
           mark={<AppleMark size={20} />}
-          name="Apple Calendar"
+          name={t.calSync.subscribe.apple}
           href={webcal}
-          steps={[
-            "Click Add on your Mac or iPhone.",
-            "Calendar asks to subscribe — confirm.",
-            "Choose how often it refreshes, then Done.",
-          ]}
+          steps={t.calSync.subscribe.appleSteps}
         />
       </div>
 
@@ -204,19 +193,17 @@ export function SubscribePanel({
           className="text-xs leading-relaxed"
           style={{ color: "color-mix(in oklch, var(--warm) 62%, var(--text))" }}
         >
-          <b>Updates aren&apos;t instant.</b> Your calendar app decides how often it checks this link
-          — often just once a day, and the timing isn&apos;t guaranteed. For last-minute changes,
-          check Flexi-Day directly.
+          <b>{t.calSync.subscribe.updatesTitle}</b> {t.calSync.subscribe.updatesBody}
         </p>
       </div>
 
       <div className="mt-6 flex flex-wrap justify-between gap-2.5">
         <button type="button" className="cs-btn cs-btn-ghost" onClick={onBack}>
           <ChevronLeft size={16} />
-          Back to settings
+          {t.calSync.subscribe.back}
         </button>
         <button type="button" className="cs-btn cs-btn-primary" onClick={onClose}>
-          Done
+          {t.calSync.subscribe.done}
         </button>
       </div>
     </div>

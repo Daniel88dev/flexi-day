@@ -5,14 +5,16 @@ import { ArrowRight } from "lucide-react";
 import { Logo } from "@/components/brand/logo";
 import { Button } from "@/components/ui/button";
 import { ModeToggle } from "@/components/ui/ModeToggle";
-
-const LINKS = [
-  { href: "#features", label: "Features" },
-  { href: "#how-it-works", label: "How it works" },
-  { href: "#pricing", label: "Pricing" },
-];
+import { LocaleToggle } from "@/components/ui/LocaleToggle";
+import { useTranslation } from "@/lib/i18n/use-translation";
 
 export function MarketingNav() {
+  const { t } = useTranslation();
+  const LINKS = [
+    { href: "#features", label: t.marketingNav.features },
+    { href: "#how-it-works", label: t.marketingNav.howItWorks },
+    { href: "#pricing", label: t.marketingNav.pricing },
+  ];
   return (
     <header
       className="sticky top-0 z-40 border-b"
@@ -39,12 +41,13 @@ export function MarketingNav() {
         <div className="flex-1" />
         <div className="flex items-center gap-3">
           <ModeToggle />
+          <LocaleToggle />
           <Button asChild variant="ghost" size="sm" className="hidden sm:inline-flex">
-            <Link href="/sign-in">Sign in</Link>
+            <Link href="/sign-in">{t.marketingNav.signIn}</Link>
           </Button>
           <Button asChild size="sm" className="gap-2">
             <Link href="/sign-up">
-              Get started <ArrowRight className="h-4 w-4" />
+              {t.marketingNav.getStarted} <ArrowRight className="h-4 w-4" />
             </Link>
           </Button>
         </div>

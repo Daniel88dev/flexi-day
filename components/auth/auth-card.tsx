@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { authClient } from "@/lib/auth-client";
+import { useTranslation } from "@/lib/i18n/use-translation";
 
 interface AuthCardProps {
   title: string;
@@ -125,14 +126,15 @@ export function GoogleButton({
   );
 }
 
-export function AuthDivider({ label = "or with email" }: { label?: string }) {
+export function AuthDivider({ label }: { label?: string }) {
+  const { t } = useTranslation();
   return (
     <div
       className="my-5 flex items-center gap-3.5 text-[13px]"
       style={{ color: "var(--text-faint)" }}
     >
       <span className="h-px flex-1" style={{ background: "var(--border)" }} />
-      {label}
+      {label ?? t.auth.orWithEmail}
       <span className="h-px flex-1" style={{ background: "var(--border)" }} />
     </div>
   );

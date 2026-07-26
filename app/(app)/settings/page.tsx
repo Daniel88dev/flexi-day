@@ -8,8 +8,10 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { useMySettings, useUpdateMySettings } from "@/lib/api/queries";
 import { changePassword, useSession } from "@/lib/auth-client";
+import { useTranslation } from "@/lib/i18n/use-translation";
 
 export default function SettingsPage() {
+  const { t } = useTranslation();
   const { data: session } = useSession();
   const settingsQuery = useMySettings();
   const updateSettings = useUpdateMySettings();
@@ -25,32 +27,28 @@ export default function SettingsPage() {
     try {
       await updateSettings.mutateAsync({ emailNotifications: next });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not save settings");
+      setError(err instanceof Error ? err.message : t.settings.saveFailed);
     }
   }
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       <div>
-        <h1 className="font-heading text-2xl font-bold">Settings</h1>
+        <h1 className="font-heading text-2xl font-bold">{t.settings.title}</h1>
         <p className="text-muted-foreground mt-1 text-sm">
-          Preferences for {session?.user?.email ?? "your account"}.
+          {t.settings.subtitle(session?.user?.email ?? t.settings.yourAccount)}
         </p>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Notifications</CardTitle>
+          <CardTitle>{t.settings.notifications}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-start justify-between gap-6">
             <div className="space-y-1">
-              <Label htmlFor="emailNotifications">Email notifications</Label>
-              <p className="text-muted-foreground text-sm">
-                Approval requests, decisions on your requests, and cancellations of approved time
-                off. Turning this off keeps them in the app only — account emails such as address
-                confirmation always send.
-              </p>
+              <Label htmlFor="emailNotifications">{t.settings.emailNotifications}</Label>
+              <p className="text-muted-foreground text-sm">{t.settings.emailNotificationsHint}</p>
             </div>
             <Switch
               id="emailNotifications"
@@ -73,6 +71,7 @@ export default function SettingsPage() {
 }
 
 function ChangePasswordCard() {
+  const { t } = useTranslation();
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -86,12 +85,12 @@ function ChangePasswordCard() {
     setSuccess(null);
 
     if (newPassword.length < 8) {
-      setError("New password must be at least 8 characters.");
+      setError(t.settings.passwordTooShort);
       return;
     }
 
     if (newPassword !== confirmPassword) {
-      setError("Passwords do not match.");
+      setError(t.settings.passwordMismatch);
       return;
     }
 
@@ -103,15 +102,15 @@ function ChangePasswordCard() {
         revokeOtherSessions: true,
       });
       if (result.error) {
-        setError(result.error.message ?? "Could not change password.");
+        setError(result.error.message ?? t.settings.changePasswordFailed);
         return;
       }
-      setSuccess("Password changed.");
+      setSuccess(t.settings.passwordChanged);
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not change password.");
+      setError(err instanceof Error ? err.message : t.settings.changePasswordFailed);
     } finally {
       setLoading(false);
     }
@@ -120,12 +119,12 @@ function ChangePasswordCard() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Change password</CardTitle>
+        <CardTitle>{t.settings.changePassword}</CardTitle>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-1.5">
-            <Label htmlFor="currentPassword">Current password</Label>
+            <Label htmlFor="currentPassword">{t.settings.currentPassword}</Label>
             <Input
               id="currentPassword"
               type="password"
@@ -136,12 +135,12 @@ function ChangePasswordCard() {
             />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="newPassword">New password</Label>
+            <Label htmlFor="newPassword">{t.settings.newPassword}</Label>
             <Input
               id="newPassword"
               type="password"
               autoComplete="new-password"
-              placeholder="At least 8 characters"
+              placeholder={t.settings.newPasswordPlaceholder}
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
               minLength={8}
@@ -149,12 +148,12 @@ function ChangePasswordCard() {
             />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="confirmPassword">Confirm new password</Label>
+            <Label htmlFor="confirmPassword">{t.settings.confirmNewPassword}</Label>
             <Input
               id="confirmPassword"
               type="password"
               autoComplete="new-password"
-              placeholder="Re-enter your new password"
+              placeholder={t.settings.confirmPlaceholder}
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               minLength={8}
@@ -163,12 +162,10 @@ function ChangePasswordCard() {
           </div>
 
           {error ? <p className="text-destructive text-sm">{error}</p> : null}
-          {success ? (
-            <p className="text-sm text-green-700 dark:text-green-400">{success}</p>
-          ) : null}
+          {success ? <p className="text-sm text-green-700 dark:text-green-400">{success}</p> : null}
 
           <Button type="submit" disabled={loading}>
-            {loading ? "Saving…" : "Change password"}
+            {loading ? t.common.saving : t.settings.changePassword}
           </Button>
         </form>
       </CardContent>

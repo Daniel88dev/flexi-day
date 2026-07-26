@@ -14,6 +14,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useSession, authClient } from "@/lib/auth-client";
+import { useTranslation } from "@/lib/i18n/use-translation";
 
 function getInitials(name?: string | null) {
   if (!name) return "?";
@@ -28,6 +29,7 @@ function getInitials(name?: string | null) {
 
 export function UserMenu() {
   const router = useRouter();
+  const { t } = useTranslation();
   const { data: session } = useSession();
   const name = session?.user?.name;
   const email = session?.user?.email;
@@ -50,7 +52,7 @@ export function UserMenu() {
             {name ? getInitials(name) : <User className="h-3.5 w-3.5" />}
           </span>
           <ChevronDown className="text-muted-foreground h-3 w-3" />
-          <span className="sr-only">User menu</span>
+          <span className="sr-only">{t.userMenu.label}</span>
         </Button>
       </DropdownMenuTrigger>
 
@@ -62,7 +64,7 @@ export function UserMenu() {
             </span>
             <div className="flex min-w-0 flex-col">
               <span className="truncate text-sm leading-tight font-semibold">
-                {name ?? "Signed in"}
+                {name ?? t.userMenu.signedIn}
               </span>
               {email ? (
                 <span className="text-muted-foreground truncate text-xs leading-tight">
@@ -79,13 +81,13 @@ export function UserMenu() {
           <DropdownMenuItem asChild className="gap-2 text-sm">
             <Link href="/groups">
               <Users className="h-3.5 w-3.5" />
-              My groups
+              {t.userMenu.myGroups}
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild className="gap-2 text-sm">
             <Link href="/settings">
               <Settings className="h-3.5 w-3.5" />
-              Settings
+              {t.userMenu.settings}
             </Link>
           </DropdownMenuItem>
         </DropdownMenuGroup>
@@ -97,7 +99,7 @@ export function UserMenu() {
           className="text-destructive focus:text-destructive gap-2 text-sm"
         >
           <LogOut className="h-3.5 w-3.5" />
-          Sign out
+          {t.userMenu.signOut}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

@@ -5,12 +5,7 @@ import { usePathname } from "next/navigation";
 import { Logo } from "@/components/brand/logo";
 import { AvatarBubble } from "@/components/brand/avatar-bubble";
 import { demoById } from "@/lib/demo/team";
-
-const QUOTES = {
-  signup:
-    "Set up your whole team in under five minutes — and never chase a time-off request again.",
-  signin: "The calmest part of our week is knowing exactly who's in and who's away.",
-};
+import { useTranslation } from "@/lib/i18n/use-translation";
 
 const STATS: Array<[string, string]> = [
   ["2,400+", "teams"],
@@ -19,8 +14,9 @@ const STATS: Array<[string, string]> = [
 ];
 
 export function BrandPanel() {
+  const { t } = useTranslation();
   const pathname = usePathname();
-  const mode: keyof typeof QUOTES = pathname.includes("sign-up") ? "signup" : "signin";
+  const mode: "signup" | "signin" = pathname.includes("sign-up") ? "signup" : "signin";
   const p = demoById("pn")!;
   return (
     <div
@@ -49,7 +45,7 @@ export function BrandPanel() {
             letterSpacing: "-0.02em",
           }}
         >
-          {QUOTES[mode]}
+          {t.auth.brand[mode]}
         </p>
         {/*<div className="flex items-center gap-3">*/}
         {/*  <AvatarBubble initials={p.initials} background={p.av} size={44} name={p.name} />*/}

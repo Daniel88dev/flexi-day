@@ -8,8 +8,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AuthCard, AuthError } from "@/components/auth/auth-card";
+import { useTranslation } from "@/lib/i18n/use-translation";
 
 function ResetPasswordForm() {
+  const { t } = useTranslation();
   const router = useRouter();
   const params = useSearchParams();
   const token = params.get("token") ?? "";
@@ -24,15 +26,15 @@ function ResetPasswordForm() {
     setError(null);
 
     if (!token) {
-      setError("Missing or invalid reset token.");
+      setError(t.auth.reset.missingToken);
       return;
     }
     if (password.length < 8) {
-      setError("Password must be at least 8 characters.");
+      setError(t.auth.reset.passwordTooShort);
       return;
     }
     if (password !== confirm) {
-      setError("Passwords do not match.");
+      setError(t.auth.reset.passwordMismatch);
       return;
     }
 
@@ -40,12 +42,12 @@ function ResetPasswordForm() {
     try {
       const result = await authClient.resetPassword({ newPassword: password, token });
       if (result.error) {
-        setError(result.error.message ?? "Could not reset password");
+        setError(result.error.message ?? t.auth.reset.failed);
       } else {
         router.replace("/sign-in");
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not reset password");
+      setError(err instanceof Error ? err.message : t.auth.reset.failed);
     } finally {
       setLoading(false);
     }
@@ -53,18 +55,18 @@ function ResetPasswordForm() {
 
   return (
     <AuthCard
-      title="Set a new password"
-      description="Pick something memorable but secure."
+      title={t.auth.reset.title}
+      description={t.auth.reset.description}
       footer={
         <Link href="/sign-in" className="text-primary font-medium hover:underline">
-          Back to sign in
+          {t.auth.reset.backToSignIn}
         </Link>
       }
     >
       <form onSubmit={handleSubmit} className="space-y-4">
         <AuthError message={error} />
         <div className="space-y-1.5">
-          <Label htmlFor="password">New password</Label>
+          <Label htmlFor="password">{t.auth.reset.newPassword}</Label>
           <Input
             id="password"
             type="password"
@@ -76,7 +78,7 @@ function ResetPasswordForm() {
           />
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="confirm">Confirm password</Label>
+          <Label htmlFor="confirm">{t.auth.reset.confirmPassword}</Label>
           <Input
             id="confirm"
             type="password"
@@ -87,7 +89,7 @@ function ResetPasswordForm() {
           />
         </div>
         <Button type="submit" size="lg" className="w-full" disabled={loading}>
-          {loading ? "Saving…" : "Reset password"}
+          {loading ? t.auth.reset.submitting : t.auth.reset.submit}
         </Button>
       </form>
     </AuthCard>

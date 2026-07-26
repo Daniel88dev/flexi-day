@@ -22,16 +22,17 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { useCreateVacation, useGroups } from "@/lib/api/queries";
 import { ApiError } from "@/lib/api/client";
-import { VACATION_KIND_LABELS, VacationKind } from "@/lib/api/types";
+import { VacationKind } from "@/lib/api/types";
+import { useTranslation } from "@/lib/i18n/use-translation";
 
 function todayIso() {
   return new Date().toISOString().slice(0, 10);
 }
 
-function formatIsoDay(iso: string): string {
+function formatIsoDay(iso: string, locale: string): string {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return iso;
-  return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  return d.toLocaleDateString(locale, { month: "short", day: "numeric" });
 }
 
 function extractConflictingDays(err: ApiError): string[] {
@@ -57,6 +58,7 @@ interface NewRequestDialogProps {
 }
 
 export function NewRequestDialog({ open, onOpenChange, initialDate }: NewRequestDialogProps = {}) {
+  const { t } = useTranslation();
   const groupsQuery = useGroups();
   const createVacation = useCreateVacation();
 
@@ -101,7 +103,7 @@ export function NewRequestDialog({ open, onOpenChange, initialDate }: NewRequest
     setError(null);
     if (!selectedGroupId || !from || !to) return;
     if (to < from) {
-      setError("End date must be on or after start date.");
+      setError(t.newRequest.endBeforeStart);
       return;
     }
 
@@ -121,19 +123,14 @@ export function NewRequestDialog({ open, onOpenChange, initialDate }: NewRequest
       if (err instanceof ApiError && err.status === 409) {
         const days = extractConflictingDays(err);
         if (days.length > 0) {
-          const formatted = days.map(formatIsoDay).join(", ");
-          setError(
-            `Some days in that range are already booked: ${formatted}. Please pick different dates.`
-          );
+          const formatted = days.map((d) => formatIsoDay(d, t.common.dateLocale)).join(", ");
+          setError(t.newRequest.conflict(formatted));
         } else {
-          setError(
-            err.message ||
-              "Some days in that range are already booked. Please pick different dates."
-          );
+          setError(err.message || t.newRequest.conflictGeneric);
         }
         return;
       }
-      const msg = err instanceof Error ? err.message : "Could not create vacation";
+      const msg = err instanceof Error ? err.message : t.newRequest.createFailed;
       setError(msg);
     }
   }
@@ -151,13 +148,13 @@ export function NewRequestDialog({ open, onOpenChange, initialDate }: NewRequest
       {controlled ? null : (
         <DialogTrigger asChild>
           <Button size="sm" disabled={!hasGroups && !groupsQuery.isLoading}>
-            + New Request
+            {t.newRequest.trigger}
           </Button>
         </DialogTrigger>
       )}
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>New Request</DialogTitle>
+          <DialogTitle>{t.newRequest.title}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 py-2">
           {error ? (
@@ -170,16 +167,16 @@ export function NewRequestDialog({ open, onOpenChange, initialDate }: NewRequest
           ) : null}
 
           <div className="space-y-1.5">
-            <Label htmlFor="group">Group</Label>
+            <Label htmlFor="group">{t.newRequest.group}</Label>
             <Select value={selectedGroupId} onValueChange={setGroupId}>
               <SelectTrigger id="group">
                 <SelectValue
                   placeholder={
                     groupsQuery.isLoading
-                      ? "Loading groups…"
+                      ? t.newRequest.loadingGroups
                       : hasGroups
-                        ? "Select group…"
-                        : "No groups available"
+                        ? t.newRequest.selectGroup
+                        : t.newRequest.noGroups
                   }
                 />
               </SelectTrigger>
@@ -194,7 +191,7 @@ export function NewRequestDialog({ open, onOpenChange, initialDate }: NewRequest
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="type">Type</Label>
+            <Label htmlFor="type">{t.newRequest.type}</Label>
             <Select value={vacationType} onValueChange={(v) => setVacationType(v as VacationKind)}>
               <SelectTrigger id="type">
                 <SelectValue />
@@ -202,7 +199,7 @@ export function NewRequestDialog({ open, onOpenChange, initialDate }: NewRequest
               <SelectContent>
                 {REQUESTABLE_KINDS.map((k) => (
                   <SelectItem key={k} value={k}>
-                    {VACATION_KIND_LABELS[k]}
+                    {t.leaveTypes[k].label}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -211,7 +208,7 @@ export function NewRequestDialog({ open, onOpenChange, initialDate }: NewRequest
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label htmlFor="from">From</Label>
+              <Label htmlFor="from">{t.newRequest.from}</Label>
               <Input
                 id="from"
                 type="date"
@@ -224,7 +221,7 @@ export function NewRequestDialog({ open, onOpenChange, initialDate }: NewRequest
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="to">To</Label>
+              <Label htmlFor="to">{t.newRequest.to}</Label>
               <Input
                 id="to"
                 type="date"
@@ -238,7 +235,7 @@ export function NewRequestDialog({ open, onOpenChange, initialDate }: NewRequest
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label htmlFor="start">Start time (optional)</Label>
+              <Label htmlFor="start">{t.newRequest.startTime}</Label>
               <Input
                 id="start"
                 type="time"
@@ -247,7 +244,7 @@ export function NewRequestDialog({ open, onOpenChange, initialDate }: NewRequest
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="end">End time (optional)</Label>
+              <Label htmlFor="end">{t.newRequest.endTime}</Label>
               <Input
                 id="end"
                 type="time"
@@ -258,22 +255,22 @@ export function NewRequestDialog({ open, onOpenChange, initialDate }: NewRequest
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="note">Note (optional)</Label>
+            <Label htmlFor="note">{t.newRequest.note}</Label>
             <Textarea
               id="note"
               rows={2}
               value={note}
               onChange={(e) => setNote(e.target.value)}
-              placeholder="Family trip, conference, …"
+              placeholder={t.newRequest.notePlaceholder}
             />
           </div>
 
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={() => setDialogOpen(false)}>
-              Cancel
+              {t.common.cancel}
             </Button>
             <Button type="submit" disabled={!isValid}>
-              {createVacation.isPending ? "Submitting…" : "Submit Request"}
+              {createVacation.isPending ? t.newRequest.submitting : t.newRequest.submit}
             </Button>
           </DialogFooter>
         </form>

@@ -1,8 +1,10 @@
 "use client";
 
 import { Calendar, Plus, RefreshCw } from "lucide-react";
+import { useTranslation } from "@/lib/i18n/use-translation";
 
 export function EmptyState({ onCreate }: { onCreate: () => void }) {
+  const { t } = useTranslation();
   return (
     <div
       className="cs-card flex flex-col items-center gap-2 text-center"
@@ -35,14 +37,13 @@ export function EmptyState({ onCreate }: { onCreate: () => void }) {
           <RefreshCw size={18} />
         </span>
       </div>
-      <h2 className="text-[25px]">No calendars yet</h2>
+      <h2 className="text-[25px]">{t.calSync.empty.title}</h2>
       <p className="mb-3 text-[15.5px]" style={{ color: "var(--text-muted)", maxWidth: 440 }}>
-        Create a calendar to push your team&apos;s time off into Google, Outlook or Apple Calendar.
-        Subscribe once — it stays up to date on its own.
+        {t.calSync.empty.body}
       </p>
       <button type="button" className="cs-btn cs-btn-primary cs-btn-lg" onClick={onCreate}>
         <Plus size={18} />
-        Create your first calendar
+        {t.calSync.empty.cta}
       </button>
     </div>
   );

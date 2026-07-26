@@ -4,6 +4,7 @@ import { AvatarBubble } from "@/components/brand/avatar-bubble";
 import { LeaveTag } from "@/components/dashboard/leave-tag";
 import { DEFAULT_LEAVE_TYPES, type LeaveTypeKey } from "@/lib/demo/leave-meta";
 import { vacationStatus, VacationKind, type VacationListItem } from "@/lib/api/types";
+import { useTranslation } from "@/lib/i18n/use-translation";
 
 interface OutTodayWidgetProps {
   vacations: VacationListItem[];
@@ -11,6 +12,7 @@ interface OutTodayWidgetProps {
 }
 
 export function OutTodayWidget({ vacations, todayDay }: OutTodayWidgetProps) {
+  const { t } = useTranslation();
   const today = new Date();
   const todayIso = today.toISOString().slice(0, 10);
 
@@ -41,7 +43,7 @@ export function OutTodayWidget({ vacations, todayDay }: OutTodayWidgetProps) {
       style={{ background: "var(--surface)", borderColor: "var(--border)" }}
     >
       <div className="mb-4 flex items-center justify-between">
-        <h3 className="font-display text-[16px] font-semibold">Out today</h3>
+        <h3 className="font-display text-[16px] font-semibold">{t.widgets.outToday.title}</h3>
         <span
           className="inline-flex items-center rounded-full border px-2.5 py-[5px] text-[12.5px] font-semibold"
           style={{
@@ -50,12 +52,12 @@ export function OutTodayWidget({ vacations, todayDay }: OutTodayWidgetProps) {
             borderColor: "var(--border)",
           }}
         >
-          {out.length} away
+          {t.widgets.outToday.away(out.length)}
         </span>
       </div>
       {out.length === 0 ? (
         <p className="text-[14px]" style={{ color: "var(--text-muted)" }}>
-          {considerToday ? "Everyone's in today." : "Viewing another month."}
+          {considerToday ? t.widgets.outToday.everyoneIn : t.widgets.outToday.otherMonth}
         </p>
       ) : (
         <div className="flex flex-col gap-3">

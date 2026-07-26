@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { AuthCard, AuthDivider, AuthError, GoogleButton } from "@/components/auth/auth-card";
 import { FieldInput } from "@/components/auth/field-input";
 import { GuestGuard } from "@/components/auth/guest-guard";
+import { useTranslation } from "@/lib/i18n/use-translation";
 
 export default function SignInPage() {
   return (
@@ -21,6 +22,7 @@ export default function SignInPage() {
 }
 
 function SignInForm() {
+  const { t } = useTranslation();
   const router = useRouter();
   const params = useSearchParams();
   const redirectTo = params.get("redirect") || "/dashboard";
@@ -37,13 +39,13 @@ function SignInForm() {
     try {
       const result = await authClient.signIn.email({ email, password });
       if (result.error) {
-        setError(result.error.message ?? "Sign-in failed");
+        setError(result.error.message ?? t.auth.signIn.failed);
       } else {
         router.replace(redirectTo);
         router.refresh();
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Sign-in failed");
+      setError(err instanceof Error ? err.message : t.auth.signIn.failed);
     } finally {
       setLoading(false);
     }
@@ -51,31 +53,31 @@ function SignInForm() {
 
   return (
     <AuthCard
-      title="Welcome back"
-      description="Sign in to see who's in and who's away."
+      title={t.auth.signIn.title}
+      description={t.auth.signIn.description}
       footer={
         <span>
-          New to flexiday?{" "}
+          {t.auth.signIn.newToApp}{" "}
           <Link
             href="/sign-up"
             className="font-bold hover:underline"
             style={{ color: "var(--primary)" }}
           >
-            Create a team
+            {t.auth.signIn.createTeam}
           </Link>
         </span>
       }
     >
-      <GoogleButton label="Continue with Google" />
+      <GoogleButton label={t.auth.continueWithGoogle} />
       <AuthDivider />
       <form onSubmit={handleSubmit} className="space-y-4">
         <AuthError message={error} />
         <FieldInput
           id="email"
-          label="Work email"
+          label={t.auth.workEmail}
           type="email"
           icon={<Mail className="h-[17px] w-[17px]" />}
-          placeholder="dana@northwind.co"
+          placeholder={t.auth.emailPlaceholder}
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           autoComplete="email"
@@ -88,14 +90,14 @@ function SignInForm() {
               className="text-[13px] font-semibold tracking-[0.01em]"
               style={{ color: "var(--text-muted)" }}
             >
-              Password
+              {t.auth.password}
             </label>
             <Link
               href="/forgot-password"
               className="text-[13px] font-semibold"
               style={{ color: "var(--primary)" }}
             >
-              Forgot?
+              {t.auth.signIn.forgot}
             </Link>
           </div>
           <FieldInput
@@ -115,7 +117,8 @@ function SignInForm() {
           className="mt-1 w-full gap-2 rounded-full"
           disabled={loading}
         >
-          {loading ? "Signing in…" : "Sign in"} <ArrowRight className="h-[18px] w-[18px]" />
+          {loading ? t.auth.signIn.submitting : t.auth.signIn.submit}{" "}
+          <ArrowRight className="h-[18px] w-[18px]" />
         </Button>
       </form>
     </AuthCard>

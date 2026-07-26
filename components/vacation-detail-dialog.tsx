@@ -21,7 +21,6 @@ import {
 } from "@/lib/api/queries";
 import {
   VACATION_KIND_COLORS,
-  VACATION_KIND_LABELS,
   vacationStatus,
   type VacationDetail,
   type VacationEvent,
@@ -29,6 +28,8 @@ import {
   type VacationStatus,
 } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "@/lib/i18n/use-translation";
+import type { Dictionary } from "@/lib/i18n";
 
 const STATUS_BADGE: Record<VacationStatus | "cancelled", string> = {
   pending: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300",
@@ -37,12 +38,12 @@ const STATUS_BADGE: Record<VacationStatus | "cancelled", string> = {
   cancelled: "bg-muted text-muted-foreground",
 };
 
-const EVENT_META: Record<VacationEventKind, { label: string; icon: typeof Check; tint: string }> = {
-  CREATED: { label: "Requested", icon: Plus, tint: "var(--text-muted)" },
-  APPROVED: { label: "Approved", icon: Check, tint: "var(--c-home)" },
-  REJECTED: { label: "Declined", icon: X, tint: "var(--destructive)" },
-  CANCELLED: { label: "Cancelled", icon: Clock, tint: "var(--warm)" },
-  COMMENT: { label: "Commented", icon: MessageSquare, tint: "var(--text-muted)" },
+const EVENT_META: Record<VacationEventKind, { icon: typeof Check; tint: string }> = {
+  CREATED: { icon: Plus, tint: "var(--text-muted)" },
+  APPROVED: { icon: Check, tint: "var(--c-home)" },
+  REJECTED: { icon: X, tint: "var(--destructive)" },
+  CANCELLED: { icon: Clock, tint: "var(--warm)" },
+  COMMENT: { icon: MessageSquare, tint: "var(--text-muted)" },
 };
 
 /** A cancelled request keeps its approved/rejected stamps, so check deletion first. */
@@ -50,8 +51,8 @@ function detailStatus(detail: VacationDetail): VacationStatus | "cancelled" {
   return detail.deletedAt ? "cancelled" : vacationStatus(detail);
 }
 
-function formatDay(iso: string) {
-  return new Date(iso).toLocaleDateString("en-GB", {
+function formatDay(iso: string, locale: string) {
+  return new Date(iso).toLocaleDateString(locale, {
     weekday: "short",
     day: "numeric",
     month: "short",
@@ -59,8 +60,8 @@ function formatDay(iso: string) {
   });
 }
 
-function formatMoment(iso: string) {
-  return new Date(iso).toLocaleString("en-GB", {
+function formatMoment(iso: string, locale: string) {
+  return new Date(iso).toLocaleString(locale, {
     day: "numeric",
     month: "short",
     year: "numeric",
@@ -84,6 +85,7 @@ export function VacationDetailDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
+  const { t } = useTranslation();
   const detailQuery = useVacation(open ? vacationId : null);
   const approve = useApproveVacation();
   const reject = useRejectVacation();
@@ -94,8 +96,7 @@ export function VacationDetailDialog({
   const [actionError, setActionError] = useState<string | null>(null);
 
   const detail = detailQuery.data;
-  const isMutating =
-    approve.isPending || reject.isPending || cancel.isPending || comment.isPending;
+  const isMutating = approve.isPending || reject.isPending || cancel.isPending || comment.isPending;
 
   function close(nextOpen: boolean) {
     if (!nextOpen) {
@@ -111,7 +112,7 @@ export function VacationDetailDialog({
       await action();
       setReason("");
     } catch (err) {
-      setActionError(err instanceof Error ? err.message : "Action failed");
+      setActionError(err instanceof Error ? err.message : t.vacationDetail.actionFailed);
     }
   }
 
@@ -119,14 +120,16 @@ export function VacationDetailDialog({
     <Dialog open={open} onOpenChange={close}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Request details</DialogTitle>
+          <DialogTitle>{t.vacationDetail.title}</DialogTitle>
           <DialogDescription>
-            {detail ? `${detail.groupName} · ${formatDay(detail.requestedDay)}` : "Loading…"}
+            {detail
+              ? `${detail.groupName} · ${formatDay(detail.requestedDay, t.common.dateLocale)}`
+              : t.common.loading}
           </DialogDescription>
         </DialogHeader>
 
         {detailQuery.isLoading ? (
-          <p className="text-muted-foreground py-6 text-center text-sm">Loading…</p>
+          <p className="text-muted-foreground py-6 text-center text-sm">{t.common.loading}</p>
         ) : detailQuery.error ? (
           <p className="text-destructive py-6 text-center text-sm">{detailQuery.error.message}</p>
         ) : detail ? (
@@ -138,20 +141,20 @@ export function VacationDetailDialog({
                   VACATION_KIND_COLORS[detail.vacationType]
                 )}
               >
-                {VACATION_KIND_LABELS[detail.vacationType]}
+                {t.leaveTypes[detail.vacationType].label}
               </span>
               <span
                 className={cn(
-                  "rounded-full px-2 py-0.5 text-xs font-medium capitalize",
+                  "rounded-full px-2 py-0.5 text-xs font-medium",
                   STATUS_BADGE[detailStatus(detail)]
                 )}
               >
-                {detailStatus(detail)}
+                {t.status[detailStatus(detail)]}
               </span>
               <span className="text-muted-foreground text-xs">
                 {detail.startTime && detail.endTime
                   ? `${detail.startTime.slice(0, 5)} – ${detail.endTime.slice(0, 5)}`
-                  : "Full day"}
+                  : t.vacationDetail.fullDay}
               </span>
             </div>
 
@@ -172,7 +175,7 @@ export function VacationDetailDialog({
               <div className="bg-muted/50 rounded-2xl px-3 py-2 text-sm">{detail.note}</div>
             ) : null}
 
-            <Timeline history={detail.history} />
+            <Timeline history={detail.history} t={t} />
 
             {actionError ? <p className="text-destructive text-sm">{actionError}</p> : null}
 
@@ -181,8 +184,8 @@ export function VacationDetailDialog({
                 rows={2}
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
-                placeholder="Write a comment, or add a reason for your decision — shown in the request history"
-                aria-label="Comment or reason"
+                placeholder={t.vacationDetail.commentPlaceholder}
+                aria-label={t.vacationDetail.commentAriaLabel}
               />
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <Button
@@ -193,7 +196,7 @@ export function VacationDetailDialog({
                     run(() => comment.mutateAsync({ id: detail.id, message: reason.trim() }))
                   }
                 >
-                  {comment.isPending ? "Sending…" : "Comment"}
+                  {comment.isPending ? t.vacationDetail.sending : t.vacationDetail.comment}
                 </Button>
                 <div className="flex flex-wrap justify-end gap-2">
                   {detail.canApprove ? (
@@ -212,7 +215,7 @@ export function VacationDetailDialog({
                           )
                         }
                       >
-                        Approve
+                        {t.vacationDetail.approve}
                       </Button>
                       <Button
                         size="sm"
@@ -221,11 +224,14 @@ export function VacationDetailDialog({
                         disabled={isMutating}
                         onClick={() =>
                           run(() =>
-                            reject.mutateAsync({ id: detail.id, reason: reason.trim() || undefined })
+                            reject.mutateAsync({
+                              id: detail.id,
+                              reason: reason.trim() || undefined,
+                            })
                           )
                         }
                       >
-                        Decline
+                        {t.vacationDetail.decline}
                       </Button>
                     </>
                   ) : null}
@@ -240,7 +246,7 @@ export function VacationDetailDialog({
                         )
                       }
                     >
-                      Cancel request
+                      {t.vacationDetail.cancelRequest}
                     </Button>
                   ) : null}
                 </div>
@@ -253,13 +259,9 @@ export function VacationDetailDialog({
   );
 }
 
-function Timeline({ history }: { history: VacationEvent[] }) {
+function Timeline({ history, t }: { history: VacationEvent[]; t: Dictionary }) {
   if (history.length === 0) {
-    return (
-      <p className="text-muted-foreground text-sm">
-        No history recorded for this request — it predates request history.
-      </p>
-    );
+    return <p className="text-muted-foreground text-sm">{t.vacationDetail.noHistory}</p>;
   }
 
   return (
@@ -280,12 +282,16 @@ function Timeline({ history }: { history: VacationEvent[] }) {
             </span>
             <div className="min-w-0 text-sm">
               <div>
-                <span className="font-medium">{meta.label}</span>
+                <span className="font-medium">{t.vacationDetail.events[event.eventType]}</span>
                 {event.actor ? (
-                  <span className="text-muted-foreground"> by {event.actor.name}</span>
+                  <span className="text-muted-foreground">
+                    {t.vacationDetail.byActor(event.actor.name)}
+                  </span>
                 ) : null}
               </div>
-              <div className="text-muted-foreground text-xs">{formatMoment(event.createdAt)}</div>
+              <div className="text-muted-foreground text-xs">
+                {formatMoment(event.createdAt, t.common.dateLocale)}
+              </div>
               {event.reason ? <div className="mt-1 text-xs">“{event.reason}”</div> : null}
             </div>
           </li>

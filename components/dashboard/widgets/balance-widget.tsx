@@ -2,13 +2,14 @@
 
 import { useMyBalances } from "@/lib/api/queries";
 import { leaveMetaFor } from "@/lib/demo/leave-meta";
-import { VACATION_KIND_LABELS } from "@/lib/api/types";
+import { useTranslation } from "@/lib/i18n/use-translation";
 
 interface BalanceWidgetProps {
   year: number;
 }
 
 export function BalanceWidget({ year }: BalanceWidgetProps) {
+  const { t } = useTranslation();
   const query = useMyBalances(year);
   const data = query.data;
   const visible = (data?.buckets ?? []).filter((b) => b.allocated > 0);
@@ -18,10 +19,10 @@ export function BalanceWidget({ year }: BalanceWidgetProps) {
       className="rounded-2xl border p-5"
       style={{ background: "var(--surface)", borderColor: "var(--border)" }}
     >
-      <h3 className="font-display mb-4 text-[16px] font-semibold">My balance</h3>
+      <h3 className="font-display mb-4 text-[16px] font-semibold">{t.widgets.balance.title}</h3>
       {query.isLoading ? (
         <p className="text-[14px]" style={{ color: "var(--text-muted)" }}>
-          Loading…
+          {t.common.loading}
         </p>
       ) : query.error ? (
         <p className="text-[14px]" style={{ color: "var(--destructive)" }}>
@@ -29,7 +30,7 @@ export function BalanceWidget({ year }: BalanceWidgetProps) {
         </p>
       ) : visible.length === 0 ? (
         <p className="text-[14px]" style={{ color: "var(--text-muted)" }}>
-          No quota set for {year}.
+          {t.widgets.balance.noQuota(year)}
         </p>
       ) : (
         <div className="flex flex-col gap-4">
@@ -37,15 +38,18 @@ export function BalanceWidget({ year }: BalanceWidgetProps) {
             const meta = leaveMetaFor(b.type);
             const left = Math.max(0, b.allocated - b.used);
             const pct = b.allocated > 0 ? Math.min(100, (b.used / b.allocated) * 100) : 0;
-            const label = meta.label !== b.type ? meta.label : VACATION_KIND_LABELS[b.type];
+            const label = t.leaveTypes[b.type].label;
             return (
               <div key={b.type}>
                 <div className="mb-2 flex items-baseline justify-between">
                   <span className="text-[13.5px] font-semibold">{label}</span>
                   <span className="tnum text-[13px]" style={{ color: "var(--text-muted)" }}>
-                    <b style={{ color: "var(--text)" }}>{left}</b> / {b.allocated} left
+                    <b style={{ color: "var(--text)" }}>{left}</b> / {b.allocated}{" "}
+                    {t.widgets.balance.leftSuffix}
                     {b.pending > 0 ? (
-                      <span style={{ color: "var(--text-faint)" }}> · {b.pending} pending</span>
+                      <span style={{ color: "var(--text-faint)" }}>
+                        {t.widgets.balance.pending(b.pending)}
+                      </span>
                     ) : null}
                   </span>
                 </div>

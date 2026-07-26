@@ -8,8 +8,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useCreateGroup, useGroups, useJoinGroup } from "@/lib/api/queries";
 import { useSession } from "@/lib/auth-client";
+import { useTranslation } from "@/lib/i18n/use-translation";
 
 export default function GroupsPage() {
+  const { t } = useTranslation();
   const { data: session } = useSession();
   const userId = session?.user?.id;
 
@@ -37,7 +39,7 @@ export default function GroupsPage() {
       });
       setGroupName("");
     } catch (err) {
-      setCreateError(err instanceof Error ? err.message : "Could not create group");
+      setCreateError(err instanceof Error ? err.message : t.groups.createFailed);
     }
   }
 
@@ -47,10 +49,10 @@ export default function GroupsPage() {
     setJoinSuccess(null);
     try {
       await joinGroup.mutateAsync(joinCode.trim());
-      setJoinSuccess("Joined group successfully.");
+      setJoinSuccess(t.groups.joinSuccess);
       setJoinCode("");
     } catch (err) {
-      setJoinError(err instanceof Error ? err.message : "Could not join group");
+      setJoinError(err instanceof Error ? err.message : t.groups.joinFailed);
     }
   }
 
@@ -59,32 +61,30 @@ export default function GroupsPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="font-heading text-2xl font-bold">Groups</h1>
-        <p className="text-muted-foreground mt-1 text-sm">
-          A group is the unit of vacation tracking — usually a team or office.
-        </p>
+        <h1 className="font-heading text-2xl font-bold">{t.groups.title}</h1>
+        <p className="text-muted-foreground mt-1 text-sm">{t.groups.subtitle}</p>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle>Create a group</CardTitle>
+            <CardTitle>{t.groups.createTitle}</CardTitle>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleCreate} className="space-y-3">
               <div className="space-y-1.5">
-                <Label htmlFor="groupName">Group name</Label>
+                <Label htmlFor="groupName">{t.groups.nameLabel}</Label>
                 <Input
                   id="groupName"
                   required
                   value={groupName}
                   onChange={(e) => setGroupName(e.target.value)}
-                  placeholder="e.g. Platform Team"
+                  placeholder={t.groups.namePlaceholder}
                 />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <Label htmlFor="dv">Default vacation days</Label>
+                  <Label htmlFor="dv">{t.groups.defaultVacation}</Label>
                   <Input
                     id="dv"
                     type="number"
@@ -97,7 +97,7 @@ export default function GroupsPage() {
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="dh">Default HO days</Label>
+                  <Label htmlFor="dh">{t.groups.defaultHomeOffice}</Label>
                   <Input
                     id="dh"
                     type="number"
@@ -112,7 +112,7 @@ export default function GroupsPage() {
               </div>
               {createError ? <p className="text-destructive text-sm">{createError}</p> : null}
               <Button type="submit" disabled={createGroup.isPending || !groupName}>
-                {createGroup.isPending ? "Creating…" : "Create group"}
+                {createGroup.isPending ? t.groups.creating : t.groups.create}
               </Button>
             </form>
           </CardContent>
@@ -120,29 +120,27 @@ export default function GroupsPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Join with code</CardTitle>
+            <CardTitle>{t.groups.joinTitle}</CardTitle>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleJoin} className="space-y-3">
               <div className="space-y-1.5">
-                <Label htmlFor="code">Invite code</Label>
+                <Label htmlFor="code">{t.groups.inviteCode}</Label>
                 <Input
                   id="code"
                   required
                   value={joinCode}
                   onChange={(e) => setJoinCode(e.target.value)}
-                  placeholder="Paste the code from your invite"
+                  placeholder={t.groups.invitePlaceholder}
                 />
-                <p className="text-muted-foreground text-xs">
-                  Ask your group admin for an invite code.
-                </p>
+                <p className="text-muted-foreground text-xs">{t.groups.inviteHint}</p>
               </div>
               {joinError ? <p className="text-destructive text-sm">{joinError}</p> : null}
               {joinSuccess ? (
                 <p className="text-sm text-green-700 dark:text-green-400">{joinSuccess}</p>
               ) : null}
               <Button type="submit" variant="outline" disabled={joinGroup.isPending || !joinCode}>
-                {joinGroup.isPending ? "Joining…" : "Join group"}
+                {joinGroup.isPending ? t.groups.joining : t.groups.join}
               </Button>
             </form>
           </CardContent>
@@ -150,11 +148,11 @@ export default function GroupsPage() {
       </div>
 
       <div className="space-y-3">
-        <h2 className="font-heading text-lg font-semibold">Your groups</h2>
+        <h2 className="font-heading text-lg font-semibold">{t.groups.yourGroups}</h2>
         {groupsQuery.isLoading ? (
-          <p className="text-muted-foreground text-sm">Loading…</p>
+          <p className="text-muted-foreground text-sm">{t.common.loading}</p>
         ) : groups.length === 0 ? (
-          <p className="text-muted-foreground text-sm">No groups yet.</p>
+          <p className="text-muted-foreground text-sm">{t.groups.none}</p>
         ) : (
           <div className="grid gap-3 md:grid-cols-2">
             {groups.map((g) => (
@@ -164,21 +162,23 @@ export default function GroupsPage() {
                     <div>
                       <div className="font-heading text-base font-semibold">{g.groupName}</div>
                       <div className="text-muted-foreground text-xs">
-                        Default vacation {g.defaultVacationDays}d · HO {g.defaultHomeOfficeDays}d
+                        {t.groups.defaultsSummary(g.defaultVacationDays, g.defaultHomeOfficeDays)}
                       </div>
                     </div>
                     {g.managerUserId === userId ? (
                       <span className="bg-primary/10 text-primary rounded-full px-2 py-0.5 text-[10px] font-bold uppercase">
-                        Manager
+                        {t.groups.manager}
                       </span>
                     ) : null}
                   </div>
                   <div className="flex gap-2 pt-1">
                     <Button asChild size="sm" variant="outline">
-                      <Link href={`/groups/detail?groupId=${g.id}`}>Members</Link>
+                      <Link href={`/groups/detail?groupId=${g.id}`}>{t.groups.members}</Link>
                     </Button>
                     <Button asChild size="sm" variant="ghost">
-                      <Link href={`/groups/detail?groupId=${g.id}&tab=quotas`}>Quotas</Link>
+                      <Link href={`/groups/detail?groupId=${g.id}&tab=quotas`}>
+                        {t.groups.quotas}
+                      </Link>
                     </Button>
                   </div>
                 </CardContent>

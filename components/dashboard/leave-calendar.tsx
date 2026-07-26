@@ -3,6 +3,7 @@
 import { AvatarBubble } from "@/components/brand/avatar-bubble";
 import { leaveMetaFor, type LeaveTypeKey } from "@/lib/demo/leave-meta";
 import { VacationKind, type UserSummary } from "@/lib/api/types";
+import { useTranslation } from "@/lib/i18n/use-translation";
 
 export interface CalendarRange {
   id: string;
@@ -28,8 +29,6 @@ interface LeaveCalendarProps {
   /** Makes empty day cells clickable; receives the day-of-month clicked. */
   onDayClick?: (day: number) => void;
 }
-
-const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
 function buildWeeks(monthDays: number, firstIdxMon: number) {
   const cells: Array<number | null> = [];
@@ -67,10 +66,13 @@ function CalBar({
   mini: boolean;
   onSelect?: (vacationId: string) => void;
 }) {
+  const { t } = useTranslation();
   const meta = leaveMetaFor(range.type);
   const u = range.user;
-  const displayName = u ? firstName(u.name) : "Everyone";
-  const title = `${u ? u.name : "Everyone"} · ${meta.label}${range.note ? ` · ${range.note}` : ""}`;
+  const everyone = t.calendar.everyone;
+  const typeLabel = t.leaveTypes[range.type].label;
+  const displayName = u ? firstName(u.name) : everyone;
+  const title = `${u ? u.name : everyone} · ${typeLabel}${range.note ? ` · ${range.note}` : ""}`;
   const vacationId = range.vacationIds?.[0];
   const clickable = Boolean(onSelect && vacationId);
   return (
@@ -78,7 +80,7 @@ function CalBar({
       title={title}
       role={clickable ? "button" : undefined}
       tabIndex={clickable ? 0 : undefined}
-      aria-label={clickable ? `Open request details: ${title}` : undefined}
+      aria-label={clickable ? t.calendar.openRequest(title) : undefined}
       onClick={clickable ? () => onSelect?.(vacationId as string) : undefined}
       onKeyDown={
         clickable
@@ -127,6 +129,8 @@ export function LeaveCalendar({
   onSelect,
   onDayClick,
 }: LeaveCalendarProps) {
+  const { t } = useTranslation();
+  const WEEKDAYS = t.calendar.weekdaysShort;
   const weeks = buildWeeks(monthDays, firstWeekdayMondayIdx);
   const active = filter ? ranges.filter((r) => filter.has(r.type)) : ranges;
   const maxLanes = 3;
@@ -235,7 +239,7 @@ export function LeaveCalendar({
                     className={d ? "transition-colors hover:bg-[var(--surface-2)]" : ""}
                     role={dayClickable ? "button" : undefined}
                     tabIndex={dayClickable ? 0 : undefined}
-                    aria-label={dayClickable ? `Create request for day ${d}` : undefined}
+                    aria-label={dayClickable ? t.calendar.createRequestDay(d as number) : undefined}
                     onClick={dayClickable ? () => onDayClick?.(d as number) : undefined}
                     onKeyDown={
                       dayClickable
@@ -327,7 +331,9 @@ export function LeaveCalendar({
                         border: "1px dashed color-mix(in oklch, var(--c-bank) 40%, transparent)",
                       }}
                     >
-                      {mini ? "Bank" : `🎉 ${e.note ?? "Bank Holiday"}`}
+                      {mini
+                        ? t.leaveTypes[VacationKind.BankHoliday].short
+                        : `🎉 ${e.note ?? t.calendar.bankHoliday}`}
                     </div>
                   </div>
                 );
@@ -365,7 +371,7 @@ export function LeaveCalendar({
                   color: "var(--text-faint)",
                 }}
               >
-                +{overflow} more
+                {t.calendar.moreCount(overflow)}
               </div>
             ) : null}
           </div>

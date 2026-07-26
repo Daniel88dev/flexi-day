@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { ArrowRight } from "lucide-react";
 import { AuthCard, AuthError, AuthSuccess } from "@/components/auth/auth-card";
 import { Button } from "@/components/ui/button";
+import { useTranslation } from "@/lib/i18n/use-translation";
 
 export default function EmailVerifiedPage() {
   return (
@@ -16,6 +17,7 @@ export default function EmailVerifiedPage() {
 }
 
 function EmailVerifiedContent() {
+  const { t } = useTranslation();
   const params = useSearchParams();
   // The API redirects here after verifying the token. On failure better-auth
   // appends `?error=<code>`; on success there is no `error` param.
@@ -24,23 +26,23 @@ function EmailVerifiedContent() {
   if (isError) {
     return (
       <AuthCard
-        title="Verification failed"
-        description="This confirmation link is invalid or has expired."
+        title={t.auth.verified.failTitle}
+        description={t.auth.verified.failDescription}
         footer={
           <Link
             href="/sign-up"
             className="font-bold hover:underline"
             style={{ color: "var(--primary)" }}
           >
-            Create a new account
+            {t.auth.verified.createNew}
           </Link>
         }
       >
-        <AuthError message="Your email couldn't be verified. Sign in to request a fresh verification link." />
+        <AuthError message={t.auth.verified.failMessage} />
         <div className="mt-5">
           <Button asChild size="lg" className="w-full gap-2 rounded-full">
             <Link href="/sign-in">
-              Go to sign in <ArrowRight className="h-[18px] w-[18px]" />
+              {t.auth.verified.goToSignIn} <ArrowRight className="h-[18px] w-[18px]" />
             </Link>
           </Button>
         </div>
@@ -50,23 +52,23 @@ function EmailVerifiedContent() {
 
   return (
     <AuthCard
-      title="Email verified"
-      description="Thanks for confirming your email address. Your account is now active."
+      title={t.auth.verified.okTitle}
+      description={t.auth.verified.okDescription}
       footer={
         <Link
           href="/sign-in"
           className="font-medium hover:underline"
           style={{ color: "var(--primary)" }}
         >
-          Back to sign in
+          {t.auth.verified.backToSignIn}
         </Link>
       }
     >
-      <AuthSuccess message="You're all set — your email address has been verified." />
+      <AuthSuccess message={t.auth.verified.okMessage} />
       <div className="mt-5">
         <Button asChild size="lg" className="w-full gap-2 rounded-full">
           <Link href="/sign-in">
-            Continue to sign in <ArrowRight className="h-[18px] w-[18px]" />
+            {t.auth.verified.continue} <ArrowRight className="h-[18px] w-[18px]" />
           </Link>
         </Button>
       </div>

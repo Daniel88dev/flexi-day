@@ -3,35 +3,20 @@
 import { Check, CheckCircle2 } from "lucide-react";
 import { AvatarBubble } from "@/components/brand/avatar-bubble";
 import { useApproveVacations, useMyApprovals, useRejectVacations } from "@/lib/api/queries";
-import { leaveMetaFor } from "@/lib/demo/leave-meta";
-import { VACATION_KIND_LABELS } from "@/lib/api/types";
+import { useTranslation } from "@/lib/i18n/use-translation";
 
-const SHORT_MONTH = [
-  "Jan",
-  "Feb",
-  "Mar",
-  "Apr",
-  "May",
-  "Jun",
-  "Jul",
-  "Aug",
-  "Sep",
-  "Oct",
-  "Nov",
-  "Dec",
-];
-
-function formatRange(fromIso: string, toIso: string) {
+function formatRange(fromIso: string, toIso: string, monthsShort: string[]) {
   const f = new Date(fromIso);
   const t = new Date(toIso);
-  const fm = SHORT_MONTH[f.getMonth()];
-  const tm = SHORT_MONTH[t.getMonth()];
+  const fm = monthsShort[f.getMonth()];
+  const tm = monthsShort[t.getMonth()];
   if (fromIso === toIso) return `${fm} ${f.getDate()}`;
   if (fm === tm) return `${fm} ${f.getDate()}–${t.getDate()}`;
   return `${fm} ${f.getDate()} – ${tm} ${t.getDate()}`;
 }
 
 export function ApprovalsWidget() {
+  const { t } = useTranslation();
   const query = useMyApprovals();
   const approve = useApproveVacations();
   const reject = useRejectVacations();
@@ -46,20 +31,20 @@ export function ApprovalsWidget() {
       style={{ background: "var(--surface)", borderColor: "var(--border)" }}
     >
       <div className="mb-4 flex items-center justify-between">
-        <h3 className="font-display text-[16px] font-semibold">Pending approvals</h3>
+        <h3 className="font-display text-[16px] font-semibold">{t.widgets.approvals.title}</h3>
         {items.length > 0 ? (
           <span
             className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-[5px] text-[12.5px] font-semibold"
             style={{ background: "var(--warm-soft)", color: "var(--warm)" }}
           >
-            {items.length} to review
+            {t.widgets.approvals.toReview(items.length)}
           </span>
         ) : null}
       </div>
 
       {isLoading ? (
         <p className="text-[14px]" style={{ color: "var(--text-muted)" }}>
-          Loading…
+          {t.common.loading}
         </p>
       ) : query.error ? (
         <p className="text-[14px]" style={{ color: "var(--destructive)" }}>
@@ -70,15 +55,13 @@ export function ApprovalsWidget() {
           className="flex items-center gap-2.5 px-1 py-3.5 text-[14px]"
           style={{ color: "var(--text-muted)" }}
         >
-          <CheckCircle2 className="h-5 w-5" style={{ color: "var(--c-home)" }} /> All caught up —
-          nothing waiting.
+          <CheckCircle2 className="h-5 w-5" style={{ color: "var(--c-home)" }} />{" "}
+          {t.widgets.approvals.allCaughtUp}
         </div>
       ) : (
         <div className="flex flex-col gap-3.5">
           {items.map((a) => {
-            const meta = leaveMetaFor(a.vacationType);
-            const typeLabel =
-              meta.label !== a.vacationType ? meta.label : VACATION_KIND_LABELS[a.vacationType];
+            const typeLabel = t.leaveTypes[a.vacationType].label;
             const rowKey = a.vacationIds[0] ?? `${a.user.id}-${a.from}`;
             return (
               <div key={rowKey} className="flex items-start gap-3">
@@ -91,8 +74,11 @@ export function ApprovalsWidget() {
                 <div className="min-w-0 flex-1">
                   <div className="text-[14.5px] font-semibold">{a.user.name}</div>
                   <div className="mb-2 text-[12.5px]" style={{ color: "var(--text-faint)" }}>
-                    {typeLabel} · {formatRange(a.from, a.to)} · {a.businessDays}{" "}
-                    {a.businessDays === 1 ? "day" : "days"}
+                    {t.widgets.approvals.meta(
+                      typeLabel,
+                      formatRange(a.from, a.to, t.calendar.monthsShort),
+                      a.businessDays
+                    )}
                   </div>
                   <div className="flex gap-2">
                     <button
@@ -102,7 +88,7 @@ export function ApprovalsWidget() {
                       className="inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-[13.5px] font-semibold disabled:opacity-60"
                       style={{ background: "var(--primary)", color: "var(--primary-fg)" }}
                     >
-                      <Check className="h-3.5 w-3.5" /> Approve
+                      <Check className="h-3.5 w-3.5" /> {t.widgets.approvals.approve}
                     </button>
                     <button
                       type="button"
@@ -115,7 +101,7 @@ export function ApprovalsWidget() {
                         background: "transparent",
                       }}
                     >
-                      Decline
+                      {t.widgets.approvals.decline}
                     </button>
                   </div>
                 </div>

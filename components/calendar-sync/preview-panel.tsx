@@ -1,11 +1,9 @@
 "use client";
 
 import { Filter, Info } from "lucide-react";
-import { VACATION_KIND_LABELS } from "@/lib/api/types";
 import { TYPE_META } from "@/lib/calendar-sync/meta";
 import type { PreviewEntry } from "@/lib/calendar-sync/preview";
-
-const WD = ["M", "T", "W", "T", "F", "S", "S"];
+import { useTranslation } from "@/lib/i18n/use-translation";
 
 function buildWeeks(monthDays: number, firstIdxMon: number) {
   const cells: Array<number | null> = [];
@@ -34,6 +32,7 @@ export function PreviewPanel({
   setMode: (m: PreviewMode) => void;
   geometry: Geometry;
 }) {
+  const { t } = useTranslation();
   return (
     <div className="flex h-full min-h-0 flex-col">
       <div className="mb-3.5 flex items-center justify-between gap-2.5">
@@ -42,7 +41,7 @@ export function PreviewPanel({
             className="flex-none rounded"
             style={{ width: 12, height: 12, background: "var(--primary)" }}
           />
-          <span className="truncate text-sm font-bold">{name || "Untitled calendar"}</span>
+          <span className="truncate text-sm font-bold">{name || t.calSync.preview.untitled}</span>
         </div>
         <div
           className="flex gap-[3px] rounded-full p-[3px]"
@@ -53,7 +52,7 @@ export function PreviewPanel({
               key={m}
               type="button"
               onClick={() => setMode(m)}
-              className="rounded-full text-xs font-semibold capitalize"
+              className="rounded-full text-xs font-semibold"
               style={{
                 padding: "6px 13px",
                 background: mode === m ? "var(--surface)" : "transparent",
@@ -61,7 +60,7 @@ export function PreviewPanel({
                 boxShadow: mode === m ? "var(--shadow-sm)" : "none",
               }}
             >
-              {m}
+              {t.calSync.preview[m]}
             </button>
           ))}
         </div>
@@ -75,9 +74,9 @@ export function PreviewPanel({
           <div>
             <Filter size={26} style={{ marginBottom: 8 }} />
             <p className="text-[13.5px]">
-              Nothing matches in {geometry.monthLabel}.
+              {t.calSync.preview.nothingMatches(geometry.monthLabel)}
               <br />
-              Turn on a record type or pick a team.
+              {t.calSync.preview.turnOn}
             </p>
           </div>
         </div>
@@ -91,8 +90,7 @@ export function PreviewPanel({
         className="mt-3 flex items-center gap-1.5 text-xs"
         style={{ color: "var(--text-faint)" }}
       >
-        <Info size={13} /> Preview of {geometry.monthLabel} · {entries.length} event
-        {entries.length === 1 ? "" : "s"} in this feed.
+        <Info size={13} /> {t.calSync.preview.footer(geometry.monthLabel, entries.length)}
       </div>
     </div>
   );
@@ -107,6 +105,8 @@ type PlacedBar = PreviewEntry & {
 };
 
 function MonthPreview({ entries, geometry }: { entries: PreviewEntry[]; geometry: Geometry }) {
+  const { t } = useTranslation();
+  const WD = t.calendar.weekdaysShort.map((d) => d[0]);
   const weeks = buildWeeks(geometry.monthDays, geometry.firstWeekdayMondayIdx);
   return (
     <div
@@ -209,15 +209,23 @@ function MonthPreview({ entries, geometry }: { entries: PreviewEntry[]; geometry
               </div>
               <div
                 className="pointer-events-none absolute grid grid-cols-7"
-                style={{ left: 0, right: 0, top: 20, bottom: 3, gridAutoRows: "16px", rowGap: 2, padding: "0 3px" }}
+                style={{
+                  left: 0,
+                  right: 0,
+                  top: 20,
+                  bottom: 3,
+                  gridAutoRows: "16px",
+                  rowGap: 2,
+                  padding: "0 3px",
+                }}
               >
                 {shown.map((b, i) => {
                   const Icon = TYPE_META[b.type].icon;
                   return (
                     <div key={i} style={{ gridColumn: `${b.sc} / ${b.ec}`, gridRow: b.lane + 1 }}>
                       <div
-                        title={`${b.name} · ${VACATION_KIND_LABELS[b.type]}`}
-                        className="flex items-center gap-[3px] overflow-hidden whitespace-nowrap text-[9px] font-bold"
+                        title={`${b.name} · ${t.leaveTypes[b.type].label}`}
+                        className="flex items-center gap-[3px] overflow-hidden text-[9px] font-bold whitespace-nowrap"
                         style={{
                           height: 15,
                           borderRadius: `${b.contL ? 0 : 5}px ${b.contR ? 0 : 5}px ${b.contR ? 0 : 5}px ${b.contL ? 0 : 5}px`,
@@ -227,10 +235,12 @@ function MonthPreview({ entries, geometry }: { entries: PreviewEntry[]; geometry
                           borderLeft: `2.5px solid ${b.color}`,
                         }}
                       >
-                        {!b.contL ? <Icon size={9} style={{ color: b.color, flex: "none" }} /> : null}
+                        {!b.contL ? (
+                          <Icon size={9} style={{ color: b.color, flex: "none" }} />
+                        ) : null}
                         {!b.contL ? (
                           <span className="overflow-hidden text-ellipsis">
-                            {b.isMine ? "You" : b.name.split(" ")[0]}
+                            {b.isMine ? t.calSync.preview.you : b.name.split(" ")[0]}
                           </span>
                         ) : null}
                       </div>
@@ -255,6 +265,7 @@ function MonthPreview({ entries, geometry }: { entries: PreviewEntry[]; geometry
 }
 
 function AgendaPreview({ entries, monthLabel }: { entries: PreviewEntry[]; monthLabel: string }) {
+  const { t } = useTranslation();
   const sorted = [...entries].sort((a, b) => a.from - b.from || a.to - b.to);
   const mon = monthLabel.split(" ")[0].slice(0, 3);
   const fmt = (d: number) => `${mon} ${d}`;
@@ -276,7 +287,7 @@ function AgendaPreview({ entries, monthLabel }: { entries: PreviewEntry[]; month
             }}
           >
             <div
-              className="tnum flex-none text-[11.5px] font-bold leading-tight"
+              className="tnum flex-none text-[11.5px] leading-tight font-bold"
               style={{ width: 62, color: "var(--text-muted)" }}
             >
               {fmt(e.from)}
@@ -300,7 +311,7 @@ function AgendaPreview({ entries, monthLabel }: { entries: PreviewEntry[]; month
             </span>
             <div className="min-w-0 flex-1">
               <div className="truncate text-[13.5px] font-semibold">
-                {e.name} — {VACATION_KIND_LABELS[e.type]}
+                {e.name} — {t.leaveTypes[e.type].label}
               </div>
               {e.note ? (
                 <div className="truncate text-xs" style={{ color: "var(--text-faint)" }}>
@@ -318,7 +329,7 @@ function AgendaPreview({ entries, monthLabel }: { entries: PreviewEntry[]; month
                   border: "1px solid var(--border)",
                 }}
               >
-                You
+                {t.calSync.preview.you}
               </span>
             ) : null}
           </div>

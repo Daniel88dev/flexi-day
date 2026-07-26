@@ -14,6 +14,7 @@ import {
 } from "@/lib/api/queries";
 import { useSession } from "@/lib/auth-client";
 import { configToBuilder, newBuilderConfig, type BuilderConfig } from "@/lib/calendar-sync/meta";
+import { useTranslation } from "@/lib/i18n/use-translation";
 import { CalBuilder, type MonthContext } from "./cal-builder";
 import { CalCard } from "./cal-card";
 import { ConfirmDialog, type ConfirmKind } from "./confirm-dialog";
@@ -37,7 +38,11 @@ function currentMonthContext(): MonthContext {
 }
 
 export function CalendarSyncScreen() {
-  const monthCtx = useMemo(() => currentMonthContext(), []);
+  const { t } = useTranslation();
+  const monthCtx = useMemo(() => {
+    const base = currentMonthContext();
+    return { ...base, label: `${t.calendar.months[base.month - 1]} ${base.year}` };
+  }, [t]);
   const { data: session } = useSession();
   const currentUserId = session?.user?.id ?? "";
 
@@ -61,10 +66,11 @@ export function CalendarSyncScreen() {
 
   const teamsLabel = (config: CalendarSyncConfig): string => {
     const ids = config.teamIds;
-    if (groups.length > 0 && ids.length === groups.length) return "All teams";
-    if (ids.length > 1) return `${ids.length} teams`;
-    if (ids.length === 1) return groups.find((g) => g.id === ids[0])?.groupName ?? "1 team";
-    return "—";
+    if (groups.length > 0 && ids.length === groups.length) return t.calSync.allTeams;
+    if (ids.length > 1) return t.calSync.teamsCount(ids.length);
+    if (ids.length === 1)
+      return groups.find((g) => g.id === ids[0])?.groupName ?? t.calSync.oneTeam;
+    return t.calSync.dash;
   };
 
   const openNew = () =>
@@ -86,14 +92,14 @@ export function CalendarSyncScreen() {
     try {
       if (confirm.kind === "delete") {
         await deleteM.mutateAsync(confirm.config.id);
-        pushToast("Calendar deleted", "danger");
+        pushToast(t.calSync.toasts.deleted, "danger");
       } else {
         await regenM.mutateAsync(confirm.config.id);
-        pushToast("Token regenerated — old link revoked", "warm");
+        pushToast(t.calSync.toasts.regenerated, "warm");
       }
       setConfirm(null);
     } catch (e) {
-      pushToast(e instanceof Error ? e.message : "Something went wrong", "danger");
+      pushToast(e instanceof Error ? e.message : t.calSync.toasts.wrong, "danger");
     }
   };
 
@@ -105,20 +111,19 @@ export function CalendarSyncScreen() {
             className="text-xs font-semibold uppercase"
             style={{ letterSpacing: ".08em", color: "var(--primary)" }}
           >
-            Calendar sync
+            {t.calSync.eyebrow}
           </span>
           <h1 className="text-[34px]" style={{ margin: "10px 0 6px" }}>
-            Your calendars
+            {t.calSync.title}
           </h1>
           <p className="text-base" style={{ color: "var(--text-muted)", maxWidth: 560 }}>
-            Subscribe to Flexi-Day from Google, Outlook or Apple Calendar. Add the link once — new
-            time off shows up automatically.
+            {t.calSync.subtitle}
           </p>
         </div>
         {configs.length > 0 ? (
           <button type="button" className="cs-btn cs-btn-primary" onClick={openNew}>
             <Plus size={17} />
-            New calendar
+            {t.calSync.newCalendar}
           </button>
         ) : null}
       </div>
@@ -128,14 +133,14 @@ export function CalendarSyncScreen() {
           className="cs-card grid place-items-center"
           style={{ padding: "64px", color: "var(--text-muted)" }}
         >
-          Loading your calendars…
+          {t.calSync.loading}
         </div>
       ) : configsQ.isError ? (
         <div
           className="cs-card grid place-items-center"
           style={{ padding: "64px", color: "var(--danger)" }}
         >
-          Couldn’t load your calendars. Please try again.
+          {t.calSync.loadError}
         </div>
       ) : configs.length === 0 ? (
         <EmptyState onCreate={openNew} />

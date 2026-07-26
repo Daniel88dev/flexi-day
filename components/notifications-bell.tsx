@@ -11,16 +11,19 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useMarkNotificationRead, useNotifications } from "@/lib/api/queries";
 import type { AppNotification } from "@/lib/api/types";
+import { useTranslation } from "@/lib/i18n/use-translation";
+import type { Dictionary } from "@/lib/i18n";
 
-function relativeTime(iso: string): string {
+function relativeTime(iso: string, t: Dictionary): string {
   const diff = Date.now() - new Date(iso).getTime();
-  if (diff < 60_000) return "just now";
-  if (diff < 3_600_000) return `${Math.floor(diff / 60_000)}m ago`;
-  if (diff < 86_400_000) return `${Math.floor(diff / 3_600_000)}h ago`;
-  return `${Math.floor(diff / 86_400_000)}d ago`;
+  if (diff < 60_000) return t.notifications.justNow;
+  if (diff < 3_600_000) return t.notifications.minutesAgo(Math.floor(diff / 60_000));
+  if (diff < 86_400_000) return t.notifications.hoursAgo(Math.floor(diff / 3_600_000));
+  return t.notifications.daysAgo(Math.floor(diff / 86_400_000));
 }
 
 export function NotificationsBell() {
+  const { t } = useTranslation();
   const query = useNotifications({ unreadOnly: false });
   const markRead = useMarkNotificationRead();
 
@@ -36,7 +39,9 @@ export function NotificationsBell() {
       <DropdownMenuTrigger asChild>
         <button
           type="button"
-          aria-label={`Notifications${unread.length ? ` (${unread.length} unread)` : ""}`}
+          aria-label={
+            unread.length ? t.notifications.unreadLabel(unread.length) : t.notifications.title
+          }
           className="relative grid h-8 w-8 place-items-center rounded-full border"
           style={{
             borderColor: "var(--border-strong)",
@@ -58,18 +63,18 @@ export function NotificationsBell() {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-[320px]">
         <DropdownMenuLabel className="flex items-center justify-between">
-          <span>Notifications</span>
+          <span>{t.notifications.title}</span>
           {unread.length > 0 ? (
             <span className="text-muted-foreground text-[12px] font-normal">
-              {unread.length} unread
+              {t.notifications.unreadCount(unread.length)}
             </span>
           ) : null}
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         {query.isLoading ? (
-          <p className="text-muted-foreground px-3 py-3 text-sm">Loading…</p>
+          <p className="text-muted-foreground px-3 py-3 text-sm">{t.common.loading}</p>
         ) : items.length === 0 ? (
-          <p className="text-muted-foreground px-3 py-3 text-sm">You&apos;re all caught up.</p>
+          <p className="text-muted-foreground px-3 py-3 text-sm">{t.notifications.empty}</p>
         ) : (
           <ul className="max-h-[360px] overflow-auto py-1">
             {items.slice(0, 12).map((n) => {
@@ -85,7 +90,7 @@ export function NotificationsBell() {
                     <div className="truncate text-[13.5px] font-semibold">{n.title}</div>
                     <div className="text-muted-foreground line-clamp-2 text-[12.5px]">{n.body}</div>
                     <div className="text-muted-foreground/70 mt-0.5 text-[11.5px]">
-                      {relativeTime(n.createdAt)}
+                      {relativeTime(n.createdAt, t)}
                     </div>
                   </div>
                 </div>
