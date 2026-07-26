@@ -451,7 +451,7 @@ export const cs: Dictionary = {
     heroTitlePrefix: "s",
     heroTitleAccent: "péčí",
     heroSubtitle:
-      "flexiday je klidný, sdílený kalendář pro týmové volno. Uvidíte, kdo je v práci, kdo je pryč, a žádosti schválíte jedním kliknutím — aby si váš tým mohl odpočinout bez zbytečného dohadování.",
+      "flexiday je přehledný, sdílený kalendář pro týmové volno. Uvidíte, kdo je v práci, kdo je pryč, a žádosti schválíte jedním kliknutím — aby si váš tým mohl odpočinout bez zbytečného dohadování.",
     startFree: "Začněte zdarma — bez karty",
     signIn: "Přihlásit se",
     setupUnder5: "Nastavte svůj tým za méně než 5 minut",
@@ -472,7 +472,7 @@ export const cs: Dictionary = {
       },
       {
         title: "Skupiny a pokrytí",
-        body: "Uspořádejte podle týmu, pobočky nebo projektu. Nastavte minimální pokrytí, aby tým nikdy nezůstal bez lidí.",
+        body: "Uspořádejte podle týmu, skupiny nebo projektu. Nastavte minimální pokrytí pracovních dní, aby tým nikdy nezůstal bez lidí.",
       },
       {
         title: "Zůstatky, které sedí",
@@ -484,7 +484,7 @@ export const cs: Dictionary = {
       },
       {
         title: "Soukromé ve výchozím nastavení",
-        body: "Citlivé volno zůstává diskrétní. Podrobná oprávnění drží ty správné detaily u těch správných lidí.",
+        body: "Citlivé informace o volnu zůstává diskrétní. Podrobná oprávnění drží ty správné detaily u těch správných lidí.",
       },
     ],
     stepsEyebrow: "Rychle spuštěno",
@@ -500,7 +500,7 @@ export const cs: Dictionary = {
       },
       {
         title: "Schvalte a odpočívejte",
-        body: "Manažeři schvalují jedním kliknutím. Kalendář se aktualizuje pro všechny — žádné honění, žádné dvojité rezervace.",
+        body: "Manažeři schvalují jedním kliknutím. Kalendář se aktualizuje pro všechny — žádné dohledávání, žádné dvojité rezervace.",
       },
     ],
     ctaTitle: "Dopřejte svému týmu klidnější rok.",
