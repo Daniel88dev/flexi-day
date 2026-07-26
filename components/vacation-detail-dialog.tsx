@@ -27,6 +27,7 @@ import {
   type VacationEventKind,
   type VacationStatus,
 } from "@/lib/api/types";
+import { dayLengthLabel } from "@/lib/vacations/day-length";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/lib/i18n/use-translation";
 import type { Dictionary } from "@/lib/i18n";
@@ -161,9 +162,10 @@ export function VacationDetailDialog({
                 {t.status[detailStatus(detail)]}
               </span>
               <span className="text-muted-foreground text-xs">
-                {detail.startTime && detail.endTime
-                  ? `${detail.startTime.slice(0, 5)} – ${detail.endTime.slice(0, 5)}`
-                  : t.vacationDetail.fullDay}
+                {dayLengthLabel(detail, {
+                  halfDay: t.vacationDetail.halfDay,
+                  fullDay: t.vacationDetail.fullDay,
+                })}
               </span>
             </div>
 

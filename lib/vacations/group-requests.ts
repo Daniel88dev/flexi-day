@@ -18,8 +18,10 @@ export interface RequestGroup {
   to: string;
   startTime: string | null;
   endTime: string | null;
+  halfDay: boolean;
   note: string | null;
   vacationIds: string[];
+  /** Calendar days in the run, not allowance days — a half-day run counts 0.5 each. */
   dayCount: number;
 }
 
@@ -40,6 +42,8 @@ export function groupVacationRequests(vacations: VacationListItem[]): RequestGro
       vacationStatus(v),
       v.startTime ?? "",
       v.endTime ?? "",
+      // Keeps a run homogeneous, so the row can label the whole span at once.
+      String(v.halfDay),
     ].join("|");
 
   const sorted = [...vacations].sort((a, b) => {
@@ -76,6 +80,7 @@ export function groupVacationRequests(vacations: VacationListItem[]): RequestGro
         to: v.requestedDay,
         startTime: v.startTime,
         endTime: v.endTime,
+        halfDay: v.halfDay,
         note: v.note,
         vacationIds: [v.id],
         dayCount: 1,

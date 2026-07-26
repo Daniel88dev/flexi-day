@@ -46,6 +46,26 @@ describe("groupVacationRequests", () => {
     });
   });
 
+  it("splits a half day off an adjacent full day", () => {
+    const groups = groupVacationRequests([
+      vac({ id: "a", requestedDay: "2026-08-17" }),
+      vac({ id: "b", requestedDay: "2026-08-18", halfDay: true }),
+    ]);
+
+    expect(groups).toHaveLength(2);
+    expect(groups.map((g) => g.halfDay)).toEqual([false, true]);
+  });
+
+  it("keeps a run of half days together", () => {
+    const groups = groupVacationRequests([
+      vac({ id: "a", requestedDay: "2026-08-17", halfDay: true }),
+      vac({ id: "b", requestedDay: "2026-08-18", halfDay: true }),
+    ]);
+
+    expect(groups).toHaveLength(1);
+    expect(groups[0]).toMatchObject({ halfDay: true, dayCount: 2 });
+  });
+
   it("splits on a calendar gap", () => {
     const groups = groupVacationRequests([
       vac({ id: "a", requestedDay: "2026-08-17" }),

@@ -19,6 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { useCreateVacation, useGroups } from "@/lib/api/queries";
 import { ApiError } from "@/lib/api/client";
@@ -77,6 +78,7 @@ export function NewRequestDialog({ open, onOpenChange, initialDate }: NewRequest
   const [vacationType, setVacationType] = useState<VacationKind>(VacationKind.Vacation);
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
+  const [halfDay, setHalfDay] = useState(false);
   const [note, setNote] = useState("");
   const [error, setError] = useState<string | null>(null);
 
@@ -87,6 +89,8 @@ export function NewRequestDialog({ open, onOpenChange, initialDate }: NewRequest
   // dialog always opens with a valid selection (derived during render — no effect needed).
   const selectedGroupId = groupId || (groups[0]?.id ?? "");
 
+  const isSingleDay = from === to;
+
   function resetForm() {
     setGroupId("");
     setFrom(baseDate);
@@ -94,6 +98,7 @@ export function NewRequestDialog({ open, onOpenChange, initialDate }: NewRequest
     setVacationType(VacationKind.Vacation);
     setStartTime("");
     setEndTime("");
+    setHalfDay(false);
     setNote("");
     setError(null);
   }
@@ -115,6 +120,9 @@ export function NewRequestDialog({ open, onOpenChange, initialDate }: NewRequest
         vacationType,
         startTime: startTime || null,
         endTime: endTime || null,
+        // The backend stamps halfDay onto every day it creates, so a range
+        // would book a half day for each — only offer it on a single day.
+        halfDay: isSingleDay && halfDay,
         note: note.trim() ? note.trim() : null,
       });
       setDialogOpen(false);
@@ -253,6 +261,16 @@ export function NewRequestDialog({ open, onOpenChange, initialDate }: NewRequest
               />
             </div>
           </div>
+
+          {isSingleDay ? (
+            <div className="flex items-start justify-between gap-6">
+              <div className="space-y-1">
+                <Label htmlFor="halfDay">{t.newRequest.halfDay}</Label>
+                <p className="text-muted-foreground text-sm">{t.newRequest.halfDayHint}</p>
+              </div>
+              <Switch id="halfDay" checked={halfDay} onCheckedChange={setHalfDay} />
+            </div>
+          ) : null}
 
           <div className="space-y-1.5">
             <Label htmlFor="note">{t.newRequest.note}</Label>

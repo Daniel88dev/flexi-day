@@ -18,6 +18,7 @@ export const en = {
     done: "Done",
     copy: "Copy",
     fullDay: "Full day",
+    halfDay: "Half day",
   },
 
   locale: {
@@ -222,6 +223,8 @@ export const en = {
     to: "To",
     startTime: "Start time (optional)",
     endTime: "End time (optional)",
+    halfDay: "Half day",
+    halfDayHint: "Counts as 0.5 days against your allowance.",
     note: "Note (optional)",
     notePlaceholder: "Family trip, conference, …",
     submit: "Submit Request",
@@ -236,6 +239,7 @@ export const en = {
   vacationDetail: {
     title: "Request details",
     fullDay: "Full day",
+    halfDay: "Half day",
     note: "Note",
     commentPlaceholder:
       "Write a comment, or add a reason for your decision — shown in the request history",
