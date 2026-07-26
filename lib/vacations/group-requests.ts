@@ -6,45 +6,29 @@ import {
   type VacationStatus,
 } from "@/lib/api/types";
 
-/**
- * A multi-day vacation is stored as one row per day. A `RequestGroup` collapses
- * the contiguous run of days that make up a single request into one entry, so
- * the UI can show a date range and act on the whole request at once.
- */
+// One request collapsed from its per-day rows. `id` is the first day's id (row key + detail target).
 export interface RequestGroup {
-  /** The first day's vacation id — a stable key and the row opened in detail. */
   id: string;
   userId: string;
   user: UserSummary;
   groupId: string;
   vacationType: VacationKind;
   status: VacationStatus;
-  /** Inclusive ISO date span of the run. */
   from: string;
   to: string;
   startTime: string | null;
   endTime: string | null;
   note: string | null;
-  /** Every day-row id in the run, ordered by day — actions apply to all of them. */
   vacationIds: string[];
   dayCount: number;
 }
 
-/** Whole days since the Unix epoch for an ISO date, for contiguity checks. */
 function dayNumber(iso: string): number {
   return Math.floor(new Date(`${iso}T00:00:00Z`).getTime() / 86_400_000);
 }
 
-/**
- * Collapses per-day vacation rows into one entry per request. Days merge when
- * they share the same user, group, leave type, status and time window and are
- * calendar-consecutive — mirroring how the calendar and the approvals widget
- * already treat a contiguous same-type run as a single request. Status is part
- * of the key so a partially-decided request splits into same-status runs, which
- * keeps each row (and the status filters) unambiguous.
- *
- * The result is ordered by start day, then group, then user, for a stable table.
- */
+// Collapses per-day rows into one entry per contiguous run of same user/group/type/status/time.
+// Status is in the key so a partially-decided request splits into unambiguous same-status rows.
 export function groupVacationRequests(vacations: VacationListItem[]): RequestGroup[] {
   if (vacations.length === 0) return [];
 

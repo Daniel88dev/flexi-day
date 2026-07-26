@@ -4,10 +4,7 @@
 
 import * as Sentry from "@sentry/nextjs";
 
-// On in production only; opt in elsewhere (e.g. local dev) with
-// NEXT_PUBLIC_SENTRY_ENABLE=true. Mirrors the backend's instrument.ts gate so
-// `next dev` never ships events, replays or logs to Sentry. `enabled: false`
-// makes the whole SDK a no-op, so the exports below stay safe to call.
+// On in production only; opt in elsewhere with NEXT_PUBLIC_SENTRY_ENABLE=true.
 const enabled =
   process.env.NODE_ENV === "production" || process.env.NEXT_PUBLIC_SENTRY_ENABLE === "true";
 

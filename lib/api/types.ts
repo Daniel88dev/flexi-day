@@ -95,10 +95,9 @@ export type VacationDetail = VacationListItem & {
   rejectedByUser: UserSummary | null;
   canApprove: boolean;
   canCancel: boolean;
-  /** Inclusive span of the contiguous same-type run this request covers. */
+  // Contiguous same-type run this request covers: span + every day-row id in it.
   rangeStart: IsoDate;
   rangeEnd: IsoDate;
-  /** Every day-row id in the range, ordered by day — actions apply to all of them. */
   vacationIds: UUID[];
   history: VacationEvent[];
 };
@@ -251,7 +250,6 @@ export type UpdateGroupQuotasInput = {
 
 export type UpdateGroupWorkingDaysInput = {
   groupId: UUID;
-  /** `Date.getDay()` numbers (0=Sun … 6=Sat); at least one required. */
   workingDays: number[];
 };
 

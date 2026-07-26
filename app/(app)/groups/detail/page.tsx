@@ -563,7 +563,6 @@ function GroupDefaultsCard({ group }: { group?: Group }) {
 // are `Date.getDay()` numbers (0=Sun … 6=Sat), so index i maps to (i + 1) % 7.
 const displayIndexToWeekday = (i: number) => (i + 1) % 7;
 
-/** Which weekdays count as working days for the group. */
 function GroupWorkingDaysCard({ group }: { group?: Group }) {
   const { t } = useTranslation();
   const updateWorkingDays = useUpdateGroupWorkingDays();

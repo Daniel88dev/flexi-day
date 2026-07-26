@@ -60,7 +60,6 @@ function formatDay(iso: string, locale: string) {
   });
 }
 
-/** A single day, or "from – to" when the request spans several days. */
 function formatDayRange(startIso: string, endIso: string, locale: string) {
   const start = formatDay(startIso, locale);
   return startIso === endIso ? start : `${start} – ${formatDay(endIso, locale)}`;
@@ -93,8 +92,6 @@ export function VacationDetailDialog({
 }) {
   const { t } = useTranslation();
   const detailQuery = useVacation(open ? vacationId : null);
-  // A multi-day request is many per-day rows; the detail exposes every id in
-  // the range so a decision here applies to the whole request at once.
   const approve = useApproveVacations();
   const reject = useRejectVacations();
   const cancel = useCancelVacations();

@@ -41,7 +41,6 @@ function formatDate(iso: string, locale: string) {
   });
 }
 
-/** A single day, or "from – to" for a multi-day request. */
 function formatDateRange(from: string, to: string, locale: string) {
   const start = formatDate(from, locale);
   return from === to ? start : `${start} – ${formatDate(to, locale)}`;
@@ -118,8 +117,6 @@ function RequestsTable() {
 
   const groupsQuery = useGroups();
   const vacationsQuery = useVacations({ year, month });
-  // Multi-day requests are booked as one row per day; act on the whole run at
-  // once so approving/rejecting/cancelling a range is a single decision.
   const approve = useApproveVacations();
   const reject = useRejectVacations();
   const cancel = useCancelVacations();
@@ -131,7 +128,6 @@ function RequestsTable() {
   );
   const groups = groupsQuery.data ?? [];
 
-  // Collapse per-day rows into one entry per request (contiguous same-type run).
   const requests = useMemo(() => groupVacationRequests(vacations), [vacations]);
 
   const groupName = (id: string) => groups.find((g) => g.id === id)?.groupName ?? id.slice(0, 8);
