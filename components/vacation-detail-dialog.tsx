@@ -13,10 +13,10 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { AvatarBubble } from "@/components/brand/avatar-bubble";
 import {
-  useApproveVacation,
-  useCancelVacation,
+  useApproveVacations,
+  useCancelVacations,
   useCommentVacation,
-  useRejectVacation,
+  useRejectVacations,
   useVacation,
 } from "@/lib/api/queries";
 import {
@@ -60,6 +60,12 @@ function formatDay(iso: string, locale: string) {
   });
 }
 
+/** A single day, or "from – to" when the request spans several days. */
+function formatDayRange(startIso: string, endIso: string, locale: string) {
+  const start = formatDay(startIso, locale);
+  return startIso === endIso ? start : `${start} – ${formatDay(endIso, locale)}`;
+}
+
 function formatMoment(iso: string, locale: string) {
   return new Date(iso).toLocaleString(locale, {
     day: "numeric",
@@ -87,9 +93,11 @@ export function VacationDetailDialog({
 }) {
   const { t } = useTranslation();
   const detailQuery = useVacation(open ? vacationId : null);
-  const approve = useApproveVacation();
-  const reject = useRejectVacation();
-  const cancel = useCancelVacation();
+  // A multi-day request is many per-day rows; the detail exposes every id in
+  // the range so a decision here applies to the whole request at once.
+  const approve = useApproveVacations();
+  const reject = useRejectVacations();
+  const cancel = useCancelVacations();
   const comment = useCommentVacation();
 
   const [reason, setReason] = useState("");
@@ -123,7 +131,11 @@ export function VacationDetailDialog({
           <DialogTitle>{t.vacationDetail.title}</DialogTitle>
           <DialogDescription>
             {detail
-              ? `${detail.groupName} · ${formatDay(detail.requestedDay, t.common.dateLocale)}`
+              ? `${detail.groupName} · ${formatDayRange(
+                  detail.rangeStart ?? detail.requestedDay,
+                  detail.rangeEnd ?? detail.requestedDay,
+                  t.common.dateLocale
+                )}`
               : t.common.loading}
           </DialogDescription>
         </DialogHeader>
@@ -206,14 +218,7 @@ export function VacationDetailDialog({
                         variant="outline"
                         className="border-green-300 text-green-700 hover:bg-green-50 dark:border-green-800 dark:text-green-400 dark:hover:bg-green-950/30"
                         disabled={isMutating}
-                        onClick={() =>
-                          run(() =>
-                            approve.mutateAsync({
-                              id: detail.id,
-                              reason: reason.trim() || undefined,
-                            })
-                          )
-                        }
+                        onClick={() => run(() => approve.mutateAsync(detail.vacationIds))}
                       >
                         {t.vacationDetail.approve}
                       </Button>
@@ -225,7 +230,7 @@ export function VacationDetailDialog({
                         onClick={() =>
                           run(() =>
                             reject.mutateAsync({
-                              id: detail.id,
+                              ids: detail.vacationIds,
                               reason: reason.trim() || undefined,
                             })
                           )
@@ -242,7 +247,10 @@ export function VacationDetailDialog({
                       disabled={isMutating}
                       onClick={() =>
                         run(() =>
-                          cancel.mutateAsync({ id: detail.id, reason: reason.trim() || undefined })
+                          cancel.mutateAsync({
+                            ids: detail.vacationIds,
+                            reason: reason.trim() || undefined,
+                          })
                         )
                       }
                     >

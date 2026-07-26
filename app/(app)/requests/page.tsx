@@ -13,19 +13,15 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
-  useApproveVacation,
-  useCancelVacation,
+  useApproveVacations,
+  useCancelVacations,
   useGroups,
-  useRejectVacation,
+  useRejectVacations,
   useVacations,
 } from "@/lib/api/queries";
 import { useSession } from "@/lib/auth-client";
-import {
-  VACATION_KIND_COLORS,
-  vacationStatus,
-  type VacationListItem,
-  type VacationStatus,
-} from "@/lib/api/types";
+import { VACATION_KIND_COLORS, type VacationListItem, type VacationStatus } from "@/lib/api/types";
+import { groupVacationRequests } from "@/lib/vacations/group-requests";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/lib/i18n/use-translation";
 
@@ -43,6 +39,12 @@ function formatDate(iso: string, locale: string) {
     month: "short",
     year: "numeric",
   });
+}
+
+/** A single day, or "from – to" for a multi-day request. */
+function formatDateRange(from: string, to: string, locale: string) {
+  const start = formatDate(from, locale);
+  return from === to ? start : `${start} – ${formatDate(to, locale)}`;
 }
 
 function MonthPicker({
@@ -116,13 +118,21 @@ function RequestsTable() {
 
   const groupsQuery = useGroups();
   const vacationsQuery = useVacations({ year, month });
-  const approve = useApproveVacation();
-  const reject = useRejectVacation();
-  const cancel = useCancelVacation();
+  // Multi-day requests are booked as one row per day; act on the whole run at
+  // once so approving/rejecting/cancelling a range is a single decision.
+  const approve = useApproveVacations();
+  const reject = useRejectVacations();
+  const cancel = useCancelVacations();
   const isMutating = approve.isPending || reject.isPending || cancel.isPending;
 
-  const vacations: VacationListItem[] = vacationsQuery.data ?? [];
+  const vacations = useMemo<VacationListItem[]>(
+    () => vacationsQuery.data ?? [],
+    [vacationsQuery.data]
+  );
   const groups = groupsQuery.data ?? [];
+
+  // Collapse per-day rows into one entry per request (contiguous same-type run).
+  const requests = useMemo(() => groupVacationRequests(vacations), [vacations]);
 
   const groupName = (id: string) => groups.find((g) => g.id === id)?.groupName ?? id.slice(0, 8);
 
@@ -133,19 +143,19 @@ function RequestsTable() {
   };
 
   const counts = useMemo(() => {
-    const c = { all: vacations.length, pending: 0, approved: 0, rejected: 0, mine: 0 };
-    for (const v of vacations) {
-      c[vacationStatus(v)]++;
-      if (v.userId === userId) c.mine++;
+    const c = { all: requests.length, pending: 0, approved: 0, rejected: 0, mine: 0 };
+    for (const r of requests) {
+      c[r.status]++;
+      if (r.userId === userId) c.mine++;
     }
     return c;
-  }, [vacations, userId]);
+  }, [requests, userId]);
 
   const filtered = useMemo(() => {
-    if (filter === "all") return vacations;
-    if (filter === "mine") return vacations.filter((v) => v.userId === userId);
-    return vacations.filter((v) => vacationStatus(v) === filter);
-  }, [vacations, filter, userId]);
+    if (filter === "all") return requests;
+    if (filter === "mine") return requests.filter((r) => r.userId === userId);
+    return requests.filter((r) => r.status === filter);
+  }, [requests, filter, userId]);
 
   return (
     <div className="space-y-6">
@@ -211,48 +221,52 @@ function RequestsTable() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filtered.map((v) => {
-                const status = vacationStatus(v);
-                const mine = v.userId === userId;
+              {filtered.map((r) => {
+                const status = r.status;
+                const mine = r.userId === userId;
+                const dateLabel = formatDateRange(r.from, r.to, t.common.dateLocale);
                 return (
                   <TableRow
-                    key={v.id}
+                    key={r.id}
                     role="button"
                     tabIndex={0}
-                    aria-label={t.requests.openDetails(
-                      formatDate(v.requestedDay, t.common.dateLocale)
-                    )}
+                    aria-label={t.requests.openDetails(dateLabel)}
                     className="hover:bg-muted/50 cursor-pointer"
-                    onClick={() => openDetail(v.id)}
+                    onClick={() => openDetail(r.id)}
                     onKeyDown={(e) => {
                       if (e.key === "Enter" || e.key === " ") {
                         e.preventDefault();
-                        openDetail(v.id);
+                        openDetail(r.id);
                       }
                     }}
                   >
                     <TableCell className="text-sm">
-                      <div className="font-medium">{groupName(v.groupId)}</div>
+                      <div className="font-medium">{groupName(r.groupId)}</div>
                       <div className="text-muted-foreground text-xs">
-                        {mine ? t.requests.you : v.user.name}
+                        {mine ? t.requests.you : r.user.name}
                       </div>
                     </TableCell>
                     <TableCell>
                       <span
                         className={cn(
                           "rounded-full px-2 py-0.5 text-xs font-medium",
-                          VACATION_KIND_COLORS[v.vacationType]
+                          VACATION_KIND_COLORS[r.vacationType]
                         )}
                       >
-                        {t.leaveTypes[v.vacationType].label}
+                        {t.leaveTypes[r.vacationType].label}
                       </span>
                     </TableCell>
                     <TableCell className="text-sm whitespace-nowrap">
-                      {formatDate(v.requestedDay, t.common.dateLocale)}
+                      {dateLabel}
+                      {r.dayCount > 1 ? (
+                        <span className="text-muted-foreground ml-1.5 text-xs">
+                          {t.requests.dayCount(r.dayCount)}
+                        </span>
+                      ) : null}
                     </TableCell>
                     <TableCell className="text-muted-foreground text-xs">
-                      {v.startTime && v.endTime
-                        ? `${v.startTime.slice(0, 5)} – ${v.endTime.slice(0, 5)}`
+                      {r.startTime && r.endTime
+                        ? `${r.startTime.slice(0, 5)} – ${r.endTime.slice(0, 5)}`
                         : t.common.fullDay}
                     </TableCell>
                     <TableCell>
@@ -273,14 +287,14 @@ function RequestsTable() {
                         onClick={(e) => e.stopPropagation()}
                         role="presentation"
                       >
-                        {status === "pending" && canApproveGroup(v.groupId) ? (
+                        {status === "pending" && canApproveGroup(r.groupId) ? (
                           <>
                             <Button
                               size="xs"
                               variant="outline"
                               className="border-green-300 text-green-700 hover:bg-green-50 dark:border-green-800 dark:text-green-400 dark:hover:bg-green-950/30"
                               disabled={isMutating}
-                              onClick={() => approve.mutate(v.id)}
+                              onClick={() => approve.mutate(r.vacationIds)}
                             >
                               {t.requests.approve}
                             </Button>
@@ -289,7 +303,7 @@ function RequestsTable() {
                               variant="outline"
                               className="border-red-300 text-red-700 hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-950/30"
                               disabled={isMutating}
-                              onClick={() => reject.mutate({ id: v.id })}
+                              onClick={() => reject.mutate({ ids: r.vacationIds })}
                             >
                               {t.requests.reject}
                             </Button>
@@ -301,7 +315,7 @@ function RequestsTable() {
                             size="xs"
                             variant="ghost"
                             disabled={isMutating}
-                            onClick={() => cancel.mutate(v.id)}
+                            onClick={() => cancel.mutate({ ids: r.vacationIds })}
                           >
                             {t.requests.cancel}
                           </Button>

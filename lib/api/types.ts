@@ -95,6 +95,11 @@ export type VacationDetail = VacationListItem & {
   rejectedByUser: UserSummary | null;
   canApprove: boolean;
   canCancel: boolean;
+  /** Inclusive span of the contiguous same-type run this request covers. */
+  rangeStart: IsoDate;
+  rangeEnd: IsoDate;
+  /** Every day-row id in the range, ordered by day — actions apply to all of them. */
+  vacationIds: UUID[];
   history: VacationEvent[];
 };
 
@@ -111,6 +116,8 @@ export type Group = {
   groupName: string;
   defaultVacationDays: number;
   defaultHomeOfficeDays: number;
+  /** Weekdays counted as working days, as JS `Date.getDay()` numbers (0=Sun … 6=Sat). */
+  workingDays: number[];
   managerUserId: UUID;
   mainApprovalUser: UUID | null;
   tempApprovalUser: UUID | null;
@@ -216,10 +223,7 @@ export type BankHoliday = {
 };
 
 export type NotificationKind =
-  | "approval_requested"
-  | "approval_decided"
-  | "calendar_conflict"
-  | "balance_low";
+  "approval_requested" | "approval_decided" | "calendar_conflict" | "balance_low";
 
 export type AppNotification = {
   id: UUID;
@@ -243,6 +247,12 @@ export type UpdateGroupQuotasInput = {
   groupId: UUID;
   defaultVacationDays: number;
   defaultHomeOfficeDays: number;
+};
+
+export type UpdateGroupWorkingDaysInput = {
+  groupId: UUID;
+  /** `Date.getDay()` numbers (0=Sun … 6=Sat); at least one required. */
+  workingDays: number[];
 };
 
 export type UserSettings = {

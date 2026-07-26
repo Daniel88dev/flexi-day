@@ -191,6 +191,7 @@ export const en = {
     },
     you: "You",
     openDetails: (date: string) => `Open request details for ${date}`,
+    dayCount: (n: number) => `(${n} ${n === 1 ? "day" : "days"})`,
     approve: "Approve",
     reject: "Reject",
     cancel: "Cancel",
@@ -257,6 +258,13 @@ export const en = {
     saveDefaultsFailed: "Could not save defaults",
     defaultsNote:
       "Applies to members who have no allowance set for a year. Existing allowances are not changed.",
+    workingDays: "Working days",
+    saveWorkingDays: "Save working days",
+    workingDaysUpdated: "Working days updated.",
+    saveWorkingDaysFailed: "Could not save working days",
+    workingDaysError: "Select at least one working day.",
+    workingDaysNote:
+      "Requests are only booked — and only counted against quotas — on these days. Other days in a range are skipped.",
   },
 
   settings: {

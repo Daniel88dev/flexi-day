@@ -1,5 +1,10 @@
 import { api } from "./client";
-import type { CreateGroupInput, Group, UpdateGroupQuotasInput } from "./types";
+import type {
+  CreateGroupInput,
+  Group,
+  UpdateGroupQuotasInput,
+  UpdateGroupWorkingDaysInput,
+} from "./types";
 
 export function listGroups(): Promise<Group[]> {
   return api<Group[]>(`/api/group`);
@@ -12,4 +17,12 @@ export function createGroup(input: CreateGroupInput): Promise<Group> {
 /** Admin-only: change the defaults new members inherit. */
 export function updateGroupQuotas({ groupId, ...body }: UpdateGroupQuotasInput): Promise<Group> {
   return api<Group>(`/api/group/${groupId}/quotas`, { method: "PUT", body });
+}
+
+/** Admin-only: set which weekdays the group treats as working days. */
+export function updateGroupWorkingDays({
+  groupId,
+  ...body
+}: UpdateGroupWorkingDaysInput): Promise<Group> {
+  return api<Group>(`/api/group/${groupId}/working-days`, { method: "PUT", body });
 }
