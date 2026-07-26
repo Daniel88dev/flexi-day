@@ -57,6 +57,8 @@ export type Vacation = {
   startTime: IsoTime | null;
   endTime: IsoTime | null;
   vacationType: VacationKind;
+  /** Counts 0.5 against the allowance instead of a full day. */
+  halfDay: boolean;
   note: string | null;
   rejectionReason: string | null;
   approvedAt: Iso | null;
@@ -150,6 +152,8 @@ export type UserYearQuota = {
   relatedYear: string;
   vacationDays: number;
   homeOfficeDays: number;
+  /** Unused vacation days rolled forward from the previous year. */
+  carriedOverDays: number;
   createdAt: Iso;
   updatedAt: Iso;
 };
@@ -161,6 +165,7 @@ export type CreateVacationInput = {
   vacationType?: VacationKind;
   startTime?: IsoTime | null;
   endTime?: IsoTime | null;
+  halfDay?: boolean;
   note?: string | null;
 };
 
@@ -240,6 +245,14 @@ export type SetUserQuotaInput = {
   year: number;
   vacationDays: number;
   homeOfficeDays: number;
+  carriedOverDays?: number;
+};
+
+export type CarryOverSuggestion = {
+  previousYear: number;
+  allocated: number;
+  used: number;
+  suggestion: number;
 };
 
 export type UpdateGroupQuotasInput = {

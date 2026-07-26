@@ -20,6 +20,7 @@ function day(id: string, requestedDay: string): VacationListItem {
     startTime: null,
     endTime: null,
     vacationType: VacationKind.Vacation,
+    halfDay: false,
     note: null,
     rejectionReason: null,
     approvedAt: null,

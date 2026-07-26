@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Calendar, LayoutGrid, Menu, RefreshCw, Users, X } from "lucide-react";
+import { BarChart3, Calendar, LayoutGrid, Menu, RefreshCw, Users, X } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Logo } from "@/components/brand/logo";
@@ -25,6 +25,7 @@ export function NavBar() {
 
   const NAV_LINKS: { href: string; label: string; icon: LucideIcon }[] = [
     { href: "/dashboard", label: t.nav.dashboard, icon: LayoutGrid },
+    { href: "/report", label: t.nav.report, icon: BarChart3 },
     { href: "/requests", label: t.nav.requests, icon: Calendar },
     { href: "/groups", label: t.nav.groups, icon: Users },
     { href: "/calendar-sync", label: t.nav.calendarSync, icon: RefreshCw },
