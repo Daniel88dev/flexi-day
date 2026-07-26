@@ -22,6 +22,7 @@ import {
 import { useSession } from "@/lib/auth-client";
 import { VACATION_KIND_COLORS, type VacationListItem, type VacationStatus } from "@/lib/api/types";
 import { groupVacationRequests } from "@/lib/vacations/group-requests";
+import { dayLengthLabel } from "@/lib/vacations/day-length";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/lib/i18n/use-translation";
 
@@ -261,9 +262,10 @@ function RequestsTable() {
                       ) : null}
                     </TableCell>
                     <TableCell className="text-muted-foreground text-xs">
-                      {r.startTime && r.endTime
-                        ? `${r.startTime.slice(0, 5)} – ${r.endTime.slice(0, 5)}`
-                        : t.common.fullDay}
+                      {dayLengthLabel(r, {
+                        halfDay: t.common.halfDay,
+                        fullDay: t.common.fullDay,
+                      })}
                     </TableCell>
                     <TableCell>
                       <span

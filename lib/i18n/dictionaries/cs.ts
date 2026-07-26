@@ -24,6 +24,7 @@ export const cs: Dictionary = {
     done: "Hotovo",
     copy: "Kopírovat",
     fullDay: "Celý den",
+    halfDay: "Půlden",
   },
 
   locale: {
@@ -222,6 +223,8 @@ export const cs: Dictionary = {
     to: "Do",
     startTime: "Čas začátku (nepovinné)",
     endTime: "Čas konce (nepovinné)",
+    halfDay: "Půlden",
+    halfDayHint: "Počítá se jako 0,5 dne z vašeho nároku.",
     note: "Poznámka (nepovinné)",
     notePlaceholder: "Rodinný výlet, konference, …",
     submit: "Odeslat žádost",
@@ -236,6 +239,7 @@ export const cs: Dictionary = {
   vacationDetail: {
     title: "Detail žádosti",
     fullDay: "Celý den",
+    halfDay: "Půlden",
     note: "Poznámka",
     commentPlaceholder:
       "Napište komentář nebo přidejte důvod svého rozhodnutí — zobrazí se v historii žádosti",
