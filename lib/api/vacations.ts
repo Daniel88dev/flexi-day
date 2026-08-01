@@ -1,12 +1,14 @@
 import { api } from "./client";
 import type { CreateVacationInput, Vacation, VacationDetail, VacationListItem } from "./types";
 
-export type ListVacationsParams = { year?: number; month?: number };
+/** With `groupId` the whole group's records come back instead of the caller's own. */
+export type ListVacationsParams = { year?: number; month?: number; groupId?: string | null };
 
 export function listVacations(params: ListVacationsParams = {}): Promise<VacationListItem[]> {
   const q = new URLSearchParams();
   if (params.year !== undefined) q.set("year", String(params.year));
   if (params.month !== undefined) q.set("month", String(params.month));
+  if (params.groupId) q.set("groupId", params.groupId);
   const qs = q.toString();
   return api<VacationListItem[]>(`/api/vacation${qs ? `?${qs}` : ""}`);
 }

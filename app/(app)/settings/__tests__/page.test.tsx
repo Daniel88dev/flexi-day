@@ -1,16 +1,35 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
-import { screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import SettingsPage from "../page";
+import { ToastHost } from "@/components/toast";
 import { renderWithClient } from "@/lib/test-utils";
+
+import type { UserSettings } from "@/lib/api/types";
 
 const updateMutate = vi.fn().mockResolvedValue({ emailNotifications: false });
 const changePasswordMock = vi.fn().mockResolvedValue({ error: null });
-let settings: { emailNotifications: boolean } | undefined = { emailNotifications: true };
+
+const DEFAULT_SETTINGS: UserSettings = {
+  emailNotifications: true,
+  dashboardScope: "MINE",
+  dashboardGroupId: null,
+};
+
+let settings: UserSettings | undefined = DEFAULT_SETTINGS;
+let scopeGroups = [
+  { groupId: "g1", groupName: "Team A", access: "all" as const, canEditQuotas: false },
+  { groupId: "g2", groupName: "Team B", access: "all" as const, canEditQuotas: false },
+];
 
 vi.mock("@/lib/api/queries", () => ({
   useMySettings: () => ({ data: settings, isLoading: false, error: null }),
   useUpdateMySettings: () => ({ mutateAsync: updateMutate, isPending: false }),
+  useReportScope: () => ({
+    data: { groups: scopeGroups, members: [], years: [] },
+    isLoading: false,
+    error: null,
+  }),
 }));
 
 vi.mock("@/lib/auth-client", () => ({
@@ -20,7 +39,11 @@ vi.mock("@/lib/auth-client", () => ({
 
 describe("SettingsPage", () => {
   beforeEach(() => {
-    settings = { emailNotifications: true };
+    settings = DEFAULT_SETTINGS;
+    scopeGroups = [
+      { groupId: "g1", groupName: "Team A", access: "all" as const, canEditQuotas: false },
+      { groupId: "g2", groupName: "Team B", access: "all" as const, canEditQuotas: false },
+    ];
     updateMutate.mockClear();
     changePasswordMock.mockClear();
   });
@@ -47,6 +70,100 @@ describe("SettingsPage", () => {
     renderWithClient(<SettingsPage />);
 
     expect(screen.getByRole("switch", { name: /Email notifications/i })).toBeChecked();
+  });
+
+  it("holds dashboard edits until Save is pressed", async () => {
+    const user = userEvent.setup();
+    renderWithClient(<SettingsPage />);
+
+    await user.click(screen.getByRole("button", { name: "My group", pressed: false }));
+
+    // Picking a scope is an edit, not a write.
+    expect(updateMutate).not.toHaveBeenCalled();
+
+    await user.click(screen.getByRole("button", { name: "Save" }));
+
+    expect(updateMutate).toHaveBeenCalledWith({
+      dashboardScope: "GROUP",
+      dashboardGroupId: "g1",
+    });
+  });
+
+  it("keeps the stored group when switching back to group scope", async () => {
+    settings = { ...DEFAULT_SETTINGS, dashboardGroupId: "g2" };
+    const user = userEvent.setup();
+    renderWithClient(<SettingsPage />);
+
+    await user.click(screen.getByRole("button", { name: "My group", pressed: false }));
+    await user.click(screen.getByRole("button", { name: "Save" }));
+
+    expect(updateMutate).toHaveBeenCalledWith({
+      dashboardScope: "GROUP",
+      dashboardGroupId: "g2",
+    });
+  });
+
+  it("keeps Save disabled until something actually changes", async () => {
+    const user = userEvent.setup();
+    renderWithClient(<SettingsPage />);
+
+    expect(screen.getByRole("button", { name: "Save" })).toBeDisabled();
+
+    await user.click(screen.getByRole("button", { name: "My group", pressed: false }));
+
+    expect(screen.getByRole("button", { name: "Save" })).toBeEnabled();
+  });
+
+  it("discards the draft on Cancel", async () => {
+    const user = userEvent.setup();
+    renderWithClient(<SettingsPage />);
+
+    await user.click(screen.getByRole("button", { name: "My group", pressed: false }));
+    await user.click(screen.getByRole("button", { name: "Cancel" }));
+
+    expect(screen.getByRole("button", { name: "Only me" })).toHaveAttribute(
+      "aria-pressed",
+      "true"
+    );
+    expect(updateMutate).not.toHaveBeenCalled();
+  });
+
+  it("confirms the write with a toast", async () => {
+    const user = userEvent.setup();
+    render(<ToastHost />);
+    renderWithClient(<SettingsPage />);
+
+    await user.click(screen.getByRole("button", { name: "My group", pressed: false }));
+    await user.click(screen.getByRole("button", { name: "Save" }));
+
+    expect(await screen.findByText("Saved")).toBeInTheDocument();
+  });
+
+  it("surfaces a failed write as a toast instead of a silent no-op", async () => {
+    updateMutate.mockRejectedValueOnce(new Error("Nope"));
+    const user = userEvent.setup();
+    const { container: toastContainer } = render(<ToastHost />);
+    renderWithClient(<SettingsPage />);
+
+    await user.click(screen.getByRole("button", { name: "My group", pressed: false }));
+    await user.click(screen.getByRole("button", { name: "Save" }));
+
+    // Also rendered inline on the card, so scope the assertion to the toast.
+    expect(await within(toastContainer).findByText("Nope")).toBeInTheDocument();
+  });
+
+  it("offers no group scope when the user may not view any group", () => {
+    scopeGroups = [];
+    renderWithClient(<SettingsPage />);
+
+    expect(screen.getByRole("button", { name: "My group" })).toBeDisabled();
+    expect(screen.getByText(/cannot view any group/i)).toBeInTheDocument();
+  });
+
+  it("disables the group picker while the calendar is personal", () => {
+    renderWithClient(<SettingsPage />);
+
+    expect(screen.getByRole("combobox", { name: "Group" })).toBeDisabled();
   });
 
   it("renders the change-password fields", () => {

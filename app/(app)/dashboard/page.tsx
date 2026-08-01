@@ -10,8 +10,24 @@ import {
   Plane,
   Users,
 } from "lucide-react";
-import { useDashboardSummary, useGroups, useVacations } from "@/lib/api/queries";
+import {
+  useDashboardSummary,
+  useGroups,
+  useMySettings,
+  useReportScope,
+  useVacations,
+} from "@/lib/api/queries";
 import { useSession } from "@/lib/auth-client";
+import { ApiError } from "@/lib/api/client";
+import type { DashboardScope } from "@/lib/api/types";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { cn } from "@/lib/utils";
 import { StatCard } from "@/components/dashboard/stat-card";
 import {
   groupConsecutiveByUserType,
@@ -54,11 +70,35 @@ export default function DashboardPage() {
   const [detailOpen, setDetailOpen] = useState(false);
   const [presetDate, setPresetDate] = useState<string | null>(null);
   const [newRequestOpen, setNewRequestOpen] = useState(false);
+  // Session-only overrides of the stored preference — a look at the team
+  // without committing to it in settings.
+  const [scopeOverride, setScopeOverride] = useState<DashboardScope | null>(null);
+  const [groupOverride, setGroupOverride] = useState<string | null>(null);
 
-  const vacationsQuery = useVacations({ year, month });
   const groupsQuery = useGroups();
   const summaryQuery = useDashboardSummary();
+  const settingsQuery = useMySettings();
+  const reportScopeQuery = useReportScope();
   const session = useSession();
+
+  // Only groups the caller may see in full; the API refuses the rest.
+  const viewableGroups = useMemo(
+    () => (reportScopeQuery.data?.groups ?? []).filter((g) => g.access === "all"),
+    [reportScopeQuery.data]
+  );
+
+  const preferredGroupId = groupOverride ?? settingsQuery.data?.dashboardGroupId ?? null;
+  const selectedGroupId =
+    viewableGroups.find((g) => g.groupId === preferredGroupId)?.groupId ??
+    viewableGroups[0]?.groupId ??
+    null;
+  const scope: DashboardScope =
+    (scopeOverride ?? settingsQuery.data?.dashboardScope ?? "MINE") === "GROUP" && selectedGroupId
+      ? "GROUP"
+      : "MINE";
+  const activeGroupId = scope === "GROUP" ? selectedGroupId : null;
+
+  const vacationsQuery = useVacations({ year, month, groupId: activeGroupId });
 
   const firstName = session.data?.user?.name?.split(" ")[0] ?? t.dashboard.fallbackName;
 
@@ -77,6 +117,7 @@ export default function DashboardPage() {
         requestedDay: v.requestedDay,
         user: v.user,
         note: v.note,
+        mirroredFromGroupName: v.mirroredFromGroupName,
       }));
     return groupConsecutiveByUserType(live);
   }, [vacations]);
@@ -228,37 +269,81 @@ export default function DashboardPage() {
                 </span>
               ) : null}
             </div>
-            <div className="flex flex-wrap gap-2">
-              {DEFAULT_LEAVE_TYPES.map((id) => {
-                const meta = leaveMetaFor(id);
-                const on = filter.has(id);
-                return (
-                  <button
-                    key={id}
-                    type="button"
-                    onClick={() => toggleType(id)}
-                    className="inline-flex items-center gap-1.5 rounded-full border px-3 py-[5px] text-[12.5px] font-semibold transition-all"
-                    style={{
-                      borderColor: on
-                        ? `color-mix(in oklch, ${meta.cssVar} 32%, transparent)`
-                        : "var(--border)",
-                      background: on
-                        ? `color-mix(in oklch, ${meta.cssVar} 12%, transparent)`
-                        : "transparent",
-                      color: on ? meta.cssVar : "var(--text-faint)",
-                      opacity: on ? 1 : 0.6,
-                    }}
-                  >
-                    <span
-                      className="h-[7px] w-[7px] rounded-full"
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+              {viewableGroups.length > 0 ? (
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-[12.5px]" style={{ color: "var(--text-faint)" }}>
+                    {t.dashboard.scope.label}
+                  </span>
+                  <div className="flex gap-1">
+                    {(["MINE", "GROUP"] as const).map((value) => (
+                      <button
+                        key={value}
+                        type="button"
+                        aria-pressed={scope === value}
+                        onClick={() => setScopeOverride(value)}
+                        className={cn(
+                          "rounded-full px-3 py-[5px] text-[12.5px] font-semibold transition-colors",
+                          scope === value
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-muted text-muted-foreground hover:ring-foreground/30 hover:ring-1"
+                        )}
+                      >
+                        {value === "MINE" ? t.dashboard.scope.mine : t.dashboard.scope.group}
+                      </button>
+                    ))}
+                  </div>
+                  {scope === "GROUP" && viewableGroups.length > 1 ? (
+                    <Select
+                      value={selectedGroupId ?? ""}
+                      onValueChange={(value) => setGroupOverride(value)}
+                    >
+                      <SelectTrigger size="sm" aria-label={t.dashboard.scope.groupPicker}>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {viewableGroups.map((group) => (
+                          <SelectItem key={group.groupId} value={group.groupId}>
+                            {group.groupName}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  ) : null}
+                </div>
+              ) : null}
+              <div className="flex flex-wrap gap-2">
+                {DEFAULT_LEAVE_TYPES.map((id) => {
+                  const meta = leaveMetaFor(id);
+                  const on = filter.has(id);
+                  return (
+                    <button
+                      key={id}
+                      type="button"
+                      onClick={() => toggleType(id)}
+                      className="inline-flex items-center gap-1.5 rounded-full border px-3 py-[5px] text-[12.5px] font-semibold transition-all"
                       style={{
-                        background: on ? meta.cssVar : "var(--text-faint)",
+                        borderColor: on
+                          ? `color-mix(in oklch, ${meta.cssVar} 32%, transparent)`
+                          : "var(--border)",
+                        background: on
+                          ? `color-mix(in oklch, ${meta.cssVar} 12%, transparent)`
+                          : "transparent",
+                        color: on ? meta.cssVar : "var(--text-faint)",
+                        opacity: on ? 1 : 0.6,
                       }}
-                    />
-                    {t.leaveTypes[id].label}
-                  </button>
-                );
-              })}
+                    >
+                      <span
+                        className="h-[7px] w-[7px] rounded-full"
+                        style={{
+                          background: on ? meta.cssVar : "var(--text-faint)",
+                        }}
+                      />
+                      {t.leaveTypes[id].label}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </div>
           <LeaveCalendar
@@ -275,7 +360,9 @@ export default function DashboardPage() {
           />
           {vacationsQuery.error ? (
             <p className="mt-3 text-sm" style={{ color: "var(--destructive)" }}>
-              {vacationsQuery.error.message}
+              {vacationsQuery.error instanceof ApiError && vacationsQuery.error.status === 403
+                ? t.dashboard.scope.forbidden
+                : vacationsQuery.error.message}
             </p>
           ) : null}
         </section>

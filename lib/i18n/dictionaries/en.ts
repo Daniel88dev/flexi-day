@@ -13,6 +13,7 @@ export const en = {
     cancel: "Cancel",
     save: "Save",
     saving: "Saving…",
+    saved: "Saved",
     edit: "Edit",
     delete: "Delete",
     done: "Done",
@@ -92,8 +93,11 @@ export const en = {
     everyone: "Everyone",
     bankHoliday: "Bank Holiday",
     moreCount: (n: number) => `+${n} more`,
+    moreOnDay: (n: number, day: number) =>
+      `${n} more ${n === 1 ? "request" : "requests"} on day ${day}`,
     openRequest: (title: string) => `Open request details: ${title}`,
     createRequestDay: (day: number) => `Create request for day ${day}`,
+    mirroredFrom: (groupName: string) => `mirrored from ${groupName}`,
   },
 
   nav: {
@@ -402,6 +406,18 @@ export const en = {
     emailNotificationsHint:
       "Approval requests, decisions on your requests, and cancellations of approved time off. Turning this off keeps them in the app only — account emails such as address confirmation always send.",
     saveFailed: "Could not save settings",
+    dashboardCalendar: "Dashboard calendar",
+    dashboardScope: "Whose time off to show",
+    dashboardScopeHint:
+      "Choose what the dashboard calendar shows when you open it. You can still switch it for a single visit from the dashboard itself.",
+    scopeMine: "Only me",
+    scopeGroup: "My group",
+    dashboardGroup: "Group",
+    dashboardGroupPlaceholder: "Select group…",
+    dashboardGroupHint:
+      "Includes time off mirrored into this group from another one. Only groups you may view are listed.",
+    noViewableGroups:
+      "You cannot view any group's time off yet. A group admin can grant you view access.",
     changePassword: "Change password",
     currentPassword: "Current password",
     newPassword: "New password",
@@ -440,6 +456,14 @@ export const en = {
     },
     prevMonth: "Previous month",
     nextMonth: "Next month",
+    scope: {
+      label: "Show",
+      mine: "Me",
+      group: "Group",
+      groupPicker: "Group shown on the calendar",
+      settingsHint: "Change the default in settings",
+      forbidden: "You no longer have access to this group's time off.",
+    },
   },
 
   widgets: {

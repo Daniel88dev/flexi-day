@@ -16,6 +16,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { AvatarBubble } from "@/components/brand/avatar-bubble";
+import { pushToast } from "@/components/toast";
 import {
   useCreateGroupInvite,
   useGroupInvites,
@@ -297,8 +298,11 @@ function MirroringTab({ groupId, groupName }: { groupId: string; groupName?: str
       await setMirrors.mutateAsync({ groupId, sourceGroupIds: Array.from(selected) });
       setDraft(null);
       setSaved(true);
+      pushToast(t.common.saved);
     } catch (err) {
-      setError(err instanceof Error ? err.message : t.groupDetail.mirroring.failed);
+      const message = err instanceof Error ? err.message : t.groupDetail.mirroring.failed;
+      setError(message);
+      pushToast(message, "danger");
     }
   }
 

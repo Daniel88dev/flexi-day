@@ -9,7 +9,10 @@ type Toast = { id: number; msg: string; kind: ToastKind };
 let toastSeq = 0;
 const listeners = new Set<(t: Toast) => void>();
 
-/** Fire a transient toast from anywhere in the calendar-sync feature. */
+/**
+ * Fire a transient toast from anywhere in the app. `ToastHost` is mounted once
+ * in the app layout, so callers never mount their own.
+ */
 export function pushToast(msg: string, kind: ToastKind = "ok") {
   const t: Toast = { id: ++toastSeq, msg, kind };
   listeners.forEach((fn) => fn(t));
@@ -40,7 +43,9 @@ export function ToastHost() {
   useEffect(() => {
     const fn = (t: Toast) => {
       setItems((prev) => [...prev, t]);
-      setTimeout(() => setItems((prev) => prev.filter((x) => x.id !== t.id)), 2600);
+      // Long enough to be noticed away from the pointer — a save confirmation
+      // is the whole reason the toast exists.
+      setTimeout(() => setItems((prev) => prev.filter((x) => x.id !== t.id)), 4000);
     };
     listeners.add(fn);
     return () => {
@@ -50,7 +55,7 @@ export function ToastHost() {
 
   return (
     <div
-      className="pointer-events-none fixed bottom-6 left-1/2 z-[200] flex -translate-x-1/2 flex-col items-center gap-2.5"
+      className="pointer-events-none fixed right-6 bottom-6 z-[200] flex flex-col items-end gap-2.5 max-[520px]:right-4 max-[520px]:left-4 max-[520px]:items-stretch"
       aria-live="polite"
     >
       {items.map((t) => {
