@@ -1,6 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import { AvatarBubble } from "@/components/brand/avatar-bubble";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { leaveMetaFor, type LeaveTypeKey } from "@/lib/demo/leave-meta";
 import { VacationKind, type UserSummary } from "@/lib/api/types";
 import { useTranslation } from "@/lib/i18n/use-translation";
@@ -15,6 +17,8 @@ export interface CalendarRange {
   note?: string;
   /** Ids of the vacation rows this bar collapses, in day order. */
   vacationIds?: string[];
+  /** Set when the record only shows here via a group mirror; names its source group. */
+  mirroredFrom?: string | null;
 }
 
 interface LeaveCalendarProps {
@@ -29,6 +33,9 @@ interface LeaveCalendarProps {
   /** Makes empty day cells clickable; receives the day-of-month clicked. */
   onDayClick?: (day: number) => void;
 }
+
+/** Bars a week shows before the rest collapse behind the "+N more" toggle. */
+export const MAX_LANES = 2;
 
 function buildWeeks(monthDays: number, firstIdxMon: number) {
   const cells: Array<number | null> = [];
@@ -72,7 +79,9 @@ function CalBar({
   const everyone = t.calendar.everyone;
   const typeLabel = t.leaveTypes[range.type].label;
   const displayName = u ? firstName(u.name) : everyone;
-  const title = `${u ? u.name : everyone} · ${typeLabel}${range.note ? ` · ${range.note}` : ""}`;
+  const title = `${u ? u.name : everyone} · ${typeLabel}${range.note ? ` · ${range.note}` : ""}${
+    range.mirroredFrom ? ` · ${t.calendar.mirroredFrom(range.mirroredFrom)}` : ""
+  }`;
   const vacationId = range.vacationIds?.[0];
   const clickable = Boolean(onSelect && vacationId);
   return (
@@ -102,7 +111,9 @@ function CalBar({
         cursor: clickable ? "pointer" : "default",
         background: `color-mix(in oklch, ${meta.cssVar} 16%, var(--surface))`,
         color: `color-mix(in oklch, ${meta.cssVar} 72%, var(--text))`,
-        borderLeft: `3px solid ${meta.cssVar}`,
+        // A mirrored record is only projected into this group, never owned by
+        // it — the dashed edge is what tells the two apart at a glance.
+        borderLeft: range.mirroredFrom ? `3px dashed ${meta.cssVar}` : `3px solid ${meta.cssVar}`,
         borderRadius: `${contL ? 0 : 7}px ${contR ? 0 : 7}px ${contR ? 0 : 7}px ${contL ? 0 : 7}px`,
         fontSize: mini ? 9.5 : 12,
         fontWeight: 600,
@@ -114,8 +125,91 @@ function CalBar({
       {u && !mini ? (
         <AvatarBubble initials={u.initials} background={u.avatarColor} name={u.name} size={16} />
       ) : null}
-      {!contL ? <span className="overflow-hidden text-ellipsis">{displayName}</span> : null}
+      {!contL ? (
+        <span className="overflow-hidden text-ellipsis">
+          {displayName}
+          {range.mirroredFrom && !mini ? <span aria-hidden="true"> ↗</span> : null}
+        </span>
+      ) : null}
     </div>
+  );
+}
+
+/**
+ * The overflow affordance for one day: "+N more", opening a popover that lists
+ * the records that day could not fit. Picking one opens the same request detail
+ * as clicking a visible bar, so a hidden record is never a dead end.
+ */
+function MoreChip({
+  hidden,
+  day,
+  onSelect,
+}: {
+  hidden: CalendarRange[];
+  day: number;
+  onSelect?: (vacationId: string) => void;
+}) {
+  const { t } = useTranslation();
+  const [open, setOpen] = useState(false);
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger
+        className="overflow-hidden rounded-full border border-[var(--border-strong)] bg-[var(--surface-2)] px-2 py-[3px] text-[11px] font-semibold whitespace-nowrap text-[var(--text-muted)] transition-colors hover:text-[var(--text)]"
+        aria-label={t.calendar.moreOnDay(hidden.length, day)}
+      >
+        {t.calendar.moreCount(hidden.length)}
+      </PopoverTrigger>
+      <PopoverContent align="start" className="w-64 gap-2 p-2">
+        <p
+          className="px-1.5 pt-0.5 text-[11px] font-semibold"
+          style={{ color: "var(--text-faint)" }}
+        >
+          {t.calendar.moreOnDay(hidden.length, day)}
+        </p>
+        {hidden.map((range) => {
+          const meta = leaveMetaFor(range.type);
+          const vacationId = range.vacationIds?.[0];
+          const clickable = Boolean(onSelect && vacationId);
+          const name = range.user ? range.user.name : t.calendar.everyone;
+          return (
+            <button
+              key={range.id}
+              type="button"
+              disabled={!clickable}
+              onClick={() => {
+                setOpen(false);
+                onSelect?.(vacationId as string);
+              }}
+              className="flex w-full items-center gap-2 rounded-xl px-1.5 py-1.5 text-left transition-colors enabled:hover:bg-[var(--surface-2)] disabled:cursor-default"
+            >
+              <span
+                className="h-6 w-[3px] shrink-0 rounded-full"
+                style={{ background: meta.cssVar }}
+              />
+              {range.user ? (
+                <AvatarBubble
+                  initials={range.user.initials}
+                  background={range.user.avatarColor}
+                  name={range.user.name}
+                  size={20}
+                />
+              ) : null}
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-[13px] font-semibold">{name}</span>
+                <span
+                  className="block truncate text-[11.5px]"
+                  style={{ color: "var(--text-muted)" }}
+                >
+                  {t.leaveTypes[range.type].label}
+                  {range.mirroredFrom ? ` · ${t.calendar.mirroredFrom(range.mirroredFrom)}` : ""}
+                </span>
+              </span>
+            </button>
+          );
+        })}
+      </PopoverContent>
+    </Popover>
   );
 }
 
@@ -133,7 +227,9 @@ export function LeaveCalendar({
   const WEEKDAYS = t.calendar.weekdaysShort;
   const weeks = buildWeeks(monthDays, firstWeekdayMondayIdx);
   const active = filter ? ranges.filter((r) => filter.has(r.type)) : ranges;
-  const maxLanes = 3;
+  const barsTop = mini ? 22 : 38;
+  // Every week is the same height, whatever the headcount — the overflow opens
+  // in a popover rather than pushing the grid around.
   const rowH = mini ? 54 : 118;
   const cellLabelSize = mini ? 16 : 24;
   const cellFs = mini ? 9.5 : 13;
@@ -217,7 +313,22 @@ export function LeaveCalendar({
             lanes.push([b]);
           }
         }
-        const overflow = Math.max(0, lanes.length - maxLanes);
+        // A week is capped at MAX_LANES bars; the rest open in a popover.
+        // Bank holidays take the first row, so they eat into the same budget.
+        const shownLanes = Math.max(0, MAX_LANES - bank.length);
+
+        // The bars each weekday hides. Keyed per column rather than per week so
+        // the "+N" sits in the cell the reader is looking at, and so the
+        // popover lists exactly the records that day dropped.
+        const hiddenPerColumn = new Map<number, CalendarRange[]>();
+        for (const b of barsRaw) {
+          if (b.lane < shownLanes) continue;
+          for (let col = b.sc; col < b.ec; col++) {
+            const forCol = hiddenPerColumn.get(col);
+            if (forCol) forCol.push(b.range);
+            else hiddenPerColumn.set(col, [b.range]);
+          }
+        }
 
         return (
           <div
@@ -293,7 +404,7 @@ export function LeaveCalendar({
                 position: "absolute",
                 left: 0,
                 right: 0,
-                top: mini ? 22 : 38,
+                top: barsTop,
                 bottom: 4,
                 display: "grid",
                 gridTemplateColumns: "repeat(7,1fr)",
@@ -339,7 +450,7 @@ export function LeaveCalendar({
                 );
               })}
               {barsRaw
-                .filter((b) => b.lane < maxLanes)
+                .filter((b) => b.lane < shownLanes)
                 .map((b, i) => (
                   <div
                     key={i}
@@ -360,18 +471,27 @@ export function LeaveCalendar({
                 ))}
             </div>
 
-            {overflow > 0 && !mini ? (
+            {!mini && hiddenPerColumn.size > 0 ? (
               <div
                 style={{
                   position: "absolute",
-                  right: 8,
-                  bottom: 6,
-                  fontSize: 11,
-                  fontWeight: 600,
-                  color: "var(--text-faint)",
+                  left: 0,
+                  right: 0,
+                  bottom: 5,
+                  display: "grid",
+                  gridTemplateColumns: "repeat(7,1fr)",
+                  padding: "0 4px",
+                  pointerEvents: "none",
                 }}
               >
-                {t.calendar.moreCount(overflow)}
+                {[...hiddenPerColumn.entries()].map(([col, hidden]) => (
+                  <div
+                    key={col}
+                    style={{ gridColumn: `${col} / ${col + 1}`, pointerEvents: "auto" }}
+                  >
+                    <MoreChip hidden={hidden} day={week[col - 1] as number} onSelect={onSelect} />
+                  </div>
+                ))}
               </div>
             ) : null}
           </div>
@@ -390,6 +510,7 @@ export function groupConsecutiveByUserType<
     requestedDay: string;
     user?: UserSummary;
     note?: string | null;
+    mirroredFromGroupName?: string | null;
   },
 >(items: T[]): CalendarRange[] {
   if (items.length === 0) return [];
@@ -405,7 +526,9 @@ export function groupConsecutiveByUserType<
   let seq = 0;
   for (const item of sorted) {
     const day = Number(item.requestedDay.slice(8, 10));
-    const key = `${item.userId}|${item.vacationType}`;
+    // The source group is part of the key so a bar never spans records the
+    // viewer owns and records only mirrored in — they are labelled differently.
+    const key = `${item.userId}|${item.vacationType}|${item.mirroredFromGroupName ?? ""}`;
     if (current && key === lastKey && lastIsoDay && isNextDay(lastIsoDay, item.requestedDay)) {
       current.to = day;
       if (item.id) current.vacationIds?.push(item.id);
@@ -419,6 +542,7 @@ export function groupConsecutiveByUserType<
         to: day,
         note: item.note ?? undefined,
         vacationIds: item.id ? [item.id] : [],
+        mirroredFrom: item.mirroredFromGroupName ?? null,
       };
       ranges.push(current);
     }

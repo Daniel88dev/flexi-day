@@ -45,6 +45,36 @@ describe("groupConsecutiveByUserType", () => {
     expect(ranges).toHaveLength(2);
   });
 
+  it("carries the mirror source onto the range", () => {
+    const ranges = groupConsecutiveByUserType([
+      {
+        userId: "u1",
+        vacationType: VacationKind.Vacation,
+        requestedDay: "2026-06-08",
+        mirroredFromGroupName: "Team B",
+      },
+    ]);
+    expect(ranges[0].mirroredFrom).toBe("Team B");
+  });
+
+  it("does not merge consecutive days that come from different source groups", () => {
+    const ranges = groupConsecutiveByUserType([
+      {
+        userId: "u1",
+        vacationType: VacationKind.Vacation,
+        requestedDay: "2026-06-08",
+        mirroredFromGroupName: null,
+      },
+      {
+        userId: "u1",
+        vacationType: VacationKind.Vacation,
+        requestedDay: "2026-06-09",
+        mirroredFromGroupName: "Team B",
+      },
+    ]);
+    expect(ranges).toHaveLength(2);
+  });
+
   it("handles unsorted input by sorting before grouping", () => {
     const ranges = groupConsecutiveByUserType([
       { userId: "u1", vacationType: VacationKind.Vacation, requestedDay: "2026-06-10" },

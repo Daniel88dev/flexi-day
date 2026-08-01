@@ -15,7 +15,7 @@ import {
 import { maskFeedUrl } from "@/lib/calendar-sync/meta";
 import { useTranslation } from "@/lib/i18n/use-translation";
 import { AppleMark, GoogleMark, MicrosoftMark } from "./service-marks";
-import { copyText, pushToast } from "./toast";
+import { copyText, pushToast } from "@/components/toast";
 
 function ProviderRow({
   mark,

@@ -59,11 +59,12 @@ import type {
   UpdateGroupQuotasInput,
   UpdateGroupUsersInput,
   UpdateGroupWorkingDaysInput,
-  UserSettings,
+  UpdateUserSettingsInput,
 } from "./types";
 
 export const qk = {
-  vacations: (year: number, month: number) => ["vacations", year, month] as const,
+  vacations: (year: number, month: number, groupId?: string | null) =>
+    ["vacations", year, month, groupId ?? "mine"] as const,
   vacation: (id: string) => ["vacation", id] as const,
   groups: () => ["groups"] as const,
   groupUsers: (groupId: string) => ["group-users", groupId] as const,
@@ -99,9 +100,11 @@ function invalidateVacationDependants(qc: ReturnType<typeof useQueryClient>) {
   qc.invalidateQueries({ queryKey: ["my-balances"] });
 }
 
-export function useVacations(params: Required<ListVacationsParams>) {
+export function useVacations(
+  params: Required<Pick<ListVacationsParams, "year" | "month">> & { groupId?: string | null }
+) {
   return useQuery({
-    queryKey: qk.vacations(params.year, params.month),
+    queryKey: qk.vacations(params.year, params.month, params.groupId),
     queryFn: () => listVacations(params),
   });
 }
@@ -328,7 +331,7 @@ export function useMySettings() {
 export function useUpdateMySettings() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (input: UserSettings) => updateMySettings(input),
+    mutationFn: (input: UpdateUserSettingsInput) => updateMySettings(input),
     onSuccess: (settings) => qc.setQueryData(qk.mySettings(), settings),
   });
 }

@@ -23,4 +23,12 @@ describe("settings api", () => {
       body: { emailNotifications: false },
     });
   });
+
+  it("updateMySettings sends only the fields it was given", async () => {
+    await updateMySettings({ dashboardScope: "GROUP", dashboardGroupId: "g-1" });
+    expect(apiMock).toHaveBeenCalledWith("/api/users/me/settings", {
+      method: "PUT",
+      body: { dashboardScope: "GROUP", dashboardGroupId: "g-1" },
+    });
+  });
 });

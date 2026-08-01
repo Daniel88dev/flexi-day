@@ -19,6 +19,7 @@ export const cs: Dictionary = {
     cancel: "Zrušit",
     save: "Uložit",
     saving: "Ukládání…",
+    saved: "Uloženo",
     edit: "Upravit",
     delete: "Smazat",
     done: "Hotovo",
@@ -94,8 +95,11 @@ export const cs: Dictionary = {
     everyone: "Všichni",
     bankHoliday: "Státní svátek",
     moreCount: (n: number) => `+${n} dalších`,
+    moreOnDay: (n: number, day: number) =>
+      `${n} ${n === 1 ? "další žádost" : n < 5 ? "další žádosti" : "dalších žádostí"} v den ${day}`,
     openRequest: (title: string) => `Otevřít detail žádosti: ${title}`,
     createRequestDay: (day: number) => `Vytvořit žádost pro den ${day}`,
+    mirroredFrom: (groupName: string) => `zrcadleno ze skupiny ${groupName}`,
   },
 
   nav: {
@@ -403,6 +407,18 @@ export const cs: Dictionary = {
     emailNotificationsHint:
       "Žádosti o schválení, rozhodnutí o vašich žádostech a zrušení schváleného volna. Vypnutím zůstanou pouze v aplikaci — účtové e-maily, jako je potvrzení adresy, se odesílají vždy.",
     saveFailed: "Nepodařilo se uložit nastavení",
+    dashboardCalendar: "Kalendář na nástěnce",
+    dashboardScope: "Čí volno zobrazovat",
+    dashboardScopeHint:
+      "Vyberte, co se v kalendáři na nástěnce zobrazí po otevření. Pro jedno zobrazení to můžete přepnout přímo na nástěnce.",
+    scopeMine: "Jen já",
+    scopeGroup: "Moje skupina",
+    dashboardGroup: "Skupina",
+    dashboardGroupPlaceholder: "Vyberte skupinu…",
+    dashboardGroupHint:
+      "Zahrnuje i volno zrcadlené do této skupiny z jiné. Nabízíme jen skupiny, které smíte zobrazit.",
+    noViewableGroups:
+      "Zatím nemůžete zobrazit volno žádné skupiny. Přístup k zobrazení vám může udělit správce skupiny.",
     changePassword: "Změnit heslo",
     currentPassword: "Současné heslo",
     newPassword: "Nové heslo",
@@ -441,6 +457,14 @@ export const cs: Dictionary = {
     },
     prevMonth: "Předchozí měsíc",
     nextMonth: "Další měsíc",
+    scope: {
+      label: "Zobrazit",
+      mine: "Já",
+      group: "Skupina",
+      groupPicker: "Skupina zobrazená v kalendáři",
+      settingsHint: "Výchozí nastavení změníte v Nastavení",
+      forbidden: "K volnu této skupiny už nemáte přístup.",
+    },
   },
 
   widgets: {

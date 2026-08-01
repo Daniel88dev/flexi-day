@@ -17,7 +17,7 @@ import { colorFor, configToBuilder } from "@/lib/calendar-sync/meta";
 import { useTranslation } from "@/lib/i18n/use-translation";
 import type { Dictionary } from "@/lib/i18n";
 import { TypeBadge } from "./type-badge";
-import { copyText, pushToast } from "./toast";
+import { copyText, pushToast } from "@/components/toast";
 
 function relativeTime(iso: string, t: Dictionary): string {
   const then = new Date(iso).getTime();

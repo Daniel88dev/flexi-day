@@ -20,7 +20,7 @@ import { CalCard } from "./cal-card";
 import { ConfirmDialog, type ConfirmKind } from "./confirm-dialog";
 import { DirectSyncSection } from "./direct-sync-section";
 import { EmptyState } from "./empty-state";
-import { pushToast, ToastHost } from "./toast";
+import { pushToast } from "@/components/toast";
 
 function currentMonthContext(): MonthContext {
   const now = new Date();
@@ -187,8 +187,6 @@ export function CalendarSyncScreen() {
           onConfirm={doConfirm}
         />
       ) : null}
-
-      <ToastHost />
     </div>
   );
 }

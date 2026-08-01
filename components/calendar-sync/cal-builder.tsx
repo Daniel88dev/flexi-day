@@ -27,7 +27,7 @@ import { buildPreviewEntries } from "@/lib/calendar-sync/preview";
 import { PreviewPanel, type PreviewMode } from "./preview-panel";
 import { SubscribePanel } from "./subscribe-panel";
 import { SwatchPicker } from "./swatch-picker";
-import { pushToast } from "./toast";
+import { pushToast } from "@/components/toast";
 
 export type MonthContext = {
   year: number;

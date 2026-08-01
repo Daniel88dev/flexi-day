@@ -70,8 +70,16 @@ export type Vacation = {
   updatedAt: Iso;
 };
 
+/**
+ * `mirroredFromGroupId` is set only on group-scoped responses, and only for
+ * records that belong to another group and are merely projected into the one
+ * being viewed (see group mirroring). Those are read-only here: they are
+ * approved, counted and reported in their source group alone.
+ */
 export type VacationListItem = Vacation & {
   user: UserSummary;
+  mirroredFromGroupId?: UUID | null;
+  mirroredFromGroupName?: string | null;
 };
 
 export type VacationEventKind = "CREATED" | "APPROVED" | "REJECTED" | "CANCELLED" | "COMMENT";
@@ -266,9 +274,17 @@ export type UpdateGroupWorkingDaysInput = {
   workingDays: number[];
 };
 
+/** Whose leave the dashboard calendar shows by default. */
+export type DashboardScope = "MINE" | "GROUP";
+
 export type UserSettings = {
   emailNotifications: boolean;
+  dashboardScope: DashboardScope;
+  dashboardGroupId: UUID | null;
 };
+
+/** The settings screen saves one card at a time; the API merges the patch. */
+export type UpdateUserSettingsInput = Partial<UserSettings>;
 
 /** An invite that can still be redeemed. `code` is a secret — admin-only. */
 export type GroupInvite = {

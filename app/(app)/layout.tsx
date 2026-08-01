@@ -1,6 +1,7 @@
 import { NavBar } from "@/components/nav-bar";
 import { AuthGuard } from "@/components/auth/auth-guard";
 import { Footer } from "@/components/footer";
+import { ToastHost } from "@/components/toast";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -12,6 +13,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </main>
         <Footer containerClassName="max-w-[1340px] max-[820px]:px-4" />
       </div>
+      {/* Mounted once for the whole app; any screen can `pushToast`. */}
+      <ToastHost />
     </AuthGuard>
   );
 }

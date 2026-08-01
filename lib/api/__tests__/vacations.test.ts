@@ -23,6 +23,16 @@ describe("vacations api", () => {
     expect(apiMock).toHaveBeenCalledWith("/api/vacation?year=2026&month=8");
   });
 
+  it("listVacations asks for a group's records when a groupId is given", async () => {
+    await listVacations({ year: 2026, month: 8, groupId: "g-1" });
+    expect(apiMock).toHaveBeenCalledWith("/api/vacation?year=2026&month=8&groupId=g-1");
+  });
+
+  it("listVacations omits a null groupId so the caller's own records come back", async () => {
+    await listVacations({ year: 2026, month: 8, groupId: null });
+    expect(apiMock).toHaveBeenCalledWith("/api/vacation?year=2026&month=8");
+  });
+
   it("getVacation GETs a single request", async () => {
     await getVacation("v-1");
     expect(apiMock).toHaveBeenCalledWith("/api/vacation/v-1");
