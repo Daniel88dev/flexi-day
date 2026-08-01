@@ -17,9 +17,14 @@ import {
 } from "@/components/ui/table";
 import { AvatarBubble } from "@/components/brand/avatar-bubble";
 import {
+  useCreateGroupInvite,
+  useGroupInvites,
+  useGroupMirrors,
   useGroupUsers,
   useGroups,
   useQuotas,
+  useRevokeGroupInvite,
+  useSetGroupMirrors,
   useSetUserQuota,
   useUpdateGroupQuotas,
   useUpdateGroupUsers,
@@ -30,14 +35,19 @@ import type { Group, GroupUserListItem } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/lib/i18n/use-translation";
 
-type Tab = "members" | "quotas";
+type Tab = "members" | "quotas" | "invites" | "mirroring";
+
+const TAB_ORDER: Tab[] = ["members", "quotas", "invites", "mirroring"];
+
+const isTab = (value: string | null): value is Tab =>
+  value !== null && (TAB_ORDER as string[]).includes(value);
 
 export default function GroupDetailPage() {
   const { t } = useTranslation();
   const search = useSearchParams();
   const groupId = search.get("groupId") ?? "";
-  const initialTab: Tab = search.get("tab") === "quotas" ? "quotas" : "members";
-  const [tab, setTab] = useState<Tab>(initialTab);
+  const tabParam = search.get("tab");
+  const [tab, setTab] = useState<Tab>(isTab(tabParam) ? tabParam : "members");
 
   const { data: session } = useSession();
   const userId = session?.user?.id;
@@ -76,7 +86,7 @@ export default function GroupDetailPage() {
       </div>
 
       <div className="border-border flex gap-1 border-b">
-        {(["members", "quotas"] as Tab[]).map((tb) => (
+        {TAB_ORDER.filter((tb) => tb !== "invites" || isAdmin).map((tb) => (
           <button
             key={tb}
             onClick={() => setTab(tb)}
@@ -94,9 +104,259 @@ export default function GroupDetailPage() {
 
       {tab === "members" ? (
         <MembersTab groupId={groupId} isAdmin={isAdmin} />
-      ) : (
+      ) : tab === "quotas" ? (
         <QuotasTab groupId={groupId} group={group} isAdmin={isAdmin} />
+      ) : tab === "invites" ? (
+        <InvitesTab groupId={groupId} isAdmin={isAdmin} />
+      ) : (
+        <MirroringTab groupId={groupId} groupName={group?.groupName} />
       )}
+    </div>
+  );
+}
+
+/**
+ * Invite people by email. The code is shown alongside so an admin can pass it
+ * on directly — useful when the mail bounces, and the only way to recover an
+ * invite whose email never arrived.
+ */
+function InvitesTab({ groupId, isAdmin }: { groupId: string; isAdmin: boolean }) {
+  const { t } = useTranslation();
+  const invitesQuery = useGroupInvites(groupId, isAdmin);
+  const createInvite = useCreateGroupInvite();
+  const revokeInvite = useRevokeGroupInvite(groupId);
+
+  const [email, setEmail] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<{ email: string; delivered: boolean } | null>(null);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  if (!isAdmin) {
+    return <p className="text-muted-foreground text-sm">{t.groupDetail.invites.adminOnly}</p>;
+  }
+
+  async function handleInvite(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    setNotice(null);
+    try {
+      const result = await createInvite.mutateAsync({ groupId, email: email.trim() });
+      setNotice({ email: email.trim(), delivered: result.emailDelivered });
+      setEmail("");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t.groupDetail.invites.failed);
+    }
+  }
+
+  async function copyCode(id: string, code: string) {
+    try {
+      await navigator.clipboard.writeText(code);
+      setCopiedId(id);
+      setTimeout(() => setCopiedId((current) => (current === id ? null : current)), 2000);
+    } catch {
+      // Clipboard access can be denied; the code is visible on screen anyway.
+    }
+  }
+
+  const invites = invitesQuery.data ?? [];
+
+  return (
+    <div className="space-y-5">
+      <Card>
+        <CardHeader>
+          <CardTitle>{t.groupDetail.invites.title}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleInvite} className="flex flex-wrap items-end gap-3">
+            <div className="min-w-[260px] flex-1 space-y-1.5">
+              <Label htmlFor="inviteEmail">{t.groupDetail.invites.emailLabel}</Label>
+              <Input
+                id="inviteEmail"
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder={t.groupDetail.invites.emailPlaceholder}
+              />
+            </div>
+            <Button type="submit" disabled={createInvite.isPending || !email.trim()}>
+              {createInvite.isPending ? t.groupDetail.invites.sending : t.groupDetail.invites.send}
+            </Button>
+          </form>
+          {error ? <p className="text-destructive mt-3 text-sm">{error}</p> : null}
+          {notice ? (
+            <p
+              className={cn(
+                "mt-3 text-sm",
+                notice.delivered ? "text-green-700 dark:text-green-400" : "text-amber-700"
+              )}
+            >
+              {notice.delivered
+                ? t.groupDetail.invites.sent(notice.email)
+                : t.groupDetail.invites.sentNoEmail(notice.email)}
+            </p>
+          ) : null}
+          <p className="text-muted-foreground mt-3 text-xs">{t.groupDetail.invites.note}</p>
+        </CardContent>
+      </Card>
+
+      <div className="space-y-3">
+        <h2 className="font-heading text-lg font-semibold">
+          {t.groupDetail.invites.pendingTitle}
+        </h2>
+        {invitesQuery.error ? (
+          <p className="text-destructive text-sm">{invitesQuery.error.message}</p>
+        ) : invitesQuery.isLoading ? (
+          <p className="text-muted-foreground text-sm">{t.common.loading}</p>
+        ) : invites.length === 0 ? (
+          <p className="text-muted-foreground text-sm">{t.groupDetail.invites.none}</p>
+        ) : (
+          <div className="border-border overflow-hidden rounded-lg border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>{t.groupDetail.invites.columns.email}</TableHead>
+                  <TableHead>{t.groupDetail.invites.columns.code}</TableHead>
+                  <TableHead>{t.groupDetail.invites.columns.expires}</TableHead>
+                  <TableHead className="text-right">
+                    {t.groupDetail.columns.actions}
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {invites.map((invite) => (
+                  <TableRow key={invite.id}>
+                    <TableCell className="text-sm">{invite.email}</TableCell>
+                    <TableCell>
+                      <button
+                        type="button"
+                        onClick={() => void copyCode(invite.id, invite.code)}
+                        title={t.groupDetail.invites.copy}
+                        className="bg-muted hover:ring-foreground/30 rounded px-2 py-1 font-mono text-xs tracking-wider hover:ring-1"
+                      >
+                        {copiedId === invite.id ? t.groupDetail.invites.copied : invite.code}
+                      </button>
+                    </TableCell>
+                    <TableCell className="text-muted-foreground text-xs">
+                      {new Date(invite.expiresAt).toLocaleDateString(t.common.dateLocale)}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button
+                        size="xs"
+                        variant="outline"
+                        disabled={revokeInvite.isPending}
+                        onClick={() => revokeInvite.mutate(invite.id)}
+                      >
+                        {t.groupDetail.invites.revoke}
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Per-user setting: which of the caller's other groups show their records here.
+ * Mirrored records are display-only — they stay owned by, approved in, and
+ * counted against their source group.
+ */
+function MirroringTab({ groupId, groupName }: { groupId: string; groupName?: string }) {
+  const { t } = useTranslation();
+  const mirrorsQuery = useGroupMirrors(groupId);
+  const setMirrors = useSetGroupMirrors();
+
+  const [draft, setDraft] = useState<Set<string> | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [saved, setSaved] = useState(false);
+
+  const candidates = useMemo(() => mirrorsQuery.data?.candidates ?? [], [mirrorsQuery.data]);
+  const selected = useMemo(
+    () => draft ?? new Set(candidates.filter((c) => c.mirrored).map((c) => c.groupId)),
+    [draft, candidates]
+  );
+
+  function toggle(sourceGroupId: string) {
+    setSaved(false);
+    setError(null);
+    const next = new Set(selected);
+    if (next.has(sourceGroupId)) next.delete(sourceGroupId);
+    else next.add(sourceGroupId);
+    setDraft(next);
+  }
+
+  async function save() {
+    setError(null);
+    setSaved(false);
+    try {
+      await setMirrors.mutateAsync({ groupId, sourceGroupIds: Array.from(selected) });
+      setDraft(null);
+      setSaved(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t.groupDetail.mirroring.failed);
+    }
+  }
+
+  return (
+    <div className="space-y-4">
+      <Card>
+        <CardHeader>
+          <CardTitle>{t.groupDetail.mirroring.title}</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-muted-foreground text-sm">
+            {t.groupDetail.mirroring.description(groupName ?? t.groupDetail.fallbackName)}
+          </p>
+
+          {mirrorsQuery.error ? (
+            <p className="text-destructive text-sm">{mirrorsQuery.error.message}</p>
+          ) : mirrorsQuery.isLoading ? (
+            <p className="text-muted-foreground text-sm">{t.common.loading}</p>
+          ) : candidates.length === 0 ? (
+            <p className="text-muted-foreground text-sm">{t.groupDetail.mirroring.noOtherGroups}</p>
+          ) : (
+            <>
+              <div className="space-y-2">
+                {candidates.map((candidate) => {
+                  const active = selected.has(candidate.groupId);
+                  return (
+                    <label
+                      key={candidate.groupId}
+                      className="border-border hover:bg-muted/50 flex cursor-pointer items-center gap-3 rounded-lg border px-3 py-2.5"
+                    >
+                      <input
+                        type="checkbox"
+                        className="accent-primary h-4 w-4"
+                        checked={active}
+                        onChange={() => toggle(candidate.groupId)}
+                      />
+                      <span className="text-sm font-medium">{candidate.groupName}</span>
+                    </label>
+                  );
+                })}
+              </div>
+              <div className="flex flex-wrap items-center gap-3">
+                <Button onClick={save} disabled={setMirrors.isPending || draft === null}>
+                  {setMirrors.isPending ? t.common.saving : t.groupDetail.mirroring.save}
+                </Button>
+                {error ? <p className="text-destructive text-sm">{error}</p> : null}
+                {saved && !error ? (
+                  <p className="text-sm text-green-700 dark:text-green-400">
+                    {t.groupDetail.mirroring.updated}
+                  </p>
+                ) : null}
+              </div>
+            </>
+          )}
+
+          <p className="text-muted-foreground text-xs">{t.groupDetail.mirroring.note}</p>
+        </CardContent>
+      </Card>
     </div>
   );
 }

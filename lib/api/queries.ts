@@ -15,7 +15,15 @@ import {
   type ListVacationsParams,
 } from "./vacations";
 import { createGroup, listGroups, updateGroupQuotas, updateGroupWorkingDays } from "./groups";
-import { joinGroupByCode, listGroupUsers, updateGroupUsers } from "./group-users";
+import {
+  createGroupInvite,
+  joinGroupByCode,
+  listGroupInvites,
+  listGroupUsers,
+  revokeGroupInvite,
+  updateGroupUsers,
+} from "./group-users";
+import { getGroupMirrors, setGroupMirrors } from "./group-mirrors";
 import { getCarryOverSuggestion, listQuotas, setUserQuota, type ListQuotasParams } from "./quotas";
 import {
   getMemberReport,
@@ -44,7 +52,9 @@ import {
 } from "./calendar-sync";
 import type {
   CreateGroupInput,
+  CreateGroupInviteInput,
   CreateVacationInput,
+  SetGroupMirrorsInput,
   SetUserQuotaInput,
   UpdateGroupQuotasInput,
   UpdateGroupUsersInput,
@@ -57,6 +67,8 @@ export const qk = {
   vacation: (id: string) => ["vacation", id] as const,
   groups: () => ["groups"] as const,
   groupUsers: (groupId: string) => ["group-users", groupId] as const,
+  groupInvites: (groupId: string) => ["group-invites", groupId] as const,
+  groupMirrors: (groupId: string) => ["group-mirrors", groupId] as const,
   quotas: (groupId: string, year: number, userId?: string) =>
     ["quotas", groupId, year, userId ?? "all"] as const,
   myApprovals: () => ["my-approvals"] as const,
@@ -341,7 +353,59 @@ export function useJoinGroup() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (code: string) => joinGroupByCode(code),
-    onSuccess: () => qc.invalidateQueries({ queryKey: qk.groups() }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: qk.groups() });
+      // A new membership changes what the dashboard counts and what the user
+      // may mirror from.
+      qc.invalidateQueries({ queryKey: qk.dashboardSummary() });
+      qc.invalidateQueries({ queryKey: ["group-mirrors"] });
+    },
+  });
+}
+
+/** Admin-only; the endpoint 403s for everyone else, so gate the call site. */
+export function useGroupInvites(groupId: string | null | undefined, enabled = true) {
+  return useQuery({
+    queryKey: qk.groupInvites(groupId ?? ""),
+    queryFn: () => listGroupInvites(groupId!),
+    enabled: enabled && !!groupId,
+  });
+}
+
+export function useCreateGroupInvite() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: CreateGroupInviteInput) => createGroupInvite(input),
+    onSuccess: (_, vars) =>
+      qc.invalidateQueries({ queryKey: qk.groupInvites(vars.groupId) }),
+  });
+}
+
+export function useRevokeGroupInvite(groupId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (inviteId: string) => revokeGroupInvite(inviteId),
+    onSuccess: () => qc.invalidateQueries({ queryKey: qk.groupInvites(groupId) }),
+  });
+}
+
+export function useGroupMirrors(groupId: string | null | undefined) {
+  return useQuery({
+    queryKey: qk.groupMirrors(groupId ?? ""),
+    queryFn: () => getGroupMirrors(groupId!),
+    enabled: !!groupId,
+  });
+}
+
+export function useSetGroupMirrors() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: SetGroupMirrorsInput) => setGroupMirrors(input),
+    onSuccess: (_, vars) => {
+      qc.invalidateQueries({ queryKey: qk.groupMirrors(vars.groupId) });
+      // Mirrored records change what a group's calendar shows.
+      qc.invalidateQueries({ queryKey: ["vacations"] });
+    },
   });
 }
 

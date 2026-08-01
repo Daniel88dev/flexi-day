@@ -2,10 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { ArrowRight, Lock, Mail, User as UserIcon, Users } from "lucide-react";
+import { ArrowRight, Lock, Mail, User as UserIcon } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
-import { signUpWithTeam } from "@/lib/api/auth-signup";
 import { Button } from "@/components/ui/button";
 import {
   AuthCard,
@@ -28,9 +26,7 @@ export default function SignUpPage() {
 
 function SignUpForm() {
   const { t } = useTranslation();
-  const router = useRouter();
   const [name, setName] = useState("");
-  const [team, setTeam] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -55,22 +51,14 @@ function SignUpForm() {
 
     setLoading(true);
     try {
-      const teamName = team.trim();
-      if (teamName) {
-        const result = await signUpWithTeam({ name, email, password, teamName });
-        if (result.token) {
-          router.replace("/dashboard");
-          router.refresh();
-        } else {
-          setSuccess(t.auth.signUp.checkInbox);
-        }
+      // No group is created here. A new account belongs to nothing until the
+      // user creates a group or redeems an invite code, and booking time off
+      // is gated on that membership.
+      const result = await authClient.signUp.email({ name, email, password });
+      if (result.error) {
+        setError(result.error.message ?? t.auth.signUp.failed);
       } else {
-        const result = await authClient.signUp.email({ name, email, password });
-        if (result.error) {
-          setError(result.error.message ?? t.auth.signUp.failed);
-        } else {
-          setSuccess(t.auth.signUp.checkInbox);
-        }
+        setSuccess(t.auth.signUp.checkInbox);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : t.auth.signUp.failed);
@@ -127,16 +115,6 @@ function SignUpForm() {
           onChange={(e) => setName(e.target.value)}
           autoComplete="name"
           required
-        />
-        <FieldInput
-          id="team"
-          label={t.auth.signUp.teamCompany}
-          type="text"
-          icon={<Users className="h-[17px] w-[17px]" />}
-          placeholder={t.auth.signUp.teamPlaceholder}
-          value={team}
-          onChange={(e) => setTeam(e.target.value)}
-          autoComplete="organization"
         />
         <FieldInput
           id="email"

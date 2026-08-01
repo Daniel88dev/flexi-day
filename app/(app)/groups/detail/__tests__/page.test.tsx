@@ -32,6 +32,11 @@ vi.mock("@/lib/api/queries", () => ({
   useUpdateGroupQuotas: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useUpdateGroupUsers: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useUpdateGroupWorkingDays: () => ({ mutateAsync: updateWorkingDaysMutate, isPending: false }),
+  useGroupInvites: () => ({ data: [], isLoading: false, error: null }),
+  useCreateGroupInvite: () => ({ mutateAsync: vi.fn(), isPending: false }),
+  useRevokeGroupInvite: () => ({ mutate: vi.fn(), isPending: false }),
+  useGroupMirrors: () => ({ data: undefined, isLoading: false, error: null }),
+  useSetGroupMirrors: () => ({ mutateAsync: vi.fn(), isPending: false }),
 }));
 
 describe("GroupDetailPage working days", () => {

@@ -270,15 +270,59 @@ export type UserSettings = {
   emailNotifications: boolean;
 };
 
-export type SignUpWithTeamInput = {
-  name: string;
-  email: string;
-  password: string;
-  teamName: string;
+/** An invite that can still be redeemed. `code` is a secret — admin-only. */
+export type GroupInvite = {
+  id: UUID;
+  groupId: UUID;
+  code: string;
+  email: string | null;
+  invitedByUserId: UUID | null;
+  invitedByName: string | null;
+  usedAt: Iso | null;
+  revokedAt: Iso | null;
+  expiresAt: Iso;
+  createdAt: Iso;
+  updatedAt: Iso;
 };
 
-export type SignUpWithTeamResponse = {
-  user: { id: UUID; name: string; email: string };
-  token: string | null;
-  group: Group;
+export type CreateGroupInviteInput = {
+  groupId: UUID;
+  email: string;
+};
+
+export type CreateGroupInviteResponse = {
+  invite: GroupInvite;
+  /** False when the code was created but the email could not be sent. */
+  emailDelivered: boolean;
+};
+
+/**
+ * One of the caller's other groups, and whether their records from it are
+ * currently mirrored into the group being configured.
+ */
+export type MirrorCandidate = {
+  groupId: UUID;
+  groupName: string;
+  mirrored: boolean;
+};
+
+export type GroupMirrorsResponse = {
+  groupId: UUID;
+  candidates: MirrorCandidate[];
+};
+
+export type SetGroupMirrorsInput = {
+  groupId: UUID;
+  sourceGroupIds: UUID[];
+};
+
+export type GroupMirror = {
+  id: UUID;
+  userId: UUID;
+  sourceGroupId: UUID;
+  targetGroupId: UUID;
+  sourceGroupName: string;
+  deletedAt: Iso | null;
+  createdAt: Iso;
+  updatedAt: Iso;
 };
