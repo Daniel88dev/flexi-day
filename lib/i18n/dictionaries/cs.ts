@@ -276,6 +276,8 @@ export const cs: Dictionary = {
       approved: "Schválené",
       rejected: "Zamítnuté",
     },
+    scopeLabel: "Zobrazit",
+    scopeMine: "Jen moje žádosti",
     empty: "V tomto měsíci nejsou žádné žádosti",
     emptyFiltered: (filter: string) => `V tomto měsíci nejsou žádné žádosti (${filter}).`,
     columns: {

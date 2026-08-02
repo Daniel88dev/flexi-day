@@ -74,26 +74,35 @@ describe("monthlySeriesFor", () => {
 
 describe("totalQuotaFor", () => {
   it("adds carry-over to the yearly allowance", () => {
-    expect(totalQuotaFor([summaryRow()], "u1")).toBe(23);
+    expect(totalQuotaFor([summaryRow()], "u1", VacationKind.Vacation)).toBe(23);
   });
 
   it("sums a member's allowance across groups", () => {
     const rows = [summaryRow(), summaryRow({ groupId: "g2", yearQuota: 10, carriedOverDays: 0 })];
 
-    expect(totalQuotaFor(rows, "u1")).toBe(33);
+    expect(totalQuotaFor(rows, "u1", VacationKind.Vacation)).toBe(33);
   });
 
   it("returns 0 for a member with no allowance rows", () => {
-    expect(totalQuotaFor([summaryRow()], "unknown")).toBe(0);
+    expect(totalQuotaFor([summaryRow()], "unknown", VacationKind.Vacation)).toBe(0);
   });
 
-  it("respects the type filter", () => {
+  it("counts only the requested allowance", () => {
     const rows = [
       summaryRow(),
       summaryRow({ vacationType: VacationKind.HomeOffice, yearQuota: 10, carriedOverDays: 0 }),
     ];
 
-    expect(totalQuotaFor(rows, "u1", [VacationKind.HomeOffice])).toBe(10);
+    expect(totalQuotaFor(rows, "u1", VacationKind.HomeOffice)).toBe(10);
+  });
+
+  it("never lets one allowance top up another", () => {
+    const rows = [
+      summaryRow({ yearQuota: 25, carriedOverDays: 3 }),
+      summaryRow({ vacationType: VacationKind.HomeOffice, yearQuota: 10, carriedOverDays: 0 }),
+    ];
+
+    expect(totalQuotaFor(rows, "u1", VacationKind.Vacation)).toBe(28);
   });
 });
 
@@ -108,7 +117,7 @@ describe("buildMemberCards", () => {
     expect(cards.map((c) => c.member.name)).toEqual(["Ada Lovelace", "Zoe Bell"]);
   });
 
-  it("deduplicates a member who belongs to several groups", () => {
+  it("collapses groups but never allowances", () => {
     const cards = buildMemberCards(
       [member("u1", "Ada Lovelace"), { ...member("u1", "Ada Lovelace"), groupId: "g2" }],
       [],
@@ -126,6 +135,36 @@ describe("buildMemberCards", () => {
     );
 
     expect(cards[0]).toMatchObject({ usedToDate: 6, remaining: 20 });
+  });
+
+  it("keeps each allowance on its own card instead of summing them", () => {
+    const cards = buildMemberCards(
+      [member("u1", "Ada Lovelace")],
+      [],
+      [
+        summaryRow({ yearQuota: 25, carriedOverDays: 3, usedToDate: 33, remaining: -5 }),
+        summaryRow({
+          vacationType: VacationKind.HomeOffice,
+          yearQuota: 10,
+          carriedOverDays: 0,
+          usedToDate: 0,
+          plannedRemaining: 0,
+          pending: 0,
+          remaining: 10,
+        }),
+      ]
+    );
+
+    expect(cards).toHaveLength(2);
+    // An untouched home-office allowance must not mask the vacation overdraft.
+    expect(cards.find((c) => c.vacationType === VacationKind.Vacation)).toMatchObject({
+      quota: 28,
+      remaining: -5,
+    });
+    expect(cards.find((c) => c.vacationType === VacationKind.HomeOffice)).toMatchObject({
+      quota: 10,
+      remaining: 10,
+    });
   });
 
   it("rounds accumulated half days instead of leaking float noise", () => {

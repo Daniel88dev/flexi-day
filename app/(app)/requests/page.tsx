@@ -17,8 +17,16 @@ import {
   useCancelVacations,
   useGroups,
   useRejectVacations,
+  useReportScope,
   useVacations,
 } from "@/lib/api/queries";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useSession } from "@/lib/auth-client";
 import { VACATION_KIND_COLORS, type VacationListItem, type VacationStatus } from "@/lib/api/types";
 import { groupVacationRequests } from "@/lib/vacations/group-requests";
@@ -27,6 +35,9 @@ import { cn } from "@/lib/utils";
 import { useTranslation } from "@/lib/i18n/use-translation";
 
 type Filter = "all" | VacationStatus | "mine";
+
+/** Sentinel for "drop the group scope" — Select cannot carry a null value. */
+const MINE_SCOPE = "__mine__";
 
 const STATUS_BADGE: Record<VacationStatus, string> = {
   pending: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300",
@@ -117,7 +128,24 @@ function RequestsTable() {
   const userId = session?.user?.id;
 
   const groupsQuery = useGroups();
-  const vacationsQuery = useVacations({ year, month });
+  // Without a group scope the endpoint returns the caller's own rows only, so
+  // the page that exists to review the team's requests could never show one.
+  // Only groups the caller may see in full are offered; the API refuses the rest.
+  const reportScopeQuery = useReportScope();
+  const viewableGroups = useMemo(
+    () => (reportScopeQuery.data?.groups ?? []).filter((g) => g.access === "all"),
+    [reportScopeQuery.data]
+  );
+
+  const [scopeOverride, setScopeOverride] = useState<string | null>(null);
+  const scopeGroupId =
+    scopeOverride === MINE_SCOPE
+      ? null
+      : (viewableGroups.find((g) => g.groupId === scopeOverride)?.groupId ??
+        viewableGroups[0]?.groupId ??
+        null);
+
+  const vacationsQuery = useVacations({ year, month, groupId: scopeGroupId });
   const approve = useApproveVacations();
   const reject = useRejectVacations();
   const cancel = useCancelVacations();
@@ -133,10 +161,14 @@ function RequestsTable() {
 
   const groupName = (id: string) => groups.find((g) => g.id === id)?.groupName ?? id.slice(0, 8);
 
-  const canApproveGroup = (gid: string) => {
-    const g = groups.find((x) => x.id === gid);
-    if (!g || !userId) return false;
-    return g.mainApprovalUser === userId || g.tempApprovalUser === userId;
+  // Mirrors the backend predicate exactly, including separation of duties —
+  // an approver's own request is for the group's other approver to decide.
+  const canDecide = (request: { groupId: string; userId: string }) => {
+    const g = groups.find((x) => x.id === request.groupId);
+    if (!g || !userId || request.userId === userId) return false;
+    return (
+      g.managerUserId === userId || g.mainApprovalUser === userId || g.tempApprovalUser === userId
+    );
   };
 
   const counts = useMemo(() => {
@@ -161,15 +193,32 @@ function RequestsTable() {
           <h1 className="font-heading text-2xl font-bold">{t.requests.title}</h1>
           <p className="text-muted-foreground mt-1 text-sm">{t.requests.subtitle}</p>
         </div>
-        <MonthPicker
-          year={year}
-          month={month}
-          months={t.calendar.monthsShort}
-          onChange={(y, m) => {
-            setYear(y);
-            setMonth(m);
-          }}
-        />
+        <div className="flex flex-wrap items-center gap-2">
+          {viewableGroups.length > 0 ? (
+            <Select value={scopeGroupId ?? MINE_SCOPE} onValueChange={setScopeOverride}>
+              <SelectTrigger size="sm" className="w-[190px]" aria-label={t.requests.scopeLabel}>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {viewableGroups.map((group) => (
+                  <SelectItem key={group.groupId} value={group.groupId}>
+                    {group.groupName}
+                  </SelectItem>
+                ))}
+                <SelectItem value={MINE_SCOPE}>{t.requests.scopeMine}</SelectItem>
+              </SelectContent>
+            </Select>
+          ) : null}
+          <MonthPicker
+            year={year}
+            month={month}
+            months={t.calendar.monthsShort}
+            onChange={(y, m) => {
+              setYear(y);
+              setMonth(m);
+            }}
+          />
+        </div>
       </div>
 
       <div className="border-border flex flex-wrap gap-1 border-b pb-0">
@@ -285,7 +334,7 @@ function RequestsTable() {
                         onClick={(e) => e.stopPropagation()}
                         role="presentation"
                       >
-                        {status === "pending" && canApproveGroup(r.groupId) ? (
+                        {status === "pending" && canDecide(r) ? (
                           <>
                             <Button
                               size="xs"

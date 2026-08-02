@@ -30,6 +30,12 @@ function todayIso() {
   return new Date().toISOString().slice(0, 10);
 }
 
+/** The window the backend accepts: this calendar year through the end of the next. */
+function bookableWindow(): { min: string; max: string } {
+  const year = new Date().getFullYear();
+  return { min: `${year}-01-01`, max: `${year + 1}-12-31` };
+}
+
 function formatIsoDay(iso: string, locale: string): string {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return iso;
@@ -102,6 +108,8 @@ export function NewRequestDialog({ open, onOpenChange, initialDate }: NewRequest
     setNote("");
     setError(null);
   }
+
+  const bookable = bookableWindow();
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -221,6 +229,8 @@ export function NewRequestDialog({ open, onOpenChange, initialDate }: NewRequest
                 id="from"
                 type="date"
                 required
+                min={bookable.min}
+                max={bookable.max}
                 value={from}
                 onChange={(e) => {
                   setFrom(e.target.value);
@@ -234,7 +244,8 @@ export function NewRequestDialog({ open, onOpenChange, initialDate }: NewRequest
                 id="to"
                 type="date"
                 required
-                min={from}
+                min={from || bookable.min}
+                max={bookable.max}
                 value={to}
                 onChange={(e) => setTo(e.target.value)}
               />

@@ -20,7 +20,7 @@ import { QuotaEditDialog } from "@/components/report/quota-edit-dialog";
 import { useMemberReport } from "@/lib/api/queries";
 import { formatDays, monthlySeriesFor, totalQuotaFor } from "@/lib/report/series";
 import type { ReportScopeGroup } from "@/lib/api/report-types";
-import { VACATION_KIND_LABELS } from "@/lib/api/types";
+import { VACATION_KIND_LABELS, type VacationKind } from "@/lib/api/types";
 import { useTranslation } from "@/lib/i18n/use-translation";
 
 export default function MemberReportPage() {
@@ -55,8 +55,13 @@ export default function MemberReportPage() {
     );
   }
 
-  const series = monthlySeriesFor(report.monthly, report.member.id);
-  const quota = totalQuotaFor(report.summary, report.member.id);
+  // One chart per allowance. Vacation and home office are independent budgets;
+  // a single combined guide line let an untouched home-office allowance hide a
+  // vacation overdraft.
+  const allowances: VacationKind[] = [];
+  for (const row of report.summary) {
+    if (!allowances.includes(row.vacationType)) allowances.push(row.vacationType);
+  }
 
   return (
     <div className="space-y-6">
@@ -81,14 +86,23 @@ export default function MemberReportPage() {
       </div>
 
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base">{t.report.charts.title}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <MemberQuotaChart series={series} quota={quota} />
-          </CardContent>
-        </Card>
+        <div className="space-y-4">
+          {allowances.map((leaveType) => (
+            <Card key={leaveType}>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">
+                  {t.report.charts.title} · {t.leaveTypes[leaveType].label}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <MemberQuotaChart
+                  series={monthlySeriesFor(report.monthly, report.member.id, [leaveType])}
+                  quota={totalQuotaFor(report.summary, report.member.id, leaveType)}
+                />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
 
         <Card>
           <CardHeader className="pb-2">
