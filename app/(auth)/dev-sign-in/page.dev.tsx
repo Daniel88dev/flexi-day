@@ -136,10 +136,10 @@ function DevSignInConsole() {
           disabled={busy !== null}
           onClick={() =>
             void run("seed", async () => {
-              const result = await devApi<{ owner: { password: string }; vacationsCreated: number }>(
-                "/scenario",
-                {}
-              );
+              const result = await devApi<{
+                owner: { password: string };
+                vacationsCreated: number;
+              }>("/scenario", {});
               return `Seeded. Shared password: ${result.owner.password} (${result.vacationsCreated} bookings)`;
             })
           }

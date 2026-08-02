@@ -121,10 +121,7 @@ describe("SettingsPage", () => {
     await user.click(screen.getByRole("button", { name: "My group", pressed: false }));
     await user.click(screen.getByRole("button", { name: "Cancel" }));
 
-    expect(screen.getByRole("button", { name: "Only me" })).toHaveAttribute(
-      "aria-pressed",
-      "true"
-    );
+    expect(screen.getByRole("button", { name: "Only me" })).toHaveAttribute("aria-pressed", "true");
     expect(updateMutate).not.toHaveBeenCalled();
   });
 

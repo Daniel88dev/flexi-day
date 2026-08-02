@@ -17,8 +17,10 @@ const clean = (attributes: Attributes = {}): Record<string, string | number | bo
 export const logger = {
   debug: (message: string, attributes?: Attributes) =>
     Sentry.logger.debug(message, clean(attributes)),
-  info: (message: string, attributes?: Attributes) => Sentry.logger.info(message, clean(attributes)),
-  warn: (message: string, attributes?: Attributes) => Sentry.logger.warn(message, clean(attributes)),
+  info: (message: string, attributes?: Attributes) =>
+    Sentry.logger.info(message, clean(attributes)),
+  warn: (message: string, attributes?: Attributes) =>
+    Sentry.logger.warn(message, clean(attributes)),
   error: (message: string, attributes?: Attributes) =>
     Sentry.logger.error(message, clean(attributes)),
 };

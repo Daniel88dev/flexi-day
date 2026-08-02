@@ -115,7 +115,9 @@ function DashboardCalendarCard() {
   const busy = settingsQuery.isLoading || updateSettings.isPending;
   const dirty = draft !== null && (scope !== storedScope || groupId !== storedGroupId);
 
-  function edit(next: Partial<{ dashboardScope: DashboardScope; dashboardGroupId: string | null }>) {
+  function edit(
+    next: Partial<{ dashboardScope: DashboardScope; dashboardGroupId: string | null }>
+  ) {
     setError(null);
     setDraft({ dashboardScope: scope, dashboardGroupId: groupId, ...next });
   }
