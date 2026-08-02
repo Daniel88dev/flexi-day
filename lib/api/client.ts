@@ -1,3 +1,5 @@
+import { correlationHeaders } from "@/lib/observability/session";
+
 export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080";
 
 export type ApiErrorEntry = {
@@ -9,13 +11,24 @@ export class ApiError extends Error {
   status: number;
   errors: ApiErrorEntry[];
   body: unknown;
+  /** Backend `x-request-id` — the key to the server-side logs. */
+  requestId?: string;
+  path?: string;
 
-  constructor(status: number, message: string, body?: unknown, errors?: ApiErrorEntry[]) {
+  constructor(
+    status: number,
+    message: string,
+    body?: unknown,
+    errors?: ApiErrorEntry[],
+    meta?: { requestId?: string; path?: string }
+  ) {
     super(message);
     this.name = "ApiError";
     this.status = status;
     this.body = body;
     this.errors = errors ?? [];
+    this.requestId = meta?.requestId;
+    this.path = meta?.path;
   }
 
   /** Convenience access for code reading typed fields off the first error's context. */
@@ -66,11 +79,14 @@ export async function api<T>(path: string, init: ApiInit = {}): Promise<T> {
     credentials: "include",
     headers: {
       ...(hasBody ? { "Content-Type": "application/json" } : {}),
+      ...correlationHeaders(),
       ...headers,
     },
     body: hasBody ? JSON.stringify(body) : undefined,
     ...rest,
   });
+
+  const requestId = res.headers.get("x-request-id") ?? undefined;
 
   if (res.status === 204) return undefined as T;
 
@@ -93,7 +109,7 @@ export async function api<T>(path: string, init: ApiInit = {}): Promise<T> {
       (typeof obj.error === "string" && obj.error) ||
       res.statusText ||
       `Request failed (${res.status})`;
-    throw new ApiError(res.status, message, parsed, errors);
+    throw new ApiError(res.status, message, parsed, errors, { requestId, path });
   }
 
   return parsed as T;
