@@ -10,8 +10,7 @@ function formatRange(fromIso: string, toIso: string, monthsShort: string[]) {
   const t = new Date(toIso);
   const fm = monthsShort[f.getMonth()];
   const tm = monthsShort[t.getMonth()];
-  // A request outside this year has to say so, or "Jan 6" reads as this
-  // January when it is next January's.
+  // Or next January's "Jan 6" reads as this January's.
   const year = f.getFullYear() === new Date().getFullYear() ? "" : ` ${f.getFullYear().toString()}`;
   if (fromIso === toIso) return `${fm} ${f.getDate()}${year}`;
   if (fm === tm) return `${fm} ${f.getDate()}–${t.getDate()}${year}`;

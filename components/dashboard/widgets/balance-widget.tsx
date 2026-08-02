@@ -36,9 +36,7 @@ export function BalanceWidget({ year }: BalanceWidgetProps) {
         <div className="flex flex-col gap-4">
           {visible.map((b) => {
             const meta = leaveMetaFor(b.type);
-            // Not clamped: someone who is over their entitlement needs to see
-            // it here, on the screen they actually look at, and not only in the
-            // report — which does show the negative number.
+            // Deliberately unclamped: an overdraft has to be visible here too.
             const left = b.allocated - b.used;
             const pct = b.allocated > 0 ? Math.min(100, (b.used / b.allocated) * 100) : 0;
             const label = t.leaveTypes[b.type].label;

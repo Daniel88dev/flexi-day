@@ -128,9 +128,7 @@ function RequestsTable() {
   const userId = session?.user?.id;
 
   const groupsQuery = useGroups();
-  // Without a group scope the endpoint returns the caller's own rows only, so
-  // the page that exists to review the team's requests could never show one.
-  // Only groups the caller may see in full are offered; the API refuses the rest.
+  // Without a group scope the endpoint returns the caller's own rows only.
   const reportScopeQuery = useReportScope();
   const viewableGroups = useMemo(
     () => (reportScopeQuery.data?.groups ?? []).filter((g) => g.access === "all"),
@@ -161,8 +159,7 @@ function RequestsTable() {
 
   const groupName = (id: string) => groups.find((g) => g.id === id)?.groupName ?? id.slice(0, 8);
 
-  // Mirrors the backend predicate exactly, including separation of duties —
-  // an approver's own request is for the group's other approver to decide.
+  // Mirrors the backend predicate, separation of duties included.
   const canDecide = (request: { groupId: string; userId: string }) => {
     const g = groups.find((x) => x.id === request.groupId);
     if (!g || !userId || request.userId === userId) return false;

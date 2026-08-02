@@ -36,13 +36,9 @@ export function monthlySeriesFor(
 }
 
 /**
- * What a member has available for the year in ONE leave type, across every
- * group they appear in: the granted allowance plus whatever rolled over.
- *
- * `leaveType` is required on purpose. Vacation and home office are independent
- * allowances — adding them produced a single figure in which unused home-office
- * days silently covered a vacation overdraft, and the member read as being in
- * credit while they were over their entitlement.
+ * Granted allowance plus carry-over for ONE leave type, across every group the
+ * member appears in. `leaveType` is required on purpose: the allowances are
+ * independent, and summing them lets one cover an overdraft in another.
  */
 export function totalQuotaFor(
   summary: ReportSummaryRow[],
@@ -56,7 +52,6 @@ export function totalQuotaFor(
 
 export type MemberCard = {
   member: ReportScopeMember;
-  /** The allowance this card reports on. One card per member per leave type. */
   vacationType: VacationKind;
   series: MonthPoint[];
   /** Granted allowance plus carry-over — what the chart's guide line uses. */
@@ -70,12 +65,8 @@ export type MemberCard = {
 };
 
 /**
- * One card per member and leave type. Groups are collapsed — someone in two
- * teams appears once per allowance with their figures added up — but the
- * allowances themselves never are, because they are not interchangeable.
- *
- * The backend already emits one summary row per (member, group, leave type);
- * this preserves that split rather than flattening it.
+ * One card per member and leave type. Groups are collapsed, allowances never
+ * are — they are not interchangeable.
  */
 export function buildMemberCards(
   members: ReportScopeMember[],
@@ -89,10 +80,8 @@ export function buildMemberCards(
     if (!seen.has(member.id)) seen.set(member.id, member);
   }
 
-  // Which allowances the report covers, in the order the backend emitted them
-  // (its `QUOTA_BEARING_TYPES`). Taken across every member so the cards line up,
-  // and falling back to the filter — or to vacation — when there is no data at
-  // all, so a member with nothing booked still gets a zeroed card.
+  // Taken across every member so the cards line up, with a fallback so a member
+  // with nothing booked still gets a zeroed card rather than disappearing.
   const leaveTypes: VacationKind[] = [];
   for (const row of summary) {
     if (wanted && !wanted.has(row.vacationType)) continue;

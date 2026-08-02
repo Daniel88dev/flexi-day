@@ -55,9 +55,7 @@ export default function MemberReportPage() {
     );
   }
 
-  // One chart per allowance. Vacation and home office are independent budgets;
-  // a single combined guide line let an untouched home-office allowance hide a
-  // vacation overdraft.
+  // One chart per allowance; they are independent budgets and must not merge.
   const allowances: VacationKind[] = [];
   for (const row of report.summary) {
     if (!allowances.includes(row.vacationType)) allowances.push(row.vacationType);
