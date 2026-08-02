@@ -275,6 +275,8 @@ export const en = {
       approved: "Approved",
       rejected: "Rejected",
     },
+    scopeLabel: "Show",
+    scopeMine: "Only my requests",
     empty: "No requests in this month",
     emptyFiltered: (filter: string) => `No requests in this month (${filter}).`,
     columns: {

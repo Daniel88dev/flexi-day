@@ -62,7 +62,7 @@ export default function ReportPage() {
             ) : (
               <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                 {cards.map((card) => (
-                  <Card key={card.member.id}>
+                  <Card key={`${card.member.id}-${card.vacationType}`}>
                     <CardHeader className="pb-2">
                       <CardTitle className="flex items-center gap-2 text-base">
                         <AvatarBubble
@@ -78,7 +78,11 @@ export default function ReportPage() {
                           {card.member.name}
                         </Link>
                         <span className="text-muted-foreground ml-auto text-xs font-normal">
-                          {formatDays(card.remaining)} / {formatDays(card.quota)}
+                          {t.leaveTypes[card.vacationType].label}{" "}
+                          <span className={card.remaining < 0 ? "text-destructive" : undefined}>
+                            {formatDays(card.remaining)}
+                          </span>{" "}
+                          / {formatDays(card.quota)}
                         </span>
                       </CardTitle>
                     </CardHeader>

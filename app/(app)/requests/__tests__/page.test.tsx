@@ -53,6 +53,13 @@ vi.mock("@/lib/api/queries", () => ({
     error: null,
   }),
   useVacations: () => ({ data: vacations, isLoading: false, error: null }),
+  // The page scopes the list to a group it may see in full — without one the
+  // API only ever returns the caller's own rows.
+  useReportScope: () => ({
+    data: { groups: [{ groupId: "g-1", groupName: "Platform", access: "all" }] },
+    isLoading: false,
+    error: null,
+  }),
   useApproveVacations: () => ({ mutate: approveMutate, isPending: false }),
   useRejectVacations: () => ({ mutate: rejectMutate, isPending: false }),
   useCancelVacations: () => ({ mutate: cancelMutate, isPending: false }),

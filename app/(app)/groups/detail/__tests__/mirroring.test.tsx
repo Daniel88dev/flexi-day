@@ -92,8 +92,6 @@ describe("GroupDetailPage mirroring tab", () => {
     mirrorsData = { groupId: "g-1", candidates: [] };
     renderWithClient(<GroupDetailPage />);
 
-    expect(
-      screen.getByText("You are not in any other group to mirror from.")
-    ).toBeInTheDocument();
+    expect(screen.getByText("You are not in any other group to mirror from.")).toBeInTheDocument();
   });
 });

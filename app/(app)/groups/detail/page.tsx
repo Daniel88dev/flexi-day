@@ -202,9 +202,7 @@ function InvitesTab({ groupId, isAdmin }: { groupId: string; isAdmin: boolean })
       </Card>
 
       <div className="space-y-3">
-        <h2 className="font-heading text-lg font-semibold">
-          {t.groupDetail.invites.pendingTitle}
-        </h2>
+        <h2 className="font-heading text-lg font-semibold">{t.groupDetail.invites.pendingTitle}</h2>
         {invitesQuery.error ? (
           <p className="text-destructive text-sm">{invitesQuery.error.message}</p>
         ) : invitesQuery.isLoading ? (
@@ -219,9 +217,7 @@ function InvitesTab({ groupId, isAdmin }: { groupId: string; isAdmin: boolean })
                   <TableHead>{t.groupDetail.invites.columns.email}</TableHead>
                   <TableHead>{t.groupDetail.invites.columns.code}</TableHead>
                   <TableHead>{t.groupDetail.invites.columns.expires}</TableHead>
-                  <TableHead className="text-right">
-                    {t.groupDetail.columns.actions}
-                  </TableHead>
+                  <TableHead className="text-right">{t.groupDetail.columns.actions}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>

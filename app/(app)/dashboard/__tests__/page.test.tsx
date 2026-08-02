@@ -57,7 +57,11 @@ vi.mock("@/lib/api/queries", () => ({
     useVacationsSpy(params);
     return { data: vacations, isLoading: false, error: null };
   },
-  useGroups: () => ({ data: [{ id: "g-1", groupName: "Platform" }], isLoading: false, error: null }),
+  useGroups: () => ({
+    data: [{ id: "g-1", groupName: "Platform" }],
+    isLoading: false,
+    error: null,
+  }),
   useDashboardSummary: () => ({ data: undefined, isLoading: false, error: null }),
   useMySettings: () => ({ data: settings, isLoading: false, error: null }),
   useReportScope: () => ({
@@ -95,18 +99,14 @@ describe("DashboardPage scope switch", () => {
   it("asks for the caller's own records by default", () => {
     renderWithClient(<DashboardPage />);
 
-    expect(useVacationsSpy).toHaveBeenLastCalledWith(
-      expect.objectContaining({ groupId: null })
-    );
+    expect(useVacationsSpy).toHaveBeenLastCalledWith(expect.objectContaining({ groupId: null }));
   });
 
   it("asks for the stored group when the preference is group scope", () => {
     settings = { emailNotifications: true, dashboardScope: "GROUP", dashboardGroupId: "g-1" };
     renderWithClient(<DashboardPage />);
 
-    expect(useVacationsSpy).toHaveBeenLastCalledWith(
-      expect.objectContaining({ groupId: "g-1" })
-    );
+    expect(useVacationsSpy).toHaveBeenLastCalledWith(expect.objectContaining({ groupId: "g-1" }));
   });
 
   it("falls back to the personal calendar when the stored group is no longer viewable", () => {
@@ -115,9 +115,7 @@ describe("DashboardPage scope switch", () => {
 
     // g-3 is `self` access, so the group calendar would 403 — the first
     // viewable group is used instead of asking for one the API refuses.
-    expect(useVacationsSpy).toHaveBeenLastCalledWith(
-      expect.objectContaining({ groupId: "g-1" })
-    );
+    expect(useVacationsSpy).toHaveBeenLastCalledWith(expect.objectContaining({ groupId: "g-1" }));
   });
 
   it("switches to the group without touching the stored preference", async () => {
@@ -126,9 +124,7 @@ describe("DashboardPage scope switch", () => {
 
     await user.click(screen.getByRole("button", { name: "Group", pressed: false }));
 
-    expect(useVacationsSpy).toHaveBeenLastCalledWith(
-      expect.objectContaining({ groupId: "g-1" })
-    );
+    expect(useVacationsSpy).toHaveBeenLastCalledWith(expect.objectContaining({ groupId: "g-1" }));
   });
 
   it("labels a mirrored teammate's leave with its source group", () => {
@@ -136,8 +132,6 @@ describe("DashboardPage scope switch", () => {
     vacations = [day("v-2", sam, "2026-08-18", "Team B")];
     renderWithClient(<DashboardPage />);
 
-    expect(
-      screen.getByTitle("Sam Ruiz · Vacation · mirrored from Team B")
-    ).toBeInTheDocument();
+    expect(screen.getByTitle("Sam Ruiz · Vacation · mirrored from Team B")).toBeInTheDocument();
   });
 });

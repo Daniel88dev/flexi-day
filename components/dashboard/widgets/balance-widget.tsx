@@ -36,7 +36,8 @@ export function BalanceWidget({ year }: BalanceWidgetProps) {
         <div className="flex flex-col gap-4">
           {visible.map((b) => {
             const meta = leaveMetaFor(b.type);
-            const left = Math.max(0, b.allocated - b.used);
+            // Deliberately unclamped: an overdraft has to be visible here too.
+            const left = b.allocated - b.used;
             const pct = b.allocated > 0 ? Math.min(100, (b.used / b.allocated) * 100) : 0;
             const label = t.leaveTypes[b.type].label;
             return (
@@ -44,8 +45,8 @@ export function BalanceWidget({ year }: BalanceWidgetProps) {
                 <div className="mb-2 flex items-baseline justify-between">
                   <span className="text-[13.5px] font-semibold">{label}</span>
                   <span className="tnum text-[13px]" style={{ color: "var(--text-muted)" }}>
-                    <b style={{ color: "var(--text)" }}>{left}</b> / {b.allocated}{" "}
-                    {t.widgets.balance.leftSuffix}
+                    <b style={{ color: left < 0 ? "var(--destructive)" : "var(--text)" }}>{left}</b>{" "}
+                    / {b.allocated} {t.widgets.balance.leftSuffix}
                     {b.pending > 0 ? (
                       <span style={{ color: "var(--text-faint)" }}>
                         {t.widgets.balance.pending(b.pending)}

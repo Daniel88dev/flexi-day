@@ -4,8 +4,7 @@ import type { NextConfig } from "next";
 // Local dev tooling. `*.dev.tsx` files are only treated as routes when this is
 // on, so `app/(auth)/dev-sign-in/page.dev.tsx` is not merely dead code in a
 // production build — Next never sees it as a page and it is never exported.
-const devTools =
-  process.env.NODE_ENV !== "production" && process.env.NEXT_PUBLIC_DEV_TOOLS === "1";
+const devTools = process.env.NODE_ENV !== "production" && process.env.NEXT_PUBLIC_DEV_TOOLS === "1";
 
 const nextConfig: NextConfig = {
   output: "export",

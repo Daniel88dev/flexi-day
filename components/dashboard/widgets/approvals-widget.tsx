@@ -10,9 +10,11 @@ function formatRange(fromIso: string, toIso: string, monthsShort: string[]) {
   const t = new Date(toIso);
   const fm = monthsShort[f.getMonth()];
   const tm = monthsShort[t.getMonth()];
-  if (fromIso === toIso) return `${fm} ${f.getDate()}`;
-  if (fm === tm) return `${fm} ${f.getDate()}–${t.getDate()}`;
-  return `${fm} ${f.getDate()} – ${tm} ${t.getDate()}`;
+  // Or next January's "Jan 6" reads as this January's.
+  const year = f.getFullYear() === new Date().getFullYear() ? "" : ` ${f.getFullYear().toString()}`;
+  if (fromIso === toIso) return `${fm} ${f.getDate()}${year}`;
+  if (fm === tm) return `${fm} ${f.getDate()}–${t.getDate()}${year}`;
+  return `${fm} ${f.getDate()} – ${tm} ${t.getDate()}${year}`;
 }
 
 export function ApprovalsWidget() {

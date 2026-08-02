@@ -379,8 +379,7 @@ export function useCreateGroupInvite() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (input: CreateGroupInviteInput) => createGroupInvite(input),
-    onSuccess: (_, vars) =>
-      qc.invalidateQueries({ queryKey: qk.groupInvites(vars.groupId) }),
+    onSuccess: (_, vars) => qc.invalidateQueries({ queryKey: qk.groupInvites(vars.groupId) }),
   });
 }
 

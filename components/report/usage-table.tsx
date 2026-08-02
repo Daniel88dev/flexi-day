@@ -32,6 +32,7 @@ export function UsageTable({ cards, year }: Props) {
         <TableHeader>
           <TableRow>
             <TableHead>{t.report.table.member}</TableHead>
+            <TableHead>{t.report.table.type}</TableHead>
             <TableHead className="text-right">{t.report.table.carriedOver}</TableHead>
             <TableHead className="text-right">{t.report.table.yearQuota}</TableHead>
             <TableHead className="text-right">{t.report.table.usedToDate}</TableHead>
@@ -42,7 +43,7 @@ export function UsageTable({ cards, year }: Props) {
         </TableHeader>
         <TableBody>
           {cards.map((card) => (
-            <TableRow key={card.member.id}>
+            <TableRow key={`${card.member.id}-${card.vacationType}`}>
               <TableCell>
                 <Link
                   href={`/report/member?userId=${encodeURIComponent(card.member.id)}&year=${String(year)}`}
@@ -57,6 +58,9 @@ export function UsageTable({ cards, year }: Props) {
                   />
                   {card.member.name}
                 </Link>
+              </TableCell>
+              <TableCell className="text-sm whitespace-nowrap">
+                {t.leaveTypes[card.vacationType].label}
               </TableCell>
               <TableCell className="text-right tabular-nums">
                 {formatDays(card.carriedOver)}
