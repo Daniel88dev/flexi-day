@@ -3,6 +3,7 @@
 // https://docs.sentry.io/platforms/javascript/guides/nextjs/
 
 import * as Sentry from "@sentry/nextjs";
+import { getDeviceId, getSessionId } from "@/lib/observability/session";
 
 // On in production only; opt in elsewhere with NEXT_PUBLIC_SENTRY_ENABLE=true.
 const enabled =
@@ -16,13 +17,12 @@ Sentry.init({
   integrations: [
     Sentry.browserTracingIntegration(),
     Sentry.replayIntegration(),
-    // send console.log, console.warn, and console.error calls as logs to Sentry
-    Sentry.consoleLoggingIntegration({ levels: ["log", "warn", "error"] }),
+    // No `levels` filter: every console level is forwarded.
+    Sentry.consoleLoggingIntegration(),
   ],
 
-  // Sample 20% of transactions in production for performance monitoring.
-  // Adjust this value or use tracesSampler for greater control.
-  tracesSampleRate: 0.2,
+  // Sample 20% of transactions by default; overridable the same way the backend does.
+  tracesSampleRate: Number(process.env.NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE ?? 0.2),
 
   // Attach trace headers to backend API calls so browser spans link to the
   // flexi-day-be server spans (distributed tracing). Cross-origin, so the API
@@ -50,4 +50,51 @@ Sentry.init({
   },
 });
 
-export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;
+// `trailingSlash: true` gives `/requests/` while the router hook gets
+// `/requests`; without this the same page splits into two values.
+const normalizePath = (path: string): string => path.replace(/\/+$/, "") || "/";
+
+const browserContext = () => {
+  try {
+    return {
+      "browser.locale": navigator.language,
+      "browser.timezone": Intl.DateTimeFormat().resolvedOptions().timeZone,
+    };
+  } catch {
+    return {};
+  }
+};
+
+if (enabled) {
+  const sessionId = getSessionId();
+  const deviceId = getDeviceId();
+
+  // Global scope attributes are merged into every log and error the SDK emits,
+  // which is what makes them dependable columns in the Sentry Logs table.
+  Sentry.getGlobalScope().setAttributes({
+    "service.name": "flexi-day-web",
+    "service.version": process.env.NEXT_PUBLIC_APP_VERSION ?? "unknown",
+    "service.type": "frontend",
+    "client.session_id": sessionId,
+    "client.device_id": deviceId,
+    "url.path": typeof window === "undefined" ? "" : normalizePath(window.location.pathname),
+    ...browserContext(),
+  });
+
+  // Attributes are the log columns; tags are what make error events searchable.
+  Sentry.setTag("client_session_id", sessionId);
+  Sentry.setTag("client_device_id", deviceId);
+}
+
+// The SPA navigates without reloading, so `url.path` has to be refreshed here or
+// it stays whatever the first page load was.
+export const onRouterTransitionStart = (href: string, navigationType: string): void => {
+  try {
+    Sentry.getGlobalScope().setAttributes({
+      "url.path": normalizePath(new URL(href, window.location.origin).pathname),
+    });
+  } catch {
+    // A malformed href must not block the navigation instrumentation below.
+  }
+  Sentry.captureRouterTransitionStart(href, navigationType);
+};
