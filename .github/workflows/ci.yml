@@ -51,6 +51,15 @@ jobs:
       contents: read
       id-token: write
 
+    # Deploys must not overlap. Two runs merged seconds apart raced here once:
+    # the later run's `--delete` asset sync removed the chunks the earlier run's
+    # index.html still pointed at, and the site served HTML in place of every
+    # missing chunk. Queue instead of cancelling — the older run may already be
+    # mid-sync, and killing it is what leaves the bucket half-written.
+    concurrency:
+      group: deploy-${{ github.ref }}
+      cancel-in-progress: false
+
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -80,7 +89,12 @@ jobs:
         run: |
           aws s3 sync out/ "s3://${{ vars.AWS_S3_BUCKET }}/" --delete \
             --exclude "*.html" --exclude "*.txt"
-          aws s3 sync out/ "s3://${{ vars.AWS_S3_BUCKET }}/" \
+          # `cp`, not `sync`: sync skips a file whose local mtime is older than
+          # the object in S3, so a freshly built index.html can be left behind in
+          # favour of another run's — pairing this HTML with those chunks. The
+          # HTML is a handful of small files, so uploading unconditionally costs
+          # nothing and cannot diverge from the assets above.
+          aws s3 cp out/ "s3://${{ vars.AWS_S3_BUCKET }}/" --recursive \
             --exclude "*" --include "*.html" --include "*.txt" \
             --cache-control "no-cache"
 
