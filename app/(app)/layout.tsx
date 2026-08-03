@@ -2,6 +2,7 @@ import { NavBar } from "@/components/nav-bar";
 import { AuthGuard } from "@/components/auth/auth-guard";
 import { Footer } from "@/components/footer";
 import { ToastHost } from "@/components/toast";
+import { VacationDetailHost } from "@/components/vacation-detail-host";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -15,6 +16,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       </div>
       {/* Mounted once for the whole app; any screen can `pushToast`. */}
       <ToastHost />
+      {/* Likewise: `?vacationId=` opens the request detail on any page. */}
+      <VacationDetailHost />
     </AuthGuard>
   );
 }

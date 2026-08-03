@@ -1,9 +1,7 @@
 "use client";
 
-import { Suspense, useMemo, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { VacationDetailDialog } from "@/components/vacation-detail-dialog";
 import {
   Table,
   TableBody,
@@ -31,6 +29,7 @@ import { useSession } from "@/lib/auth-client";
 import { VACATION_KIND_COLORS, type VacationListItem, type VacationStatus } from "@/lib/api/types";
 import { groupVacationRequests } from "@/lib/vacations/group-requests";
 import { dayLengthLabel } from "@/lib/vacations/day-length";
+import { useOpenVacationDetail } from "@/lib/vacations/use-vacation-detail";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/lib/i18n/use-translation";
 
@@ -99,30 +98,15 @@ function MonthPicker({
 }
 
 export default function RequestsPage() {
-  return (
-    <Suspense fallback={null}>
-      <RequestsTable />
-    </Suspense>
-  );
-}
-
-function RequestsTable() {
   const { t } = useTranslation();
   const now = new Date();
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth() + 1);
   const [filter, setFilter] = useState<Filter>("all");
 
-  // Notification emails deep-link here with ?vacationId=…, so a request can be
-  // opened straight from the inbox.
-  const search = useSearchParams();
-  const [selectedId, setSelectedId] = useState<string | null>(search.get("vacationId"));
-  const [detailOpen, setDetailOpen] = useState(Boolean(search.get("vacationId")));
-
-  function openDetail(id: string) {
-    setSelectedId(id);
-    setDetailOpen(true);
-  }
+  // The detail dialog lives in the app layout, keyed off `?vacationId=` — the
+  // same query notification emails deep-link here with.
+  const { openVacation } = useOpenVacationDetail();
 
   const { data: session } = useSession();
   const userId = session?.user?.id;
@@ -275,11 +259,11 @@ function RequestsTable() {
                     tabIndex={0}
                     aria-label={t.requests.openDetails(dateLabel)}
                     className="hover:bg-muted/50 cursor-pointer"
-                    onClick={() => openDetail(r.id)}
+                    onClick={() => openVacation(r.id)}
                     onKeyDown={(e) => {
                       if (e.key === "Enter" || e.key === " ") {
                         e.preventDefault();
-                        openDetail(r.id);
+                        openVacation(r.id);
                       }
                     }}
                   >
@@ -376,12 +360,6 @@ function RequestsTable() {
           </Table>
         </div>
       )}
-
-      <VacationDetailDialog
-        vacationId={selectedId}
-        open={detailOpen}
-        onOpenChange={setDetailOpen}
-      />
     </div>
   );
 }
