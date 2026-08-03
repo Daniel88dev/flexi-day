@@ -37,8 +37,12 @@ function day(id: string, requestedDay: string): VacationListItem {
 // A single 3-day pending request, stored as three per-day rows.
 const vacations = [day("v-1", "2026-08-17"), day("v-2", "2026-08-18"), day("v-3", "2026-08-19")];
 
+const replaceSpy = vi.fn();
+
 vi.mock("next/navigation", () => ({
   useSearchParams: () => new URLSearchParams(),
+  usePathname: () => "/requests/",
+  useRouter: () => ({ replace: replaceSpy, push: vi.fn() }),
 }));
 
 vi.mock("@/lib/auth-client", () => ({

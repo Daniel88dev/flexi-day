@@ -48,6 +48,11 @@ let settings: UserSettings = {
 
 let vacations: VacationListItem[] = [day("v-1", dana, "2026-08-17")];
 
+vi.mock("next/navigation", () => ({
+  usePathname: () => "/dashboard/",
+  useRouter: () => ({ replace: vi.fn(), push: vi.fn() }),
+}));
+
 vi.mock("@/lib/auth-client", () => ({
   useSession: () => ({ data: { user: { id: "u-dana", name: "Dana Holt" } } }),
 }));

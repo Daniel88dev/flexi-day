@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { Bell } from "lucide-react";
 import {
@@ -11,6 +12,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useMarkNotificationRead, useNotifications } from "@/lib/api/queries";
 import type { AppNotification } from "@/lib/api/types";
+import { useOpenVacationDetail } from "@/lib/vacations/use-vacation-detail";
+import { notificationTarget } from "@/lib/vacations/vacation-detail-url";
 import { useTranslation } from "@/lib/i18n/use-translation";
 import type { Dictionary } from "@/lib/i18n";
 
@@ -26,16 +29,21 @@ export function NotificationsBell() {
   const { t } = useTranslation();
   const query = useNotifications({ unreadOnly: false });
   const markRead = useMarkNotificationRead();
+  const { openVacation } = useOpenVacationDetail();
+  // Controlled because picking a request no longer navigates away, and the
+  // menu would otherwise stay open behind the dialog it just opened.
+  const [open, setOpen] = useState(false);
 
   const items: AppNotification[] = query.data ?? [];
   const unread = items.filter((n) => n.readAt === null);
 
   function onItemClick(n: AppNotification) {
     if (n.readAt === null) markRead.mutate(n.id);
+    setOpen(false);
   }
 
   return (
-    <DropdownMenu>
+    <DropdownMenu open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger asChild>
         <button
           type="button"
@@ -78,6 +86,7 @@ export function NotificationsBell() {
         ) : (
           <ul className="max-h-[360px] overflow-auto py-1">
             {items.slice(0, 12).map((n) => {
+              const target = notificationTarget(n.href);
               const inner = (
                 <div className="flex w-full gap-2.5">
                   <span
@@ -97,9 +106,9 @@ export function NotificationsBell() {
               );
               return (
                 <li key={n.id}>
-                  {n.href ? (
+                  {target?.kind === "link" ? (
                     <Link
-                      href={n.href}
+                      href={target.href}
                       onClick={() => onItemClick(n)}
                       className="hover:bg-accent block px-3 py-2"
                     >
@@ -108,7 +117,12 @@ export function NotificationsBell() {
                   ) : (
                     <button
                       type="button"
-                      onClick={() => onItemClick(n)}
+                      onClick={() => {
+                        onItemClick(n);
+                        // A request opens right here — the reader keeps the
+                        // page they are on, dashboard included.
+                        if (target?.kind === "vacation") openVacation(target.vacationId);
+                      }}
                       className="hover:bg-accent block w-full px-3 py-2 text-left"
                     >
                       {inner}
