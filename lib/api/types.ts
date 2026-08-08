@@ -80,6 +80,8 @@ export type VacationListItem = Vacation & {
   user: UserSummary;
   mirroredFromGroupId?: UUID | null;
   mirroredFromGroupName?: string | null;
+  /** The backend's verdict on whether the caller may decide on this request. */
+  canApprove: boolean;
 };
 
 export type VacationEventKind = "CREATED" | "APPROVED" | "REJECTED" | "CANCELLED" | "COMMENT";
@@ -140,7 +142,10 @@ export type GroupUser = {
   groupId: UUID;
   userId: UUID;
   viewAccess: boolean;
+  /** Manages the group — members, quotas, invites, mirroring. Never approves. */
   adminAccess: boolean;
+  /** Decides on the group's leave. Manages nothing. */
+  approverAccess: boolean;
   controlledUser: boolean;
   deletedAt: Iso | null;
   createdAt: Iso;
@@ -190,6 +195,7 @@ export type UpdateGroupUsersInput = {
     userId: UUID;
     viewAccess: boolean;
     adminAccess: boolean;
+    approverAccess: boolean;
     controlledUser: boolean;
   }>;
 };
@@ -313,22 +319,38 @@ export type CreateGroupInviteResponse = {
 };
 
 /**
- * One of the caller's other groups, and whether their records from it are
- * currently mirrored into the group being configured.
+ * A group a member's records could be projected from, and whether they
+ * currently are. `manageable` is false for a source the viewer does not
+ * administer: shown for completeness, not theirs to change.
  */
 export type MirrorCandidate = {
   groupId: UUID;
   groupName: string;
   mirrored: boolean;
+  manageable: boolean;
 };
 
+/** One member of the group being configured, with their mirror sources. */
+export type MirrorMember = {
+  userId: UUID;
+  user: UserSummary;
+  email: string;
+  candidates: MirrorCandidate[];
+};
+
+/**
+ * Mirroring is configured by a group's admins. `canManage` is false for
+ * everyone else, and `members` then holds only the caller's own mirrors.
+ */
 export type GroupMirrorsResponse = {
   groupId: UUID;
-  candidates: MirrorCandidate[];
+  canManage: boolean;
+  members: MirrorMember[];
 };
 
 export type SetGroupMirrorsInput = {
   groupId: UUID;
+  userId: UUID;
   sourceGroupIds: UUID[];
 };
 

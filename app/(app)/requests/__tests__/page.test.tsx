@@ -11,7 +11,7 @@ const cancelMutate = vi.fn();
 
 const employee = { id: "u-emp", name: "Dana Holt", initials: "DH", avatarColor: "hsl(0 0% 50%)" };
 
-function day(id: string, requestedDay: string): VacationListItem {
+function day(id: string, requestedDay: string, canApprove = true): VacationListItem {
   return {
     id,
     userId: "u-emp",
@@ -31,6 +31,7 @@ function day(id: string, requestedDay: string): VacationListItem {
     createdAt: "2026-08-01T09:00:00.000Z",
     updatedAt: "2026-08-01T09:00:00.000Z",
     user: employee,
+    canApprove,
   };
 }
 
@@ -46,13 +47,12 @@ vi.mock("next/navigation", () => ({
 }));
 
 vi.mock("@/lib/auth-client", () => ({
-  // The approver: mainApprovalUser on the group below.
   useSession: () => ({ data: { user: { id: "approver-1" } } }),
 }));
 
 vi.mock("@/lib/api/queries", () => ({
   useGroups: () => ({
-    data: [{ id: "g-1", groupName: "Platform", mainApprovalUser: "approver-1" }],
+    data: [{ id: "g-1", groupName: "Platform" }],
     isLoading: false,
     error: null,
   }),
@@ -104,5 +104,19 @@ describe("RequestsPage grouping", () => {
     await user.click(screen.getByRole("button", { name: "Reject" }));
 
     expect(rejectMutate).toHaveBeenCalledWith({ ids: ["v-1", "v-2", "v-3"] });
+  });
+});
+
+describe("RequestsPage decision actions", () => {
+  it("offers no decision buttons when the backend says the caller may not decide", () => {
+    vacations.forEach((v) => (v.canApprove = false));
+    try {
+      renderWithClient(<RequestsPage />);
+
+      expect(screen.queryByRole("button", { name: "Approve" })).not.toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: "Reject" })).not.toBeInTheDocument();
+    } finally {
+      vacations.forEach((v) => (v.canApprove = true));
+    }
   });
 });

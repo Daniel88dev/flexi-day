@@ -22,6 +22,7 @@ function buildVacation(overrides: Partial<VacationListItem>): VacationListItem {
     deletedAt: null,
     createdAt: "2026-06-10T00:00:00Z",
     updatedAt: "2026-06-10T00:00:00Z",
+    canApprove: false,
     user: { id: "u-1", name: "Dana Holt", initials: "DH", avatarColor: "hsl(0 0% 50%)" },
     ...overrides,
   };
