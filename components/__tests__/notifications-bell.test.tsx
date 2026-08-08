@@ -7,6 +7,9 @@ import type { AppNotification } from "@/lib/api/types";
 
 const replaceSpy = vi.fn();
 const markReadSpy = vi.fn();
+const markAllReadSpy = vi.fn();
+const removeSpy = vi.fn();
+const removeAllSpy = vi.fn();
 let notifications: AppNotification[] = [];
 
 vi.mock("next/navigation", () => ({
@@ -17,6 +20,9 @@ vi.mock("next/navigation", () => ({
 vi.mock("@/lib/api/queries", () => ({
   useNotifications: () => ({ data: notifications, isLoading: false, error: null }),
   useMarkNotificationRead: () => ({ mutate: markReadSpy, isPending: false }),
+  useMarkAllNotificationsRead: () => ({ mutate: markAllReadSpy, isPending: false }),
+  useDeleteNotification: () => ({ mutate: removeSpy, isPending: false }),
+  useDeleteAllNotifications: () => ({ mutate: removeAllSpy, isPending: false }),
 }));
 
 function notification(overrides: Partial<AppNotification> = {}): AppNotification {
@@ -36,6 +42,9 @@ describe("NotificationsBell", () => {
   beforeEach(() => {
     replaceSpy.mockClear();
     markReadSpy.mockClear();
+    markAllReadSpy.mockClear();
+    removeSpy.mockClear();
+    removeAllSpy.mockClear();
     notifications = [];
     window.history.replaceState({}, "", "/dashboard/");
   });
@@ -67,5 +76,50 @@ describe("NotificationsBell", () => {
       "href",
       "/groups?groupId=g-1"
     );
+  });
+
+  it("removes a single notification without following it", async () => {
+    notifications = [notification()];
+    renderWithClient(<NotificationsBell />);
+
+    await userEvent.click(screen.getByRole("button", { name: /Notifications/i }));
+    await userEvent.click(
+      screen.getByRole("button", { name: /Remove notification: Dana Holt requested vacation/i })
+    );
+
+    expect(removeSpy).toHaveBeenCalledWith("n-1");
+    expect(markReadSpy).not.toHaveBeenCalled();
+    expect(replaceSpy).not.toHaveBeenCalled();
+  });
+
+  it("marks every notification read and clears them all from the header", async () => {
+    notifications = [notification()];
+    renderWithClient(<NotificationsBell />);
+
+    await userEvent.click(screen.getByRole("button", { name: /Notifications/i }));
+    await userEvent.click(screen.getByRole("button", { name: "Mark all read" }));
+    await userEvent.click(screen.getByRole("button", { name: "Clear all" }));
+
+    expect(markAllReadSpy).toHaveBeenCalledTimes(1);
+    expect(removeAllSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it("hides mark-all-read once nothing is unread, but keeps clear all", async () => {
+    notifications = [notification({ readAt: new Date().toISOString() })];
+    renderWithClient(<NotificationsBell />);
+
+    await userEvent.click(screen.getByRole("button", { name: /Notifications/i }));
+
+    expect(screen.queryByRole("button", { name: "Mark all read" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Clear all" })).toBeInTheDocument();
+  });
+
+  it("offers no bulk actions when there is nothing to act on", async () => {
+    renderWithClient(<NotificationsBell />);
+
+    await userEvent.click(screen.getByRole("button", { name: /Notifications/i }));
+
+    expect(screen.queryByRole("button", { name: "Clear all" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Mark all read" })).not.toBeInTheDocument();
   });
 });
