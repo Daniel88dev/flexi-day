@@ -20,6 +20,9 @@ vi.mock("@/lib/auth-client", () => ({
 vi.mock("@/lib/api/queries", () => ({
   useNotifications: () => ({ data: [], isLoading: false, error: null }),
   useMarkNotificationRead: () => ({ mutate: vi.fn(), isPending: false }),
+  useMarkAllNotificationsRead: () => ({ mutate: vi.fn(), isPending: false }),
+  useDeleteNotification: () => ({ mutate: vi.fn(), isPending: false }),
+  useDeleteAllNotifications: () => ({ mutate: vi.fn(), isPending: false }),
   useGroups: () => ({ data: [], isLoading: false }),
   useCreateVacation: () => ({ mutateAsync: vi.fn(), isPending: false }),
 }));

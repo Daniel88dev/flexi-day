@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Bell } from "lucide-react";
+import { Bell, X } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,7 +10,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useMarkNotificationRead, useNotifications } from "@/lib/api/queries";
+import {
+  useDeleteAllNotifications,
+  useDeleteNotification,
+  useMarkAllNotificationsRead,
+  useMarkNotificationRead,
+  useNotifications,
+} from "@/lib/api/queries";
 import type { AppNotification } from "@/lib/api/types";
 import { useOpenVacationDetail } from "@/lib/vacations/use-vacation-detail";
 import { notificationTarget } from "@/lib/vacations/vacation-detail-url";
@@ -29,6 +35,9 @@ export function NotificationsBell() {
   const { t } = useTranslation();
   const query = useNotifications({ unreadOnly: false });
   const markRead = useMarkNotificationRead();
+  const markAllRead = useMarkAllNotificationsRead();
+  const remove = useDeleteNotification();
+  const removeAll = useDeleteAllNotifications();
   const { openVacation } = useOpenVacationDetail();
   // Controlled because picking a request no longer navigates away, and the
   // menu would otherwise stay open behind the dialog it just opened.
@@ -78,6 +87,28 @@ export function NotificationsBell() {
             </span>
           ) : null}
         </DropdownMenuLabel>
+        {items.length > 0 ? (
+          <div className="flex items-center justify-end gap-3 px-2 pb-1.5">
+            {unread.length > 0 ? (
+              <button
+                type="button"
+                onClick={() => markAllRead.mutate()}
+                disabled={markAllRead.isPending}
+                className="text-muted-foreground hover:text-foreground text-[12px] underline-offset-2 hover:underline disabled:opacity-50"
+              >
+                {t.notifications.markAllRead}
+              </button>
+            ) : null}
+            <button
+              type="button"
+              onClick={() => removeAll.mutate()}
+              disabled={removeAll.isPending}
+              className="text-muted-foreground hover:text-foreground text-[12px] underline-offset-2 hover:underline disabled:opacity-50"
+            >
+              {t.notifications.clearAll}
+            </button>
+          </div>
+        ) : null}
         <DropdownMenuSeparator />
         {query.isLoading ? (
           <p className="text-muted-foreground px-3 py-3 text-sm">{t.common.loading}</p>
@@ -105,12 +136,14 @@ export function NotificationsBell() {
                 </div>
               );
               return (
-                <li key={n.id}>
+                // The remove control is a sibling of the row, not a child —
+                // a button nested inside the Link would be invalid markup.
+                <li key={n.id} className="flex items-stretch">
                   {target?.kind === "link" ? (
                     <Link
                       href={target.href}
                       onClick={() => onItemClick(n)}
-                      className="hover:bg-accent block px-3 py-2"
+                      className="hover:bg-accent block min-w-0 flex-1 px-3 py-2"
                     >
                       {inner}
                     </Link>
@@ -123,11 +156,19 @@ export function NotificationsBell() {
                         // page they are on, dashboard included.
                         if (target?.kind === "vacation") openVacation(target.vacationId);
                       }}
-                      className="hover:bg-accent block w-full px-3 py-2 text-left"
+                      className="hover:bg-accent block min-w-0 flex-1 px-3 py-2 text-left"
                     >
                       {inner}
                     </button>
                   )}
+                  <button
+                    type="button"
+                    aria-label={t.notifications.remove(n.title)}
+                    onClick={() => remove.mutate(n.id)}
+                    className="hover:bg-accent text-muted-foreground/60 hover:text-foreground grid w-9 shrink-0 place-items-center"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
                 </li>
               );
             })}
