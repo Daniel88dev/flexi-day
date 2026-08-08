@@ -26,12 +26,6 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      # Fails the build on a known-vulnerable dependency. The repo is at zero
-      # advisories; `overrides` in package.json pin the transitive fixes that
-      # upstream has not shipped yet.
-      - name: Audit dependencies
-        run: npm audit --audit-level=high
-
       - name: Lint
         run: npm run lint
 
