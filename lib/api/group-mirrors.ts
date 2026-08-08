@@ -1,7 +1,7 @@
 import { api } from "./client";
 import type { GroupMirror, GroupMirrorsResponse, SetGroupMirrorsInput } from "./types";
 
-/** The caller's own mirroring setup for a group — never anyone else's. */
+/** A group's mirroring setup: every member for an admin, only the caller otherwise. */
 export function getGroupMirrors(groupId: string): Promise<GroupMirrorsResponse> {
   return api<GroupMirrorsResponse>(`/api/group/${groupId}/mirrors`);
 }

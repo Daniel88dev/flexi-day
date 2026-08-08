@@ -23,6 +23,8 @@ export interface RequestGroup {
   vacationIds: string[];
   /** Calendar days in the run, not allowance days — a half-day run counts 0.5 each. */
   dayCount: number;
+  /** ANDed across the run, so a bulk action never offers more than every day allows. */
+  canApprove: boolean;
 }
 
 function dayNumber(iso: string): number {
@@ -68,6 +70,7 @@ export function groupVacationRequests(vacations: VacationListItem[]): RequestGro
       current.to = v.requestedDay;
       current.vacationIds.push(v.id);
       current.dayCount += 1;
+      current.canApprove &&= v.canApprove;
     } else {
       current = {
         id: v.id,
@@ -84,6 +87,7 @@ export function groupVacationRequests(vacations: VacationListItem[]): RequestGro
         note: v.note,
         vacationIds: [v.id],
         dayCount: 1,
+        canApprove: v.canApprove,
       };
       groups.push(current);
     }

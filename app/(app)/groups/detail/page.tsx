@@ -32,7 +32,7 @@ import {
   useUpdateGroupWorkingDays,
 } from "@/lib/api/queries";
 import { useSession } from "@/lib/auth-client";
-import type { Group, GroupUserListItem } from "@/lib/api/types";
+import type { Group, GroupUserListItem, MirrorMember } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/lib/i18n/use-translation";
 
@@ -259,27 +259,97 @@ function InvitesTab({ groupId, isAdmin }: { groupId: string; isAdmin: boolean })
 }
 
 /**
- * Per-user setting: which of the caller's other groups show their records here.
- * Mirrored records are display-only — they stay owned by, approved in, and
- * counted against their source group.
+ * Which members' records from other groups show up here — an admin's call, not
+ * a per-user preference; a plain member only gets to see their own. Mirrored
+ * records are display-only: they stay owned by, approved in, and counted
+ * against their source group.
  */
 function MirroringTab({ groupId, groupName }: { groupId: string; groupName?: string }) {
   const { t } = useTranslation();
   const mirrorsQuery = useGroupMirrors(groupId);
+
+  const name = groupName ?? t.groupDetail.fallbackName;
+
+  if (mirrorsQuery.error) {
+    return <p className="text-destructive text-sm">{mirrorsQuery.error.message}</p>;
+  }
+  if (mirrorsQuery.isLoading || !mirrorsQuery.data) {
+    return <p className="text-muted-foreground text-sm">{t.common.loading}</p>;
+  }
+
+  const { canManage, members = [] } = mirrorsQuery.data;
+
+  if (!canManage) {
+    const mine = members[0]?.candidates ?? [];
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>{t.groupDetail.mirroring.readOnlyTitle}</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <p className="text-muted-foreground text-sm">
+            {t.groupDetail.mirroring.readOnlyDescription(name)}
+          </p>
+          {mine.length === 0 ? (
+            <p className="text-muted-foreground text-sm">{t.groupDetail.mirroring.readOnlyNone}</p>
+          ) : (
+            <ul className="space-y-2">
+              {mine.map((candidate) => (
+                <li
+                  key={candidate.groupId}
+                  className="border-border rounded-lg border px-3 py-2.5 text-sm font-medium"
+                >
+                  {candidate.groupName}
+                </li>
+              ))}
+            </ul>
+          )}
+          <p className="text-muted-foreground text-xs">{t.groupDetail.mirroring.note}</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <Card>
+        <CardHeader>
+          <CardTitle>{t.groupDetail.mirroring.title}</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-5">
+          <p className="text-muted-foreground text-sm">
+            {t.groupDetail.mirroring.description(name)}
+          </p>
+
+          {members.length === 0 ? (
+            <p className="text-muted-foreground text-sm">{t.groupDetail.noMembers}</p>
+          ) : (
+            members.map((member) => (
+              <MirroringMemberRow key={member.userId} groupId={groupId} member={member} />
+            ))
+          )}
+
+          <p className="text-muted-foreground text-xs">{t.groupDetail.mirroring.note}</p>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+/** One member's mirror sources. Each row saves on its own. */
+function MirroringMemberRow({ groupId, member }: { groupId: string; member: MirrorMember }) {
+  const { t } = useTranslation();
   const setMirrors = useSetGroupMirrors();
 
   const [draft, setDraft] = useState<Set<string> | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [saved, setSaved] = useState(false);
 
-  const candidates = useMemo(() => mirrorsQuery.data?.candidates ?? [], [mirrorsQuery.data]);
   const selected = useMemo(
-    () => draft ?? new Set(candidates.filter((c) => c.mirrored).map((c) => c.groupId)),
-    [draft, candidates]
+    () => draft ?? new Set(member.candidates.filter((c) => c.mirrored).map((c) => c.groupId)),
+    [draft, member.candidates]
   );
 
   function toggle(sourceGroupId: string) {
-    setSaved(false);
     setError(null);
     const next = new Set(selected);
     if (next.has(sourceGroupId)) next.delete(sourceGroupId);
@@ -289,11 +359,17 @@ function MirroringTab({ groupId, groupName }: { groupId: string; groupName?: str
 
   async function save() {
     setError(null);
-    setSaved(false);
     try {
-      await setMirrors.mutateAsync({ groupId, sourceGroupIds: Array.from(selected) });
+      // Locked sources belong to another admin; sending them back would 403.
+      const manageable = new Set(
+        member.candidates.filter((c) => c.manageable).map((c) => c.groupId)
+      );
+      await setMirrors.mutateAsync({
+        groupId,
+        userId: member.userId,
+        sourceGroupIds: Array.from(selected).filter((id) => manageable.has(id)),
+      });
       setDraft(null);
-      setSaved(true);
       pushToast(t.common.saved);
     } catch (err) {
       const message = err instanceof Error ? err.message : t.groupDetail.mirroring.failed;
@@ -303,60 +379,57 @@ function MirroringTab({ groupId, groupName }: { groupId: string; groupName?: str
   }
 
   return (
-    <div className="space-y-4">
-      <Card>
-        <CardHeader>
-          <CardTitle>{t.groupDetail.mirroring.title}</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <p className="text-muted-foreground text-sm">
-            {t.groupDetail.mirroring.description(groupName ?? t.groupDetail.fallbackName)}
-          </p>
+    <div className="border-border space-y-3 rounded-lg border p-3">
+      <div className="flex items-center gap-2.5">
+        <AvatarBubble
+          initials={member.user.initials}
+          background={member.user.avatarColor}
+          name={member.user.name}
+          size={26}
+        />
+        <div className="min-w-0">
+          <div className="truncate text-sm font-medium">{member.user.name}</div>
+          <div className="text-muted-foreground truncate text-xs">{member.email}</div>
+        </div>
+      </div>
 
-          {mirrorsQuery.error ? (
-            <p className="text-destructive text-sm">{mirrorsQuery.error.message}</p>
-          ) : mirrorsQuery.isLoading ? (
-            <p className="text-muted-foreground text-sm">{t.common.loading}</p>
-          ) : candidates.length === 0 ? (
-            <p className="text-muted-foreground text-sm">{t.groupDetail.mirroring.noOtherGroups}</p>
-          ) : (
-            <>
-              <div className="space-y-2">
-                {candidates.map((candidate) => {
-                  const active = selected.has(candidate.groupId);
-                  return (
-                    <label
-                      key={candidate.groupId}
-                      className="border-border hover:bg-muted/50 flex cursor-pointer items-center gap-3 rounded-lg border px-3 py-2.5"
-                    >
-                      <input
-                        type="checkbox"
-                        className="accent-primary h-4 w-4"
-                        checked={active}
-                        onChange={() => toggle(candidate.groupId)}
-                      />
-                      <span className="text-sm font-medium">{candidate.groupName}</span>
-                    </label>
-                  );
-                })}
-              </div>
-              <div className="flex flex-wrap items-center gap-3">
-                <Button onClick={save} disabled={setMirrors.isPending || draft === null}>
-                  {setMirrors.isPending ? t.common.saving : t.groupDetail.mirroring.save}
-                </Button>
-                {error ? <p className="text-destructive text-sm">{error}</p> : null}
-                {saved && !error ? (
-                  <p className="text-sm text-green-700 dark:text-green-400">
-                    {t.groupDetail.mirroring.updated}
-                  </p>
-                ) : null}
-              </div>
-            </>
-          )}
-
-          <p className="text-muted-foreground text-xs">{t.groupDetail.mirroring.note}</p>
-        </CardContent>
-      </Card>
+      {member.candidates.length === 0 ? (
+        <p className="text-muted-foreground text-sm">{t.groupDetail.mirroring.noCandidates}</p>
+      ) : (
+        <>
+          <div className="space-y-2">
+            {member.candidates.map((candidate) => (
+              <label
+                key={candidate.groupId}
+                className={cn(
+                  "border-border flex items-center gap-3 rounded-lg border px-3 py-2",
+                  candidate.manageable ? "hover:bg-muted/50 cursor-pointer" : "opacity-60"
+                )}
+              >
+                <input
+                  type="checkbox"
+                  className="accent-primary h-4 w-4"
+                  checked={selected.has(candidate.groupId)}
+                  disabled={!candidate.manageable}
+                  onChange={() => toggle(candidate.groupId)}
+                />
+                <span className="text-sm font-medium">{candidate.groupName}</span>
+                {candidate.manageable ? null : (
+                  <span className="text-muted-foreground ml-auto text-xs">
+                    {t.groupDetail.mirroring.lockedHint}
+                  </span>
+                )}
+              </label>
+            ))}
+          </div>
+          <div className="flex flex-wrap items-center gap-3">
+            <Button size="sm" onClick={save} disabled={setMirrors.isPending || draft === null}>
+              {setMirrors.isPending ? t.common.saving : t.groupDetail.mirroring.save}
+            </Button>
+            {error ? <p className="text-destructive text-sm">{error}</p> : null}
+          </div>
+        </>
+      )}
     </div>
   );
 }
@@ -383,7 +456,10 @@ function MembersTab({ groupId, isAdmin }: { groupId: string; isAdmin: boolean })
     setSaveError(null);
   }
 
-  function toggle(id: string, field: "viewAccess" | "adminAccess" | "controlledUser") {
+  function toggle(
+    id: string,
+    field: "viewAccess" | "adminAccess" | "approverAccess" | "controlledUser"
+  ) {
     if (!draft) return;
     setDraft({ ...draft, [id]: { ...draft[id], [field]: !draft[id][field] } });
   }
@@ -398,6 +474,7 @@ function MembersTab({ groupId, isAdmin }: { groupId: string; isAdmin: boolean })
           userId: m.userId,
           viewAccess: m.viewAccess,
           adminAccess: m.adminAccess,
+          approverAccess: m.approverAccess,
           controlledUser: m.controlledUser,
         })),
       });
@@ -447,6 +524,7 @@ function MembersTab({ groupId, isAdmin }: { groupId: string; isAdmin: boolean })
                 <TableHead>{t.groupDetail.columns.member}</TableHead>
                 <TableHead>{t.groupDetail.columns.view}</TableHead>
                 <TableHead>{t.groupDetail.columns.admin}</TableHead>
+                <TableHead>{t.groupDetail.columns.approver}</TableHead>
                 <TableHead>{t.groupDetail.columns.tracked}</TableHead>
                 <TableHead>{t.groupDetail.columns.joined}</TableHead>
               </TableRow>
@@ -480,6 +558,13 @@ function MembersTab({ groupId, isAdmin }: { groupId: string; isAdmin: boolean })
                       value={m.adminAccess}
                       editing={editing}
                       onToggle={() => toggle(m.id, "adminAccess")}
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <PermBadge
+                      value={m.approverAccess}
+                      editing={editing}
+                      onToggle={() => toggle(m.id, "approverAccess")}
                     />
                   </TableCell>
                   <TableCell>

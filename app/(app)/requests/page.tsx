@@ -143,15 +143,6 @@ export default function RequestsPage() {
 
   const groupName = (id: string) => groups.find((g) => g.id === id)?.groupName ?? id.slice(0, 8);
 
-  // Mirrors the backend predicate, separation of duties included.
-  const canDecide = (request: { groupId: string; userId: string }) => {
-    const g = groups.find((x) => x.id === request.groupId);
-    if (!g || !userId || request.userId === userId) return false;
-    return (
-      g.managerUserId === userId || g.mainApprovalUser === userId || g.tempApprovalUser === userId
-    );
-  };
-
   const counts = useMemo(() => {
     const c = { all: requests.length, pending: 0, approved: 0, rejected: 0, mine: 0 };
     for (const r of requests) {
@@ -315,7 +306,7 @@ export default function RequestsPage() {
                         onClick={(e) => e.stopPropagation()}
                         role="presentation"
                       >
-                        {status === "pending" && canDecide(r) ? (
+                        {status === "pending" && r.canApprove ? (
                           <>
                             <Button
                               size="xs"
