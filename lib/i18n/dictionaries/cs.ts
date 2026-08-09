@@ -468,9 +468,18 @@ export const cs: Dictionary = {
       comingUpSub: "nadcházející volna",
       workingToday: "Dnes v práci",
       workingTodaySub: "u svého stolu",
+      viewRequests: "Zobrazit žádosti",
     },
     prevMonth: "Předchozí měsíc",
     nextMonth: "Další měsíc",
+    filter: {
+      label: "Filtrovat typy volna",
+      allTypes: "Všechny typy",
+      noTypes: "Žádné typy",
+      someTypes: (n: number) => `Typy: ${n}`,
+      selectAll: "Vybrat vše",
+      clearAll: "Zrušit výběr",
+    },
     scope: {
       label: "Zobrazit",
       mine: "Já",
