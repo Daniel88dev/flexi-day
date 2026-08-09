@@ -103,7 +103,9 @@ export default function DashboardPage() {
 
   const firstName = session.data?.user?.name?.split(" ")[0] ?? t.dashboard.fallbackName;
 
-  const vacations = vacationsQuery.data ?? [];
+  // `?? []` builds a new array on every render while the query is empty, which
+  // would change the `ranges` dependency each time and defeat the memo below.
+  const vacations = useMemo(() => vacationsQuery.data ?? [], [vacationsQuery.data]);
   const groups = groupsQuery.data ?? [];
   const summary = summaryQuery.data;
 
