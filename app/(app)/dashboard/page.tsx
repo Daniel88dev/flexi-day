@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { StatCard } from "@/components/dashboard/stat-card";
+import { MobileStatStrip, type MobileStat } from "@/components/dashboard/mobile-stat-strip";
 import {
   groupConsecutiveByUserType,
   LeaveCalendar,
@@ -37,7 +38,8 @@ import {
 import { ApprovalsWidget } from "@/components/dashboard/widgets/approvals-widget";
 import { OutTodayWidget } from "@/components/dashboard/widgets/out-today-widget";
 import { BalanceWidget } from "@/components/dashboard/widgets/balance-widget";
-import { DEFAULT_LEAVE_TYPES, leaveMetaFor, type LeaveTypeKey } from "@/lib/demo/leave-meta";
+import { DEFAULT_LEAVE_TYPES, type LeaveTypeKey } from "@/lib/demo/leave-meta";
+import { LeaveTypeFilter } from "@/components/dashboard/leave-type-filter";
 import { NewRequestDialog } from "@/components/new-request-dialog";
 import { useOpenVacationDetail } from "@/lib/vacations/use-vacation-detail";
 import { Card, CardContent } from "@/components/ui/card";
@@ -101,7 +103,9 @@ export default function DashboardPage() {
 
   const firstName = session.data?.user?.name?.split(" ")[0] ?? t.dashboard.fallbackName;
 
-  const vacations = vacationsQuery.data ?? [];
+  // `?? []` builds a new array on every render while the query is empty, which
+  // would change the `ranges` dependency each time and defeat the memo below.
+  const vacations = useMemo(() => vacationsQuery.data ?? [], [vacationsQuery.data]);
   const groups = groupsQuery.data ?? [];
   const summary = summaryQuery.data;
 
@@ -129,13 +133,6 @@ export default function DashboardPage() {
   const firstDayJs = new Date(year, month - 1, 1).getDay();
   const firstWeekdayMondayIdx = (firstDayJs + 6) % 7;
 
-  function toggleType(id: LeaveTypeKey) {
-    const next = new Set(filter);
-    if (next.has(id)) next.delete(id);
-    else next.add(id);
-    setFilter(next);
-  }
-
   function shiftMonth(delta: number) {
     let nm = month + delta;
     let ny = year;
@@ -158,6 +155,44 @@ export default function DashboardPage() {
   }
 
   const noGroups = groups.length === 0 && !groupsQuery.isLoading;
+
+  const stats: MobileStat[] = [
+    {
+      id: "pending",
+      icon: <Clock className="h-5 w-5" />,
+      tint: "var(--warm)",
+      label: t.dashboard.stats.pendingApprovals,
+      value: summary?.pendingApprovalsCount ?? 0,
+      sub: t.dashboard.stats.pendingApprovalsSub,
+      href: "/requests",
+      accentValue: true,
+    },
+    {
+      id: "out-today",
+      icon: <Plane className="h-5 w-5" />,
+      tint: "var(--c-vacation)",
+      label: t.dashboard.stats.outToday,
+      value: summary?.outTodayCount ?? 0,
+      sub: t.dashboard.stats.outTodaySub,
+    },
+    {
+      id: "coming-up",
+      icon: <CalendarIcon className="h-5 w-5" />,
+      tint: "var(--c-pto)",
+      label: t.dashboard.stats.comingUp,
+      value: summary?.upcomingNext14DaysCount ?? 0,
+      sub: t.dashboard.stats.comingUpSub,
+      href: "/requests",
+    },
+    {
+      id: "working-today",
+      icon: <Users className="h-5 w-5" />,
+      tint: "var(--c-home)",
+      label: t.dashboard.stats.workingToday,
+      value: summary?.workingTodayCount ?? 0,
+      sub: t.dashboard.stats.workingTodaySub,
+    },
+  ];
 
   return (
     <div className="flex flex-col gap-7">
@@ -194,36 +229,19 @@ export default function DashboardPage() {
       ) : null}
 
       {/* Stats */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard
-          icon={<Clock className="h-5 w-5" />}
-          tint="var(--warm)"
-          label={t.dashboard.stats.pendingApprovals}
-          value={summary?.pendingApprovalsCount ?? 0}
-          sub={t.dashboard.stats.pendingApprovalsSub}
-          accentValue
-        />
-        <StatCard
-          icon={<Plane className="h-5 w-5" />}
-          tint="var(--c-vacation)"
-          label={t.dashboard.stats.outToday}
-          value={summary?.outTodayCount ?? 0}
-          sub={t.dashboard.stats.outTodaySub}
-        />
-        <StatCard
-          icon={<CalendarIcon className="h-5 w-5" />}
-          tint="var(--c-pto)"
-          label={t.dashboard.stats.comingUp}
-          value={summary?.upcomingNext14DaysCount ?? 0}
-          sub={t.dashboard.stats.comingUpSub}
-        />
-        <StatCard
-          icon={<Users className="h-5 w-5" />}
-          tint="var(--c-home)"
-          label={t.dashboard.stats.workingToday}
-          value={summary?.workingTodayCount ?? 0}
-          sub={t.dashboard.stats.workingTodaySub}
-        />
+      <MobileStatStrip stats={stats} className="sm:hidden" />
+      <div className="hidden gap-4 sm:grid sm:grid-cols-2 lg:grid-cols-4">
+        {stats.map((stat) => (
+          <StatCard
+            key={stat.id}
+            icon={stat.icon}
+            tint={stat.tint}
+            label={stat.label}
+            value={stat.value}
+            sub={stat.sub}
+            accentValue={stat.accentValue}
+          />
+        ))}
       </div>
 
       {/* Calendar + Sidebar */}
@@ -311,38 +329,7 @@ export default function DashboardPage() {
                   ) : null}
                 </div>
               ) : null}
-              <div className="flex flex-wrap gap-2">
-                {DEFAULT_LEAVE_TYPES.map((id) => {
-                  const meta = leaveMetaFor(id);
-                  const on = filter.has(id);
-                  return (
-                    <button
-                      key={id}
-                      type="button"
-                      onClick={() => toggleType(id)}
-                      className="inline-flex items-center gap-1.5 rounded-full border px-3 py-[5px] text-[12.5px] font-semibold transition-all"
-                      style={{
-                        borderColor: on
-                          ? `color-mix(in oklch, ${meta.cssVar} 32%, transparent)`
-                          : "var(--border)",
-                        background: on
-                          ? `color-mix(in oklch, ${meta.cssVar} 12%, transparent)`
-                          : "transparent",
-                        color: on ? meta.cssVar : "var(--text-faint)",
-                        opacity: on ? 1 : 0.6,
-                      }}
-                    >
-                      <span
-                        className="h-[7px] w-[7px] rounded-full"
-                        style={{
-                          background: on ? meta.cssVar : "var(--text-faint)",
-                        }}
-                      />
-                      {t.leaveTypes[id].label}
-                    </button>
-                  );
-                })}
-              </div>
+              <LeaveTypeFilter value={filter} onChange={setFilter} />
             </div>
           </div>
           <LeaveCalendar

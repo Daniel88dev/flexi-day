@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { QueryClient, QueryClientProvider, QueryCache, MutationCache } from "@tanstack/react-query";
 import { reportQueryError } from "@/lib/observability/report-query-error";
+import { shouldRetryQuery } from "@/lib/api/retry";
 
 export function QueryProvider({ children }: { children: React.ReactNode }) {
   const [client] = useState(
@@ -19,7 +20,7 @@ export function QueryProvider({ children }: { children: React.ReactNode }) {
           queries: {
             staleTime: 30_000,
             refetchOnWindowFocus: false,
-            retry: 1,
+            retry: shouldRetryQuery,
           },
         },
       })

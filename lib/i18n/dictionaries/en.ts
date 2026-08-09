@@ -467,9 +467,18 @@ export const en = {
       comingUpSub: "upcoming leaves",
       workingToday: "Working today",
       workingTodaySub: "at their desk",
+      viewRequests: "View requests",
     },
     prevMonth: "Previous month",
     nextMonth: "Next month",
+    filter: {
+      label: "Filter leave types",
+      allTypes: "All types",
+      noTypes: "No types",
+      someTypes: (n: number) => `${n} types`,
+      selectAll: "Select all",
+      clearAll: "Clear all",
+    },
     scope: {
       label: "Show",
       mine: "Me",
