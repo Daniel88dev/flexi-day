@@ -23,6 +23,7 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { useCreateVacation, useGroups } from "@/lib/api/queries";
 import { ApiError } from "@/lib/api/client";
+import { planLimitFromError } from "@/lib/billing/plan-limit-error";
 import { VacationKind } from "@/lib/api/types";
 import { useTranslation } from "@/lib/i18n/use-translation";
 
@@ -144,6 +145,18 @@ export function NewRequestDialog({ open, onOpenChange, initialDate }: NewRequest
         } else {
           setError(err.message || t.newRequest.conflictGeneric);
         }
+        return;
+      }
+      // A lapsed plan makes over-limit groups read-only. This is the one place
+      // an ordinary member meets that state, so it needs a translated reason
+      // rather than the backend's raw English.
+      const planLimit = planLimitFromError(err);
+      if (planLimit) {
+        setError(
+          planLimit.reason === "READ_ONLY"
+            ? t.billing.readOnlyGroup
+            : t.billing.memberLimitReached(planLimit.limit)
+        );
         return;
       }
       const msg = err instanceof Error ? err.message : t.newRequest.createFailed;

@@ -6,7 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useCreateGroup, useGroups, useJoinGroup } from "@/lib/api/queries";
+import { Sparkles } from "lucide-react";
+import { useCreateGroup, useGroups, useJoinGroup, useSubscription } from "@/lib/api/queries";
+import { planLimitFromError } from "@/lib/billing/plan-limit-error";
 import { useSession } from "@/lib/auth-client";
 import { useTranslation } from "@/lib/i18n/use-translation";
 
@@ -18,11 +20,22 @@ export default function GroupsPage() {
   const groupsQuery = useGroups();
   const createGroup = useCreateGroup();
   const joinGroup = useJoinGroup();
+  const billingQuery = useSubscription();
+
+  // `useSubscription` describes the viewer's OWN organization. Someone who
+  // only administers a group inside another owner's org gets Free entitlements
+  // and zero usage from it, so the cap UI would be flatly wrong for them — only
+  // show it when the viewer actually owns an organization.
+  const billing = billingQuery.data?.organization ? billingQuery.data : undefined;
+  const atGroupCap = billing ? billing.usage.groupsUsed >= billing.entitlements.maxGroups : false;
 
   const [groupName, setGroupName] = useState("");
   const [defaultVacation, setDefaultVacation] = useState<number | "">(20);
   const [defaultHomeOffice, setDefaultHomeOffice] = useState<number | "">(60);
-  const [createError, setCreateError] = useState<string | null>(null);
+  const [createError, setCreateError] = useState<{
+    message: string;
+    isPlanLimit: boolean;
+  } | null>(null);
 
   const [joinCode, setJoinCode] = useState("");
   const [joinError, setJoinError] = useState<string | null>(null);
@@ -39,7 +52,17 @@ export default function GroupsPage() {
       });
       setGroupName("");
     } catch (err) {
-      setCreateError(err instanceof Error ? err.message : t.groups.createFailed);
+      // A 402 carries the real limits — render the translated prompt rather
+      // than the backend's English message.
+      const planLimit = planLimitFromError(err);
+      setCreateError(
+        planLimit
+          ? { message: t.billing.groupLimitReached(planLimit.limit), isPlanLimit: true }
+          : {
+              message: err instanceof Error ? err.message : t.groups.createFailed,
+              isPlanLimit: false,
+            }
+      );
     }
   }
 
@@ -110,10 +133,38 @@ export default function GroupsPage() {
                   />
                 </div>
               </div>
-              {createError ? <p className="text-destructive text-sm">{createError}</p> : null}
-              <Button type="submit" disabled={createGroup.isPending || !groupName}>
-                {createGroup.isPending ? t.groups.creating : t.groups.create}
-              </Button>
+              {createError ? (
+                <p className="text-destructive flex flex-wrap items-center gap-2 text-sm">
+                  <span>{createError.message}</span>
+                  {createError.isPlanLimit ? (
+                    <Link href="/billing" className="text-primary font-semibold underline">
+                      {t.billing.upgrade}
+                    </Link>
+                  ) : null}
+                </p>
+              ) : null}
+              {billing ? (
+                <p className="text-muted-foreground text-xs">
+                  {t.billing.groupsUsed(billing.usage.groupsUsed, billing.entitlements.maxGroups)}
+                </p>
+              ) : null}
+              {atGroupCap ? (
+                <div className="flex flex-wrap items-center gap-2">
+                  <Button type="submit" disabled>
+                    {t.groups.create}
+                  </Button>
+                  <Button asChild size="sm" variant="outline" className="gap-1.5">
+                    <Link href="/billing">
+                      <Sparkles className="h-3.5 w-3.5" />
+                      {t.billing.upgrade}
+                    </Link>
+                  </Button>
+                </div>
+              ) : (
+                <Button type="submit" disabled={createGroup.isPending || !groupName}>
+                  {createGroup.isPending ? t.groups.creating : t.groups.create}
+                </Button>
+              )}
             </form>
           </CardContent>
         </Card>

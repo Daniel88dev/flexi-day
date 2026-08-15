@@ -17,7 +17,10 @@ describe("LeaveTypeFilter", () => {
     for (const label of ["Vacation", "Home Office", "Sick", "Bank Holiday", "Paid Time Off"]) {
       expect(screen.getByRole("button", { name: label })).toBeInTheDocument();
     }
-    expect(screen.getByRole("button", { name: "Vacation" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: "Vacation" })).toHaveAttribute(
+      "aria-pressed",
+      "true"
+    );
     expect(screen.getByRole("button", { name: "Sick" })).toHaveAttribute("aria-pressed", "false");
   });
 

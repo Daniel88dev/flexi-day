@@ -1,4 +1,5 @@
 import { NavBar } from "@/components/nav-bar";
+import { GraceBanner } from "@/components/billing/grace-banner";
 import { AuthGuard } from "@/components/auth/auth-guard";
 import { Footer } from "@/components/footer";
 import { ToastHost } from "@/components/toast";
@@ -9,6 +10,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     <AuthGuard>
       <div className="flex min-h-screen flex-col">
         <NavBar />
+        <GraceBanner />
         <main className="mx-auto w-full max-w-[1340px] flex-1 px-7 py-8 max-[820px]:px-4">
           {children}
         </main>

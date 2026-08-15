@@ -44,6 +44,8 @@ vi.mock("@/lib/api/queries", () => ({
   useRevokeGroupInvite: () => ({ mutate: vi.fn(), isPending: false }),
   useGroupMirrors: () => ({ data: mirrorsData, isLoading: false, error: null }),
   useSetGroupMirrors: () => ({ mutateAsync: setMirrorsMutate, isPending: false }),
+  useSubscription: () => ({ data: undefined, isLoading: false, error: null }),
+  useRemoveGroupUser: () => ({ mutateAsync: vi.fn(), isPending: false }),
 }));
 
 describe("GroupDetailPage mirroring tab — admin", () => {

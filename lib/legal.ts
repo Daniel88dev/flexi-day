@@ -7,8 +7,11 @@ export const LEGAL = {
   address: "Bořetická 4133/6, 615 00 Brno-Židenice, Czech Republic",
   email: "daniel@hrynusiw.cz",
   country: "Czech Republic",
+  ico: "23347406",
+  /** Merchant of Record for paid plans — the seller of record on invoices. */
+  merchantOfRecord: "Paddle.com Market Ltd",
   /** Human-readable last-updated date shown on every legal page. */
-  updated: "23 July 2026",
+  updated: "11 August 2026",
   /** Where the product is hosted (AWS region). */
   hosting: "Amazon Web Services (AWS), eu-central-1 region (Frankfurt, Germany)",
   /** Data-protection supervisory authority for the controller. */

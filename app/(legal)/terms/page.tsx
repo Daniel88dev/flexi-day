@@ -71,19 +71,55 @@ export default function TermsPage() {
         (such as teammates) with the Service.
       </p>
 
-      <h2>7. Availability and early access</h2>
+      <h2>7. Availability</h2>
       <p>
-        The Service is provided on an ongoing, best-effort basis and may currently be offered as an
-        early-access or free plan. We do not guarantee that the Service will be uninterrupted or
-        error-free, and we may perform maintenance or suspend features when needed.
+        The Service is provided on an ongoing, best-effort basis. We do not guarantee that the
+        Service will be uninterrupted or error-free, and we may perform maintenance or suspend
+        features when needed.
       </p>
 
-      <h2>8. Fees</h2>
+      <h2>8. Plans, fees and billing</h2>
       <p>
-        The Service may be provided free of charge during early access. If we introduce paid plans,
-        we will give you reasonable advance notice and you may choose whether to continue on a paid
-        plan.
+        The Service offers a free plan and paid subscription plans (currently Pro and Enterprise,
+        plus optional extra group slots). Each plan&rsquo;s limits and prices are shown on our
+        pricing page. Displayed prices exclude VAT; applicable tax is calculated and shown at
+        checkout before you pay.
       </p>
+      <p>
+        Paid plans are sold by our authorised reseller and Merchant of Record,{" "}
+        <strong>Paddle.com Market Ltd</strong> (&ldquo;Paddle&rdquo;). Paddle is the seller of
+        record for your purchase: it processes your payment, calculates and remits applicable taxes,
+        and issues your invoices and receipts. Paddle&rsquo;s own{" "}
+        <a href="https://www.paddle.com/legal/checkout-buyer-terms">Buyer Terms</a> apply to the
+        payment transaction itself.
+      </p>
+      <ul>
+        <li>
+          <strong>Renewal.</strong> Subscriptions renew automatically at the end of each monthly or
+          yearly billing period until cancelled.
+        </li>
+        <li>
+          <strong>Cancellation.</strong> You can cancel at any time from the billing page, via
+          &ldquo;Manage payment method&rdquo;, which opens Paddle&rsquo;s customer portal. Your plan
+          stays active until the end of the paid period; it is not renewed afterwards.
+        </li>
+        <li>
+          <strong>Failed payments and downgrades.</strong> If a renewal payment fails or you
+          downgrade, your existing limits keep working for a 14-day grace period. After that, groups
+          exceeding your plan&rsquo;s limits become read-only — they remain visible and nothing is
+          deleted — until you are back within your plan&rsquo;s limits.
+        </li>
+        <li>
+          <strong>Refunds.</strong> Refund requests are handled through Paddle in line with
+          Paddle&rsquo;s refund policy and your statutory rights. As the Service is a digital
+          service that begins immediately, you consent to performance starting right away; statutory
+          consumer withdrawal rights remain unaffected where they apply.
+        </li>
+        <li>
+          <strong>Price changes.</strong> If we change prices, the new prices apply from your next
+          billing period, and we will give you reasonable advance notice.
+        </li>
+      </ul>
 
       <h2>9. Intellectual property</h2>
       <p>

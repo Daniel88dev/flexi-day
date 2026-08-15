@@ -38,3 +38,13 @@ export function createGroupInvite({
 export function revokeGroupInvite(inviteId: string): Promise<GroupInvite> {
   return api<GroupInvite>(`/api/group-user/invites/${inviteId}`, { method: "DELETE" });
 }
+
+/**
+ * Admin-only: removes a member (soft delete). Available even on read-only
+ * over-limit groups — it is how an owner gets back under a plan limit.
+ */
+export function removeGroupUser(groupId: string, userId: string): Promise<GroupUser> {
+  return api<GroupUser>(`/api/group-user/${groupId}/${encodeURIComponent(userId)}`, {
+    method: "DELETE",
+  });
+}

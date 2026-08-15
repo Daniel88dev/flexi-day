@@ -20,9 +20,20 @@ import {
   joinGroupByCode,
   listGroupInvites,
   listGroupUsers,
+  removeGroupUser,
   revokeGroupInvite,
   updateGroupUsers,
 } from "./group-users";
+import {
+  changePlan,
+  createCheckout,
+  createPortalSession,
+  getBillingOverview,
+  updateExtraSlots,
+  type BillingCycle,
+  type CheckoutInput,
+  type PaidPlan,
+} from "./billing";
 import { getGroupMirrors, setGroupMirrors } from "./group-mirrors";
 import { getCarryOverSuggestion, listQuotas, setUserQuota, type ListQuotasParams } from "./quotas";
 import {
@@ -91,6 +102,7 @@ export const qk = {
   memberReport: (userId: string, year: number) => ["member-report", userId, year] as const,
   carryOverSuggestion: (groupId: string, userId: string, year: number) =>
     ["carryover-suggestion", groupId, userId, year] as const,
+  subscription: () => ["subscription"] as const,
 };
 
 function invalidateVacationDependants(qc: ReturnType<typeof useQueryClient>) {
@@ -483,5 +495,52 @@ export function useRegenerateCalendarSyncToken() {
   return useMutation({
     mutationFn: (id: string) => regenerateCalendarSyncToken(id),
     onSuccess: () => qc.invalidateQueries({ queryKey: qk.calendarSyncs() }),
+  });
+}
+
+export function useSubscription() {
+  return useQuery({
+    queryKey: qk.subscription(),
+    queryFn: getBillingOverview,
+  });
+}
+
+export function useCreateCheckout() {
+  return useMutation({
+    mutationFn: (input: CheckoutInput) => createCheckout(input),
+  });
+}
+
+export function useCreatePortalSession() {
+  return useMutation({
+    mutationFn: () => createPortalSession(),
+  });
+}
+
+export function useUpdateExtraSlots() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (extraGroupSlots: number) => updateExtraSlots(extraGroupSlots),
+    onSuccess: () => qc.invalidateQueries({ queryKey: qk.subscription() }),
+  });
+}
+
+export function useChangePlan() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { plan: PaidPlan; billingCycle: BillingCycle }) => changePlan(input),
+    onSuccess: () => qc.invalidateQueries({ queryKey: qk.subscription() }),
+  });
+}
+
+export function useRemoveGroupUser() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (vars: { groupId: string; userId: string }) =>
+      removeGroupUser(vars.groupId, vars.userId),
+    onSuccess: (_, vars) => {
+      qc.invalidateQueries({ queryKey: qk.groupUsers(vars.groupId) });
+      qc.invalidateQueries({ queryKey: qk.subscription() });
+    },
   });
 }
