@@ -641,6 +641,10 @@ export const en = {
     } as Record<string, string>,
     renewsOn: (date: string) => `Renews on ${date}`,
     cancelsOn: (date: string) => `Cancels on ${date}`,
+    trialBadge: (n: number, unit: "day" | "month") =>
+      `${n} ${unit === "day" ? (n === 1 ? "day" : "days") : n === 1 ? "month" : "months"} free`,
+    trialEndsOn: (date: string) => `Free trial ends on ${date} — you're billed from then on.`,
+    slotsTrialNote: "Extra slots are charged straight away — they're not part of the free trial.",
     graceBanner: (date: string) =>
       `There's a problem with your subscription. Everything keeps working until ${date} — after that, groups over your plan's limits become read-only.`,
     graceBannerCta: "Review billing",
@@ -659,7 +663,7 @@ export const en = {
     plansTitle: "Plans",
     monthly: "Monthly",
     yearly: "Yearly",
-    yearlyBonus: "2 months free",
+    yearlyBonus: "Save 17%",
     perMonth: "/ month",
     perYear: "/ year",
     freePrice: "€0",
@@ -765,7 +769,9 @@ export const en = {
       perYear: "/ year",
       monthly: "Monthly",
       yearly: "Yearly",
-      yearlyBonus: "2 months free",
+      yearlyBonus: "Save 17%",
+      trialBadge: (n: number, unit: "day" | "month") =>
+        `${n} ${unit === "day" ? (n === 1 ? "day" : "days") : n === 1 ? "month" : "months"} free`,
       mostPopular: "MOST POPULAR",
       free: {
         name: "Free",

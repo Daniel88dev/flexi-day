@@ -642,6 +642,14 @@ export const cs: Dictionary = {
     } as Record<string, string>,
     renewsOn: (date: string) => `Obnoví se ${date}`,
     cancelsOn: (date: string) => `Skončí ${date}`,
+    trialBadge: (n: number, unit: "day" | "month") =>
+      `${n} ${
+        unit === "day"
+          ? plural(n, "den", "dny", "dní")
+          : plural(n, "měsíc", "měsíce", "měsíců")
+      } zdarma`,
+    trialEndsOn: (date: string) => `Zkušební období končí ${date} — od té doby se účtuje.`,
+    slotsTrialNote: "Extra sloty se účtují ihned — nejsou součástí zkušebního období.",
     graceBanner: (date: string) =>
       `S vaším předplatným je problém. Vše funguje dál do ${date} — poté se skupiny nad limity tarifu přepnou jen pro čtení.`,
     graceBannerCta: "Zkontrolovat fakturaci",
@@ -660,7 +668,7 @@ export const cs: Dictionary = {
     plansTitle: "Tarify",
     monthly: "Měsíčně",
     yearly: "Ročně",
-    yearlyBonus: "2 měsíce zdarma",
+    yearlyBonus: "Ušetříte 17 %",
     perMonth: "/ měsíc",
     perYear: "/ rok",
     freePrice: "0 €",
@@ -766,7 +774,13 @@ export const cs: Dictionary = {
       perYear: "/ rok",
       monthly: "Měsíčně",
       yearly: "Ročně",
-      yearlyBonus: "2 měsíce zdarma",
+      yearlyBonus: "Ušetříte 17 %",
+      trialBadge: (n: number, unit: "day" | "month") =>
+        `${n} ${
+          unit === "day"
+            ? plural(n, "den", "dny", "dní")
+            : plural(n, "měsíc", "měsíce", "měsíců")
+        } zdarma`,
       mostPopular: "NEJOBLÍBENĚJŠÍ",
       free: {
         name: "Free",

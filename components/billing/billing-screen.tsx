@@ -14,7 +14,7 @@ import {
 } from "@/lib/api/queries";
 import type { BillingCycle, BillingOverview, PaidPlan } from "@/lib/api/billing";
 import { isPaddleConfigured, openCheckout } from "@/lib/paddle";
-import { PLAN_PRICES, formatEur } from "@/lib/billing/prices";
+import { PLAN_PRICES, TRIAL, formatEur } from "@/lib/billing/prices";
 import { pushToast } from "@/components/toast";
 import { useTranslation } from "@/lib/i18n/use-translation";
 import { useQueryClient } from "@tanstack/react-query";
@@ -105,6 +105,14 @@ function PlanCard({
   const per = cycle === "YEARLY" ? t.billing.perYear : t.billing.perMonth;
   const busy = createCheckout.isPending || changePlan.isPending;
 
+  // Paddle grants the trial on first subscribe only, so an org that already has
+  // a subscription gets none when it switches plans — advertising one here
+  // would be a promise Paddle won't keep.
+  const trial =
+    plan !== "FREE" && !hasSubscription
+      ? TRIAL[cycle === "YEARLY" ? "yearly" : "monthly"]
+      : null;
+
   const action = (() => {
     if (isCurrent) {
       return (
@@ -156,6 +164,11 @@ function PlanCard({
             </span>
           ) : null}
         </div>
+        {trial ? (
+          <p className="text-primary text-xs font-semibold">
+            {t.billing.trialBadge(trial.count, trial.unit)}
+          </p>
+        ) : null}
       </CardHeader>
       <CardContent className="space-y-4">
         <ul className="space-y-2 text-sm">
@@ -317,7 +330,10 @@ export function BillingScreen() {
               </p>
             ) : subscription?.currentPeriodEnd ? (
               <p className="text-muted-foreground text-sm">
-                {t.billing.renewsOn(formatDate(subscription.currentPeriodEnd))}
+                {/* While trialing, Paddle reports the trial end as the period end. */}
+                {subscription.status === "trialing"
+                  ? t.billing.trialEndsOn(formatDate(subscription.currentPeriodEnd))
+                  : t.billing.renewsOn(formatDate(subscription.currentPeriodEnd))}
               </p>
             ) : null}
             {overview.organization?.hasPaddleCustomer ? (
@@ -404,6 +420,9 @@ export function BillingScreen() {
         </CardHeader>
         <CardContent className="space-y-3">
           <p className="text-muted-foreground text-sm">{t.billing.slotsHint}</p>
+          {subscription?.status === "trialing" ? (
+            <p className="text-muted-foreground text-sm">{t.billing.slotsTrialNote}</p>
+          ) : null}
           {canModify && subscription?.plan ? (
             <div className="flex flex-wrap items-center gap-3">
               <div className="flex items-center gap-2">
