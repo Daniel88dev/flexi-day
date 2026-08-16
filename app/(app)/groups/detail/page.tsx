@@ -15,14 +15,16 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { ShieldCheck } from "lucide-react";
 import { AvatarBubble } from "@/components/brand/avatar-bubble";
+import { OrganizationBadge } from "@/components/billing/organization-badge";
 import { pushToast } from "@/components/toast";
 import {
   useCreateGroupInvite,
   useGroupInvites,
   useGroupMirrors,
   useGroupUsers,
-  useGroups,
+  useGroup,
   useQuotas,
   useRemoveGroupUser,
   useRevokeGroupInvite,
@@ -33,7 +35,6 @@ import {
   useUpdateGroupUsers,
   useUpdateGroupWorkingDays,
 } from "@/lib/api/queries";
-import { useSession } from "@/lib/auth-client";
 import type { Group, GroupUserListItem, MirrorMember } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/lib/i18n/use-translation";
@@ -52,18 +53,16 @@ export default function GroupDetailPage() {
   const tabParam = search.get("tab");
   const [tab, setTab] = useState<Tab>(isTab(tabParam) ? tabParam : "members");
 
-  const { data: session } = useSession();
-  const userId = session?.user?.id;
-
-  const groupsQuery = useGroups();
-  const membersQuery = useGroupUsers(groupId);
-  const group = groupsQuery.data?.find((g) => g.id === groupId);
-  // The backend authorizes on the membership's adminAccess flag; the manager
-  // is an admin too, even before a membership row grants it.
-  const isAdmin = useMemo(() => {
-    if (userId && userId === group?.managerUserId) return true;
-    return membersQuery.data?.some((m) => m.userId === userId && m.adminAccess) ?? false;
-  }, [userId, group, membersQuery.data]);
+  // The group and the caller's rights over it both come from the backend, so an
+  // organization admin — who has no membership row at all — sees the same screen
+  // as a group admin, and nobody is shown a control the API will refuse.
+  const groupQuery = useGroup(groupId);
+  const group = groupQuery.data;
+  const isAdmin = group?.access.canAdmin ?? false;
+  // `viaOrgAdmin` is also true for a plain member whose admin rights come from
+  // the organization, and the notice says they are not a member — so it takes
+  // both flags.
+  const viaOrgAdmin = (group?.access.viaOrgAdmin && !group.access.isMember) ?? false;
 
   return (
     <div className="space-y-6">
@@ -85,8 +84,19 @@ export default function GroupDetailPage() {
               )}
             </p>
           ) : null}
+          <OrganizationBadge organization={group?.organization ?? null} className="mt-2" />
         </div>
       </div>
+
+      {viaOrgAdmin && group?.organization ? (
+        <div
+          className="flex items-start gap-2.5 rounded-lg px-3.5 py-2.5 text-sm"
+          style={{ background: "var(--warm-soft)", color: "var(--text)" }}
+        >
+          <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+          <span>{t.organization.viaOrgAdminNotice(group.organization.name)}</span>
+        </div>
+      ) : null}
 
       <div className="border-border flex gap-1 border-b">
         {TAB_ORDER.filter((tb) => tb !== "invites" || isAdmin).map((tb) => (
@@ -129,13 +139,13 @@ function InvitesTab({ groupId, isAdmin }: { groupId: string; isAdmin: boolean })
   const createInvite = useCreateGroupInvite();
   const revokeInvite = useRevokeGroupInvite(groupId);
   const membersQuery = useGroupUsers(groupId);
-  const groupsQuery = useGroups();
+  const groupQuery = useGroup(groupId);
   const billingQuery = useSubscription();
 
   // Entitlements come from the viewer's own organization, so they only describe
   // this group when the viewer owns it. For a group in someone else's org the
   // caps are theirs, not ours — show nothing and let the backend decide.
-  const group = groupsQuery.data?.find((g) => g.id === groupId);
+  const group = groupQuery.data;
   const ownsThisGroup =
     billingQuery.data?.organization != null &&
     group?.organizationId === billingQuery.data.organization.id;
@@ -469,8 +479,8 @@ function MembersTab({ groupId, isAdmin }: { groupId: string; isAdmin: boolean })
   const updateMembers = useUpdateGroupUsers();
   const removeMember = useRemoveGroupUser();
   const billingQuery = useSubscription();
-  const groupsQuery = useGroups();
-  const group = groupsQuery.data?.find((g) => g.id === groupId);
+  const groupQuery = useGroup(groupId);
+  const group = groupQuery.data;
   const managerUserId = group?.managerUserId;
   const ownsThisGroup =
     billingQuery.data?.organization != null &&
@@ -637,8 +647,8 @@ function MembersTab({ groupId, isAdmin }: { groupId: string; isAdmin: boolean })
                   </TableCell>
                   {isAdmin && !editing ? (
                     <TableCell className="text-right">
-                      {/* `managerUserId` is undefined while useGroups is in
-                          flight; rendering then would offer Remove on the
+                      {/* `managerUserId` is undefined while the group query is
+                          in flight; rendering then would offer Remove on the
                           manager, which the backend 409s. */}
                       {managerUserId !== undefined && m.userId !== managerUserId ? (
                         <Button

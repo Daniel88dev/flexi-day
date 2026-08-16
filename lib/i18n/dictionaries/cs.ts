@@ -200,6 +200,7 @@ export const cs: Dictionary = {
     label: "Uživatelské menu",
     signedIn: "Přihlášen",
     myGroups: "Moje skupiny",
+    organization: "Organizace",
     billing: "Fakturace",
     settings: "Nastavení",
     signOut: "Odhlásit se",
@@ -620,6 +621,50 @@ export const cs: Dictionary = {
     copyrightRest: (year: number) => `© ${year} flexiday. Odpočiňte si.`,
   },
 
+  organization: {
+    title: "Organizace",
+    subtitle: "Plátce, pod kterého vaše skupiny spadají, a kdo je spravuje.",
+    loadError: "Organizaci se nepodařilo načíst. Zkuste to prosím znovu.",
+    none: "Zatím nemáte organizaci — vytvořte první skupinu a organizace se založí sama.",
+    planBadge: (name: string, plan: string) => `${name} · ${plan}`,
+    freeBadge: (name: string) => `${name} · tarif Zdarma`,
+    planLapsed: "vypršel",
+    planIssue: "problém s platbou",
+    switcher: "Organizace",
+    ownerTag: "Vlastník",
+    detailsTitle: "Údaje",
+    nameLabel: "Název organizace",
+    billingEmailLabel: "Fakturační e-mail",
+    billingEmailHint: "Kam chodí upozornění k předplatnému. Změnit ho může jen vlastník.",
+    save: "Uložit změny",
+    saving: "Ukládám…",
+    saved: "Organizace upravena",
+    saveFailed: "Organizaci se nepodařilo upravit",
+    planTitle: "Tarif",
+    planLimits: (groups: number, members: number) =>
+      `${groups} ${plural(groups, "skupina", "skupiny", "skupin")} · ${members} ${plural(members, "člověk", "lidé", "lidí")} ve skupině`,
+    manageBilling: "Spravovat fakturaci",
+    groupsTitle: "Skupiny",
+    groupsNone: "Tato organizace zatím nemá žádné skupiny.",
+    groupMembers: (n: number) => `${n} ${plural(n, "člen", "členové", "členů")}`,
+    openGroup: "Otevřít",
+    adminsTitle: "Správci",
+    adminsHint:
+      "Správce může spravovat všechny skupiny v této organizaci — členy, fondy, nastavení i pozvánky — aniž by do nich patřil. Dovolenou nikomu schvalovat nemůže.",
+    adminsOwnerOnly: "Přidávat a odebírat správce může jen vlastník.",
+    addAdmin: "Přidat správce",
+    adding: "Přidávám…",
+    addAdminPlaceholder: "Vyberte osobu",
+    addFailed: "Správce se nepodařilo přidat",
+    noCandidates: "Všichni ve skupinách této organizace už jsou správci.",
+    candidateGroups: (groups: string) => `ve skupinách ${groups}`,
+    remove: "Odebrat",
+    removing: "Odebírám…",
+    removeFailed: "Správce se nepodařilo odebrat",
+    viaOrgAdminNotice: (name: string) =>
+      `Tuto skupinu spravujete jako správce organizace ${name}. Nejste jejím členem, takže si zde nemůžete brát ani schvalovat volno.`,
+  },
+
   billing: {
     title: "Fakturace",
     subtitle: "Váš tarif, využití a platební údaje.",
@@ -644,9 +689,7 @@ export const cs: Dictionary = {
     cancelsOn: (date: string) => `Skončí ${date}`,
     trialBadge: (n: number, unit: "day" | "month") =>
       `${n} ${
-        unit === "day"
-          ? plural(n, "den", "dny", "dní")
-          : plural(n, "měsíc", "měsíce", "měsíců")
+        unit === "day" ? plural(n, "den", "dny", "dní") : plural(n, "měsíc", "měsíce", "měsíců")
       } zdarma`,
     trialEndsOn: (date: string) => `Zkušební období končí ${date} — od té doby se účtuje.`,
     slotsTrialNote: "Extra sloty se účtují ihned — nejsou součástí zkušebního období.",
@@ -777,9 +820,7 @@ export const cs: Dictionary = {
       yearlyBonus: "Ušetříte 17 %",
       trialBadge: (n: number, unit: "day" | "month") =>
         `${n} ${
-          unit === "day"
-            ? plural(n, "den", "dny", "dní")
-            : plural(n, "měsíc", "měsíce", "měsíců")
+          unit === "day" ? plural(n, "den", "dny", "dní") : plural(n, "měsíc", "měsíce", "měsíců")
         } zdarma`,
       mostPopular: "NEJOBLÍBENĚJŠÍ",
       free: {

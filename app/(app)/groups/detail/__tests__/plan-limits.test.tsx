@@ -14,6 +14,9 @@ const group = {
   defaultHomeOfficeDays: 0,
   workingDays: [1, 2, 3, 4, 5],
   managerUserId: "u-1",
+  organization: null,
+  // The page reads its permissions from the backend now, not from the member list.
+  access: { canView: true, canAdmin: true, viaOrgAdmin: false, isMember: true },
 };
 
 let members: {
@@ -71,7 +74,7 @@ vi.mock("@/lib/auth-client", () => ({
 }));
 
 vi.mock("@/lib/api/queries", () => ({
-  useGroups: () => ({ data: [group], isLoading: false, error: null }),
+  useGroup: () => ({ data: group, isLoading: false, error: null }),
   useGroupUsers: () => ({ data: members, isLoading: false, error: null }),
   useQuotas: () => ({ data: [], isLoading: false, error: null }),
   useSetUserQuota: () => ({ mutateAsync: vi.fn(), isPending: false }),
