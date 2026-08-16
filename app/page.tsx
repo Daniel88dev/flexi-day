@@ -22,7 +22,7 @@ import { HeroPreview } from "@/components/landing/hero-preview";
 import { Eyebrow } from "@/components/landing/eyebrow";
 import { DEMO_TEAM, demoById } from "@/lib/demo/team";
 import { useTranslation } from "@/lib/i18n/use-translation";
-import { PLAN_PRICES } from "@/lib/billing/prices";
+import { PLAN_PRICES, TRIAL } from "@/lib/billing/prices";
 
 /** Icon + accent per feature card; copy comes from the dictionary, matched by index. */
 const FEATURE_ICONS = [
@@ -421,6 +421,14 @@ export default function LandingPage() {
                         : `${yearlyPricing ? t.landing.pricing.perYear : t.landing.pricing.perMonth} · ${t.landing.pricing.exclVat}`}
                     </span>
                   </div>
+                  {tier.monthly !== null ? (
+                    <p className="mt-1 text-[13px] font-semibold" style={{ color: "var(--primary)" }}>
+                      {t.landing.pricing.trialBadge(
+                        TRIAL[yearlyPricing ? "yearly" : "monthly"].count,
+                        TRIAL[yearlyPricing ? "yearly" : "monthly"].unit
+                      )}
+                    </p>
+                  ) : null}
                   <p className="mt-2 text-[14px]" style={{ color: "var(--text-muted)" }}>
                     {tier.copy.blurb}
                   </p>

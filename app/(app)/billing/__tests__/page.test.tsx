@@ -173,4 +173,58 @@ describe("BillingPage", () => {
 
     expect(screen.getByText(/read-only until you upgrade/i)).toBeInTheDocument();
   });
+
+  it("advertises the trial on the paid plans to someone with no subscription", () => {
+    // Yearly is preselected, so the yearly trial is the one on screen.
+    renderWithClient(<BillingPage />);
+
+    expect(screen.getAllByText("2 months free")).toHaveLength(2);
+    // The price stays the headline — the trial is additional, not a substitute.
+    expect(screen.getByText("€80")).toBeInTheDocument();
+  });
+
+  it("switches to the monthly trial when the monthly cycle is selected", async () => {
+    renderWithClient(<BillingPage />);
+
+    await userEvent.click(screen.getByRole("button", { name: "Monthly" }));
+
+    expect(screen.getAllByText("10 days free")).toHaveLength(2);
+  });
+
+  it("hides the trial once the org already has a subscription", () => {
+    // Paddle grants a trial on first subscribe only — showing it on a switch
+    // would promise something Paddle will not honour.
+    overview.subscription = {
+      plan: "PRO",
+      status: "active",
+      billingCycle: "YEARLY",
+      extraGroupSlots: 0,
+      currentPeriodEnd: null,
+      graceEndsAt: null,
+      cancelAt: null,
+    };
+
+    renderWithClient(<BillingPage />);
+
+    expect(screen.queryByText("2 months free")).not.toBeInTheDocument();
+    expect(screen.queryByText("10 days free")).not.toBeInTheDocument();
+  });
+
+  it("reports the trial end rather than a renewal while trialing", () => {
+    overview.subscription = {
+      plan: "PRO",
+      status: "trialing",
+      billingCycle: "YEARLY",
+      extraGroupSlots: 0,
+      currentPeriodEnd: "2026-10-16T12:00:00.000Z",
+      graceEndsAt: null,
+      cancelAt: null,
+    };
+
+    renderWithClient(<BillingPage />);
+
+    expect(screen.getByText(/Free trial ends on 16 October 2026/)).toBeInTheDocument();
+    expect(screen.queryByText(/Renews on/)).not.toBeInTheDocument();
+    expect(screen.getByText(/not part of the free trial/i)).toBeInTheDocument();
+  });
 });
