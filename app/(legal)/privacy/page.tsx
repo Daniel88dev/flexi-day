@@ -124,8 +124,21 @@ export default function PrivacyPage() {
             <td>Sending transactional emails</td>
             <td>EU (Frankfurt, Germany)</td>
           </tr>
+          <tr>
+            <td>Paddle.com Market Ltd</td>
+            <td>
+              Payment processing, subscription billing, tax handling and invoicing (Merchant of
+              Record for paid plans)
+            </td>
+            <td>United Kingdom / EU</td>
+          </tr>
         </tbody>
       </table>
+      <p>
+        Paddle acts as the seller of record for paid plans: when you buy a subscription, Paddle
+        processes your payment details under its own privacy policy — we never receive your full
+        payment card details.
+      </p>
       <p>
         We may also disclose data where required by law, to enforce our Terms, or to protect the
         rights, safety and security of our users.

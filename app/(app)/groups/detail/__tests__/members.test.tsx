@@ -68,6 +68,8 @@ vi.mock("@/lib/api/queries", () => ({
   useRevokeGroupInvite: () => ({ mutate: vi.fn(), isPending: false }),
   useGroupMirrors: () => ({ data: undefined, isLoading: false, error: null }),
   useSetGroupMirrors: () => ({ mutateAsync: vi.fn(), isPending: false }),
+  useSubscription: () => ({ data: undefined, isLoading: false, error: null }),
+  useRemoveGroupUser: () => ({ mutateAsync: vi.fn(), isPending: false }),
 }));
 
 /** The permission cells of one member's row, in column order. */

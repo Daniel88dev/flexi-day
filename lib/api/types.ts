@@ -124,6 +124,8 @@ export function vacationStatus(v: Vacation): VacationStatus {
 
 export type Group = {
   id: UUID;
+  /** Billing owner. Plan limits only apply when this is the viewer's own org. */
+  organizationId: UUID;
   groupName: string;
   defaultVacationDays: number;
   defaultHomeOfficeDays: number;

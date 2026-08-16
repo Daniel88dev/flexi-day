@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import {
   ArrowRight,
@@ -21,6 +22,7 @@ import { HeroPreview } from "@/components/landing/hero-preview";
 import { Eyebrow } from "@/components/landing/eyebrow";
 import { DEMO_TEAM, demoById } from "@/lib/demo/team";
 import { useTranslation } from "@/lib/i18n/use-translation";
+import { PLAN_PRICES } from "@/lib/billing/prices";
 
 /** Icon + accent per feature card; copy comes from the dictionary, matched by index. */
 const FEATURE_ICONS = [
@@ -53,53 +55,10 @@ const TESTIMONIALS = [
   },
 ];
 
-const PRICING = [
-  {
-    name: "Starter",
-    price: "Free",
-    per: "up to 10 people",
-    blurb: "Everything a small team needs to get organised.",
-    features: [
-      "Shared team calendar",
-      "Unlimited requests",
-      "Approvals & notifications",
-      "Public holidays built in",
-    ],
-    cta: "Get started",
-  },
-  {
-    name: "Team",
-    price: "$3",
-    per: "/ person / month",
-    blurb: "For growing teams that want more control.",
-    features: [
-      "Everything in Starter",
-      "Groups & coverage rules",
-      "Allowances & carry-over",
-      "Calendar sync (Google, Outlook)",
-      "Priority support",
-    ],
-    cta: "Start free trial",
-    featured: true,
-  },
-  {
-    name: "Company",
-    price: "Let's talk",
-    per: "",
-    blurb: "Advanced security and admin at scale.",
-    features: [
-      "Everything in Team",
-      "SSO & SCIM provisioning",
-      "Custom leave policies",
-      "Audit log & API access",
-      "Dedicated success manager",
-    ],
-    cta: "Contact sales",
-  },
-];
-
 export default function LandingPage() {
   const { t } = useTranslation();
+  // Yearly preselected: annual billing is the better deal on both sides.
+  const [yearlyPricing, setYearlyPricing] = useState(true);
   return (
     <div className="overflow-x-hidden" style={{ background: "var(--bg)" }}>
       {/* Signed-in visitors belong on the dashboard, not the pitch. Rendered
@@ -356,98 +315,145 @@ export default function LandingPage() {
       {/*  </div>*/}
       {/*</section>*/}
       {/* PRICING */}
-      {/*<section*/}
-      {/*  id="pricing"*/}
-      {/*  style={{ background: "var(--bg-tint)", borderTop: "1px solid var(--border)" }}*/}
-      {/*>*/}
-      {/*  <div className="mx-auto max-w-6xl px-7 py-[90px]">*/}
-      {/*    <div className="mx-auto mb-12 max-w-[600px] text-center">*/}
-      {/*      <Eyebrow center>Simple pricing</Eyebrow>*/}
-      {/*      <h2*/}
-      {/*        className="font-display my-4 font-semibold"*/}
-      {/*        style={{*/}
-      {/*          fontSize: "clamp(30px,4vw,44px)",*/}
-      {/*          letterSpacing: "-0.03em",*/}
-      {/*        }}*/}
-      {/*      >*/}
-      {/*        Fair, per person, no surprises*/}
-      {/*      </h2>*/}
-      {/*      <p className="text-[17px]" style={{ color: "var(--text-muted)" }}>*/}
-      {/*        Start free for small teams. Upgrade when you grow.*/}
-      {/*      </p>*/}
-      {/*    </div>*/}
-      {/*    <div className="mx-auto grid max-w-[880px] gap-5 md:grid-cols-3">*/}
-      {/*      {PRICING.map((p) => (*/}
-      {/*        <div*/}
-      {/*          key={p.name}*/}
-      {/*          className="relative flex flex-col gap-5 rounded-2xl p-7"*/}
-      {/*          style={{*/}
-      {/*            border: p.featured ? "1.5px solid var(--primary)" : "1px solid var(--border)",*/}
-      {/*            background: p.featured*/}
-      {/*              ? "color-mix(in oklch, var(--primary) 5%, var(--surface))"*/}
-      {/*              : "var(--surface)",*/}
-      {/*            boxShadow: p.featured ? "var(--shadow)" : "none",*/}
-      {/*          }}*/}
-      {/*        >*/}
-      {/*          {p.featured ? (*/}
-      {/*            <span*/}
-      {/*              className="absolute -top-[13px] left-7 rounded-full px-3 py-1 text-[12px] font-bold tracking-wide"*/}
-      {/*              style={{ background: "var(--primary)", color: "var(--primary-fg)" }}*/}
-      {/*            >*/}
-      {/*              MOST POPULAR*/}
-      {/*            </span>*/}
-      {/*          ) : null}*/}
-      {/*          <div>*/}
-      {/*            <div className="text-[16px] font-semibold" style={{ color: "var(--text-muted)" }}>*/}
-      {/*              {p.name}*/}
-      {/*            </div>*/}
-      {/*            <div className="mt-2 flex items-baseline gap-1.5">*/}
-      {/*              <span*/}
-      {/*                className="font-display font-bold"*/}
-      {/*                style={{*/}
-      {/*                  fontSize: 44,*/}
-      {/*                  letterSpacing: "-0.03em",*/}
-      {/*                }}*/}
-      {/*              >*/}
-      {/*                {p.price}*/}
-      {/*              </span>*/}
-      {/*              <span className="text-[14.5px]" style={{ color: "var(--text-faint)" }}>*/}
-      {/*                {p.per}*/}
-      {/*              </span>*/}
-      {/*            </div>*/}
-      {/*            <p className="mt-2 text-[14px]" style={{ color: "var(--text-muted)" }}>*/}
-      {/*              {p.blurb}*/}
-      {/*            </p>*/}
-      {/*          </div>*/}
-      {/*          <div className="h-px" style={{ background: "var(--border)" }} />*/}
-      {/*          <ul className="flex flex-1 flex-col gap-3">*/}
-      {/*            {p.features.map((f) => (*/}
-      {/*              <li*/}
-      {/*                key={f}*/}
-      {/*                className="flex items-start gap-2.5 text-[14.5px]"*/}
-      {/*                style={{ color: "var(--text-muted)" }}*/}
-      {/*              >*/}
-      {/*                <Check*/}
-      {/*                  className="mt-[1px] h-[18px] w-[18px] shrink-0"*/}
-      {/*                  style={{ color: "var(--primary)" }}*/}
-      {/*                />*/}
-      {/*                {f}*/}
-      {/*              </li>*/}
-      {/*            ))}*/}
-      {/*          </ul>*/}
-      {/*          <Button*/}
-      {/*            asChild*/}
-      {/*            variant={p.featured ? "default" : "outline"}*/}
-      {/*            size="lg"*/}
-      {/*            className="w-full rounded-full"*/}
-      {/*          >*/}
-      {/*            <Link href="/sign-up">{p.cta}</Link>*/}
-      {/*          </Button>*/}
-      {/*        </div>*/}
-      {/*      ))}*/}
-      {/*    </div>*/}
-      {/*  </div>*/}
-      {/*</section>*/}
+      <section
+        id="pricing"
+        style={{ background: "var(--bg-tint)", borderTop: "1px solid var(--border)" }}
+      >
+        <div className="mx-auto max-w-6xl px-7 py-[90px]">
+          <div className="mx-auto mb-8 max-w-[600px] text-center">
+            <Eyebrow center>{t.landing.pricing.eyebrow}</Eyebrow>
+            <h2
+              className="font-display my-4 font-semibold"
+              style={{ fontSize: "clamp(30px,4vw,44px)", letterSpacing: "-0.03em" }}
+            >
+              {t.landing.pricing.title}
+            </h2>
+            <p className="text-[17px]" style={{ color: "var(--text-muted)" }}>
+              {t.landing.pricing.subtitle}
+            </p>
+          </div>
+
+          <div className="mb-10 flex justify-center">
+            <div
+              className="flex items-center rounded-full p-1 text-[13px] font-semibold"
+              style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
+            >
+              <button
+                type="button"
+                onClick={() => setYearlyPricing(false)}
+                className="rounded-full px-4 py-1.5"
+                style={
+                  yearlyPricing
+                    ? { color: "var(--text-muted)" }
+                    : { background: "var(--primary)", color: "var(--primary-fg)" }
+                }
+              >
+                {t.landing.pricing.monthly}
+              </button>
+              <button
+                type="button"
+                onClick={() => setYearlyPricing(true)}
+                className="rounded-full px-4 py-1.5"
+                style={
+                  yearlyPricing
+                    ? { background: "var(--primary)", color: "var(--primary-fg)" }
+                    : { color: "var(--text-muted)" }
+                }
+              >
+                {t.landing.pricing.yearly} · {t.landing.pricing.yearlyBonus}
+              </button>
+            </div>
+          </div>
+
+          <div className="mx-auto grid max-w-[880px] gap-5 md:grid-cols-3">
+            {(
+              [
+                { copy: t.landing.pricing.free, monthly: null, yearly: null, featured: false },
+                {
+                  copy: t.landing.pricing.pro,
+                  monthly: PLAN_PRICES.PRO.monthly,
+                  yearly: PLAN_PRICES.PRO.yearly,
+                  featured: true,
+                },
+                {
+                  copy: t.landing.pricing.enterprise,
+                  monthly: PLAN_PRICES.ENTERPRISE.monthly,
+                  yearly: PLAN_PRICES.ENTERPRISE.yearly,
+                  featured: false,
+                },
+              ] as const
+            ).map((tier) => (
+              <div
+                key={tier.copy.name}
+                className="relative flex flex-col gap-5 rounded-2xl p-7"
+                style={{
+                  border: tier.featured ? "1.5px solid var(--primary)" : "1px solid var(--border)",
+                  background: tier.featured
+                    ? "color-mix(in oklch, var(--primary) 5%, var(--surface))"
+                    : "var(--surface)",
+                  boxShadow: tier.featured ? "var(--shadow)" : "none",
+                }}
+              >
+                {tier.featured ? (
+                  <span
+                    className="absolute -top-[13px] left-7 rounded-full px-3 py-1 text-[12px] font-bold tracking-wide"
+                    style={{ background: "var(--primary)", color: "var(--primary-fg)" }}
+                  >
+                    {t.landing.pricing.mostPopular}
+                  </span>
+                ) : null}
+                <div>
+                  <div className="text-[16px] font-semibold" style={{ color: "var(--text-muted)" }}>
+                    {tier.copy.name}
+                  </div>
+                  <div className="mt-2 flex items-baseline gap-1.5">
+                    <span
+                      className="font-display font-bold"
+                      style={{ fontSize: 44, letterSpacing: "-0.03em" }}
+                    >
+                      {tier.monthly === null
+                        ? "€0"
+                        : `€${yearlyPricing ? tier.yearly : tier.monthly}`}
+                    </span>
+                    <span className="text-[14.5px]" style={{ color: "var(--text-faint)" }}>
+                      {tier.monthly === null
+                        ? ""
+                        : `${yearlyPricing ? t.landing.pricing.perYear : t.landing.pricing.perMonth} · ${t.landing.pricing.exclVat}`}
+                    </span>
+                  </div>
+                  <p className="mt-2 text-[14px]" style={{ color: "var(--text-muted)" }}>
+                    {tier.copy.blurb}
+                  </p>
+                </div>
+                <div className="h-px" style={{ background: "var(--border)" }} />
+                <ul className="flex flex-1 flex-col gap-3">
+                  {tier.copy.features.map((f) => (
+                    <li
+                      key={f}
+                      className="flex items-start gap-2.5 text-[14.5px]"
+                      style={{ color: "var(--text-muted)" }}
+                    >
+                      <Check
+                        className="mt-[1px] h-[18px] w-[18px] shrink-0"
+                        style={{ color: "var(--primary)" }}
+                      />
+                      {f}
+                    </li>
+                  ))}
+                </ul>
+                <Button
+                  asChild
+                  variant={tier.featured ? "default" : "outline"}
+                  size="lg"
+                  className="w-full rounded-full"
+                >
+                  <Link href="/sign-up">{tier.copy.cta}</Link>
+                </Button>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
       {/* CTA */}
       <section className="mx-auto max-w-6xl px-7 py-[90px]">
         <div

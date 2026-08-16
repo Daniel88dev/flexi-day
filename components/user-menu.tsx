@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { User, Settings, LogOut, ChevronDown, Users } from "lucide-react";
+import { User, Settings, LogOut, ChevronDown, Users, CreditCard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -82,6 +82,12 @@ export function UserMenu() {
             <Link href="/groups">
               <Users className="h-3.5 w-3.5" />
               {t.userMenu.myGroups}
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild className="gap-2 text-sm">
+            <Link href="/billing">
+              <CreditCard className="h-3.5 w-3.5" />
+              {t.userMenu.billing}
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild className="gap-2 text-sm">

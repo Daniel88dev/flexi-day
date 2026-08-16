@@ -24,9 +24,11 @@ import {
   useGroupUsers,
   useGroups,
   useQuotas,
+  useRemoveGroupUser,
   useRevokeGroupInvite,
   useSetGroupMirrors,
   useSetUserQuota,
+  useSubscription,
   useUpdateGroupQuotas,
   useUpdateGroupUsers,
   useUpdateGroupWorkingDays,
@@ -126,6 +128,22 @@ function InvitesTab({ groupId, isAdmin }: { groupId: string; isAdmin: boolean })
   const invitesQuery = useGroupInvites(groupId, isAdmin);
   const createInvite = useCreateGroupInvite();
   const revokeInvite = useRevokeGroupInvite(groupId);
+  const membersQuery = useGroupUsers(groupId);
+  const groupsQuery = useGroups();
+  const billingQuery = useSubscription();
+
+  // Entitlements come from the viewer's own organization, so they only describe
+  // this group when the viewer owns it. For a group in someone else's org the
+  // caps are theirs, not ours — show nothing and let the backend decide.
+  const group = groupsQuery.data?.find((g) => g.id === groupId);
+  const ownsThisGroup =
+    billingQuery.data?.organization != null &&
+    group?.organizationId === billingQuery.data.organization.id;
+
+  // Mirrors the backend gate: pending invites reserve their seat.
+  const maxMembers = ownsThisGroup ? billingQuery.data?.entitlements.maxMembersPerGroup : undefined;
+  const seatsTaken = (membersQuery.data?.length ?? 0) + (invitesQuery.data?.length ?? 0);
+  const atMemberCap = maxMembers !== undefined && seatsTaken >= maxMembers;
 
   const [email, setEmail] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -180,10 +198,21 @@ function InvitesTab({ groupId, isAdmin }: { groupId: string; isAdmin: boolean })
                 placeholder={t.groupDetail.invites.emailPlaceholder}
               />
             </div>
-            <Button type="submit" disabled={createInvite.isPending || !email.trim()}>
+            <Button type="submit" disabled={createInvite.isPending || !email.trim() || atMemberCap}>
               {createInvite.isPending ? t.groupDetail.invites.sending : t.groupDetail.invites.send}
             </Button>
           </form>
+          {atMemberCap && maxMembers !== undefined ? (
+            <p className="mt-3 flex flex-wrap items-center gap-2 text-sm">
+              <span>{t.billing.memberLimitReached(maxMembers)}</span>
+              <Link
+                href="/billing"
+                className="text-primary font-semibold underline underline-offset-2"
+              >
+                {t.billing.upgrade}
+              </Link>
+            </p>
+          ) : null}
           {error ? <p className="text-destructive mt-3 text-sm">{error}</p> : null}
           {notice ? (
             <p
@@ -438,12 +467,36 @@ function MembersTab({ groupId, isAdmin }: { groupId: string; isAdmin: boolean })
   const { t } = useTranslation();
   const membersQuery = useGroupUsers(groupId);
   const updateMembers = useUpdateGroupUsers();
+  const removeMember = useRemoveGroupUser();
+  const billingQuery = useSubscription();
+  const groupsQuery = useGroups();
+  const group = groupsQuery.data?.find((g) => g.id === groupId);
+  const managerUserId = group?.managerUserId;
+  const ownsThisGroup =
+    billingQuery.data?.organization != null &&
+    group?.organizationId === billingQuery.data.organization.id;
 
   const [draft, setDraft] = useState<Record<string, GroupUserListItem> | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
+  // Per-row so one removal does not disable every other row's button.
+  const [removingId, setRemovingId] = useState<string | null>(null);
 
   const members = membersQuery.data ?? [];
   const editing = draft !== null;
+  const maxMembers = ownsThisGroup ? billingQuery.data?.entitlements.maxMembersPerGroup : undefined;
+
+  async function handleRemove(member: GroupUserListItem) {
+    if (!window.confirm(t.groupDetail.removeConfirm(member.user.name))) return;
+    setRemovingId(member.userId);
+    try {
+      await removeMember.mutateAsync({ groupId, userId: member.userId });
+      pushToast(t.groupDetail.memberRemoved);
+    } catch (err) {
+      pushToast(err instanceof Error ? err.message : t.groupDetail.removeFailed, "danger");
+    } finally {
+      setRemovingId(null);
+    }
+  }
 
   function startEdit() {
     const next: Record<string, GroupUserListItem> = {};
@@ -490,7 +543,11 @@ function MembersTab({ groupId, isAdmin }: { groupId: string; isAdmin: boolean })
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <p className="text-muted-foreground text-sm">
-          {membersQuery.isLoading ? t.common.loading : t.groupDetail.membersCount(members.length)}
+          {membersQuery.isLoading
+            ? t.common.loading
+            : maxMembers !== undefined
+              ? t.billing.membersCount(members.length, maxMembers)
+              : t.groupDetail.membersCount(members.length)}
         </p>
         {isAdmin ? (
           editing ? (
@@ -527,6 +584,7 @@ function MembersTab({ groupId, isAdmin }: { groupId: string; isAdmin: boolean })
                 <TableHead>{t.groupDetail.columns.approver}</TableHead>
                 <TableHead>{t.groupDetail.columns.tracked}</TableHead>
                 <TableHead>{t.groupDetail.columns.joined}</TableHead>
+                {isAdmin && !editing ? <TableHead className="text-right" /> : null}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -577,6 +635,24 @@ function MembersTab({ groupId, isAdmin }: { groupId: string; isAdmin: boolean })
                   <TableCell className="text-muted-foreground text-xs">
                     {new Date(m.createdAt).toLocaleDateString(t.common.dateLocale)}
                   </TableCell>
+                  {isAdmin && !editing ? (
+                    <TableCell className="text-right">
+                      {/* `managerUserId` is undefined while useGroups is in
+                          flight; rendering then would offer Remove on the
+                          manager, which the backend 409s. */}
+                      {managerUserId !== undefined && m.userId !== managerUserId ? (
+                        <Button
+                          size="xs"
+                          variant="outline"
+                          className="text-destructive"
+                          disabled={removingId !== null}
+                          onClick={() => void handleRemove(m)}
+                        >
+                          {t.groupDetail.removeMember}
+                        </Button>
+                      ) : null}
+                    </TableCell>
+                  ) : null}
                 </TableRow>
               ))}
             </TableBody>
