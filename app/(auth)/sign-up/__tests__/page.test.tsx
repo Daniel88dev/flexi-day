@@ -8,6 +8,9 @@ const signUpEmail = vi.fn().mockResolvedValue({ error: null });
 // GuestGuard calls useRouter to bounce an already-signed-in visitor.
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ replace: vi.fn(), refresh: vi.fn() }),
+  // The social buttons' error alert reads the `?error=` better-auth appends
+  // when it bounces the browser back here.
+  useSearchParams: () => new URLSearchParams(),
 }));
 
 vi.mock("@/lib/auth-client", () => ({

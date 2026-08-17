@@ -525,7 +525,13 @@ export const cs: Dictionary = {
     loading: "Načítání…",
     orWithEmail: "nebo e-mailem",
     continueWithGoogle: "Pokračovat přes Google",
-    continueWithGoogleNotReady: "Pokračovat přes Google",
+    continueWithMicrosoft: "Pokračovat přes Microsoft",
+    socialError: {
+      accountNotLinked:
+        "Tento e-mail je tu už zaregistrovaný jiným způsobem přihlášení. Použijte ten, kterým jste se registrovali.",
+      cancelled: "Přihlášení bylo zrušeno.",
+      generic: "Přihlášení se nepodařilo dokončit. Zkuste to prosím znovu.",
+    },
     email: "E-mail",
     workEmail: "Pracovní e-mail",
     emailPlaceholder: "dana@northwind.co",

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import Link from "next/link";
 import { ArrowRight, Lock, Mail, User as UserIcon } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
@@ -11,6 +11,8 @@ import {
   AuthError,
   AuthSuccess,
   GoogleButton,
+  MicrosoftButton,
+  OAuthErrorAlert,
 } from "@/components/auth/auth-card";
 import { FieldInput } from "@/components/auth/field-input";
 import { GuestGuard } from "@/components/auth/guest-guard";
@@ -19,7 +21,9 @@ import { useTranslation } from "@/lib/i18n/use-translation";
 export default function SignUpPage() {
   return (
     <GuestGuard>
-      <SignUpForm />
+      <Suspense fallback={null}>
+        <SignUpForm />
+      </Suspense>
     </GuestGuard>
   );
 }
@@ -33,6 +37,7 @@ function SignUpForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [socialError, setSocialError] = useState<string | null>(null);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -100,7 +105,12 @@ function SignUpForm() {
         </>
       }
     >
-      <GoogleButton label={t.auth.continueWithGoogleNotReady} />
+      <div className="space-y-2.5">
+        <OAuthErrorAlert />
+        <AuthError message={socialError} />
+        <GoogleButton label={t.auth.continueWithGoogle} onError={setSocialError} />
+        <MicrosoftButton label={t.auth.continueWithMicrosoft} onError={setSocialError} />
+      </div>
       <AuthDivider />
       <form onSubmit={handleSubmit} className="space-y-4">
         <AuthError message={error} />

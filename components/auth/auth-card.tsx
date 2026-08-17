@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { authClient } from "@/lib/auth-client";
 import { useTranslation } from "@/lib/i18n/use-translation";
@@ -63,13 +64,40 @@ export function AuthSuccess({ message }: { message: string | null }) {
   );
 }
 
-export function GoogleButton({
+/**
+ * Renders the `?error=` better-auth appends when it bounces the browser back
+ * after a failed social sign-in. Must sit inside a Suspense boundary.
+ */
+export function OAuthErrorAlert() {
+  const params = useSearchParams();
+  const { t } = useTranslation();
+  const code = params.get("error");
+  if (!code) return null;
+
+  const message =
+    code === "account_not_linked"
+      ? t.auth.socialError.accountNotLinked
+      : code === "access_denied"
+        ? t.auth.socialError.cancelled
+        : t.auth.socialError.generic;
+
+  return <AuthError message={message} />;
+}
+
+function SocialButton({
+  provider,
   label,
+  icon,
   callbackURL = "/dashboard",
+  onError,
 }: {
+  provider: "google" | "microsoft";
   label: string;
+  icon: React.ReactNode;
   callbackURL?: string;
+  onError?: (message: string) => void;
 }) {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
 
   async function handleClick() {
@@ -80,17 +108,41 @@ export function GoogleButton({
       // Resolve it to an absolute URL on THIS (frontend) origin so the browser
       // returns to the SPA. The origin must be in the backend's trustedOrigins.
       const absoluteCallbackURL = new URL(callbackURL, window.location.origin).toString();
-      // Redirects the browser to Google, which returns to the backend at
-      // {API}/api/auth/callback/google; better-auth sets the session cookie and
-      // then sends the browser to callbackURL. On success the page navigates
-      // away, so we only reset loading if the redirect never happens (an error).
+      // Failures default to the BACKEND's own /api/auth/error page — the wrong
+      // origin, untranslated, with no way back into the app. Microsoft makes
+      // that the common path rather than the rare one: an address Entra has not
+      // vouched for cannot link onto an existing account, so it errors here.
+      // Keep the rest of the query (notably ?redirect=) so a deep link is not
+      // lost when sign-in fails. Stale error params are stripped first —
+      // URLSearchParams.get returns the FIRST match, so appending a second
+      // `error` on a repeat failure would surface the previous one.
+      const errorParams = new URLSearchParams(window.location.search);
+      errorParams.delete("error");
+      errorParams.delete("error_description");
+      const errorQuery = errorParams.toString();
+      const errorCallbackURL =
+        window.location.origin +
+        window.location.pathname +
+        (errorQuery ? `?${errorQuery}` : "");
+      // Redirects the browser to the provider, which returns to the backend at
+      // {API}/api/auth/callback/{provider}; better-auth sets the session cookie
+      // and then sends the browser to callbackURL. On success the page
+      // navigates away, so we only reset loading if the redirect never happens.
       const { error } = await authClient.signIn.social({
-        provider: "google",
+        provider,
         callbackURL: absoluteCallbackURL,
+        errorCallbackURL,
       });
-      if (error) setLoading(false);
+      if (error) {
+        setLoading(false);
+        // Deliberately not error.message: better-auth always sets one, so a
+        // `??` fallback never fires and a raw English backend string lands in
+        // the middle of a Czech page.
+        onError?.(t.auth.socialError.generic);
+      }
     } catch {
       setLoading(false);
+      onError?.(t.auth.socialError.generic);
     }
   }
 
@@ -99,6 +151,7 @@ export function GoogleButton({
       type="button"
       onClick={handleClick}
       disabled={loading}
+      aria-busy={loading}
       className="flex w-full items-center justify-center gap-2.5 rounded-full border px-4 py-3 text-[15px] font-semibold transition-colors disabled:opacity-60"
       style={{
         borderColor: "var(--border-strong)",
@@ -106,23 +159,72 @@ export function GoogleButton({
         color: "var(--text)",
       }}
     >
-      <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden>
-        <path
-          fill="#4285F4"
-          d="M22.5 12.2c0-.7-.06-1.4-.18-2.06H12v3.9h5.9a5 5 0 0 1-2.18 3.3v2.74h3.52c2.06-1.9 3.26-4.7 3.26-7.88z"
-        />
-        <path
-          fill="#34A853"
-          d="M12 23c2.94 0 5.4-.97 7.2-2.63l-3.52-2.73c-.98.66-2.23 1.05-3.68 1.05-2.83 0-5.23-1.91-6.09-4.48H2.27v2.82A11 11 0 0 0 12 23z"
-        />
-        <path fill="#FBBC05" d="M5.91 14.21a6.6 6.6 0 0 1 0-4.42V6.97H2.27a11 11 0 0 0 0 9.86z" />
-        <path
-          fill="#EA4335"
-          d="M12 5.5c1.6 0 3.03.55 4.16 1.62l3.12-3.12C17.4 2.2 14.94 1.2 12 1.2A11 11 0 0 0 2.27 6.97l3.64 2.82C6.77 7.4 9.17 5.5 12 5.5z"
-        />
-      </svg>
+      {icon}
       {label}
     </button>
+  );
+}
+
+export function GoogleButton({
+  label,
+  callbackURL,
+  onError,
+}: {
+  label: string;
+  callbackURL?: string;
+  onError?: (message: string) => void;
+}) {
+  return (
+    <SocialButton
+      provider="google"
+      label={label}
+      callbackURL={callbackURL}
+      onError={onError}
+      icon={
+        <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden>
+          <path
+            fill="#4285F4"
+            d="M22.5 12.2c0-.7-.06-1.4-.18-2.06H12v3.9h5.9a5 5 0 0 1-2.18 3.3v2.74h3.52c2.06-1.9 3.26-4.7 3.26-7.88z"
+          />
+          <path
+            fill="#34A853"
+            d="M12 23c2.94 0 5.4-.97 7.2-2.63l-3.52-2.73c-.98.66-2.23 1.05-3.68 1.05-2.83 0-5.23-1.91-6.09-4.48H2.27v2.82A11 11 0 0 0 12 23z"
+          />
+          <path fill="#FBBC05" d="M5.91 14.21a6.6 6.6 0 0 1 0-4.42V6.97H2.27a11 11 0 0 0 0 9.86z" />
+          <path
+            fill="#EA4335"
+            d="M12 5.5c1.6 0 3.03.55 4.16 1.62l3.12-3.12C17.4 2.2 14.94 1.2 12 1.2A11 11 0 0 0 2.27 6.97l3.64 2.82C6.77 7.4 9.17 5.5 12 5.5z"
+          />
+        </svg>
+      }
+    />
+  );
+}
+
+export function MicrosoftButton({
+  label,
+  callbackURL,
+  onError,
+}: {
+  label: string;
+  callbackURL?: string;
+  onError?: (message: string) => void;
+}) {
+  return (
+    <SocialButton
+      provider="microsoft"
+      label={label}
+      callbackURL={callbackURL}
+      onError={onError}
+      icon={
+        <svg width="18" height="18" viewBox="0 0 100 100" aria-hidden>
+          <rect x="4" y="4" width="43" height="43" fill="#F25022" />
+          <rect x="53" y="4" width="43" height="43" fill="#7FBA00" />
+          <rect x="4" y="53" width="43" height="43" fill="#00A4EF" />
+          <rect x="53" y="53" width="43" height="43" fill="#FFB900" />
+        </svg>
+      }
+    />
   );
 }
 
