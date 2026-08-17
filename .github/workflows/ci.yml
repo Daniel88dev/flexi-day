@@ -8,7 +8,7 @@ on:
 
 jobs:
   test:
-    name: Lint, Test & Build
+    name: Lint, Typecheck, Test & Build
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -28,6 +28,11 @@ jobs:
 
       - name: Lint
         run: npm run lint
+
+      # `next build` type-checks too, but only over the files it decides to include —
+      # that scope has changed between minor releases. This checks the whole tsconfig.
+      - name: Typecheck
+        run: npm run typecheck
 
       - name: Test
         run: npm run test

@@ -34,6 +34,15 @@ describe("shouldReport", () => {
 });
 
 describe("reportQueryError", () => {
+  // `captureException`'s second argument is a union that also covers a Scope and a
+  // callback, so the scope-context branch has to be picked out to read tags/contexts.
+  type CaptureOptions = {
+    tags?: Record<string, string | undefined>;
+    contexts?: Record<string, Record<string, unknown> | undefined>;
+  };
+  const captureOptions = (call = 0) =>
+    vi.mocked(Sentry.captureException).mock.calls[call][1] as CaptureOptions | undefined;
+
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -79,7 +88,8 @@ describe("reportQueryError", () => {
     reportQueryError(error, "query", ["vacations", "2026"]);
 
     expect(Sentry.captureException).toHaveBeenCalledTimes(1);
-    const [captured, options] = vi.mocked(Sentry.captureException).mock.calls[0];
+    const [captured] = vi.mocked(Sentry.captureException).mock.calls[0];
+    const options = captureOptions();
     expect(captured).toBe(error);
     expect(options?.tags).toMatchObject({
       source: "tanstack.query",
@@ -97,15 +107,14 @@ describe("reportQueryError", () => {
   it("tags mutations distinctly", () => {
     reportQueryError(new ApiError(500, "boom"), "mutation", ["createVacation"]);
 
-    const [, options] = vi.mocked(Sentry.captureException).mock.calls[0];
-    expect(options?.tags?.source).toBe("tanstack.mutation");
+    expect(captureOptions()?.tags?.source).toBe("tanstack.mutation");
   });
 
   it("captures an error with no query key", () => {
     reportQueryError(new TypeError("Failed to fetch"), "query");
 
     expect(Sentry.captureException).toHaveBeenCalledTimes(1);
-    const [, options] = vi.mocked(Sentry.captureException).mock.calls[0];
+    const options = captureOptions();
     expect(options?.tags?.query_key).toBeUndefined();
     expect(options?.tags?.http_status).toBeUndefined();
   });
