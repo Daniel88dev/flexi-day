@@ -11,16 +11,15 @@ import {
   Shield,
   TrendingUp,
   Users,
-  Star,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { AvatarBubble, AvatarStack } from "@/components/brand/avatar-bubble";
+import { AvatarStack } from "@/components/brand/avatar-bubble";
 import { Footer } from "@/components/footer";
 import { MarketingNav } from "@/components/landing/marketing-nav";
 import { GuestRedirect } from "@/components/auth/guest-guard";
 import { HeroPreview } from "@/components/landing/hero-preview";
 import { Eyebrow } from "@/components/landing/eyebrow";
-import { DEMO_TEAM, demoById } from "@/lib/demo/team";
+import { DEMO_TEAM } from "@/lib/demo/team";
 import { useTranslation } from "@/lib/i18n/use-translation";
 import { PLAN_PRICES, TRIAL } from "@/lib/billing/prices";
 
@@ -34,26 +33,26 @@ const FEATURE_ICONS = [
   { icon: Shield, tint: "var(--c-sick)" },
 ];
 
-const TESTIMONIALS = [
-  {
-    personId: "pn",
-    role: "People Ops, Northwind",
-    quote:
-      "We replaced a messy spreadsheet and three Slack channels with flexiday. Approvals that took days now take seconds.",
-  },
-  {
-    personId: "ep",
-    role: "Product Manager, Lumen",
-    quote:
-      "Finally a tool that respects rest. The calendar is genuinely calming to look at, and coverage rules saved our launch week.",
-  },
-  {
-    personId: "mr",
-    role: "Engineering Lead, Atlas Co",
-    quote:
-      "Booking time off used to feel like asking permission. Now it's two clicks and my whole squad can see it instantly.",
-  },
-];
+// const TESTIMONIALS = [
+//   {
+//     personId: "pn",
+//     role: "People Ops, Northwind",
+//     quote:
+//       "We replaced a messy spreadsheet and three Slack channels with flexiday. Approvals that took days now take seconds.",
+//   },
+//   {
+//     personId: "ep",
+//     role: "Product Manager, Lumen",
+//     quote:
+//       "Finally a tool that respects rest. The calendar is genuinely calming to look at, and coverage rules saved our launch week.",
+//   },
+//   {
+//     personId: "mr",
+//     role: "Engineering Lead, Atlas Co",
+//     quote:
+//       "Booking time off used to feel like asking permission. Now it's two clicks and my whole squad can see it instantly.",
+//   },
+// ];
 
 export default function LandingPage() {
   const { t } = useTranslation();
@@ -422,7 +421,10 @@ export default function LandingPage() {
                     </span>
                   </div>
                   {tier.monthly !== null ? (
-                    <p className="mt-1 text-[13px] font-semibold" style={{ color: "var(--primary)" }}>
+                    <p
+                      className="mt-1 text-[13px] font-semibold"
+                      style={{ color: "var(--primary)" }}
+                    >
                       {t.landing.pricing.trialBadge(
                         TRIAL[yearlyPricing ? "yearly" : "monthly"].count,
                         TRIAL[yearlyPricing ? "yearly" : "monthly"].unit
