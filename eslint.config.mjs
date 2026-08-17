@@ -21,6 +21,9 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     // Generated output
     "coverage/**",
+    // Local tooling scratch space — holds full checkouts (with their own .next/
+    // build output), which the paths above only ignore at the repo root.
+    ".claude/**",
   ]),
 ]);
 

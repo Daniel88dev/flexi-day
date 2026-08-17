@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { VacationKind } from "@/lib/api/types";
 import type { CalendarSyncConfig } from "@/lib/api/calendar-sync";
+import type { SwatchKey } from "../meta";
 import {
   builderToInput,
   colorFor,
@@ -57,11 +58,15 @@ describe("colorFor", () => {
   const base = { distinguishMine: true, scope: "TEAM" as const, colors: defaultColors() };
 
   it("uses the mine color for the owner when distinguishing in TEAM scope", () => {
-    const cfg = { ...base, colors: { ...base.colors, [`${VacationKind.Vacation}_mine`]: "rose" } };
-    expect(colorFor(cfg, VacationKind.Vacation, true)).toBe(swatch("rose"));
+    const colors: Record<string, SwatchKey> = {
+      ...base.colors,
+      [`${VacationKind.Vacation}_mine`]: "rose",
+    };
+    expect(colorFor({ ...base, colors }, VacationKind.Vacation, true)).toBe(swatch("rose"));
   });
   it("uses the base color for others", () => {
-    const cfg = { ...base, colors: { ...base.colors, [VacationKind.Vacation]: "blue" } };
+    const colors: Record<string, SwatchKey> = { ...base.colors, [VacationKind.Vacation]: "blue" };
+    const cfg = { ...base, colors };
     expect(colorFor(cfg, VacationKind.Vacation, false)).toBe(swatch("blue"));
   });
   it("ignores the mine color when not distinguishing", () => {
