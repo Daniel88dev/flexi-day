@@ -122,10 +122,25 @@ export function vacationStatus(v: Vacation): VacationStatus {
   return "pending";
 }
 
+/**
+ * The organization a group belongs to, as it rides along with the group. Plan
+ * and status only — no billing address, renewal date or amounts, which stay on
+ * the billing endpoint and are owner-only.
+ */
+export type GroupOrganization = {
+  id: UUID;
+  name: string;
+  plan: "FREE" | "PRO" | "ENTERPRISE" | "CUSTOM";
+  status: "active" | "trialing" | "past_due" | "paused" | "canceled" | null;
+  /** False on Free, and once a lapsed plan's grace has run out. */
+  active: boolean;
+};
+
 export type Group = {
   id: UUID;
   /** Billing owner. Plan limits only apply when this is the viewer's own org. */
   organizationId: UUID;
+  organization: GroupOrganization | null;
   groupName: string;
   defaultVacationDays: number;
   defaultHomeOfficeDays: number;
@@ -138,6 +153,17 @@ export type Group = {
   createdAt: Iso;
   updatedAt: Iso;
 };
+
+/** What the caller may actually do with a group, as the backend will enforce it. */
+export type GroupAccess = {
+  canView: boolean;
+  canAdmin: boolean;
+  /** Authority came from administering the organization, not from a membership. */
+  viaOrgAdmin: boolean;
+  isMember: boolean;
+};
+
+export type GroupDetail = Group & { access: GroupAccess };
 
 export type GroupUser = {
   id: UUID;

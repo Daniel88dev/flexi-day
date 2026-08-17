@@ -14,6 +14,9 @@ const group = {
   defaultHomeOfficeDays: 0,
   workingDays: [1, 2, 3, 4, 5],
   managerUserId: "u-1",
+  organization: null,
+  // The page reads its permissions from the backend now, not from the member list.
+  access: { canView: true, canAdmin: true, viaOrgAdmin: false, isMember: true },
 };
 
 let members: { userId: string; adminAccess: boolean }[] = [];
@@ -28,7 +31,7 @@ vi.mock("@/lib/auth-client", () => ({
 }));
 
 vi.mock("@/lib/api/queries", () => ({
-  useGroups: () => ({ data: [group], isLoading: false, error: null }),
+  useGroup: () => ({ data: group, isLoading: false, error: null }),
   useGroupUsers: () => ({ data: members, isLoading: false, error: null }),
   useQuotas: () => ({ data: [], isLoading: false, error: null }),
   useSetUserQuota: () => ({ mutateAsync: vi.fn(), isPending: false }),
@@ -98,13 +101,14 @@ describe("GroupDetailPage invites tab", () => {
   });
 
   it("hides the invites tab entirely from non-admins", () => {
-    // Not the manager and no adminAccess membership.
-    group.managerUserId = "someone-else";
+    // A plain member: view access, no administration from either a membership
+    // or the organization.
+    group.access = { canView: true, canAdmin: false, viaOrgAdmin: false, isMember: true };
     members = [{ userId: "u-1", adminAccess: false }];
 
     renderWithClient(<GroupDetailPage />);
 
     expect(screen.queryByRole("button", { name: "Invites" })).not.toBeInTheDocument();
-    group.managerUserId = "u-1";
+    group.access = { canView: true, canAdmin: true, viaOrgAdmin: false, isMember: true };
   });
 });

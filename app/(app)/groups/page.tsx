@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Sparkles } from "lucide-react";
+import { OrganizationBadge } from "@/components/billing/organization-badge";
 import { useCreateGroup, useGroups, useJoinGroup, useSubscription } from "@/lib/api/queries";
 import { planLimitFromError } from "@/lib/billing/plan-limit-error";
 import { useSession } from "@/lib/auth-client";
@@ -210,14 +211,15 @@ export default function GroupsPage() {
               <Card key={g.id}>
                 <CardContent className="space-y-2 py-5">
                   <div className="flex items-start justify-between gap-3">
-                    <div>
+                    <div className="min-w-0">
                       <div className="font-heading text-base font-semibold">{g.groupName}</div>
                       <div className="text-muted-foreground text-xs">
                         {t.groups.defaultsSummary(g.defaultVacationDays, g.defaultHomeOfficeDays)}
                       </div>
+                      <OrganizationBadge organization={g.organization} className="mt-1.5" />
                     </div>
                     {g.managerUserId === userId ? (
-                      <span className="bg-primary/10 text-primary rounded-full px-2 py-0.5 text-[10px] font-bold uppercase">
+                      <span className="bg-primary/10 text-primary shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase">
                         {t.groups.manager}
                       </span>
                     ) : null}

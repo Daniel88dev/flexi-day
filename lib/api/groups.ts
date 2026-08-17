@@ -2,12 +2,23 @@ import { api } from "./client";
 import type {
   CreateGroupInput,
   Group,
+  GroupDetail,
   UpdateGroupQuotasInput,
   UpdateGroupWorkingDaysInput,
 } from "./types";
 
+/** The caller's own groups — membership only. Organization-administered groups live on `/organization`. */
 export function listGroups(): Promise<Group[]> {
   return api<Group[]>(`/api/group`);
+}
+
+/**
+ * One group with the caller's effective rights. Unlike `listGroups` this also
+ * reaches groups the caller only administers through their organization, which
+ * is why the detail screens read permissions from here.
+ */
+export function getGroup(groupId: string): Promise<GroupDetail> {
+  return api<GroupDetail>(`/api/group/${groupId}`);
 }
 
 export function createGroup(input: CreateGroupInput): Promise<Group> {

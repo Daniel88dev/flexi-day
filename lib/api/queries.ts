@@ -14,7 +14,21 @@ import {
   rejectVacations,
   type ListVacationsParams,
 } from "./vacations";
-import { createGroup, listGroups, updateGroupQuotas, updateGroupWorkingDays } from "./groups";
+import {
+  createGroup,
+  getGroup,
+  listGroups,
+  updateGroupQuotas,
+  updateGroupWorkingDays,
+} from "./groups";
+import {
+  addOrganizationAdmin,
+  getOrganization,
+  listOrganizationCandidates,
+  listOrganizations,
+  removeOrganizationAdmin,
+  updateOrganization,
+} from "./organization";
 import {
   createGroupInvite,
   joinGroupByCode,
@@ -81,6 +95,7 @@ export const qk = {
     ["vacations", year, month, groupId ?? "mine"] as const,
   vacation: (id: string) => ["vacation", id] as const,
   groups: () => ["groups"] as const,
+  group: (groupId: string) => ["group", groupId] as const,
   groupUsers: (groupId: string) => ["group-users", groupId] as const,
   groupInvites: (groupId: string) => ["group-invites", groupId] as const,
   groupMirrors: (groupId: string) => ["group-mirrors", groupId] as const,
@@ -103,6 +118,11 @@ export const qk = {
   carryOverSuggestion: (groupId: string, userId: string, year: number) =>
     ["carryover-suggestion", groupId, userId, year] as const,
   subscription: () => ["subscription"] as const,
+  organizations: () => ["organizations"] as const,
+  organization: (organizationId?: string | null) =>
+    ["organization", organizationId ?? "own"] as const,
+  organizationCandidates: (organizationId?: string | null) =>
+    ["organization-candidates", organizationId ?? "own"] as const,
 };
 
 function invalidateVacationDependants(qc: ReturnType<typeof useQueryClient>) {
@@ -136,6 +156,19 @@ export function useGroups() {
   return useQuery({
     queryKey: qk.groups(),
     queryFn: listGroups,
+  });
+}
+
+/**
+ * One group with the caller's effective rights. Reaches groups the caller only
+ * administers through their organization, which `useGroups` deliberately does
+ * not — that list also drives the dashboard and the request dialog.
+ */
+export function useGroup(groupId: string | null | undefined) {
+  return useQuery({
+    queryKey: qk.group(groupId ?? ""),
+    queryFn: () => getGroup(groupId!),
+    enabled: !!groupId,
   });
 }
 
@@ -320,11 +353,17 @@ export function useMemberReport(userId: string | null | undefined, year: number)
   });
 }
 
+// Both also invalidate the single-group query: the detail screen reads the
+// group from there now, so invalidating only the list would leave the header
+// and the quota fallbacks showing the old defaults until a reload.
 export function useUpdateGroupQuotas() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (input: UpdateGroupQuotasInput) => updateGroupQuotas(input),
-    onSuccess: () => qc.invalidateQueries({ queryKey: qk.groups() }),
+    onSuccess: (_data, vars) => {
+      qc.invalidateQueries({ queryKey: qk.groups() });
+      qc.invalidateQueries({ queryKey: qk.group(vars.groupId) });
+    },
   });
 }
 
@@ -332,7 +371,10 @@ export function useUpdateGroupWorkingDays() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (input: UpdateGroupWorkingDaysInput) => updateGroupWorkingDays(input),
-    onSuccess: () => qc.invalidateQueries({ queryKey: qk.groups() }),
+    onSuccess: (_data, vars) => {
+      qc.invalidateQueries({ queryKey: qk.groups() });
+      qc.invalidateQueries({ queryKey: qk.group(vars.groupId) });
+    },
   });
 }
 
@@ -502,6 +544,70 @@ export function useSubscription() {
   return useQuery({
     queryKey: qk.subscription(),
     queryFn: getBillingOverview,
+  });
+}
+
+export function useOrganizations() {
+  return useQuery({
+    queryKey: qk.organizations(),
+    queryFn: listOrganizations,
+  });
+}
+
+/** `enabled` keeps the first render from firing an unscoped request that the real id immediately replaces. */
+export function useOrganization(organizationId?: string | null) {
+  return useQuery({
+    queryKey: qk.organization(organizationId),
+    queryFn: () => getOrganization(organizationId),
+    enabled: !!organizationId,
+  });
+}
+
+/** Owner-only; skipped for a delegated admin, who would only get a 403. */
+export function useOrganizationCandidates(organizationId: string | null, enabled: boolean) {
+  return useQuery({
+    queryKey: qk.organizationCandidates(organizationId),
+    queryFn: () => listOrganizationCandidates(organizationId),
+    enabled,
+  });
+}
+
+export function useUpdateOrganization(organizationId?: string | null) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { name?: string; billingEmail?: string }) =>
+      updateOrganization({ ...input, organizationId }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: qk.organization(organizationId) });
+      qc.invalidateQueries({ queryKey: qk.organizations() });
+      // The organization name rides along with every group, so the badges and
+      // the billing screen are both stale after a rename.
+      qc.invalidateQueries({ queryKey: qk.groups() });
+      qc.invalidateQueries({ queryKey: ["group"] });
+      qc.invalidateQueries({ queryKey: qk.subscription() });
+    },
+  });
+}
+
+export function useAddOrganizationAdmin(organizationId?: string | null) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (userId: string) => addOrganizationAdmin({ userId, organizationId }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: qk.organization(organizationId) });
+      qc.invalidateQueries({ queryKey: qk.organizationCandidates(organizationId) });
+    },
+  });
+}
+
+export function useRemoveOrganizationAdmin(organizationId?: string | null) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (userId: string) => removeOrganizationAdmin({ userId, organizationId }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: qk.organization(organizationId) });
+      qc.invalidateQueries({ queryKey: qk.organizationCandidates(organizationId) });
+    },
   });
 }
 
