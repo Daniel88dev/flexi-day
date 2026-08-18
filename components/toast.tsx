@@ -12,6 +12,10 @@ const listeners = new Set<(t: Toast) => void>();
 /**
  * Fire a transient toast from anywhere in the app. `ToastHost` is mounted once
  * in the app layout, so callers never mount their own.
+ *
+ * Delivery is synchronous to whoever is subscribed at that instant, so a caller
+ * pushing from a mount effect needs the host to have subscribed first — which
+ * is why the layout mounts `ToastHost` above `{children}`.
  */
 export function pushToast(msg: string, kind: ToastKind = "ok") {
   const t: Toast = { id: ++toastSeq, msg, kind };

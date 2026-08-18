@@ -450,6 +450,34 @@ export const cs: Dictionary = {
     passwordMismatch: "Hesla se neshodují.",
     passwordChanged: "Heslo změněno.",
     changePasswordFailed: "Nepodařilo se změnit heslo.",
+    connectedAccounts: {
+      title: "Způsoby přihlášení",
+      hint: "Připojte Google nebo Microsoft a přihlašujte se jimi místo heslem. Účet u poskytovatele musí používat stejnou e-mailovou adresu jako tento účet.",
+      password: "Heslo",
+      inUse: "Používá se",
+      connected: "Připojeno",
+      notConnected: "Nepřipojeno",
+      connect: (provider: string) => `Připojit ${provider}`,
+      disconnect: (provider: string) => `Odpojit ${provider}`,
+      connecting: "Přesměrování…",
+      lastMethod:
+        "Tímto způsobem se přihlašujete jako jediným, proto ho nelze odebrat. Nejdřív připojte jiný.",
+      noPassword:
+        "Tento účet nemá heslo. Pokud ho chcete přidat, odhlaste se a použijte „Zapomenuté heslo“ — heslo nastavíte přes odkaz, který vám pošleme e-mailem.",
+      loadFailed: "Nepodařilo se načíst způsoby přihlášení.",
+      connectedToast: (provider: string) => `${provider} připojen.`,
+      disconnectedToast: (provider: string) => `${provider} odpojen.`,
+      errors: {
+        emailMismatch:
+          "Tento účet používá jinou e-mailovou adresu. Připojte ten se stejnou adresou, jakou má tento účet.",
+        alreadyLinked: "Tento účet je už připojený k jinému uživateli Flexi Day.",
+        cancelled: "Připojení bylo zrušeno.",
+        notFresh:
+          "Z bezpečnostních důvodů se před změnou způsobů přihlášení odhlaste a přihlaste znovu.",
+        lastAccount: "Nemůžete odebrat svůj jediný způsob přihlášení.",
+        generic: "Způsoby přihlášení se nepodařilo změnit. Zkuste to prosím znovu.",
+      },
+    },
   },
 
   dashboard: {
@@ -528,7 +556,7 @@ export const cs: Dictionary = {
     continueWithMicrosoft: "Pokračovat přes Microsoft",
     socialError: {
       accountNotLinked:
-        "Tento e-mail je tu už zaregistrovaný jiným způsobem přihlášení. Použijte ten, kterým jste se registrovali.",
+        "Tento e-mail je tu už zaregistrovaný jiným způsobem přihlášení. Přihlaste se jím a v Nastavení si pak připojte i tento.",
       cancelled: "Přihlášení bylo zrušeno.",
       generic: "Přihlášení se nepodařilo dokončit. Zkuste to prosím znovu.",
     },

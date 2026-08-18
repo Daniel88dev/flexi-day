@@ -449,6 +449,33 @@ export const en = {
     passwordMismatch: "Passwords do not match.",
     passwordChanged: "Password changed.",
     changePasswordFailed: "Could not change password.",
+    connectedAccounts: {
+      title: "Sign-in methods",
+      hint: "Connect Google or Microsoft to sign in with either one instead of your password. The provider account has to use this account's email address.",
+      password: "Password",
+      inUse: "In use",
+      connected: "Connected",
+      notConnected: "Not connected",
+      connect: (provider: string) => `Connect ${provider}`,
+      disconnect: (provider: string) => `Disconnect ${provider}`,
+      connecting: "Redirecting…",
+      lastMethod:
+        "This is your only way to sign in, so it cannot be removed. Connect another method first.",
+      noPassword:
+        "This account has no password. To add one, sign out and use “Forgot password” — the link we email you sets it.",
+      loadFailed: "Could not load your sign-in methods.",
+      connectedToast: (provider: string) => `${provider} connected.`,
+      disconnectedToast: (provider: string) => `${provider} disconnected.`,
+      errors: {
+        emailMismatch:
+          "That account uses a different email address. Connect the one that matches this account.",
+        alreadyLinked: "That account is already connected to a different Flexi Day user.",
+        cancelled: "Connecting was cancelled.",
+        notFresh: "For your security, sign out and back in before changing sign-in methods.",
+        lastAccount: "You cannot remove your only way to sign in.",
+        generic: "Could not change your sign-in methods. Please try again.",
+      },
+    },
   },
 
   dashboard: {
@@ -527,7 +554,7 @@ export const en = {
     continueWithMicrosoft: "Continue with Microsoft",
     socialError: {
       accountNotLinked:
-        "That email is already registered here by another sign-in method. Use the one you signed up with.",
+        "That email is already registered here by another sign-in method. Sign in with it, then connect this one from Settings.",
       cancelled: "Sign-in was cancelled.",
       generic: "That sign-in could not be completed. Please try again.",
     },
