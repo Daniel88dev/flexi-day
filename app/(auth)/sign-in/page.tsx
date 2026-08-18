@@ -6,7 +6,14 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowRight, Lock, Mail } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
-import { AuthCard, AuthDivider, AuthError, GoogleButton } from "@/components/auth/auth-card";
+import {
+  AuthCard,
+  AuthDivider,
+  AuthError,
+  GoogleButton,
+  MicrosoftButton,
+  OAuthErrorAlert,
+} from "@/components/auth/auth-card";
 import { FieldInput } from "@/components/auth/field-input";
 import { GuestGuard } from "@/components/auth/guest-guard";
 import { useTranslation } from "@/lib/i18n/use-translation";
@@ -25,12 +32,21 @@ function SignInForm() {
   const { t } = useTranslation();
   const router = useRouter();
   const params = useSearchParams();
-  const redirectTo = params.get("redirect") || "/dashboard";
+  // Same-origin paths only. The value reaches router.replace() and, since the
+  // social buttons landed, an OAuth callbackURL too — an absolute or
+  // protocol-relative value would turn this page into an open redirect off a
+  // link an attacker can send ("?redirect=https://flexi-day-login.evil.com/").
+  const requested = params.get("redirect");
+  const redirectTo =
+    requested && requested.startsWith("/") && !requested.startsWith("//")
+      ? requested
+      : "/dashboard";
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [socialError, setSocialError] = useState<string | null>(null);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -68,7 +84,22 @@ function SignInForm() {
         </span>
       }
     >
-      <GoogleButton label={t.auth.continueWithGoogle} />
+      <div className="space-y-2.5">
+        <OAuthErrorAlert />
+        <AuthError message={socialError} />
+        {/* Same destination as the password form, so a deep link survives
+            being bounced through the provider. */}
+        <GoogleButton
+          label={t.auth.continueWithGoogle}
+          callbackURL={redirectTo}
+          onError={setSocialError}
+        />
+        <MicrosoftButton
+          label={t.auth.continueWithMicrosoft}
+          callbackURL={redirectTo}
+          onError={setSocialError}
+        />
+      </div>
       <AuthDivider />
       <form onSubmit={handleSubmit} className="space-y-4">
         <AuthError message={error} />

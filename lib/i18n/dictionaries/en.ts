@@ -524,7 +524,13 @@ export const en = {
     loading: "Loading…",
     orWithEmail: "or with email",
     continueWithGoogle: "Continue with Google",
-    continueWithGoogleNotReady: "Continue with Google (not yet ready)",
+    continueWithMicrosoft: "Continue with Microsoft",
+    socialError: {
+      accountNotLinked:
+        "That email is already registered here by another sign-in method. Use the one you signed up with.",
+      cancelled: "Sign-in was cancelled.",
+      generic: "That sign-in could not be completed. Please try again.",
+    },
     email: "Email",
     workEmail: "Work email",
     emailPlaceholder: "dana@northwind.co",
