@@ -33,7 +33,9 @@ function ForgotPasswordForm() {
     try {
       const result = await authClient.requestPasswordReset({
         email,
-        redirectTo: `${window.location.origin}/reset-password`,
+        // Trailing slash to match the exported route; the backend overwrites
+        // this anyway so the mailed link cannot depend on the caller.
+        redirectTo: `${window.location.origin}/reset-password/`,
       });
       if (result.error) {
         setError(result.error.message ?? t.auth.forgot.sendFailed);

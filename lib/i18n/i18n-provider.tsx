@@ -9,6 +9,14 @@ interface I18nContextValue {
   locale: Locale;
   setLocale: (next: Locale) => void;
   t: Dictionary;
+  /**
+   * False until the mount effect below has corrected `locale` from English to
+   * the detected one. Anything that captures `t` once — pushing a toast from
+   * its own mount effect, say — must wait for this, because a descendant's
+   * effects run before the provider's and would otherwise capture English on a
+   * Czech page.
+   */
+  localeReady: boolean;
 }
 
 /**
@@ -20,12 +28,15 @@ export const I18nContext = createContext<I18nContextValue>({
   locale: DEFAULT_LOCALE,
   setLocale: () => {},
   t: dictionaries[DEFAULT_LOCALE],
+  // No provider means no correction is coming, so nothing should wait for one.
+  localeReady: true,
 });
 
 export function I18nProvider({ children }: { children: React.ReactNode }) {
   // First render must match the statically-exported HTML (English) to avoid a
   // hydration mismatch; the mount effect then corrects to the detected locale.
   const [locale, setLocaleState] = useState<Locale>(DEFAULT_LOCALE);
+  const [localeReady, setLocaleReady] = useState(false);
 
   useEffect(() => {
     // Deliberate: the first render must match the statically-exported HTML
@@ -34,6 +45,7 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
     const detected = detectLocale();
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setLocaleState(detected);
+    setLocaleReady(true);
     document.documentElement.lang = detected;
   }, []);
 
@@ -48,8 +60,8 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const value = useMemo<I18nContextValue>(
-    () => ({ locale, setLocale, t: dictionaries[locale] }),
-    [locale, setLocale]
+    () => ({ locale, setLocale, t: dictionaries[locale], localeReady }),
+    [locale, setLocale, localeReady]
   );
 
   return <I18nContext.Provider value={value}>{children}</I18nContext.Provider>;

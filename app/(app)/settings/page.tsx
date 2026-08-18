@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { Suspense, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -13,10 +13,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { ConnectedAccountsCard } from "@/components/settings/connected-accounts-card";
 import { pushToast } from "@/components/toast";
 import { useMySettings, useReportScope, useUpdateMySettings } from "@/lib/api/queries";
 import type { DashboardScope } from "@/lib/api/types";
 import { changePassword, useSession } from "@/lib/auth-client";
+import { shouldOfferPasswordChange, useLinkedAccounts } from "@/lib/auth/use-linked-accounts";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/lib/i18n/use-translation";
 
@@ -25,6 +27,8 @@ export default function SettingsPage() {
   const { data: session } = useSession();
   const settingsQuery = useMySettings();
   const updateSettings = useUpdateMySettings();
+  const accountsQuery = useLinkedAccounts();
+  const offerPasswordChange = shouldOfferPasswordChange(accountsQuery);
 
   const [error, setError] = useState<string | null>(null);
 
@@ -80,7 +84,16 @@ export default function SettingsPage() {
 
       <DashboardCalendarCard />
 
-      <ChangePasswordCard />
+      <Suspense fallback={null}>
+        <ConnectedAccountsCard />
+      </Suspense>
+
+      {/* Someone who only ever signed in with Google or Microsoft has no
+          password to change — better-auth stores no credential account for
+          them, so the form could only ever fail. The card above tells them how
+          to get one. Shown anyway when the lookup failed: a wrong guess there
+          costs a rejected request, while hiding it strands a password user. */}
+      {offerPasswordChange ? <ChangePasswordCard /> : null}
     </div>
   );
 }

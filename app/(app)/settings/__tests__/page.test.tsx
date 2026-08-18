@@ -32,10 +32,32 @@ vi.mock("@/lib/api/queries", () => ({
   }),
 }));
 
+vi.mock("next/navigation", () => ({
+  useSearchParams: () => new URLSearchParams(),
+  usePathname: () => "/settings/",
+  useRouter: () => ({ replace: vi.fn() }),
+}));
+
 vi.mock("@/lib/auth-client", () => ({
   useSession: () => ({ data: { user: { email: "dana@example.com" } } }),
   changePassword: (...args: unknown[]) => changePasswordMock(...args),
+  authClient: {
+    listAccounts: () => listAccountsMock(),
+    linkSocial: vi.fn(),
+    unlinkAccount: vi.fn(),
+  },
 }));
+
+function account(providerId: string) {
+  return { id: providerId, providerId, accountId: "a", userId: "u", scopes: [] };
+}
+
+type Account = ReturnType<typeof account>;
+type ListAccountsResult = { data: Account[] | null; error: { message: string } | null };
+
+let accounts = [account("credential")];
+let listAccountsMock = (): Promise<ListAccountsResult> =>
+  Promise.resolve({ data: accounts, error: null });
 
 describe("SettingsPage", () => {
   beforeEach(() => {
@@ -44,6 +66,8 @@ describe("SettingsPage", () => {
       { groupId: "g1", groupName: "Team A", access: "all" as const, canEditQuotas: false },
       { groupId: "g2", groupName: "Team B", access: "all" as const, canEditQuotas: false },
     ];
+    accounts = [account("credential")];
+    listAccountsMock = () => Promise.resolve({ data: accounts, error: null });
     updateMutate.mockClear();
     changePasswordMock.mockClear();
   });
@@ -163,10 +187,10 @@ describe("SettingsPage", () => {
     expect(screen.getByRole("combobox", { name: "Group" })).toBeDisabled();
   });
 
-  it("renders the change-password fields", () => {
+  it("renders the change-password fields", async () => {
     renderWithClient(<SettingsPage />);
 
-    expect(screen.getByLabelText("Current password")).toBeInTheDocument();
+    expect(await screen.findByLabelText("Current password")).toBeInTheDocument();
     expect(screen.getByLabelText("New password")).toBeInTheDocument();
     expect(screen.getByLabelText("Confirm new password")).toBeInTheDocument();
   });
@@ -175,7 +199,7 @@ describe("SettingsPage", () => {
     const user = userEvent.setup();
     renderWithClient(<SettingsPage />);
 
-    await user.type(screen.getByLabelText("Current password"), "oldpassword");
+    await user.type(await screen.findByLabelText("Current password"), "oldpassword");
     await user.type(screen.getByLabelText("New password"), "newpassword1");
     await user.type(screen.getByLabelText("Confirm new password"), "newpassword2");
     await user.click(screen.getByRole("button", { name: "Change password" }));
@@ -188,7 +212,7 @@ describe("SettingsPage", () => {
     const user = userEvent.setup();
     renderWithClient(<SettingsPage />);
 
-    await user.type(screen.getByLabelText("Current password"), "oldpassword");
+    await user.type(await screen.findByLabelText("Current password"), "oldpassword");
     await user.type(screen.getByLabelText("New password"), "newpassword1");
     await user.type(screen.getByLabelText("Confirm new password"), "newpassword1");
     await user.click(screen.getByRole("button", { name: "Change password" }));
@@ -198,5 +222,31 @@ describe("SettingsPage", () => {
       newPassword: "newpassword1",
       revokeOtherSessions: true,
     });
+  });
+
+  it("hides the change-password card for a user who signed in with a provider", async () => {
+    accounts = [account("microsoft")];
+    renderWithClient(<SettingsPage />);
+
+    // No credential account means no password: better-auth would answer
+    // CREDENTIAL_ACCOUNT_NOT_FOUND, so the form could only ever fail.
+    expect(await screen.findByText("Sign-in methods")).toBeInTheDocument();
+    expect(screen.queryByLabelText("Current password")).not.toBeInTheDocument();
+  });
+
+  it("keeps the card hidden while the sign-in methods are still unknown", () => {
+    renderWithClient(<SettingsPage />);
+
+    // Rendering it first and pulling it away would be worse than a late show.
+    expect(screen.queryByLabelText("Current password")).not.toBeInTheDocument();
+  });
+
+  it("still offers the card when the sign-in methods could not be loaded", async () => {
+    listAccountsMock = () => Promise.resolve({ data: null, error: { message: "boom" } });
+    renderWithClient(<SettingsPage />);
+
+    // Guessing wrong here costs a rejected request. Guessing the other way
+    // strands a password user with no form and no explanation.
+    expect(await screen.findByLabelText("Current password")).toBeInTheDocument();
   });
 });
