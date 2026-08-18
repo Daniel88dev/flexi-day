@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { ConnectedAccountsCard } from "@/components/settings/connected-accounts-card";
+import { TwoFactorCard } from "@/components/settings/two-factor-card";
 import { pushToast } from "@/components/toast";
 import { useMySettings, useReportScope, useUpdateMySettings } from "@/lib/api/queries";
 import type { DashboardScope } from "@/lib/api/types";
@@ -94,6 +95,10 @@ export default function SettingsPage() {
           to get one. Shown anyway when the lookup failed: a wrong guess there
           costs a rejected request, while hiding it strands a password user. */}
       {offerPasswordChange ? <ChangePasswordCard /> : null}
+
+      {/* Same gate as the password card: 2FA only ever challenges password
+          sign-in, so a social-only account has nothing to enable. */}
+      {offerPasswordChange ? <TwoFactorCard /> : null}
     </div>
   );
 }

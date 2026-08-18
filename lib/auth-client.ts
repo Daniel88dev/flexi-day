@@ -1,11 +1,13 @@
 "use client";
 
 import { createAuthClient } from "better-auth/react";
+import { twoFactorClient } from "better-auth/client/plugins";
 import { API_BASE_URL } from "@/lib/api/client";
 import { correlationHeaders } from "@/lib/observability/session";
 
 export const authClient = createAuthClient({
   baseURL: API_BASE_URL,
+  plugins: [twoFactorClient()],
   fetchOptions: {
     credentials: "include",
     // Sign-in/sign-up never go through `api()`. In `onRequest` rather than

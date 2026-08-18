@@ -56,6 +56,21 @@ function SignInForm() {
       const result = await authClient.signIn.email({ email, password });
       if (result.error) {
         setError(result.error.message ?? t.auth.signIn.failed);
+      } else if (
+        result.data &&
+        "twoFactorRedirect" in result.data &&
+        result.data.twoFactorRedirect
+      ) {
+        // The password was right but no session exists yet — the server set a
+        // short-lived challenge cookie and expects a second factor.
+        const methods =
+          "twoFactorMethods" in result.data &&
+          Array.isArray(result.data.twoFactorMethods)
+            ? result.data.twoFactorMethods.join(",")
+            : "";
+        router.replace(
+          `/two-factor/?redirect=${encodeURIComponent(redirectTo)}&methods=${encodeURIComponent(methods)}`,
+        );
       } else {
         router.replace(redirectTo);
         router.refresh();
