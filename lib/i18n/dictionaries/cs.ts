@@ -247,6 +247,10 @@ export const cs: Dictionary = {
       `Některé dny v tomto rozsahu jsou již rezervované: ${days}. Vyberte prosím jiná data.`,
     conflictGeneric: "Některé dny v tomto rozsahu jsou již rezervované. Vyberte prosím jiná data.",
     createFailed: "Nepodařilo se vytvořit žádost",
+    forMember: "Pro",
+    myself: "Sebe",
+    approveImmediately: "Rovnou schválit",
+    approveImmediatelyHint: "Žádost se vytvoří jako schválená a bude uvedeno, že jste ji schválili vy.",
   },
 
   vacationDetail: {
@@ -266,13 +270,24 @@ export const cs: Dictionary = {
     noHistory:
       "Pro tuto žádost není zaznamenána žádná historie — pochází z doby před historií žádostí.",
     byActor: (name: string) => ` – ${name}`,
+    createdBy: (name: string) => `Vytvořil(a) ${name} v zastoupení člena`,
+    cancelledBy: (name: string) => `Zrušil(a) ${name}`,
+    edit: "Upravit",
     events: {
       CREATED: "Vytvořeno",
       APPROVED: "Schváleno",
       REJECTED: "Zamítnuto",
       CANCELLED: "Zrušeno",
       COMMENT: "Okomentováno",
+      UPDATED: "Upraveno",
     },
+  },
+
+  editRequest: {
+    title: "Upravit žádost",
+    save: "Uložit změny",
+    saving: "Ukládám…",
+    updateFailed: "Žádost se nepodařilo upravit",
   },
 
   requests: {
@@ -284,6 +299,7 @@ export const cs: Dictionary = {
       pending: "Čekající",
       approved: "Schválené",
       rejected: "Zamítnuté",
+      cancelled: "Zrušené",
     },
     scopeLabel: "Zobrazit",
     scopeMine: "Jen moje žádosti",

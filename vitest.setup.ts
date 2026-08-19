@@ -10,3 +10,9 @@ if (!globalThis.ResizeObserver) {
     disconnect() {}
   };
 }
+
+// jsdom has no scrollIntoView either; Radix Select scrolls the highlighted
+// option into view when its listbox opens.
+if (typeof Element !== "undefined" && !Element.prototype.scrollIntoView) {
+  Element.prototype.scrollIntoView = () => {};
+}

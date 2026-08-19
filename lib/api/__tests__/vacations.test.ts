@@ -6,11 +6,14 @@ vi.mock("../client", () => ({ api: (...args: unknown[]) => apiMock(...args) }));
 import {
   cancelVacation,
   cancelVacations,
+  createVacation,
   getVacation,
   listVacations,
   rejectVacation,
   approveVacations,
+  updateVacation,
 } from "../vacations";
+import { VacationKind, vacationStatus, type Vacation } from "../types";
 
 describe("vacations api", () => {
   beforeEach(() => {
@@ -84,5 +87,66 @@ describe("vacations api", () => {
       method: "POST",
       body: { ids: ["v-1", "v-2"] },
     });
+  });
+
+  it("listVacations opts into cancelled rows only when asked", async () => {
+    await listVacations({ year: 2026, month: 8, includeCancelled: true });
+    expect(apiMock).toHaveBeenCalledWith("/api/vacation?year=2026&month=8&includeCancelled=true");
+
+    apiMock.mockClear();
+    await listVacations({ year: 2026, month: 8, includeCancelled: false });
+    expect(apiMock).toHaveBeenCalledWith("/api/vacation?year=2026&month=8");
+  });
+
+  it("createVacation passes on-behalf fields through untouched", async () => {
+    await createVacation({
+      groupId: "g-1",
+      userId: "u-member",
+      from: "2026-08-20",
+      to: "2026-08-20",
+      autoApprove: true,
+    });
+    expect(apiMock).toHaveBeenCalledWith("/api/vacation/create-vacation", {
+      method: "POST",
+      body: {
+        groupId: "g-1",
+        userId: "u-member",
+        from: "2026-08-20",
+        to: "2026-08-20",
+        autoApprove: true,
+      },
+    });
+  });
+
+  it("updateVacation PATCHes the collection with ids and the changed fields", async () => {
+    await updateVacation({ ids: ["v-1", "v-2"], vacationType: VacationKind.Sick, halfDay: true });
+    expect(apiMock).toHaveBeenCalledWith("/api/vacation", {
+      method: "PATCH",
+      body: { ids: ["v-1", "v-2"], vacationType: VacationKind.Sick, halfDay: true },
+    });
+  });
+});
+
+describe("vacationStatus", () => {
+  const base = {
+    approvedAt: null,
+    rejectedAt: null,
+    deletedAt: null,
+  } as Vacation;
+
+  it("returns cancelled even when the row was approved first", () => {
+    expect(
+      vacationStatus({
+        ...base,
+        approvedAt: "2026-08-01T00:00:00Z",
+        deletedAt: "2026-08-02T00:00:00Z",
+      })
+    ).toBe("cancelled");
+  });
+
+  it("keeps the existing three-state derivation for live rows", () => {
+    expect(vacationStatus(base)).toBe("pending");
+    expect(vacationStatus({ ...base, approvedAt: "2026-08-01T00:00:00Z" })).toBe("approved");
+    expect(vacationStatus({ ...base, rejectedAt: "2026-08-01T00:00:00Z" })).toBe("rejected");
   });
 });

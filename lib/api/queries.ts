@@ -12,6 +12,7 @@ import {
   listVacations,
   rejectVacation,
   rejectVacations,
+  updateVacation,
   type ListVacationsParams,
 } from "./vacations";
 import {
@@ -88,11 +89,16 @@ import type {
   UpdateGroupUsersInput,
   UpdateGroupWorkingDaysInput,
   UpdateUserSettingsInput,
+  UpdateVacationInput,
 } from "./types";
 
 export const qk = {
-  vacations: (year: number, month: number, groupId?: string | null) =>
-    ["vacations", year, month, groupId ?? "mine"] as const,
+  vacations: (
+    year: number,
+    month: number,
+    groupId?: string | null,
+    includeCancelled?: boolean
+  ) => ["vacations", year, month, groupId ?? "mine", includeCancelled ?? false] as const,
   vacation: (id: string) => ["vacation", id] as const,
   groups: () => ["groups"] as const,
   group: (groupId: string) => ["group", groupId] as const,
@@ -136,10 +142,13 @@ function invalidateVacationDependants(qc: ReturnType<typeof useQueryClient>) {
 }
 
 export function useVacations(
-  params: Required<Pick<ListVacationsParams, "year" | "month">> & { groupId?: string | null }
+  params: Required<Pick<ListVacationsParams, "year" | "month">> & {
+    groupId?: string | null;
+    includeCancelled?: boolean;
+  }
 ) {
   return useQuery({
-    queryKey: qk.vacations(params.year, params.month, params.groupId),
+    queryKey: qk.vacations(params.year, params.month, params.groupId, params.includeCancelled),
     queryFn: () => listVacations(params),
   });
 }
@@ -234,6 +243,14 @@ export function useCreateVacation() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (input: CreateVacationInput) => createVacation(input),
+    onSuccess: () => invalidateVacationDependants(qc),
+  });
+}
+
+export function useUpdateVacation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: UpdateVacationInput) => updateVacation(input),
     onSuccess: () => invalidateVacationDependants(qc),
   });
 }

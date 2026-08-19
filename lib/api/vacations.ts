@@ -1,14 +1,27 @@
 import { api } from "./client";
-import type { CreateVacationInput, Vacation, VacationDetail, VacationListItem } from "./types";
+import type {
+  CreateVacationInput,
+  UpdateVacationInput,
+  Vacation,
+  VacationDetail,
+  VacationListItem,
+} from "./types";
 
 /** With `groupId` the whole group's records come back instead of the caller's own. */
-export type ListVacationsParams = { year?: number; month?: number; groupId?: string | null };
+export type ListVacationsParams = {
+  year?: number;
+  month?: number;
+  groupId?: string | null;
+  /** Include cancelled (soft-deleted) rows; the requests view sets this. */
+  includeCancelled?: boolean;
+};
 
 export function listVacations(params: ListVacationsParams = {}): Promise<VacationListItem[]> {
   const q = new URLSearchParams();
   if (params.year !== undefined) q.set("year", String(params.year));
   if (params.month !== undefined) q.set("month", String(params.month));
   if (params.groupId) q.set("groupId", params.groupId);
+  if (params.includeCancelled) q.set("includeCancelled", "true");
   const qs = q.toString();
   return api<VacationListItem[]>(`/api/vacation${qs ? `?${qs}` : ""}`);
 }
@@ -21,6 +34,14 @@ export function getVacation(id: string): Promise<VacationDetail> {
 export function createVacation(input: CreateVacationInput): Promise<Vacation[]> {
   return api<Vacation[]>(`/api/vacation/create-vacation`, {
     method: "POST",
+    body: input,
+  });
+}
+
+/** Admin-only in-place edit of one member's day rows. */
+export function updateVacation(input: UpdateVacationInput): Promise<Vacation[]> {
+  return api<Vacation[]>(`/api/vacation`, {
+    method: "PATCH",
     body: input,
   });
 }

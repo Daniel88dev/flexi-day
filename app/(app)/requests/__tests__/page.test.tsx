@@ -28,6 +28,8 @@ function day(id: string, requestedDay: string, canApprove = true): VacationListI
     rejectedAt: null,
     rejectedBy: null,
     deletedAt: null,
+    deletedByUserId: null,
+    createdByUserId: null,
     createdAt: "2026-08-01T09:00:00.000Z",
     updatedAt: "2026-08-01T09:00:00.000Z",
     user: employee,
@@ -36,7 +38,13 @@ function day(id: string, requestedDay: string, canApprove = true): VacationListI
 }
 
 // A single 3-day pending request, stored as three per-day rows.
-const vacations = [day("v-1", "2026-08-17"), day("v-2", "2026-08-18"), day("v-3", "2026-08-19")];
+const vacations: VacationListItem[] = [
+  day("v-1", "2026-08-17"),
+  day("v-2", "2026-08-18"),
+  day("v-3", "2026-08-19"),
+];
+
+const useVacationsSpy = vi.fn();
 
 const replaceSpy = vi.fn();
 
@@ -56,7 +64,10 @@ vi.mock("@/lib/api/queries", () => ({
     isLoading: false,
     error: null,
   }),
-  useVacations: () => ({ data: vacations, isLoading: false, error: null }),
+  useVacations: (params: unknown) => {
+    useVacationsSpy(params);
+    return { data: vacations, isLoading: false, error: null };
+  },
   // The page scopes the list to a group it may see in full — without one the
   // API only ever returns the caller's own rows.
   useReportScope: () => ({
@@ -117,6 +128,38 @@ describe("RequestsPage decision actions", () => {
       expect(screen.queryByRole("button", { name: "Reject" })).not.toBeInTheDocument();
     } finally {
       vacations.forEach((v) => (v.canApprove = true));
+    }
+  });
+});
+
+describe("RequestsPage cancelled visibility", () => {
+  it("asks the API for cancelled rows and offers a Cancelled tab with its count", async () => {
+    // Owned by the session user: `mine` is true, so the missing Cancel button
+    // below proves the cancelled-status guard, not just the ownership one.
+    const cancelled = {
+      ...day("v-9", "2026-08-20", false),
+      userId: "approver-1",
+      deletedAt: "2026-08-05T09:00:00.000Z",
+      deletedByUserId: "approver-1",
+    };
+    vacations.push(cancelled);
+    try {
+      const user = userEvent.setup();
+      renderWithClient(<RequestsPage />);
+
+      expect(useVacationsSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ includeCancelled: true })
+      );
+
+      const cancelledTab = screen.getByRole("button", { name: /Cancelled/ });
+      expect(cancelledTab).toHaveTextContent("1");
+      await user.click(cancelledTab);
+
+      // Only the cancelled run remains, with no inline cancel action on it.
+      expect(screen.getByText(/20 Aug 2026/)).toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: "Cancel" })).not.toBeInTheDocument();
+    } finally {
+      vacations.pop();
     }
   });
 });

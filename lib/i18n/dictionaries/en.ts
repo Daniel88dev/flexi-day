@@ -247,6 +247,10 @@ export const en = {
       `Some days in that range are already booked: ${days}. Please pick different dates.`,
     conflictGeneric: "Some days in that range are already booked. Please pick different dates.",
     createFailed: "Could not create vacation",
+    forMember: "For",
+    myself: "Myself",
+    approveImmediately: "Approve immediately",
+    approveImmediatelyHint: "The request is created already approved, attributed to you.",
   },
 
   vacationDetail: {
@@ -265,13 +269,24 @@ export const en = {
     actionFailed: "Action failed",
     noHistory: "No history recorded for this request — it predates request history.",
     byActor: (name: string) => ` by ${name}`,
+    createdBy: (name: string) => `Created by ${name} on the member's behalf`,
+    cancelledBy: (name: string) => `Cancelled by ${name}`,
+    edit: "Edit",
     events: {
       CREATED: "Requested",
       APPROVED: "Approved",
       REJECTED: "Declined",
       CANCELLED: "Cancelled",
       COMMENT: "Commented",
+      UPDATED: "Updated",
     },
+  },
+
+  editRequest: {
+    title: "Edit request",
+    save: "Save changes",
+    saving: "Saving…",
+    updateFailed: "Could not update the request",
   },
 
   requests: {
@@ -283,6 +298,7 @@ export const en = {
       pending: "Pending",
       approved: "Approved",
       rejected: "Rejected",
+      cancelled: "Cancelled",
     },
     scopeLabel: "Show",
     scopeMine: "Only my requests",

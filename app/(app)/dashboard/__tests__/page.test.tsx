@@ -32,6 +32,8 @@ function day(
     rejectedAt: null,
     rejectedBy: null,
     deletedAt: null,
+    deletedByUserId: null,
+    createdByUserId: null,
     createdAt: "2026-08-01T09:00:00.000Z",
     updatedAt: "2026-08-01T09:00:00.000Z",
     canApprove: false,
@@ -68,6 +70,9 @@ vi.mock("@/lib/api/queries", () => ({
     isLoading: false,
     error: null,
   }),
+  useGroup: () => ({ data: undefined, isLoading: false, error: null }),
+  useGroupUsers: () => ({ data: [], isLoading: false, error: null }),
+
   useDashboardSummary: () => ({ data: undefined, isLoading: false, error: null }),
   useMySettings: () => ({ data: settings, isLoading: false, error: null }),
   useReportScope: () => ({
