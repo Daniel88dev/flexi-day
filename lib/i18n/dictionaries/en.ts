@@ -140,6 +140,10 @@ export const en = {
       pending: "Pending",
       quotaLine: "Monthly average of the yearly allowance",
       axisDays: "Days",
+      total: "Total",
+      bars: "Bars",
+      lines: "Lines",
+      toggleMember: (name: string) => `Show or hide ${name}`,
     },
     table: {
       title: "Members",

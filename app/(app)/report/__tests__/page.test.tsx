@@ -12,8 +12,8 @@ vi.mock("next/navigation", () => ({
 
 // Recharts measures its container, which jsdom reports as 0x0 — stub the chart
 // so the page's own structure is what the test exercises.
-vi.mock("@/components/report/member-quota-chart", () => ({
-  MemberQuotaChart: () => <div data-testid="chart" />,
+vi.mock("@/components/report/team-usage-chart", () => ({
+  TeamUsageChart: () => <div data-testid="chart" />,
 }));
 
 const scope: ReportScope = {

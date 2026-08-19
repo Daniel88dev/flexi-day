@@ -142,6 +142,10 @@ export const cs: Dictionary = {
       pending: "Ke schválení",
       quotaLine: "Měsíční průměr ročního nároku",
       axisDays: "Dny",
+      total: "Celkem",
+      bars: "Sloupce",
+      lines: "Čáry",
+      toggleMember: (name: string) => `Zobrazit nebo skrýt ${name}`,
     },
     table: {
       title: "Členové",

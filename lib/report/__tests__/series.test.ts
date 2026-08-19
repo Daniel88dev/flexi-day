@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { buildMemberCards, formatDays, monthlySeriesFor, totalQuotaFor } from "@/lib/report/series";
+import {
+  activeLeaveTypes,
+  buildMemberCards,
+  buildTeamMonthlySeries,
+  formatDays,
+  monthlySeriesFor,
+  totalQuotaFor,
+} from "@/lib/report/series";
 import type { MonthlyUsage, ReportScopeMember, ReportSummaryRow } from "@/lib/api/report-types";
 import { VacationKind } from "@/lib/api/types";
 
@@ -200,5 +207,62 @@ describe("formatDays", () => {
 
   it("keeps a negative overdraft readable", () => {
     expect(formatDays(-1.5)).toBe("-1.5");
+  });
+});
+
+describe("activeLeaveTypes", () => {
+  it("returns types in first-seen summary order", () => {
+    const rows = [
+      summaryRow({ vacationType: VacationKind.HomeOffice }),
+      summaryRow({ vacationType: VacationKind.Vacation }),
+      summaryRow({ vacationType: VacationKind.HomeOffice, userId: "u2" }),
+    ];
+
+    expect(activeLeaveTypes(rows)).toEqual([VacationKind.HomeOffice, VacationKind.Vacation]);
+  });
+
+  it("respects the type filter", () => {
+    const rows = [
+      summaryRow({ vacationType: VacationKind.HomeOffice }),
+      summaryRow({ vacationType: VacationKind.Vacation }),
+    ];
+
+    expect(activeLeaveTypes(rows, [VacationKind.Vacation])).toEqual([VacationKind.Vacation]);
+  });
+
+  it("falls back to the filter, then to Vacation, when the summary is empty", () => {
+    expect(activeLeaveTypes([], [VacationKind.Sick])).toEqual([VacationKind.Sick]);
+    expect(activeLeaveTypes([])).toEqual([VacationKind.Vacation]);
+  });
+});
+
+describe("buildTeamMonthlySeries", () => {
+  it("returns twelve rows with every member zero-filled", () => {
+    const rows = buildTeamMonthlySeries([], ["u1", "u2"], VacationKind.Vacation);
+
+    expect(rows).toHaveLength(12);
+    expect(rows.map((r) => r.month)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]);
+    expect(rows.every((r) => r.u1 === 0 && r.u2 === 0)).toBe(true);
+  });
+
+  it("sums used and pending into the member's month", () => {
+    const rows = buildTeamMonthlySeries(
+      [usage(), usage({ groupId: "g2", used: 0.5, pending: 0 })],
+      ["u1"],
+      VacationKind.Vacation
+    );
+
+    expect(rows[2].u1).toBe(3.5);
+  });
+
+  it("ignores other leave types and members outside the id list", () => {
+    const rows = buildTeamMonthlySeries(
+      [usage({ vacationType: VacationKind.HomeOffice }), usage({ userId: "ghost" })],
+      ["u1"],
+      VacationKind.Vacation
+    );
+
+    expect(rows[2].u1).toBe(0);
+    expect(rows[2]).not.toHaveProperty("ghost");
   });
 });
