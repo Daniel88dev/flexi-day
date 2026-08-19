@@ -23,6 +23,8 @@ function vac(over: Partial<VacationListItem> & { requestedDay: string }): Vacati
     rejectedAt: null,
     rejectedBy: null,
     deletedAt: null,
+    deletedByUserId: null,
+    createdByUserId: null,
     createdAt: "2026-07-01T00:00:00.000Z",
     updatedAt: "2026-07-01T00:00:00.000Z",
     canApprove: false,

@@ -21,11 +21,12 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { useCreateVacation, useGroups } from "@/lib/api/queries";
+import { useCreateVacation, useGroup, useGroups, useGroupUsers } from "@/lib/api/queries";
 import { ApiError } from "@/lib/api/client";
 import { planLimitFromError } from "@/lib/billing/plan-limit-error";
 import { VacationKind } from "@/lib/api/types";
 import { useTranslation } from "@/lib/i18n/use-translation";
+import { useSession } from "@/lib/auth-client";
 
 function todayIso() {
   return new Date().toISOString().slice(0, 10);
@@ -57,6 +58,9 @@ const REQUESTABLE_KINDS: VacationKind[] = [
   VacationKind.PaidTimeOff,
 ];
 
+/** Radix Select items cannot carry an empty value, so "myself" needs a sentinel. */
+const SELF = "__self__";
+
 interface NewRequestDialogProps {
   /** Controlled open state. When provided, the built-in trigger button is hidden. */
   open?: boolean;
@@ -87,6 +91,8 @@ export function NewRequestDialog({ open, onOpenChange, initialDate }: NewRequest
   const [endTime, setEndTime] = useState("");
   const [halfDay, setHalfDay] = useState(false);
   const [note, setNote] = useState("");
+  const [forUserId, setForUserId] = useState(SELF);
+  const [autoApprove, setAutoApprove] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const groups = groupsQuery.data ?? [];
@@ -95,6 +101,22 @@ export function NewRequestDialog({ open, onOpenChange, initialDate }: NewRequest
   // Default to the first available group until the user explicitly picks one, so the
   // dialog always opens with a valid selection (derived during render — no effect needed).
   const selectedGroupId = groupId || (groups[0]?.id ?? "");
+
+  // Admin standing (incl. via org admin) gates the on-behalf picker; the
+  // backend enforces the same rule, this only decides whether to offer it.
+  const { data: session } = useSession();
+  const groupDetail = useGroup(dialogOpen ? selectedGroupId || null : null);
+  const canAdmin = groupDetail.data?.access.canAdmin ?? false;
+  const membersQuery = useGroupUsers(dialogOpen && canAdmin ? selectedGroupId || null : null);
+  // Wait for the session before listing anyone: with the caller's id unknown,
+  // the self-exclusion cannot work and an admin could pick themselves.
+  const members = session
+    ? (membersQuery.data ?? []).filter(
+        (m) => m.controlledUser && !m.deletedAt && m.userId !== session.user.id
+      )
+    : [];
+
+  const onBehalf = canAdmin && forUserId !== SELF;
 
   const isSingleDay = from === to;
 
@@ -107,6 +129,8 @@ export function NewRequestDialog({ open, onOpenChange, initialDate }: NewRequest
     setEndTime("");
     setHalfDay(false);
     setNote("");
+    setForUserId(SELF);
+    setAutoApprove(true);
     setError(null);
   }
 
@@ -124,6 +148,7 @@ export function NewRequestDialog({ open, onOpenChange, initialDate }: NewRequest
     try {
       await createVacation.mutateAsync({
         groupId: selectedGroupId,
+        ...(onBehalf ? { userId: forUserId, autoApprove } : {}),
         from,
         to,
         vacationType,
@@ -197,7 +222,15 @@ export function NewRequestDialog({ open, onOpenChange, initialDate }: NewRequest
 
           <div className="space-y-1.5">
             <Label htmlFor="group">{t.newRequest.group}</Label>
-            <Select value={selectedGroupId} onValueChange={setGroupId}>
+            <Select
+              value={selectedGroupId}
+              onValueChange={(v) => {
+                setGroupId(v);
+                // The picked member belongs to the previous group.
+                setForUserId(SELF);
+                setAutoApprove(true);
+              }}
+            >
               <SelectTrigger id="group">
                 <SelectValue
                   placeholder={
@@ -218,6 +251,49 @@ export function NewRequestDialog({ open, onOpenChange, initialDate }: NewRequest
               </SelectContent>
             </Select>
           </div>
+
+          {canAdmin ? (
+            <div className="space-y-1.5">
+              <Label htmlFor="forMember">{t.newRequest.forMember}</Label>
+              <Select
+                value={forUserId}
+                onValueChange={(v) => {
+                  setForUserId(v);
+                  if (v === SELF) setAutoApprove(true);
+                }}
+              >
+                <SelectTrigger id="forMember">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={SELF}>{t.newRequest.myself}</SelectItem>
+                  {members.map((m) => (
+                    <SelectItem key={m.userId} value={m.userId}>
+                      {m.user.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          ) : null}
+
+          {onBehalf ? (
+            <div className="flex items-start justify-between gap-6">
+              <div className="space-y-1">
+                <Label htmlFor="autoApprove">{t.newRequest.approveImmediately}</Label>
+                <p className="text-muted-foreground text-sm">
+                  {t.newRequest.approveImmediatelyHint}
+                </p>
+              </div>
+              <input
+                id="autoApprove"
+                type="checkbox"
+                className="accent-primary mt-1 size-4"
+                checked={autoApprove}
+                onChange={(e) => setAutoApprove(e.target.checked)}
+              />
+            </div>
+          ) : null}
 
           <div className="space-y-1.5">
             <Label htmlFor="type">{t.newRequest.type}</Label>

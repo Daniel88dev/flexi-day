@@ -42,6 +42,7 @@ const STATUS_BADGE: Record<VacationStatus, string> = {
   pending: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300",
   approved: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300",
   rejected: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300",
+  cancelled: "bg-muted text-muted-foreground",
 };
 
 function formatDate(iso: string, locale: string) {
@@ -127,7 +128,9 @@ export default function RequestsPage() {
         viewableGroups[0]?.groupId ??
         null);
 
-  const vacationsQuery = useVacations({ year, month, groupId: scopeGroupId });
+  // Cancelled rows stay visible here (with who cancelled them on the detail);
+  // the calendar and dashboard keep their live-rows-only view.
+  const vacationsQuery = useVacations({ year, month, groupId: scopeGroupId, includeCancelled: true });
   const approve = useApproveVacations();
   const reject = useRejectVacations();
   const cancel = useCancelVacations();
@@ -144,7 +147,7 @@ export default function RequestsPage() {
   const groupName = (id: string) => groups.find((g) => g.id === id)?.groupName ?? id.slice(0, 8);
 
   const counts = useMemo(() => {
-    const c = { all: requests.length, pending: 0, approved: 0, rejected: 0, mine: 0 };
+    const c = { all: requests.length, pending: 0, approved: 0, rejected: 0, cancelled: 0, mine: 0 };
     for (const r of requests) {
       c[r.status]++;
       if (r.userId === userId) c.mine++;
@@ -194,7 +197,7 @@ export default function RequestsPage() {
       </div>
 
       <div className="border-border flex flex-wrap gap-1 border-b pb-0">
-        {(["all", "mine", "pending", "approved", "rejected"] as Filter[]).map((f) => (
+        {(["all", "mine", "pending", "approved", "rejected", "cancelled"] as Filter[]).map((f) => (
           <button
             key={f}
             onClick={() => setFilter(f)}
@@ -329,7 +332,7 @@ export default function RequestsPage() {
                           </>
                         ) : null}
                         {/* Approved days can be cancelled too — plans change. */}
-                        {mine ? (
+                        {mine && status !== "cancelled" ? (
                           <Button
                             size="xs"
                             variant="ghost"
@@ -339,7 +342,7 @@ export default function RequestsPage() {
                             {t.requests.cancel}
                           </Button>
                         ) : null}
-                        {status !== "pending" && !mine ? (
+                        {status === "cancelled" || (status !== "pending" && !mine) ? (
                           <span className="text-muted-foreground text-xs">—</span>
                         ) : null}
                       </div>

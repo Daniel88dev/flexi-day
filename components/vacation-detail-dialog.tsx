@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Check, Clock, MessageSquare, Plus, X } from "lucide-react";
+import { Check, Clock, MessageSquare, Pencil, Plus, X } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -31,8 +31,9 @@ import { dayLengthLabel } from "@/lib/vacations/day-length";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/lib/i18n/use-translation";
 import type { Dictionary } from "@/lib/i18n";
+import { EditRequestDialog } from "@/components/edit-request-dialog";
 
-const STATUS_BADGE: Record<VacationStatus | "cancelled", string> = {
+const STATUS_BADGE: Record<VacationStatus, string> = {
   pending: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300",
   approved: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300",
   rejected: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300",
@@ -45,12 +46,8 @@ const EVENT_META: Record<VacationEventKind, { icon: typeof Check; tint: string }
   REJECTED: { icon: X, tint: "var(--destructive)" },
   CANCELLED: { icon: Clock, tint: "var(--warm)" },
   COMMENT: { icon: MessageSquare, tint: "var(--text-muted)" },
+  UPDATED: { icon: Pencil, tint: "var(--text-muted)" },
 };
-
-/** A cancelled request keeps its approved/rejected stamps, so check deletion first. */
-function detailStatus(detail: VacationDetail): VacationStatus | "cancelled" {
-  return detail.deletedAt ? "cancelled" : vacationStatus(detail);
-}
 
 function formatDay(iso: string, locale: string) {
   return new Date(iso).toLocaleDateString(locale, {
@@ -100,6 +97,7 @@ export function VacationDetailDialog({
 
   const [reason, setReason] = useState("");
   const [actionError, setActionError] = useState<string | null>(null);
+  const [editOpen, setEditOpen] = useState(false);
 
   const detail = detailQuery.data;
   const isMutating = approve.isPending || reject.isPending || cancel.isPending || comment.isPending;
@@ -156,10 +154,10 @@ export function VacationDetailDialog({
               <span
                 className={cn(
                   "rounded-full px-2 py-0.5 text-xs font-medium",
-                  STATUS_BADGE[detailStatus(detail)]
+                  STATUS_BADGE[vacationStatus(detail)]
                 )}
               >
-                {t.status[detailStatus(detail)]}
+                {t.status[vacationStatus(detail)]}
               </span>
               <span className="text-muted-foreground text-xs">
                 {dayLengthLabel(detail, {
@@ -181,6 +179,17 @@ export function VacationDetailDialog({
                 <div className="text-muted-foreground text-xs">{detail.groupName}</div>
               </div>
             </div>
+
+            {detail.createdByUser && detail.createdByUser.id !== detail.userId ? (
+              <p className="text-muted-foreground text-xs">
+                {t.vacationDetail.createdBy(detail.createdByUser.name)}
+              </p>
+            ) : null}
+            {detail.deletedAt && detail.deletedByUser ? (
+              <p className="text-muted-foreground text-xs">
+                {t.vacationDetail.cancelledBy(detail.deletedByUser.name)}
+              </p>
+            ) : null}
 
             {detail.note ? (
               <div className="bg-muted/50 rounded-2xl px-3 py-2 text-sm">{detail.note}</div>
@@ -210,6 +219,16 @@ export function VacationDetailDialog({
                   {comment.isPending ? t.vacationDetail.sending : t.vacationDetail.comment}
                 </Button>
                 <div className="flex flex-wrap justify-end gap-2">
+                  {detail.canEdit ? (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={isMutating}
+                      onClick={() => setEditOpen(true)}
+                    >
+                      {t.vacationDetail.edit}
+                    </Button>
+                  ) : null}
                   {detail.canApprove ? (
                     <>
                       <Button
@@ -262,6 +281,16 @@ export function VacationDetailDialog({
           </div>
         ) : null}
       </DialogContent>
+      {detail && detail.canEdit ? (
+        // Keyed on updatedAt so a refetched detail remounts the form with
+        // fresh initial values instead of the pre-edit ones.
+        <EditRequestDialog
+          key={`${detail.id}-${detail.updatedAt}`}
+          detail={detail}
+          open={editOpen}
+          onOpenChange={setEditOpen}
+        />
+      ) : null}
     </Dialog>
   );
 }

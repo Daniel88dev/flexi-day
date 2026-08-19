@@ -27,6 +27,8 @@ vi.mock("@/lib/api/queries", () => ({
   useDeleteAllNotifications: () => ({ mutate: vi.fn(), isPending: false }),
   useGroups: () => ({ data: [], isLoading: false }),
   useCreateVacation: () => ({ mutateAsync: vi.fn(), isPending: false }),
+  useGroup: () => ({ data: undefined, isLoading: false, error: null }),
+  useGroupUsers: () => ({ data: [], isLoading: false, error: null }),
 }));
 
 describe("LegalHeader", () => {

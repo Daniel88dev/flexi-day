@@ -66,6 +66,10 @@ export type Vacation = {
   rejectedAt: Iso | null;
   rejectedBy: UUID | null;
   deletedAt: Iso | null;
+  /** Who cancelled the row; null on rows cancelled before the column existed. */
+  deletedByUserId: UUID | null;
+  /** Differs from `userId` when an admin booked on the member's behalf. */
+  createdByUserId: UUID | null;
   createdAt: Iso;
   updatedAt: Iso;
 };
@@ -84,7 +88,13 @@ export type VacationListItem = Vacation & {
   canApprove: boolean;
 };
 
-export type VacationEventKind = "CREATED" | "APPROVED" | "REJECTED" | "CANCELLED" | "COMMENT";
+export type VacationEventKind =
+  | "CREATED"
+  | "APPROVED"
+  | "REJECTED"
+  | "CANCELLED"
+  | "COMMENT"
+  | "UPDATED";
 
 export type VacationEvent = {
   id: UUID;
@@ -105,8 +115,12 @@ export type VacationDetail = VacationListItem & {
   groupName: string;
   approvedByUser: UserSummary | null;
   rejectedByUser: UserSummary | null;
+  createdByUser: UserSummary | null;
+  deletedByUser: UserSummary | null;
   canApprove: boolean;
   canCancel: boolean;
+  /** Admin-only in-place edit of per-day fields. */
+  canEdit: boolean;
   // Contiguous same-type run this request covers: span + every day-row id in it.
   rangeStart: IsoDate;
   rangeEnd: IsoDate;
@@ -114,9 +128,11 @@ export type VacationDetail = VacationListItem & {
   history: VacationEvent[];
 };
 
-export type VacationStatus = "pending" | "approved" | "rejected";
+export type VacationStatus = "pending" | "approved" | "rejected" | "cancelled";
 
 export function vacationStatus(v: Vacation): VacationStatus {
+  // Cancellation wins: an approved-then-cancelled row still carries approvedAt.
+  if (v.deletedAt) return "cancelled";
   if (v.approvedAt) return "approved";
   if (v.rejectedAt) return "rejected";
   return "pending";
@@ -201,8 +217,22 @@ export type UserYearQuota = {
 
 export type CreateVacationInput = {
   groupId: UUID;
+  /** Book on behalf of this member (group/org admins only). */
+  userId?: UUID;
   from: IsoDate;
   to: IsoDate;
+  vacationType?: VacationKind;
+  startTime?: IsoTime | null;
+  endTime?: IsoTime | null;
+  halfDay?: boolean;
+  note?: string | null;
+  /** Create already approved; only valid together with `userId`. */
+  autoApprove?: boolean;
+};
+
+/** Admin edit of one member's day rows; only per-day fields, never dates. */
+export type UpdateVacationInput = {
+  ids: UUID[];
   vacationType?: VacationKind;
   startTime?: IsoTime | null;
   endTime?: IsoTime | null;
