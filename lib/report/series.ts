@@ -50,6 +50,57 @@ export function totalQuotaFor(
     .reduce((total, row) => total + row.yearQuota + row.carriedOverDays, 0);
 }
 
+/**
+ * Leave types worth charting for the current filters, in first-seen summary
+ * order, with a fallback so an empty summary still yields one chart/card per
+ * member instead of nothing.
+ */
+export function activeLeaveTypes(
+  summary: ReportSummaryRow[],
+  types?: VacationKind[]
+): VacationKind[] {
+  const wanted = types && types.length > 0 ? new Set(types) : null;
+  const leaveTypes: VacationKind[] = [];
+  for (const row of summary) {
+    if (wanted && !wanted.has(row.vacationType)) continue;
+    if (!leaveTypes.includes(row.vacationType)) leaveTypes.push(row.vacationType);
+  }
+  if (leaveTypes.length === 0) {
+    leaveTypes.push(...(types && types.length > 0 ? types : [VacationKind.Vacation]));
+  }
+  return leaveTypes;
+}
+
+/** One row per month; every member id present as a key, zero-filled. */
+export type TeamMonthRow = { month: number } & Record<string, number>;
+
+/**
+ * Twelve rows keyed by member id for the aggregate team chart. A member's
+ * value is used + pending — the bar reads as "committed days", matching the
+ * per-member chart; the split is surfaced in tooltips/table instead.
+ */
+export function buildTeamMonthlySeries(
+  monthly: MonthlyUsage[],
+  memberIds: string[],
+  leaveType: VacationKind
+): TeamMonthRow[] {
+  const ids = new Set(memberIds);
+  const rows = MONTHS.map((month) => {
+    const row: TeamMonthRow = { month };
+    for (const id of memberIds) row[id] = 0;
+    return row;
+  });
+
+  for (const entry of monthly) {
+    if (entry.vacationType !== leaveType || !ids.has(entry.userId)) continue;
+    const row = rows[entry.month - 1];
+    if (!row) continue;
+    row[entry.userId] = Number((row[entry.userId] + entry.used + entry.pending).toFixed(2));
+  }
+
+  return rows;
+}
+
 export type MemberCard = {
   member: ReportScopeMember;
   vacationType: VacationKind;
@@ -80,16 +131,7 @@ export function buildMemberCards(
     if (!seen.has(member.id)) seen.set(member.id, member);
   }
 
-  // Taken across every member so the cards line up, with a fallback so a member
-  // with nothing booked still gets a zeroed card rather than disappearing.
-  const leaveTypes: VacationKind[] = [];
-  for (const row of summary) {
-    if (wanted && !wanted.has(row.vacationType)) continue;
-    if (!leaveTypes.includes(row.vacationType)) leaveTypes.push(row.vacationType);
-  }
-  if (leaveTypes.length === 0) {
-    leaveTypes.push(...(types && types.length > 0 ? types : [VacationKind.Vacation]));
-  }
+  const leaveTypes = activeLeaveTypes(summary, types);
 
   const cards: MemberCard[] = [];
 
