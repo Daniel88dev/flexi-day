@@ -1,6 +1,5 @@
 "use client";
 
-import { Lock } from "lucide-react";
 import { LeaveCalendar, type CalendarRange } from "@/components/dashboard/leave-calendar";
 import { DEFAULT_LEAVE_TYPES, leaveMetaFor } from "@/lib/demo/leave-meta";
 import { DEMO_LEAVE, DEMO_MONTH, demoById } from "@/lib/demo/team";
@@ -30,31 +29,6 @@ export function HeroPreview() {
         boxShadow: "var(--shadow-lg)",
       }}
     >
-      <div
-        className="flex items-center gap-2 px-4 py-3"
-        style={{
-          borderBottom: "1px solid var(--border)",
-          background: "var(--surface-2)",
-        }}
-      >
-        <span className="flex gap-1.5">
-          {["#f0916b", "#e9b15a", "#74c08a"].map((c) => (
-            <span
-              key={c}
-              className="block h-[11px] w-[11px] rounded-full"
-              style={{ background: c }}
-            />
-          ))}
-        </span>
-        <div className="flex flex-1 justify-center">
-          <span
-            className="inline-flex items-center gap-1.5 text-[12px] font-medium"
-            style={{ color: "var(--text-faint)" }}
-          >
-            <Lock className="h-[11px] w-[11px]" /> app.flexiday.com
-          </span>
-        </div>
-      </div>
       <div className="p-5">
         <div className="mb-3 flex items-center justify-between">
           <div>

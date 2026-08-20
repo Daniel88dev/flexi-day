@@ -871,25 +871,24 @@ export const cs: Dictionary = {
     howItWorks: "Jak to funguje",
     pricing: "Ceník",
     signIn: "Přihlásit se",
-    getStarted: "Začít",
+    getStarted: "Začít zdarma",
   },
 
   landing: {
-    trustedBadge: "Důvěřuje nám více než 2 400 týmů po celém světě",
     heroTitleLine1: "Volno, vyřízené",
     heroTitlePrefix: "s",
     heroTitleAccent: "péčí",
     heroSubtitle:
-      "flexiday je přehledný, sdílený kalendář pro týmové volno. Uvidíte, kdo je v práci, kdo je pryč, a žádosti schválíte jedním kliknutím — aby si váš tým mohl odpočinout bez zbytečného dohadování.",
-    startFree: "Začněte zdarma — bez karty",
+      "Přehledný sdílený kalendář pro týmové volno. Vidíte, kdo je v práci, kdo je pryč, a žádosti schválíte jedním kliknutím.",
+    startFree: "Začít zdarma",
     signIn: "Přihlásit se",
     setupUnder5: "Nastavte svůj tým za méně než 5 minut",
     heroPreviewTeam: (n: number) => `Northwind · ${n} ${plural(n, "kolega", "kolegové", "kolegů")}`,
-    earlyAccess: "Přístup zdarma pro první uživatele",
+    earlyAccess: "Zdarma pro první uživatele",
     featuresEyebrow: "Vše na jednom místě",
     featuresTitle: "Jeden kalendář, kterému věří celý váš tým",
     featuresSubtitle:
-      "Dovolené, nemoci, home office a svátky — sledované společně, viditelné pro všechny, nikdy dvakrát rezervované.",
+      "Dovolené, nemoci, home office i svátky, sledované společně a viditelné pro všechny.",
     features: [
       {
         title: "Sdílený týmový kalendář",
@@ -897,7 +896,7 @@ export const cs: Dictionary = {
       },
       {
         title: "Schvalování jedním kliknutím",
-        body: "Žádosti přistanou ve vaší frontě s kontextem, který potřebujete. Schvalte nebo zamítněte jedním klepnutím — všichni jsou okamžitě informováni.",
+        body: "Žádosti přistanou ve vaší frontě s kontextem, který potřebujete. Schvalte nebo zamítněte jedním klepnutím a všichni jsou okamžitě informováni.",
       },
       {
         title: "Skupiny a pokrytí",
@@ -913,10 +912,9 @@ export const cs: Dictionary = {
       },
       {
         title: "Soukromé ve výchozím nastavení",
-        body: "Citlivé informace o volnu zůstává diskrétní. Podrobná oprávnění drží ty správné detaily u těch správných lidí.",
+        body: "Citlivé informace o volnu zůstávají diskrétní. Podrobná oprávnění drží ty správné detaily u těch správných lidí.",
       },
     ],
-    stepsEyebrow: "Rychle spuštěno",
     stepsTitle: "Tři kroky ke spokojenějšímu týmu",
     steps: [
       {
@@ -929,16 +927,61 @@ export const cs: Dictionary = {
       },
       {
         title: "Schvalte a odpočívejte",
-        body: "Manažeři schvalují jedním kliknutím. Kalendář se aktualizuje pro všechny — žádné dohledávání, žádné dvojité rezervace.",
+        body: "Manažeři schvalují jedním kliknutím. Kalendář se aktualizuje pro všechny. Žádné dohledávání, žádné dvojité rezervace.",
       },
     ],
+    calSyncSection: {
+      title: "Žije v kalendáři, který už používáte",
+      body: "Přihlaste se k odběru jednou z Google Kalendáře, Outlooku nebo Apple Kalendáře. Schválené volno se v něm objeví automaticky a je vždy aktuální.",
+      providers: ["Google Kalendář", "Outlook", "Apple Kalendář"],
+    },
+    approvalPreviewDates: "24.-26. 8.",
+    faq: {
+      title: "Časté otázky",
+      items: [
+        {
+          q: "Kdo vidí detaily mého volna?",
+          a: "Manažer a schvalovatelé skupiny vidí žádosti, o kterých rozhodují. Kolegové vidí jen to, že jste pryč, a citlivé typy volna zůstávají diskrétní.",
+        },
+        {
+          q: "Je flexiday v souladu s GDPR?",
+          a: "Ano. Data ukládáme v EU (AWS Frankfurt), sbíráme jen to, co produkt potřebuje, a kdykoli můžete požádat o export nebo smazání svých dat.",
+        },
+        {
+          q: "Co se stane po skončení zkušební doby?",
+          a: "Vrátíte se na tarif Free a nic se nemaže. Skupiny nad limit tarifu Free budou jen pro čtení, dokud znovu neupgradujete.",
+        },
+        {
+          q: "Můžu předplatné kdykoli zrušit?",
+          a: "Ano. Zrušíte ho jedním kliknutím v nastavení plateb a tarif zůstane aktivní do konce zaplaceného období.",
+        },
+        {
+          q: "Jsou v ceně státní svátky?",
+          a: "Ano. Státní svátky pro každou zemi jsou součástí a v týmovém kalendáři se zobrazují automaticky.",
+        },
+        {
+          q: "Funguje s mou kalendářovou aplikací?",
+          a: "Ano. Stačí se jednou přihlásit k odběru z Google Kalendáře, Outlooku nebo Apple Kalendáře a schválené volno se tam objeví automaticky.",
+        },
+      ],
+    },
+    security: {
+      line: "Připraveno na GDPR. Vaše data zůstávají v EU.",
+      link: "Více o zabezpečení",
+    },
+    founder: {
+      title: "Pár slov od zakladatele",
+      body: "flexiday začal jako tabulka dovolených, kterou jsem pořád rozbíjel. Sledování volna malého týmu by nemělo vyžadovat celý HR systém, tak jsem si postavil nástroj, který jsem sám chtěl: klidný kalendář, který na první pohled odpoví, kdo má příští týden volno. Každou zpětnou vazbu čtu osobně.",
+      name: "Daniel",
+      role: "zakladatel flexiday",
+    },
     ctaTitle: "Dopřejte svému týmu klidnější rok.",
     ctaSubtitle: "Nastavte flexiday za pět minut. Zdarma až pro 10 lidí, navždy.",
-    createTeam: "Vytvořit svůj tým",
+    createTeam: "Začít zdarma",
     pricing: {
       eyebrow: "Jednoduchý ceník",
       title: "Férový pro malé týmy, připravený růst",
-      subtitle: "Začněte zdarma. Všechny ceny jsou bez DPH — daň se přičte při platbě podle země.",
+      subtitle: "Začněte zdarma. Ceny jsou bez DPH. Daň se přičte při platbě podle vaší země.",
       exclVat: "bez DPH",
       perMonth: "/ měsíc",
       perYear: "/ rok",

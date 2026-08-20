@@ -867,25 +867,24 @@ export const en = {
     howItWorks: "How it works",
     pricing: "Pricing",
     signIn: "Sign in",
-    getStarted: "Get started",
+    getStarted: "Start free",
   },
 
   landing: {
-    trustedBadge: "Trusted by 2,400+ teams worldwide",
     heroTitleLine1: "Time off, handled",
     heroTitlePrefix: "with",
     heroTitleAccent: "care",
     heroSubtitle:
-      "flexiday is the calm, shared calendar for team time off. See who's in, who's away, and approve requests in a click — so your team can rest without the back-and-forth.",
-    startFree: "Start free — no card",
+      "The calm, shared calendar for team time off. See who's in, who's away, and approve requests in one click.",
+    startFree: "Start free",
     signIn: "Sign in",
     setupUnder5: "Set up your team in under 5 minutes",
     heroPreviewTeam: (n: number) => `Northwind · ${n} teammates`,
-    earlyAccess: "Early adopters free access",
+    earlyAccess: "Free for early adopters",
     featuresEyebrow: "Everything in one place",
     featuresTitle: "One calendar your whole team trusts",
     featuresSubtitle:
-      "Vacations, sick days, home-office and holidays — tracked together, visible to everyone, never double-booked.",
+      "Vacations, sick days, home office and holidays, tracked together and visible to everyone.",
     features: [
       {
         title: "Shared team calendar",
@@ -893,7 +892,7 @@ export const en = {
       },
       {
         title: "One-click approvals",
-        body: "Requests land in your queue with the context you need. Approve or decline in a tap — everyone's notified instantly.",
+        body: "Requests land in your queue with the context you need. Approve or decline in a tap, and everyone's notified instantly.",
       },
       {
         title: "Groups & coverage",
@@ -912,7 +911,6 @@ export const en = {
         body: "Sensitive leave stays discreet. Granular permissions keep the right details with the right people.",
       },
     ],
-    stepsEyebrow: "Up and running fast",
     stepsTitle: "Three steps to a happier team",
     steps: [
       {
@@ -925,16 +923,61 @@ export const en = {
       },
       {
         title: "Approve & relax",
-        body: "Managers approve in a click. The calendar updates for everyone — no chasing, no double-booking.",
+        body: "Managers approve in a click. The calendar updates for everyone. No chasing, no double-booking.",
       },
     ],
+    calSyncSection: {
+      title: "Lives in the calendar you already use",
+      body: "Subscribe once from Google Calendar, Outlook or Apple Calendar. Approved time off shows up there automatically and stays current.",
+      providers: ["Google Calendar", "Outlook", "Apple Calendar"],
+    },
+    approvalPreviewDates: "Aug 24-26",
+    faq: {
+      title: "Common questions",
+      items: [
+        {
+          q: "Who can see the details of my leave?",
+          a: "Your manager and group approvers see the requests they decide on. Teammates only see that you're away, and sensitive leave types stay discreet.",
+        },
+        {
+          q: "Is flexiday GDPR-compliant?",
+          a: "Yes. Data is stored in the EU (AWS Frankfurt), we collect only what the product needs, and you can request an export or deletion of your data at any time.",
+        },
+        {
+          q: "What happens when my trial ends?",
+          a: "You move back to the Free plan and nothing is deleted. Groups over the Free limit become read-only until you upgrade again.",
+        },
+        {
+          q: "Can I cancel anytime?",
+          a: "Yes. Cancel in one click from your billing settings; your plan stays active until the end of the period you've paid for.",
+        },
+        {
+          q: "Are public holidays included?",
+          a: "Yes. Public holidays for every country are built in and appear on the team calendar automatically.",
+        },
+        {
+          q: "Does it work with my calendar app?",
+          a: "Yes. Subscribe once from Google Calendar, Outlook or Apple Calendar and approved leave appears there automatically.",
+        },
+      ],
+    },
+    security: {
+      line: "GDPR-ready. Your data stays in the EU.",
+      link: "Read about security",
+    },
+    founder: {
+      title: "A note from the founder",
+      body: "flexiday started as a vacation spreadsheet I kept breaking. Tracking a small team's time off shouldn't need a full HR suite, so I built the tool I wanted: a calm calendar that answers “who's off next week?” at a glance. I read every piece of feedback personally.",
+      name: "Daniel",
+      role: "Founder, flexiday",
+    },
     ctaTitle: "Give your team a calmer year.",
     ctaSubtitle: "Set up flexiday in five minutes. Free for up to 10 people, forever.",
-    createTeam: "Create your team",
+    createTeam: "Start free",
     pricing: {
       eyebrow: "Simple pricing",
       title: "Fair for small teams, ready to grow",
-      subtitle: "Start free. All prices exclude VAT — tax is added at checkout for your country.",
+      subtitle: "Start free. Prices exclude VAT. Tax is added at checkout for your country.",
       exclVat: "excl. VAT",
       perMonth: "/ month",
       perYear: "/ year",
@@ -953,7 +996,7 @@ export const en = {
           "Approvals & notifications",
           "Public holidays built in",
         ],
-        cta: "Get started",
+        cta: "Start free",
       },
       pro: {
         name: "Pro",

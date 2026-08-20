@@ -27,7 +27,7 @@ const instrument = Instrument_Serif({
 });
 
 export const metadata: Metadata = {
-  title: "flexiday — time off, handled with care",
+  title: "flexiday · time off, handled with care",
   description:
     "The calm, shared calendar for team time off. See who's in, who's away, and approve requests in a click.",
 };
