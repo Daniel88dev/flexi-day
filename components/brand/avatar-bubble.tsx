@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import { readableForeground } from "@/lib/color/readable-text";
 
 interface AvatarBubbleProps {
   initials: string;
@@ -18,14 +19,12 @@ export function AvatarBubble({
   return (
     <span
       title={name}
-      className={cn(
-        "grid shrink-0 place-items-center rounded-full font-bold text-white",
-        className
-      )}
+      className={cn("grid shrink-0 place-items-center rounded-full font-bold", className)}
       style={{
         width: size,
         height: size,
         background,
+        color: readableForeground(background),
         fontSize: size * 0.4,
         letterSpacing: ".01em",
         boxShadow: "inset 0 0 0 1px oklch(1 0 0 / .14), 0 1px 2px oklch(0 0 0 / .15)",
