@@ -3,9 +3,17 @@ import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import DashboardPage from "../page";
 import { renderWithClient } from "@/lib/test-utils";
-import { VacationKind, type UserSettings, type VacationListItem } from "@/lib/api/types";
+import {
+  VacationKind,
+  type BankHoliday,
+  type UserSettings,
+  type VacationListItem,
+} from "@/lib/api/types";
 
 const useVacationsSpy = vi.fn();
+const useBankHolidaysMultiSpy = vi.fn();
+
+let bankHolidayRows: BankHoliday[] = [];
 
 const dana = { id: "u-dana", name: "Dana Holt", initials: "DH", avatarColor: "hsl(0 0% 50%)" };
 const sam = { id: "u-sam", name: "Sam Ruiz", initials: "SR", avatarColor: "hsl(0 0% 40%)" };
@@ -66,11 +74,19 @@ vi.mock("@/lib/api/queries", () => ({
     return { data: vacations, isLoading: false, error: null };
   },
   useGroups: () => ({
-    data: [{ id: "g-1", groupName: "Platform" }],
+    data: [
+      { id: "g-1", groupName: "Platform", holidayCountry: "CZ" },
+      { id: "g-2", groupName: "Ops", holidayCountry: "DE" },
+      { id: "g-4", groupName: "Sales", holidayCountry: "CZ" },
+    ],
     isLoading: false,
     error: null,
   }),
   useGroup: () => ({ data: undefined, isLoading: false, error: null }),
+  useBankHolidaysMulti: (year: number, countries: string[]) => {
+    useBankHolidaysMultiSpy(year, countries);
+    return bankHolidayRows;
+  },
   useGroupUsers: () => ({ data: [], isLoading: false, error: null }),
 
   useDashboardSummary: () => ({ data: undefined, isLoading: false, error: null }),
@@ -144,5 +160,47 @@ describe("DashboardPage scope switch", () => {
     renderWithClient(<DashboardPage />);
 
     expect(screen.getByTitle("Sam Ruiz · Vacation · mirrored from Team B")).toBeInTheDocument();
+  });
+});
+
+describe("DashboardPage bank holidays", () => {
+  const now = new Date();
+  const visibleMonthDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-15`;
+
+  beforeEach(() => {
+    settings = { emailNotifications: true, dashboardScope: "MINE", dashboardGroupId: null };
+    vacations = [];
+    bankHolidayRows = [];
+    useBankHolidaysMultiSpy.mockClear();
+  });
+
+  it("requests the distinct holiday countries of the caller's groups in MINE scope", () => {
+    renderWithClient(<DashboardPage />);
+
+    // g-1 and g-4 are both CZ; the page dedupes before fetching.
+    expect(useBankHolidaysMultiSpy).toHaveBeenLastCalledWith(now.getFullYear(), ["CZ", "DE"]);
+  });
+
+  it("renders a holiday from the visible month as a calendar pill", () => {
+    bankHolidayRows = [{ date: visibleMonthDate, name: "State Holiday", country: "CZ" }];
+    renderWithClient(<DashboardPage />);
+
+    expect(screen.getByText(/State Holiday/)).toBeInTheDocument();
+  });
+
+  it("ignores holidays outside the visible month", () => {
+    bankHolidayRows = [{ date: "1999-01-01", name: "Old Holiday", country: "CZ" }];
+    renderWithClient(<DashboardPage />);
+
+    expect(screen.queryByText(/Old Holiday/)).not.toBeInTheDocument();
+  });
+
+  it("uses only the selected group's country from the membership list in GROUP scope", () => {
+    settings = { emailNotifications: true, dashboardScope: "GROUP", dashboardGroupId: "g-1" };
+    renderWithClient(<DashboardPage />);
+
+    // g-1 is in the mocked useGroups list with CZ — no detail fetch, and the
+    // other memberships' countries (DE) must not leak into GROUP scope.
+    expect(useBankHolidaysMultiSpy).toHaveBeenLastCalledWith(now.getFullYear(), ["CZ"]);
   });
 });

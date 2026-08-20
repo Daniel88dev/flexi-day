@@ -17,6 +17,14 @@ if (typeof Element !== "undefined" && !Element.prototype.scrollIntoView) {
   Element.prototype.scrollIntoView = () => {};
 }
 
+// jsdom also lacks the pointer-capture API; Radix Select calls it on every
+// trigger click and option pick.
+if (typeof Element !== "undefined" && !Element.prototype.hasPointerCapture) {
+  Element.prototype.hasPointerCapture = () => false;
+  Element.prototype.setPointerCapture = () => {};
+  Element.prototype.releasePointerCapture = () => {};
+}
+
 // jsdom implements neither IntersectionObserver nor matchMedia; the motion
 // library needs both (whileInView tracking, useReducedMotion). No-ops render
 // everything in its initial state, which is all the smoke tests assert on.

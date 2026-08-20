@@ -7,6 +7,7 @@ import {
   createGroup,
   getGroup,
   listGroups,
+  updateGroupHolidayCountry,
   updateGroupQuotas,
   updateGroupWorkingDays,
 } from "../groups";
@@ -52,6 +53,22 @@ describe("groups api", () => {
     expect(apiMock).toHaveBeenCalledWith("/api/group/g-1/working-days", {
       method: "PUT",
       body: { workingDays: [1, 2, 3, 4, 5] },
+    });
+  });
+
+  it("updateGroupHolidayCountry PUTs the country with the groupId in the path only", async () => {
+    await updateGroupHolidayCountry({ groupId: "g-1", holidayCountry: "CZ" });
+    expect(apiMock).toHaveBeenCalledWith("/api/group/g-1/holiday-country", {
+      method: "PUT",
+      body: { holidayCountry: "CZ" },
+    });
+  });
+
+  it("updateGroupHolidayCountry PUTs null to disable holidays", async () => {
+    await updateGroupHolidayCountry({ groupId: "g-1", holidayCountry: null });
+    expect(apiMock).toHaveBeenCalledWith("/api/group/g-1/holiday-country", {
+      method: "PUT",
+      body: { holidayCountry: null },
     });
   });
 });

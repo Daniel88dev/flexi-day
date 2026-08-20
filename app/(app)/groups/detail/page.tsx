@@ -20,6 +20,14 @@ import { AvatarBubble } from "@/components/brand/avatar-bubble";
 import { OrganizationBadge } from "@/components/billing/organization-badge";
 import { pushToast } from "@/components/toast";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  useBankHolidayCountries,
   useCreateGroupInvite,
   useGroupInvites,
   useGroupMirrors,
@@ -31,6 +39,7 @@ import {
   useSetGroupMirrors,
   useSetUserQuota,
   useSubscription,
+  useUpdateGroupHolidayCountry,
   useUpdateGroupQuotas,
   useUpdateGroupUsers,
   useUpdateGroupWorkingDays,
@@ -768,6 +777,9 @@ function QuotasTab({
     <div className="space-y-4">
       {isAdmin ? <GroupDefaultsCard group={group} /> : null}
       {isAdmin ? <GroupWorkingDaysCard group={group} /> : null}
+      {/* Keyed so switching groups remounts the form instead of carrying the
+          previous group's selection into a save against the new one. */}
+      {isAdmin ? <GroupHolidayCountryCard key={group?.id} group={group} /> : null}
 
       <div className="flex items-center gap-2">
         <Button variant="outline" size="icon-sm" onClick={() => setYear((y) => y - 1)}>
@@ -1078,6 +1090,91 @@ function GroupWorkingDaysCard({ group }: { group?: Group }) {
           </div>
         </form>
         <p className="text-muted-foreground mt-3 text-xs">{t.groupDetail.workingDaysNote}</p>
+      </CardContent>
+    </Card>
+  );
+}
+
+// Radix Select refuses an empty item value, so "off" travels as a sentinel.
+const NO_HOLIDAY_COUNTRY = "NONE";
+
+function GroupHolidayCountryCard({ group }: { group?: Group }) {
+  const { t } = useTranslation();
+  const countriesQuery = useBankHolidayCountries();
+  const updateHolidayCountry = useUpdateGroupHolidayCountry();
+  const [selected, setSelected] = useState(group?.holidayCountry ?? NO_HOLIDAY_COUNTRY);
+  const [error, setError] = useState<string | null>(null);
+  const [saved, setSaved] = useState(false);
+
+  if (!group) return null;
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!group) return;
+    setError(null);
+    setSaved(false);
+    try {
+      await updateHolidayCountry.mutateAsync({
+        groupId: group.id,
+        holidayCountry: selected === NO_HOLIDAY_COUNTRY ? null : selected,
+      });
+      setSaved(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t.groupDetail.saveHolidayCountryFailed);
+    }
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>{t.groupDetail.holidayCountry}</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleSubmit} className="space-y-3">
+          <div className="grid gap-2">
+            <Label htmlFor="holiday-country">{t.groupDetail.holidayCountryLabel}</Label>
+            <Select
+              value={selected}
+              onValueChange={(value) => {
+                setSaved(false);
+                setError(null);
+                setSelected(value);
+              }}
+            >
+              <SelectTrigger id="holiday-country" className="w-full sm:w-72">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={NO_HOLIDAY_COUNTRY}>
+                  {t.groupDetail.holidayCountryNone}
+                </SelectItem>
+                {/* Keeps the saved code visible while the list loads or when
+                    the endpoint fails — otherwise the trigger renders blank. */}
+                {selected !== NO_HOLIDAY_COUNTRY &&
+                !(countriesQuery.data ?? []).some((c) => c.code === selected) ? (
+                  <SelectItem value={selected}>{selected}</SelectItem>
+                ) : null}
+                {(countriesQuery.data ?? []).map((country) => (
+                  <SelectItem key={country.code} value={country.code}>
+                    {country.name} ({country.code})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex flex-wrap items-center gap-3">
+            <Button type="submit" disabled={updateHolidayCountry.isPending}>
+              {updateHolidayCountry.isPending ? t.common.saving : t.groupDetail.saveHolidayCountry}
+            </Button>
+            {error ? <p className="text-destructive text-sm">{error}</p> : null}
+            {saved && !error ? (
+              <p className="text-sm text-green-700 dark:text-green-400">
+                {t.groupDetail.holidayCountryUpdated}
+              </p>
+            ) : null}
+          </div>
+        </form>
+        <p className="text-muted-foreground mt-3 text-xs">{t.groupDetail.holidayCountryNote}</p>
       </CardContent>
     </Card>
   );

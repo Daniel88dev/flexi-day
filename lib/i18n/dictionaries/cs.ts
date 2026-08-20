@@ -400,6 +400,14 @@ export const cs: Dictionary = {
     workingDaysError: "Vyberte alespoň jeden pracovní den.",
     workingDaysNote:
       "Žádosti se evidují — a započítávají do přídělů — jen v tyto dny. Ostatní dny v rozsahu se přeskočí.",
+    holidayCountry: "Státní svátky",
+    holidayCountryLabel: "Země",
+    holidayCountryNone: "Žádná (svátky se nezobrazují)",
+    saveHolidayCountry: "Uložit státní svátky",
+    holidayCountryUpdated: "Státní svátky uloženy.",
+    saveHolidayCountryFailed: "Nepodařilo se uložit státní svátky",
+    holidayCountryNote:
+      "Zobrazují se v kalendáři na nástěnce všem členům skupiny. Svátky jsou jen informativní: nezapočítávají se do přídělů a nikdy se neexportují do kalendářových kanálů.",
     invites: {
       title: "Pozvat člověka",
       adminOnly: "Zvát lidi mohou jen správci skupiny.",

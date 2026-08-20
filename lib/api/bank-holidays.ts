@@ -1,5 +1,5 @@
 import { api } from "./client";
-import type { BankHoliday } from "./types";
+import type { BankHoliday, HolidayCountry } from "./types";
 
 export type ListBankHolidaysParams = {
   year?: number;
@@ -13,4 +13,8 @@ export function listBankHolidays(params: ListBankHolidaysParams): Promise<BankHo
   if (params.year !== undefined) q.set("year", String(params.year));
   if (params.region) q.set("region", params.region);
   return api<BankHoliday[]>(`/api/bank-holidays?${q.toString()}`);
+}
+
+export function listBankHolidayCountries(): Promise<HolidayCountry[]> {
+  return api<HolidayCountry[]>("/api/bank-holidays/countries");
 }

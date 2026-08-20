@@ -54,6 +54,43 @@ describe("LeaveCalendar day clicks", () => {
   });
 });
 
+describe("LeaveCalendar bank holiday lanes", () => {
+  const bankDay = (day: number, name: string): CalendarRange => ({
+    id: `bh-${day}`,
+    who: "all",
+    type: VacationKind.BankHoliday,
+    from: day,
+    to: day,
+    note: name,
+    vacationIds: [],
+  });
+
+  it("charges any number of same-week holidays as a single lane", () => {
+    // Two holidays share the pill row; with MAX_LANES = 2 one bar lane stays
+    // free, so the vacation bar must render instead of collapsing into "+1".
+    const ranges: CalendarRange[] = [
+      bankDay(9, "First Holiday"),
+      bankDay(10, "Second Holiday"),
+      {
+        id: "r0",
+        who: "u1",
+        user: { id: "u1", name: "Dana Holt", initials: "DH", avatarColor: "hsl(270 60% 60%)" },
+        type: VacationKind.Vacation,
+        from: 8,
+        to: 8,
+        vacationIds: ["v-8"],
+      },
+    ];
+
+    render(<LeaveCalendar {...baseProps} ranges={ranges} />);
+
+    expect(screen.getByText("🎉 First Holiday")).toBeInTheDocument();
+    expect(screen.getByText("🎉 Second Holiday")).toBeInTheDocument();
+    expect(screen.getByTitle("Dana Holt · Vacation")).toBeInTheDocument();
+    expect(screen.queryByText(/^\+\d/)).toBeNull();
+  });
+});
+
 // Everyone off on the same day: each needs its own lane in that week.
 function sameDayRanges(count: number, day: number): CalendarRange[] {
   return Array.from({ length: count }, (_, i) => ({

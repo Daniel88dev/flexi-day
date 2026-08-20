@@ -162,6 +162,8 @@ export type Group = {
   defaultHomeOfficeDays: number;
   /** Weekdays counted as working days, as JS `Date.getDay()` numbers (0=Sun … 6=Sat). */
   workingDays: number[];
+  /** ISO 3166-1 alpha-2 country whose public holidays show on the dashboard; null = off. */
+  holidayCountry: string | null;
   managerUserId: UUID;
   mainApprovalUser: UUID | null;
   tempApprovalUser: UUID | null;
@@ -298,6 +300,11 @@ export type BankHoliday = {
   region?: string;
 };
 
+export type HolidayCountry = {
+  code: string;
+  name: string;
+};
+
 export type NotificationKind =
   "approval_requested" | "approval_decided" | "calendar_conflict" | "balance_low";
 
@@ -336,6 +343,11 @@ export type UpdateGroupQuotasInput = {
 export type UpdateGroupWorkingDaysInput = {
   groupId: UUID;
   workingDays: number[];
+};
+
+export type UpdateGroupHolidayCountryInput = {
+  groupId: UUID;
+  holidayCountry: string | null;
 };
 
 /** Whose leave the dashboard calendar shows by default. */

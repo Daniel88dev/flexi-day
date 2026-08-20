@@ -1,6 +1,6 @@
 "use client";
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   approveVacation,
   approveVacations,
@@ -19,6 +19,7 @@ import {
   createGroup,
   getGroup,
   listGroups,
+  updateGroupHolidayCountry,
   updateGroupQuotas,
   updateGroupWorkingDays,
 } from "./groups";
@@ -70,7 +71,11 @@ import {
   deleteAllNotifications,
   type ListNotificationsParams,
 } from "./notifications";
-import { listBankHolidays, type ListBankHolidaysParams } from "./bank-holidays";
+import {
+  listBankHolidayCountries,
+  listBankHolidays,
+  type ListBankHolidaysParams,
+} from "./bank-holidays";
 import {
   createCalendarSync,
   deleteCalendarSync,
@@ -85,6 +90,7 @@ import type {
   CreateVacationInput,
   SetGroupMirrorsInput,
   SetUserQuotaInput,
+  UpdateGroupHolidayCountryInput,
   UpdateGroupQuotasInput,
   UpdateGroupUsersInput,
   UpdateGroupWorkingDaysInput,
@@ -113,6 +119,7 @@ export const qk = {
   notifications: (unreadOnly: boolean) => ["notifications", unreadOnly] as const,
   bankHolidays: (year: number, country: string, region?: string) =>
     ["bank-holidays", year, country, region ?? "*"] as const,
+  bankHolidayCountries: () => ["bank-holiday-countries"] as const,
   calendarSyncs: () => ["calendar-syncs"] as const,
   mySettings: () => ["my-settings"] as const,
   reportScope: () => ["report-scope"] as const,
@@ -236,6 +243,27 @@ export function useBankHolidays(params: ListBankHolidaysParams & { enabled?: boo
     queryKey: qk.bankHolidays(effectiveYear, country, region),
     queryFn: () => listBankHolidays({ year: effectiveYear, country, region }),
     enabled: enabled && !!country,
+  });
+}
+
+export function useBankHolidayCountries() {
+  return useQuery({
+    queryKey: qk.bankHolidayCountries(),
+    queryFn: () => listBankHolidayCountries(),
+    // The dataset is bundled with the backend; it never changes within a session.
+    staleTime: Infinity,
+  });
+}
+
+/** Bank holidays for several countries at once, merged into one flat list. */
+export function useBankHolidaysMulti(year: number, countries: string[]) {
+  const unique = Array.from(new Set(countries)).sort();
+  return useQueries({
+    queries: unique.map((country) => ({
+      queryKey: qk.bankHolidays(year, country),
+      queryFn: () => listBankHolidays({ year, country }),
+    })),
+    combine: (results) => results.flatMap((r) => r.data ?? []),
   });
 }
 
@@ -388,6 +416,17 @@ export function useUpdateGroupWorkingDays() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (input: UpdateGroupWorkingDaysInput) => updateGroupWorkingDays(input),
+    onSuccess: (_data, vars) => {
+      qc.invalidateQueries({ queryKey: qk.groups() });
+      qc.invalidateQueries({ queryKey: qk.group(vars.groupId) });
+    },
+  });
+}
+
+export function useUpdateGroupHolidayCountry() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: UpdateGroupHolidayCountryInput) => updateGroupHolidayCountry(input),
     onSuccess: (_data, vars) => {
       qc.invalidateQueries({ queryKey: qk.groups() });
       qc.invalidateQueries({ queryKey: qk.group(vars.groupId) });
