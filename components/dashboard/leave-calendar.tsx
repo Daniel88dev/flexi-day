@@ -110,7 +110,7 @@ function CalBar({
         overflow: "hidden",
         cursor: clickable ? "pointer" : "default",
         background: `color-mix(in oklch, ${meta.cssVar} 16%, var(--surface))`,
-        color: `color-mix(in oklch, ${meta.cssVar} 72%, var(--text))`,
+        color: `color-mix(in oklch, ${meta.cssVar} 55%, var(--text))`,
         // A mirrored record is only projected into this group, never owned by
         // it — the dashed edge is what tells the two apart at a glance.
         borderLeft: range.mirroredFrom ? `3px dashed ${meta.cssVar}` : `3px solid ${meta.cssVar}`,
@@ -126,7 +126,15 @@ function CalBar({
         <AvatarBubble initials={u.initials} background={u.avatarColor} name={u.name} size={16} />
       ) : null}
       {!contL ? (
-        <span className="overflow-hidden text-ellipsis">
+        // On narrow bars (single days on mobile) the avatar alone identifies
+        // the person; the name only renders once the bar can actually fit it.
+        <span
+          className={
+            mini
+              ? "overflow-hidden text-ellipsis"
+              : "hidden overflow-hidden text-ellipsis @min-[64px]:inline"
+          }
+        >
           {displayName}
           {range.mirroredFrom && !mini ? <span aria-hidden="true"> ↗</span> : null}
         </span>
@@ -454,6 +462,7 @@ export function LeaveCalendar({
                 .map((b, i) => (
                   <div
                     key={i}
+                    className="@container"
                     style={{
                       gridColumn: `${b.sc} / ${b.ec}`,
                       gridRow: bank.length + b.lane + 1,
