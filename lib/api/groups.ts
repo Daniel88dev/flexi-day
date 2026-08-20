@@ -3,6 +3,7 @@ import type {
   CreateGroupInput,
   Group,
   GroupDetail,
+  UpdateGroupHolidayCountryInput,
   UpdateGroupQuotasInput,
   UpdateGroupWorkingDaysInput,
 } from "./types";
@@ -36,4 +37,12 @@ export function updateGroupWorkingDays({
   ...body
 }: UpdateGroupWorkingDaysInput): Promise<Group> {
   return api<Group>(`/api/group/${groupId}/working-days`, { method: "PUT", body });
+}
+
+/** Admin-only: set the country whose public holidays show on the dashboard (null = off). */
+export function updateGroupHolidayCountry({
+  groupId,
+  ...body
+}: UpdateGroupHolidayCountryInput): Promise<Group> {
+  return api<Group>(`/api/group/${groupId}/holiday-country`, { method: "PUT", body });
 }

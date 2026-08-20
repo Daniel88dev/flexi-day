@@ -31,6 +31,8 @@ vi.mock("@/lib/auth-client", () => ({
 }));
 
 vi.mock("@/lib/api/queries", () => ({
+  useBankHolidayCountries: () => ({ data: [], isLoading: false, error: null }),
+  useUpdateGroupHolidayCountry: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useGroup: () => ({ data: group, isLoading: false, error: null }),
   useGroupUsers: () => ({ data: members, isLoading: false, error: null }),
   useQuotas: () => ({ data: [], isLoading: false, error: null }),

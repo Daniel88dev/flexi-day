@@ -11,12 +11,15 @@ import {
   Users,
 } from "lucide-react";
 import {
+  useBankHolidaysMulti,
   useDashboardSummary,
+  useGroup,
   useGroups,
   useMySettings,
   useReportScope,
   useVacations,
 } from "@/lib/api/queries";
+import { bankHolidaysToRanges } from "@/lib/holidays";
 import { useSession } from "@/lib/auth-client";
 import { ApiError } from "@/lib/api/client";
 import type { DashboardScope } from "@/lib/api/types";
@@ -100,6 +103,16 @@ export default function DashboardPage() {
   const activeGroupId = scope === "GROUP" ? selectedGroupId : null;
 
   const vacationsQuery = useVacations({ year, month, groupId: activeGroupId });
+  // The membership list already carries `holidayCountry`; the detail fetch is
+  // only for groups the caller sees without a membership (org admins). Report
+  // scope can also grant GROUP view to a manager the detail endpoint refuses,
+  // so hitting it for in-list groups would 403 for exactly them.
+  const activeGroupFromList = (groupsQuery.data ?? []).find((g) => g.id === activeGroupId);
+  // Wait for the list before falling back — firing while it loads would hit
+  // the detail endpoint for in-list groups after all.
+  const activeGroupQuery = useGroup(
+    groupsQuery.isPending || activeGroupFromList ? null : activeGroupId
+  );
 
   const firstName = session.data?.user?.name?.split(" ")[0] ?? t.dashboard.fallbackName;
 
@@ -108,6 +121,20 @@ export default function DashboardPage() {
   const vacations = useMemo(() => vacationsQuery.data ?? [], [vacationsQuery.data]);
   const groups = groupsQuery.data ?? [];
   const summary = summaryQuery.data;
+
+  // GROUP scope shows the selected group's holidays; MINE merges every country
+  // across the caller's groups (deduped per date in bankHolidaysToRanges).
+  const activeGroupCountry =
+    activeGroupFromList?.holidayCountry ?? activeGroupQuery.data?.holidayCountry;
+  const holidayCountries = useMemo(() => {
+    if (scope === "GROUP") return activeGroupCountry ? [activeGroupCountry] : [];
+    return Array.from(
+      new Set(
+        (groupsQuery.data ?? []).map((g) => g.holidayCountry).filter((c): c is string => !!c)
+      )
+    );
+  }, [scope, activeGroupCountry, groupsQuery.data]);
+  const bankHolidays = useBankHolidaysMulti(year, holidayCountries);
 
   const ranges: CalendarRange[] = useMemo(() => {
     const live = vacations
@@ -122,8 +149,8 @@ export default function DashboardPage() {
         note: v.note,
         mirroredFromGroupName: v.mirroredFromGroupName,
       }));
-    return groupConsecutiveByUserType(live);
-  }, [vacations]);
+    return [...groupConsecutiveByUserType(live), ...bankHolidaysToRanges(bankHolidays, year, month)];
+  }, [vacations, bankHolidays, year, month]);
 
   const today = new Date();
   const todayMatches = today.getFullYear() === year && today.getMonth() + 1 === month;

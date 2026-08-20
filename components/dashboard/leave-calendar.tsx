@@ -322,8 +322,10 @@ export function LeaveCalendar({
           }
         }
         // A week is capped at MAX_LANES bars; the rest open in a popover.
-        // Bank holidays take the first row, so they eat into the same budget.
-        const shownLanes = Math.max(0, MAX_LANES - bank.length);
+        // Bank holidays share the first row (each pill spans only its own
+        // days), so however many there are, they cost the budget one lane.
+        const bankRows = bank.length > 0 ? 1 : 0;
+        const shownLanes = Math.max(0, MAX_LANES - bankRows);
 
         // The bars each weekday hides. Keyed per column rather than per week so
         // the "+N" sits in the cell the reader is looking at, and so the
@@ -465,7 +467,7 @@ export function LeaveCalendar({
                     className="@container"
                     style={{
                       gridColumn: `${b.sc} / ${b.ec}`,
-                      gridRow: bank.length + b.lane + 1,
+                      gridRow: bankRows + b.lane + 1,
                       pointerEvents: "auto",
                     }}
                   >

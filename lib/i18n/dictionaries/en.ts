@@ -399,6 +399,14 @@ export const en = {
     workingDaysError: "Select at least one working day.",
     workingDaysNote:
       "Requests are only booked — and only counted against quotas — on these days. Other days in a range are skipped.",
+    holidayCountry: "Public holidays",
+    holidayCountryLabel: "Country",
+    holidayCountryNone: "None (no public holidays shown)",
+    saveHolidayCountry: "Save public holidays",
+    holidayCountryUpdated: "Public holidays updated.",
+    saveHolidayCountryFailed: "Could not save public holidays",
+    holidayCountryNote:
+      "Shown on the dashboard calendar for everyone in the group. Holidays are display-only: they are not counted against quotas and are never exported to calendar feeds.",
     invites: {
       title: "Invite someone",
       adminOnly: "Only group admins can invite people.",
