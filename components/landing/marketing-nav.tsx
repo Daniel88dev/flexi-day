@@ -24,7 +24,7 @@ export function MarketingNav() {
         borderColor: "var(--border)",
       }}
     >
-      <div className="mx-auto flex h-[70px] max-w-6xl items-center gap-6 px-7">
+      <div className="mx-auto flex h-[70px] max-w-6xl items-center gap-4 px-4 sm:gap-6 sm:px-7">
         <Logo size={26} />
         <nav className="ml-6 hidden gap-7 md:flex">
           {LINKS.map((l) => (
