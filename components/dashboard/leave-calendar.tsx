@@ -221,6 +221,53 @@ function MoreChip({
   );
 }
 
+// The full holiday name lives in the popover (and the title tooltip) because
+// a truncated pill is the only thing that fits a day cell — and hover does not
+// exist on touch screens, so tap has to work too.
+function BankHolidayPill({ label, names, mini }: { label: string; names: string[]; mini?: boolean }) {
+  return (
+    <Popover>
+      <PopoverTrigger
+        title={names.join(" · ")}
+        style={{
+          width: "100%",
+          height: mini ? 16 : 24,
+          borderRadius: 7,
+          display: "flex",
+          alignItems: "center",
+          gap: 6,
+          padding: "0 8px",
+          fontSize: mini ? 9 : 11.5,
+          fontWeight: 700,
+          letterSpacing: ".02em",
+          color: "var(--c-bank)",
+          background: "color-mix(in oklch, var(--c-bank) 16%, var(--surface))",
+          border: "1px dashed color-mix(in oklch, var(--c-bank) 40%, transparent)",
+          cursor: "pointer",
+        }}
+      >
+        <span
+          style={{
+            minWidth: 0,
+            overflow: "hidden",
+            whiteSpace: "nowrap",
+            textOverflow: "ellipsis",
+          }}
+        >
+          {mini ? label : `🎉 ${label}`}
+        </span>
+      </PopoverTrigger>
+      <PopoverContent align="start" className="w-64 gap-1 p-3">
+        {names.map((name) => (
+          <p key={name} className="text-[13px] font-semibold" style={{ color: "var(--c-bank)" }}>
+            🎉 {name}
+          </p>
+        ))}
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 export function LeaveCalendar({
   monthDays,
   firstWeekdayMondayIdx,
@@ -434,28 +481,18 @@ export function LeaveCalendar({
                       gridColumn: `${week.indexOf(cf) + 1} / ${week.indexOf(ct) + 2}`,
                       gridRow: 1,
                       pointerEvents: "auto",
+                      minWidth: 0,
                     }}
                   >
-                    <div
-                      style={{
-                        height: mini ? 16 : 24,
-                        borderRadius: 7,
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 6,
-                        padding: "0 8px",
-                        fontSize: mini ? 9 : 11.5,
-                        fontWeight: 700,
-                        letterSpacing: ".02em",
-                        color: "var(--c-bank)",
-                        background: "color-mix(in oklch, var(--c-bank) 16%, var(--surface))",
-                        border: "1px dashed color-mix(in oklch, var(--c-bank) 40%, transparent)",
-                      }}
-                    >
-                      {mini
-                        ? t.leaveTypes[VacationKind.BankHoliday].short
-                        : `🎉 ${e.note ?? t.calendar.bankHoliday}`}
-                    </div>
+                    <BankHolidayPill
+                      label={
+                        mini
+                          ? t.leaveTypes[VacationKind.BankHoliday].short
+                          : (e.note ?? t.calendar.bankHoliday)
+                      }
+                      names={(e.note ?? t.calendar.bankHoliday).split(" · ")}
+                      mini={mini}
+                    />
                   </div>
                 );
               })}

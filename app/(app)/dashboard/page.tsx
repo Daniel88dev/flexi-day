@@ -276,7 +276,10 @@ export default function DashboardPage() {
         <section>
           <div className="mb-3.5 flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-3">
-              <h2 className="font-display text-[22px] font-semibold">
+              {/* Fixed slot sized for the longest month name: without it the
+                  title's width decides whether the filter chips wrap, and the
+                  header jumps between one and two lines while paging months. */}
+              <h2 className="font-display min-w-[8.5em] text-[22px] font-semibold">
                 {t.calendar.months[month - 1]} {year}
               </h2>
               <div className="flex gap-1">
@@ -307,11 +310,16 @@ export default function DashboardPage() {
                   <ChevronRight className="h-4 w-4" />
                 </button>
               </div>
-              {vacationsQuery.isLoading ? (
-                <span className="text-xs" style={{ color: "var(--text-faint)" }}>
-                  {t.common.loading}
-                </span>
-              ) : null}
+              <span
+                className="text-xs"
+                style={{
+                  color: "var(--text-faint)",
+                  visibility: vacationsQuery.isLoading ? "visible" : "hidden",
+                }}
+                aria-hidden={!vacationsQuery.isLoading}
+              >
+                {t.common.loading}
+              </span>
             </div>
             <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
               {viewableGroups.length > 0 ? (

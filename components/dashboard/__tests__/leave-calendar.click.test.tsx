@@ -89,6 +89,24 @@ describe("LeaveCalendar bank holiday lanes", () => {
     expect(screen.getByTitle("Dana Holt · Vacation")).toBeInTheDocument();
     expect(screen.queryByText(/^\+\d/)).toBeNull();
   });
+
+  it("opens a popover with every full holiday name on click", async () => {
+    const user = userEvent.setup();
+    render(
+      <LeaveCalendar
+        {...baseProps}
+        ranges={[bankDay(9, "Den vzniku samostatného československého státu · Second Holiday")]}
+      />
+    );
+
+    await user.click(screen.getByTitle(/Den vzniku samostatného/));
+
+    // The popover lists each merged same-day holiday on its own line.
+    expect(
+      screen.getByText("🎉 Den vzniku samostatného československého státu")
+    ).toBeInTheDocument();
+    expect(screen.getByText("🎉 Second Holiday")).toBeInTheDocument();
+  });
 });
 
 // Everyone off on the same day: each needs its own lane in that week.
