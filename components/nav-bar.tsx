@@ -3,9 +3,10 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BarChart3, Calendar, LayoutGrid, Menu, RefreshCw, Users, X } from "lucide-react";
+import { BarChart3, Calendar, LayoutGrid, LifeBuoy, Menu, RefreshCw, Users, X } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useSupportAdmin } from "@/lib/support/use-support-admin";
 import { Logo } from "@/components/brand/logo";
 import { NewRequestDialog } from "@/components/new-request-dialog";
 import { NotificationsBell } from "@/components/notifications-bell";
@@ -22,6 +23,7 @@ export function NavBar() {
   const pathname = usePathname();
   const { t } = useTranslation();
   const [navOpen, setNavOpen] = useState(false);
+  const { supportAdmin } = useSupportAdmin();
 
   const NAV_LINKS: { href: string; label: string; icon: LucideIcon }[] = [
     { href: "/dashboard", label: t.nav.dashboard, icon: LayoutGrid },
@@ -29,6 +31,7 @@ export function NavBar() {
     { href: "/requests", label: t.nav.requests, icon: Calendar },
     { href: "/groups", label: t.nav.groups, icon: Users },
     { href: "/calendar-sync", label: t.nav.calendarSync, icon: RefreshCw },
+    ...(supportAdmin ? [{ href: "/support", label: t.nav.support, icon: LifeBuoy }] : []),
   ];
 
   return (

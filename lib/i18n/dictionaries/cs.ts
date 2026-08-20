@@ -109,6 +109,7 @@ export const cs: Dictionary = {
     requests: "Žádosti",
     groups: "Skupiny",
     calendarSync: "Synchronizace kalendáře",
+    support: "Podpora",
   },
 
   report: {
@@ -250,7 +251,8 @@ export const cs: Dictionary = {
     forMember: "Pro",
     myself: "Sebe",
     approveImmediately: "Rovnou schválit",
-    approveImmediatelyHint: "Žádost se vytvoří jako schválená a bude uvedeno, že jste ji schválili vy.",
+    approveImmediatelyHint:
+      "Žádost se vytvoří jako schválená a bude uvedeno, že jste ji schválili vy.",
   },
 
   vacationDetail: {

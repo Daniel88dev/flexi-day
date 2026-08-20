@@ -28,13 +28,16 @@ export const reportQueryError = (
   const message = error instanceof Error ? error.message : String(error);
   // First key segment is the resource name; the rest is per-user ids.
   const resource = typeof key?.[0] === "string" ? key[0] : undefined;
+  // Pathname only — query strings can carry free text (the support search
+  // takes emails), and that must not end up in Sentry.
+  const path = apiError?.path?.split("?")[0];
 
   const attributes = {
     "query.source": `tanstack.${source}`,
     "query.resource": resource,
     "query.key": key ? JSON.stringify(key) : undefined,
     "http.response.status_code": apiError?.status,
-    "url.path": apiError?.path,
+    "url.path": path,
     "request.id": apiError?.requestId,
   };
 
@@ -55,7 +58,7 @@ export const reportQueryError = (
     contexts: {
       request: {
         key: key ? JSON.stringify(key) : undefined,
-        path: apiError?.path,
+        path,
         status: apiError?.status,
         request_id: apiError?.requestId,
         // Backend `publicContext`, e.g. conflicting days on a booking clash.
