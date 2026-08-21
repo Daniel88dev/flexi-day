@@ -32,7 +32,7 @@ export type TwoFactorErrorKey =
  */
 export function twoFactorErrorKey(
   status: number | undefined,
-  code: string | undefined | null,
+  code: string | undefined | null
 ): TwoFactorErrorKey {
   switch (code) {
     case "INVALID_CODE":

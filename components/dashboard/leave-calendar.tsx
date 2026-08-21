@@ -224,7 +224,15 @@ function MoreChip({
 // The full holiday name lives in the popover (and the title tooltip) because
 // a truncated pill is the only thing that fits a day cell — and hover does not
 // exist on touch screens, so tap has to work too.
-function BankHolidayPill({ label, names, mini }: { label: string; names: string[]; mini?: boolean }) {
+function BankHolidayPill({
+  label,
+  names,
+  mini,
+}: {
+  label: string;
+  names: string[];
+  mini?: boolean;
+}) {
   return (
     <Popover>
       <PopoverTrigger

@@ -64,12 +64,11 @@ function SignInForm() {
         // The password was right but no session exists yet — the server set a
         // short-lived challenge cookie and expects a second factor.
         const methods =
-          "twoFactorMethods" in result.data &&
-          Array.isArray(result.data.twoFactorMethods)
+          "twoFactorMethods" in result.data && Array.isArray(result.data.twoFactorMethods)
             ? result.data.twoFactorMethods.join(",")
             : "";
         router.replace(
-          `/two-factor/?redirect=${encodeURIComponent(redirectTo)}&methods=${encodeURIComponent(methods)}`,
+          `/two-factor/?redirect=${encodeURIComponent(redirectTo)}&methods=${encodeURIComponent(methods)}`
         );
       } else {
         router.replace(redirectTo);

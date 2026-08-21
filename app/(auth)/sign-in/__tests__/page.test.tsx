@@ -62,7 +62,9 @@ describe("SignInPage", () => {
     render(<SignInPage />);
     await submit(user);
 
-    expect(replaceMock).toHaveBeenCalledWith("/two-factor/?redirect=%2Fsettings%2F&methods=totp%2Cotp");
+    expect(replaceMock).toHaveBeenCalledWith(
+      "/two-factor/?redirect=%2Fsettings%2F&methods=totp%2Cotp"
+    );
     expect(refreshMock).not.toHaveBeenCalled();
   });
 

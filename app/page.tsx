@@ -63,7 +63,7 @@ export default function LandingPage() {
       <section className="relative overflow-x-clip">
         <div
           aria-hidden
-          className="pointer-events-none absolute right-[-160px] top-[-80px] hidden lg:block"
+          className="pointer-events-none absolute top-[-80px] right-[-160px] hidden lg:block"
           style={{
             width: 720,
             height: 560,
@@ -71,7 +71,7 @@ export default function LandingPage() {
             filter: "blur(24px)",
           }}
         />
-        <div className="relative mx-auto max-w-6xl px-7 pb-16 pt-12 lg:pb-24 lg:pt-20">
+        <div className="relative mx-auto max-w-6xl px-7 pt-12 pb-16 lg:pt-20 lg:pb-24">
           <div className="grid items-center gap-12 lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] lg:gap-16">
             <HeroEnter>
               <h1
@@ -235,13 +235,16 @@ export default function LandingPage() {
                 <div className="flex flex-col gap-2">
                   <span
                     aria-hidden
-                    className="font-display text-[56px] font-bold leading-none"
+                    className="font-display text-[56px] leading-none font-bold"
                     style={{ color: "color-mix(in oklch, var(--primary) 30%, transparent)" }}
                   >
                     {i + 1}
                   </span>
                   <h3 className="font-display text-[19px] font-semibold">{s.title}</h3>
-                  <p className="text-[15px]" style={{ color: "var(--text-muted)", lineHeight: 1.55 }}>
+                  <p
+                    className="text-[15px]"
+                    style={{ color: "var(--text-muted)", lineHeight: 1.55 }}
+                  >
                     {s.body}
                   </p>
                 </div>
@@ -491,7 +494,10 @@ export default function LandingPage() {
       {/* FOUNDER NOTE */}
       <section className="mx-auto max-w-[640px] px-7 py-[90px] text-center">
         <Reveal>
-          <h2 className="font-display text-[24px] font-semibold" style={{ letterSpacing: "-0.02em" }}>
+          <h2
+            className="font-display text-[24px] font-semibold"
+            style={{ letterSpacing: "-0.02em" }}
+          >
             {t.landing.founder.title}
           </h2>
           <p className="mt-5 text-[17px]" style={{ color: "var(--text-muted)", lineHeight: 1.65 }}>

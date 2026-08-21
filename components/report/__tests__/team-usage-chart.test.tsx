@@ -13,7 +13,16 @@ const members: ReportScopeMember[] = [
 const colors = { u1: "hsl(200, 65%, 50%)", u2: "hsl(30, 70%, 55%)" };
 
 const series = buildTeamMonthlySeries(
-  [{ userId: "u1", groupId: "g1", month: 3, vacationType: VacationKind.Vacation, used: 2, pending: 1 }],
+  [
+    {
+      userId: "u1",
+      groupId: "g1",
+      month: 3,
+      vacationType: VacationKind.Vacation,
+      used: 2,
+      pending: 1,
+    },
+  ],
   ["u1", "u2"],
   VacationKind.Vacation
 );

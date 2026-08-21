@@ -108,7 +108,7 @@ export function TeamUsageChart({ members, series, colors }: Props) {
       className={cn(
         "rounded-full border px-2.5 py-0.5 text-xs transition-colors",
         pressed
-          ? "border-transparent bg-secondary text-secondary-foreground"
+          ? "bg-secondary text-secondary-foreground border-transparent"
           : "text-muted-foreground border-border bg-transparent opacity-70"
       )}
     >
