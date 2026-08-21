@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { KeyRound } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { AuthCard, AuthError, AuthSuccess } from "@/components/auth/auth-card";
 import { FieldInput } from "@/components/auth/field-input";
 import { useTranslation } from "@/lib/i18n/use-translation";
@@ -165,11 +166,9 @@ function TwoFactorForm() {
           disabled={dead}
         />
         <label className="flex items-center gap-2 text-sm" style={{ color: "var(--text-muted)" }}>
-          <input
-            type="checkbox"
-            className="accent-primary h-4 w-4"
+          <Checkbox
             checked={trustDevice}
-            onChange={(e) => setTrustDevice(e.target.checked)}
+            onCheckedChange={(v) => setTrustDevice(v === true)}
             disabled={dead}
           />
           {t.auth.twoFactor.trustDevice}

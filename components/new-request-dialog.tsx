@@ -19,7 +19,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { useCreateVacation, useGroup, useGroups, useGroupUsers } from "@/lib/api/queries";
 import { ApiError } from "@/lib/api/client";
@@ -231,7 +232,7 @@ export function NewRequestDialog({ open, onOpenChange, initialDate }: NewRequest
                 setAutoApprove(true);
               }}
             >
-              <SelectTrigger id="group">
+              <SelectTrigger id="group" className="w-full">
                 <SelectValue
                   placeholder={
                     groupsQuery.isLoading
@@ -262,7 +263,7 @@ export function NewRequestDialog({ open, onOpenChange, initialDate }: NewRequest
                   if (v === SELF) setAutoApprove(true);
                 }}
               >
-                <SelectTrigger id="forMember">
+                <SelectTrigger id="forMember" className="w-full">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -278,37 +279,58 @@ export function NewRequestDialog({ open, onOpenChange, initialDate }: NewRequest
           ) : null}
 
           {onBehalf ? (
-            <div className="flex items-start justify-between gap-6">
+            <div className="flex items-start gap-3">
+              <Checkbox
+                id="autoApprove"
+                className="mt-0.5"
+                checked={autoApprove}
+                onCheckedChange={(v) => setAutoApprove(v === true)}
+              />
               <div className="space-y-1">
                 <Label htmlFor="autoApprove">{t.newRequest.approveImmediately}</Label>
                 <p className="text-muted-foreground text-sm">
                   {t.newRequest.approveImmediatelyHint}
                 </p>
               </div>
-              <input
-                id="autoApprove"
-                type="checkbox"
-                className="accent-primary mt-1 size-4"
-                checked={autoApprove}
-                onChange={(e) => setAutoApprove(e.target.checked)}
-              />
             </div>
           ) : null}
 
           <div className="space-y-1.5">
-            <Label htmlFor="type">{t.newRequest.type}</Label>
-            <Select value={vacationType} onValueChange={(v) => setVacationType(v as VacationKind)}>
-              <SelectTrigger id="type">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
+            <Label id="type-label" htmlFor="type">
+              {t.newRequest.type}
+            </Label>
+            {/* Four kind labels don't fit one row on phones — a select reads
+                better there than a wrapped tab grid. */}
+            <div className="sm:hidden">
+              <Select
+                value={vacationType}
+                onValueChange={(v) => setVacationType(v as VacationKind)}
+              >
+                <SelectTrigger id="type" className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {REQUESTABLE_KINDS.map((k) => (
+                    <SelectItem key={k} value={k}>
+                      {t.leaveTypes[k].label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <Tabs
+              value={vacationType}
+              onValueChange={(v) => setVacationType(v as VacationKind)}
+              className="max-sm:hidden"
+            >
+              <TabsList aria-labelledby="type-label" className="w-full">
                 {REQUESTABLE_KINDS.map((k) => (
-                  <SelectItem key={k} value={k}>
+                  <TabsTrigger key={k} value={k}>
                     {t.leaveTypes[k].label}
-                  </SelectItem>
+                  </TabsTrigger>
                 ))}
-              </SelectContent>
-            </Select>
+              </TabsList>
+            </Tabs>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
@@ -363,12 +385,17 @@ export function NewRequestDialog({ open, onOpenChange, initialDate }: NewRequest
           </div>
 
           {isSingleDay ? (
-            <div className="flex items-start justify-between gap-6">
+            <div className="flex items-start gap-3">
+              <Checkbox
+                id="halfDay"
+                className="mt-0.5"
+                checked={halfDay}
+                onCheckedChange={(v) => setHalfDay(v === true)}
+              />
               <div className="space-y-1">
                 <Label htmlFor="halfDay">{t.newRequest.halfDay}</Label>
                 <p className="text-muted-foreground text-sm">{t.newRequest.halfDayHint}</p>
               </div>
-              <Switch id="halfDay" checked={halfDay} onCheckedChange={setHalfDay} />
             </div>
           ) : null}
 

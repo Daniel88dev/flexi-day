@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -454,12 +455,10 @@ function MirroringMemberRow({ groupId, member }: { groupId: string; member: Mirr
                   candidate.manageable ? "hover:bg-muted/50 cursor-pointer" : "opacity-60"
                 )}
               >
-                <input
-                  type="checkbox"
-                  className="accent-primary h-4 w-4"
+                <Checkbox
                   checked={selected.has(candidate.groupId)}
                   disabled={!candidate.manageable}
-                  onChange={() => toggle(candidate.groupId)}
+                  onCheckedChange={() => toggle(candidate.groupId)}
                 />
                 <span className="text-sm font-medium">{candidate.groupName}</span>
                 {candidate.manageable ? null : (

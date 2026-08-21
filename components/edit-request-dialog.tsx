@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -19,7 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { useUpdateVacation } from "@/lib/api/queries";
 import { VacationKind, type UpdateVacationInput, type VacationDetail } from "@/lib/api/types";
@@ -71,6 +72,13 @@ export function EditRequestDialog({
   const [error, setError] = useState<string | null>(null);
 
   const isSingleDay = detail.rangeStart === detail.rangeEnd;
+
+  // The API can create kinds this picker does not offer (e.g. StudyLeave). The
+  // record's own kind must always be a tab: with no active tab, Radix's roving
+  // focus would land on the first trigger and silently rewrite the type.
+  const kinds = REQUESTABLE_KINDS.includes(detail.vacationType)
+    ? REQUESTABLE_KINDS
+    : [...REQUESTABLE_KINDS, detail.vacationType];
 
   function close(nextOpen: boolean) {
     if (!nextOpen) {
@@ -136,19 +144,44 @@ export function EditRequestDialog({
           ) : null}
 
           <div className="space-y-1.5">
-            <Label htmlFor="edit-type">{t.newRequest.type}</Label>
-            <Select value={vacationType} onValueChange={(v) => setVacationType(v as VacationKind)}>
-              <SelectTrigger id="edit-type">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {REQUESTABLE_KINDS.map((k) => (
-                  <SelectItem key={k} value={k}>
+            <Label id="edit-type-label" htmlFor="edit-type">
+              {t.newRequest.type}
+            </Label>
+            {/* Four kind labels don't fit one row on phones — a select reads
+                better there than a wrapped tab grid. */}
+            <div className="sm:hidden">
+              <Select
+                value={vacationType}
+                onValueChange={(v) => setVacationType(v as VacationKind)}
+              >
+                <SelectTrigger id="edit-type" className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {kinds.map((k) => (
+                    <SelectItem key={k} value={k}>
+                      {t.leaveTypes[k].label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <Tabs
+              value={vacationType}
+              onValueChange={(v) => setVacationType(v as VacationKind)}
+              className="max-sm:hidden"
+            >
+              <TabsList
+                aria-labelledby="edit-type-label"
+                className="h-auto min-h-9 w-full flex-wrap"
+              >
+                {kinds.map((k) => (
+                  <TabsTrigger key={k} value={k}>
                     {t.leaveTypes[k].label}
-                  </SelectItem>
+                  </TabsTrigger>
                 ))}
-              </SelectContent>
-            </Select>
+              </TabsList>
+            </Tabs>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
@@ -173,12 +206,17 @@ export function EditRequestDialog({
           </div>
 
           {isSingleDay ? (
-            <div className="flex items-start justify-between gap-6">
+            <div className="flex items-start gap-3">
+              <Checkbox
+                id="edit-halfDay"
+                className="mt-0.5"
+                checked={halfDay}
+                onCheckedChange={(v) => setHalfDay(v === true)}
+              />
               <div className="space-y-1">
                 <Label htmlFor="edit-halfDay">{t.newRequest.halfDay}</Label>
                 <p className="text-muted-foreground text-sm">{t.newRequest.halfDayHint}</p>
               </div>
-              <Switch id="edit-halfDay" checked={halfDay} onCheckedChange={setHalfDay} />
             </div>
           ) : null}
 

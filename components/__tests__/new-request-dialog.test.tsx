@@ -58,7 +58,7 @@ describe("NewRequestDialog", () => {
   it("submits halfDay when the toggle is on", async () => {
     renderWithClient(<NewRequestDialog open initialDate="2026-07-15" onOpenChange={() => {}} />);
 
-    fireEvent.click(screen.getByRole("switch", { name: "Half day" }));
+    fireEvent.click(screen.getByRole("checkbox", { name: "Half day" }));
     fireEvent.click(screen.getByRole("button", { name: "Submit Request" }));
 
     await waitFor(() => expect(createMutate).toHaveBeenCalled());
@@ -77,17 +77,17 @@ describe("NewRequestDialog", () => {
   it("hides the half-day toggle once the request spans more than one day", () => {
     renderWithClient(<NewRequestDialog open initialDate="2026-07-15" onOpenChange={() => {}} />);
 
-    expect(screen.getByRole("switch", { name: "Half day" })).toBeInTheDocument();
+    expect(screen.getByRole("checkbox", { name: "Half day" })).toBeInTheDocument();
 
     fireEvent.change(screen.getByLabelText("To"), { target: { value: "2026-07-17" } });
 
-    expect(screen.queryByRole("switch", { name: "Half day" })).toBeNull();
+    expect(screen.queryByRole("checkbox", { name: "Half day" })).toBeNull();
   });
 
   it("does not send a half day for a multi-day range", async () => {
     renderWithClient(<NewRequestDialog open initialDate="2026-07-15" onOpenChange={() => {}} />);
 
-    fireEvent.click(screen.getByRole("switch", { name: "Half day" }));
+    fireEvent.click(screen.getByRole("checkbox", { name: "Half day" }));
     fireEvent.change(screen.getByLabelText("To"), { target: { value: "2026-07-17" } });
     fireEvent.click(screen.getByRole("button", { name: "Submit Request" }));
 
