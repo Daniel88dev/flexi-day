@@ -346,8 +346,13 @@ export const cs: Dictionary = {
     none: "Zatím žádné skupiny.",
     defaultsSummary: (vacation: number, ho: number) => `Výchozí dovolená ${vacation}d · HO ${ho}d`,
     manager: "Manažer",
+    admin: "Správce",
+    approver: "Schvalovatel",
     members: "Členové",
     quotas: "Kvóty",
+    invites: "Pozvánky",
+    settings: "Nastavení",
+    memberCount: (n: number) => `${n} ${plural(n, "člen", "členové", "členů")}`,
   },
 
   groupDetail: {
@@ -359,6 +364,7 @@ export const cs: Dictionary = {
       members: "Členové",
       quotas: "Kvóty",
       invites: "Pozvánky",
+      settings: "Nastavení",
       mirroring: "Zrcadlení",
     },
     membersCount: (n: number) => `${n} ${plural(n, "člen", "členové", "členů")}`,

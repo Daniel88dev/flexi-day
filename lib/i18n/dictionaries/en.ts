@@ -344,8 +344,13 @@ export const en = {
     none: "No groups yet.",
     defaultsSummary: (vacation: number, ho: number) => `Default vacation ${vacation}d · HO ${ho}d`,
     manager: "Manager",
+    admin: "Admin",
+    approver: "Approver",
     members: "Members",
     quotas: "Quotas",
+    invites: "Invites",
+    settings: "Settings",
+    memberCount: (n: number) => `${n} member${n === 1 ? "" : "s"}`,
   },
 
   groupDetail: {
@@ -357,6 +362,7 @@ export const en = {
       members: "Members",
       quotas: "Quotas",
       invites: "Invites",
+      settings: "Settings",
       mirroring: "Mirroring",
     },
     membersCount: (n: number) => `${n} member${n === 1 ? "" : "s"}`,

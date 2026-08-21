@@ -22,6 +22,7 @@ const group = {
 };
 
 vi.mock("next/navigation", () => ({
+  useRouter: () => ({ replace: vi.fn() }),
   useSearchParams: () => new URLSearchParams({ groupId: "g-1", tab: "members" }),
 }));
 
@@ -55,7 +56,7 @@ describe("GroupDetailPage as an organization admin", () => {
 
   it("gives them the admin surface despite no membership", () => {
     renderWithClient(<GroupDetailPage />);
-    expect(screen.getByRole("button", { name: "Invites" })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "Invites" })).toBeInTheDocument();
   });
 
   it("tells them they are acting for the organization", () => {
@@ -77,7 +78,7 @@ describe("GroupDetailPage as an organization admin", () => {
     renderWithClient(<GroupDetailPage />);
 
     expect(screen.queryByText(/administrator of Acme/i)).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Invites" })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "Invites" })).toBeInTheDocument();
   });
 
   it("hides the admin surface when the org grants only viewing", () => {
@@ -85,7 +86,7 @@ describe("GroupDetailPage as an organization admin", () => {
 
     renderWithClient(<GroupDetailPage />);
 
-    expect(screen.queryByRole("button", { name: "Invites" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("tab", { name: "Invites" })).not.toBeInTheDocument();
     expect(screen.queryByText(/administrator of Acme/i)).not.toBeInTheDocument();
   });
 });

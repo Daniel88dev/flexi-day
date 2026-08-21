@@ -167,6 +167,19 @@ export type Group = {
   updatedAt: Iso;
 };
 
+/**
+ * A group as the list endpoint returns it: with headcount and the caller's own
+ * flags. Both fields are optional because the repos deploy independently — a
+ * frontend running against a backend without them must degrade, not crash.
+ */
+export type GroupListItem = Group & {
+  memberCount?: number;
+  membership?: {
+    adminAccess: boolean;
+    approverAccess: boolean;
+  };
+};
+
 /** What the caller may actually do with a group, as the backend will enforce it. */
 export type GroupAccess = {
   canView: boolean;

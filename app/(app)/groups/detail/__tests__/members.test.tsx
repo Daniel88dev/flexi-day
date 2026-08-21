@@ -51,6 +51,7 @@ const members = [
 ];
 
 vi.mock("next/navigation", () => ({
+  useRouter: () => ({ replace: vi.fn() }),
   useSearchParams: () => new URLSearchParams({ groupId: "g-1", tab: "members" }),
 }));
 

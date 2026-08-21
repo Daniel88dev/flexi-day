@@ -3,14 +3,15 @@ import type {
   CreateGroupInput,
   Group,
   GroupDetail,
+  GroupListItem,
   UpdateGroupHolidayCountryInput,
   UpdateGroupQuotasInput,
   UpdateGroupWorkingDaysInput,
 } from "./types";
 
 /** The caller's own groups — membership only. Organization-administered groups live on `/organization`. */
-export function listGroups(): Promise<Group[]> {
-  return api<Group[]>(`/api/group`);
+export function listGroups(): Promise<GroupListItem[]> {
+  return api<GroupListItem[]>(`/api/group`);
 }
 
 /**

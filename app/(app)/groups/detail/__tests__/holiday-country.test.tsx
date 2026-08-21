@@ -19,7 +19,8 @@ const group = {
 };
 
 vi.mock("next/navigation", () => ({
-  useSearchParams: () => new URLSearchParams({ groupId: "g-1", tab: "quotas" }),
+  useRouter: () => ({ replace: vi.fn() }),
+  useSearchParams: () => new URLSearchParams({ groupId: "g-1", tab: "settings" }),
 }));
 
 vi.mock("@/lib/auth-client", () => ({
