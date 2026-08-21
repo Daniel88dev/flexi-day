@@ -104,6 +104,23 @@ describe("reportQueryError", () => {
     });
   });
 
+  it("strips the query string from the reported path", () => {
+    const error = new ApiError(500, "boom", null, [], {
+      requestId: "req-q",
+      path: "/api/support/organizations?query=jane%40acme.com",
+    });
+
+    reportQueryError(error, "query", ["support-organizations", "1abc2d"]);
+
+    expect(Sentry.logger.error).toHaveBeenCalledWith(
+      expect.stringContaining("boom"),
+      expect.objectContaining({ "url.path": "/api/support/organizations" })
+    );
+    expect(captureOptions()?.contexts?.request).toMatchObject({
+      path: "/api/support/organizations",
+    });
+  });
+
   it("tags mutations distinctly", () => {
     reportQueryError(new ApiError(500, "boom"), "mutation", ["createVacation"]);
 

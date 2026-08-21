@@ -60,6 +60,12 @@ import {
 } from "./reports";
 import type { ReportFilters } from "./report-types";
 import { getMySettings, updateMySettings } from "./settings";
+import {
+  getSupportGroup,
+  getSupportOrganization,
+  opaqueSearchKey,
+  searchSupportOrganizations,
+} from "./support";
 import { listMyApprovals } from "./approvals";
 import { getDashboardSummary } from "./dashboard";
 import { getMyBalances } from "./balances";
@@ -99,12 +105,8 @@ import type {
 } from "./types";
 
 export const qk = {
-  vacations: (
-    year: number,
-    month: number,
-    groupId?: string | null,
-    includeCancelled?: boolean
-  ) => ["vacations", year, month, groupId ?? "mine", includeCancelled ?? false] as const,
+  vacations: (year: number, month: number, groupId?: string | null, includeCancelled?: boolean) =>
+    ["vacations", year, month, groupId ?? "mine", includeCancelled ?? false] as const,
   vacation: (id: string) => ["vacation", id] as const,
   groups: () => ["groups"] as const,
   group: (groupId: string) => ["group", groupId] as const,
@@ -136,6 +138,12 @@ export const qk = {
     ["organization", organizationId ?? "own"] as const,
   organizationCandidates: (organizationId?: string | null) =>
     ["organization-candidates", organizationId ?? "own"] as const,
+  // Hashed: query keys reach Sentry on failures and this one is free text.
+  supportOrganizations: (query: string) =>
+    ["support-organizations", opaqueSearchKey(query)] as const,
+  supportOrganization: (organizationId: string) =>
+    ["support-organization", organizationId] as const,
+  supportGroup: (groupId: string) => ["support-group", groupId] as const,
 };
 
 function invalidateVacationDependants(qc: ReturnType<typeof useQueryClient>) {
@@ -704,5 +712,36 @@ export function useRemoveGroupUser() {
       qc.invalidateQueries({ queryKey: qk.groupUsers(vars.groupId) });
       qc.invalidateQueries({ queryKey: qk.subscription() });
     },
+  });
+}
+
+/**
+ * Support surface — owner-only. Callers gate on `useSupportAdmin` first; the
+ * backend re-checks its allowlist on every request regardless.
+ */
+export function useSupportOrganizations(query: string, enabled: boolean) {
+  return useQuery({
+    queryKey: qk.supportOrganizations(query),
+    queryFn: () => searchSupportOrganizations(query),
+    enabled,
+    // A debug surface must not answer from cache: flipping between two terms
+    // within the default staleTime would otherwise hide a fix just made.
+    staleTime: 0,
+  });
+}
+
+export function useSupportOrganization(organizationId: string | null, enabled: boolean) {
+  return useQuery({
+    queryKey: qk.supportOrganization(organizationId ?? ""),
+    queryFn: () => getSupportOrganization(organizationId ?? ""),
+    enabled: enabled && !!organizationId,
+  });
+}
+
+export function useSupportGroup(groupId: string | null, enabled: boolean) {
+  return useQuery({
+    queryKey: qk.supportGroup(groupId ?? ""),
+    queryFn: () => getSupportGroup(groupId ?? ""),
+    enabled: enabled && !!groupId,
   });
 }

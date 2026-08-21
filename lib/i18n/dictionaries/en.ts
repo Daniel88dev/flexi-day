@@ -107,6 +107,7 @@ export const en = {
     requests: "Requests",
     groups: "Groups",
     calendarSync: "Calendar sync",
+    support: "Support",
   },
 
   report: {

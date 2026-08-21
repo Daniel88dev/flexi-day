@@ -17,6 +17,12 @@ vi.mock("@/lib/auth-client", () => ({
   authClient: { signOut: vi.fn() },
 }));
 
+const supportAdminState = { supportAdmin: false, isPending: false };
+
+vi.mock("@/lib/support/use-support-admin", () => ({
+  useSupportAdmin: () => supportAdminState,
+}));
+
 vi.mock("@/lib/api/queries", () => ({
   useNotifications: () => ({ data: [], isLoading: false, error: null }),
   useMarkNotificationRead: () => ({ mutate: vi.fn(), isPending: false }),
@@ -48,6 +54,21 @@ describe("NavBar", () => {
       "Groups",
       "Calendar sync",
     ]);
+  });
+
+  it("shows the Support link only for a support admin", () => {
+    supportAdminState.supportAdmin = true;
+    try {
+      renderWithClient(<NavBar />);
+      expect(screen.getAllByRole("link", { name: "Support" }).length).toBeGreaterThan(0);
+    } finally {
+      supportAdminState.supportAdmin = false;
+    }
+  });
+
+  it("hides the Support link for everyone else", () => {
+    renderWithClient(<NavBar />);
+    expect(screen.queryByRole("link", { name: "Support" })).not.toBeInTheDocument();
   });
 
   it("toggles the mobile menu button state", () => {
