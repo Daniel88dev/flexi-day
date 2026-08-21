@@ -41,7 +41,10 @@ describe("bankHolidaysToRanges", () => {
 
   it("merges same-day holidays from different countries into one range", () => {
     const ranges = bankHolidaysToRanges(
-      [holiday("2026-12-25", "Christmas Day", "CZ"), holiday("2026-12-25", "1. Weihnachtstag", "DE")],
+      [
+        holiday("2026-12-25", "Christmas Day", "CZ"),
+        holiday("2026-12-25", "1. Weihnachtstag", "DE"),
+      ],
       2026,
       12
     );
@@ -52,7 +55,10 @@ describe("bankHolidaysToRanges", () => {
 
   it("does not repeat an identical name shared by two countries", () => {
     const ranges = bankHolidaysToRanges(
-      [holiday("2026-01-01", "New Year's Day", "DE"), holiday("2026-01-01", "New Year's Day", "AT")],
+      [
+        holiday("2026-01-01", "New Year's Day", "DE"),
+        holiday("2026-01-01", "New Year's Day", "AT"),
+      ],
       2026,
       1
     );

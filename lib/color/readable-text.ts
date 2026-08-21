@@ -54,8 +54,7 @@ const DARK_LUMINANCE = 0.0092;
  * near-black has the higher WCAG contrast; unparsable input keeps white.
  */
 export function readableForeground(background: string): string {
-  const token =
-    /#(?:[0-9a-f]{6}|[0-9a-f]{3})\b|hsl\([^)]*\)/i.exec(background)?.[0] ?? background;
+  const token = /#(?:[0-9a-f]{6}|[0-9a-f]{3})\b|hsl\([^)]*\)/i.exec(background)?.[0] ?? background;
   const rgb = hslToRgb(token) ?? hexToRgb(token);
   if (!rgb) return "#fff";
   const lum = relativeLuminance(rgb);

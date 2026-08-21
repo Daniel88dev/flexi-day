@@ -13,7 +13,7 @@ export function ApprovalPreview() {
   return (
     <div
       aria-hidden
-      className="pointer-events-none mt-auto select-none rounded-xl border p-4"
+      className="pointer-events-none mt-auto rounded-xl border p-4 select-none"
       style={{ borderColor: "var(--border)", background: "var(--surface-2)" }}
     >
       <div className="flex items-center gap-3">

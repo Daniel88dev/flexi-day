@@ -129,9 +129,7 @@ export default function DashboardPage() {
   const holidayCountries = useMemo(() => {
     if (scope === "GROUP") return activeGroupCountry ? [activeGroupCountry] : [];
     return Array.from(
-      new Set(
-        (groupsQuery.data ?? []).map((g) => g.holidayCountry).filter((c): c is string => !!c)
-      )
+      new Set((groupsQuery.data ?? []).map((g) => g.holidayCountry).filter((c): c is string => !!c))
     );
   }, [scope, activeGroupCountry, groupsQuery.data]);
   const bankHolidays = useBankHolidaysMulti(year, holidayCountries);
@@ -149,7 +147,10 @@ export default function DashboardPage() {
         note: v.note,
         mirroredFromGroupName: v.mirroredFromGroupName,
       }));
-    return [...groupConsecutiveByUserType(live), ...bankHolidaysToRanges(bankHolidays, year, month)];
+    return [
+      ...groupConsecutiveByUserType(live),
+      ...bankHolidaysToRanges(bankHolidays, year, month),
+    ];
   }, [vacations, bankHolidays, year, month]);
 
   const today = new Date();

@@ -148,7 +148,7 @@ function BackupCodes({ codes, onDone }: { codes: string[]; onDone: () => void })
           onClick={() => {
             navigator.clipboard.writeText(codes.join("\n")).then(
               () => pushToast(t.settings.twoFactor.copied),
-              () => pushToast(t.settings.twoFactor.copyFailed, "danger"),
+              () => pushToast(t.settings.twoFactor.copyFailed, "danger")
             );
           }}
         >
@@ -332,12 +332,20 @@ function EnableDialog({ onClose }: { onClose: () => void }) {
         {step === "totp" ? (
           <div className="space-y-4">
             <TotpUriPanel totpURI={totpURI} />
-            <CodeVerifyForm onVerify={(code) => void verify("totp", code)} busy={busy} error={error} />
+            <CodeVerifyForm
+              onVerify={(code) => void verify("totp", code)}
+              busy={busy}
+              error={error}
+            />
           </div>
         ) : null}
         {step === "otp" ? (
           <div className="space-y-4">
-            <CodeVerifyForm onVerify={(code) => void verify("otp", code)} busy={busy} error={error} />
+            <CodeVerifyForm
+              onVerify={(code) => void verify("otp", code)}
+              busy={busy}
+              error={error}
+            />
             <button
               type="button"
               className="text-primary text-sm font-semibold hover:underline disabled:opacity-50"

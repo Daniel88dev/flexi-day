@@ -82,6 +82,29 @@ describe("EditRequestDialog", () => {
     });
   });
 
+  it("offers the record's own kind as a selected tab even when it is not requestable", async () => {
+    const onOpenChange = vi.fn();
+    renderWithClient(
+      <EditRequestDialog
+        detail={{ ...detail, vacationType: VacationKind.StudyLeave }}
+        open
+        onOpenChange={onOpenChange}
+      />
+    );
+
+    // Without its own tab, no tab is active and Radix's roving focus would
+    // land on "Vacation" and silently rewrite the type on keyboard traversal.
+    expect(screen.getByRole("tab", { name: "Study Leave" })).toHaveAttribute(
+      "aria-selected",
+      "true"
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
+
+    await waitFor(() => expect(onOpenChange).toHaveBeenCalledWith(false));
+    expect(updateMutate).not.toHaveBeenCalled();
+  });
+
   it("closes without a request when nothing changed", async () => {
     const onOpenChange = vi.fn();
     renderWithClient(<EditRequestDialog detail={detail} open onOpenChange={onOpenChange} />);
@@ -101,7 +124,7 @@ describe("EditRequestDialog", () => {
       />
     );
 
-    expect(screen.queryByRole("switch", { name: "Half day" })).toBeNull();
+    expect(screen.queryByRole("checkbox", { name: "Half day" })).toBeNull();
   });
 
   it("shows the backend error inline when the update fails", async () => {
@@ -113,8 +136,6 @@ describe("EditRequestDialog", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
 
-    expect(await screen.findByRole("alert")).toHaveTextContent(
-      "Rejected records cannot be edited"
-    );
+    expect(await screen.findByRole("alert")).toHaveTextContent("Rejected records cannot be edited");
   });
 });

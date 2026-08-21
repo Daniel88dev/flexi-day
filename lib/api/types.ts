@@ -89,12 +89,7 @@ export type VacationListItem = Vacation & {
 };
 
 export type VacationEventKind =
-  | "CREATED"
-  | "APPROVED"
-  | "REJECTED"
-  | "CANCELLED"
-  | "COMMENT"
-  | "UPDATED";
+  "CREATED" | "APPROVED" | "REJECTED" | "CANCELLED" | "COMMENT" | "UPDATED";
 
 export type VacationEvent = {
   id: UUID;

@@ -130,7 +130,12 @@ export default function RequestsPage() {
 
   // Cancelled rows stay visible here (with who cancelled them on the detail);
   // the calendar and dashboard keep their live-rows-only view.
-  const vacationsQuery = useVacations({ year, month, groupId: scopeGroupId, includeCancelled: true });
+  const vacationsQuery = useVacations({
+    year,
+    month,
+    groupId: scopeGroupId,
+    includeCancelled: true,
+  });
   const approve = useApproveVacations();
   const reject = useRejectVacations();
   const cancel = useCancelVacations();

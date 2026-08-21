@@ -109,9 +109,7 @@ function PlanCard({
   // a subscription gets none when it switches plans — advertising one here
   // would be a promise Paddle won't keep.
   const trial =
-    plan !== "FREE" && !hasSubscription
-      ? TRIAL[cycle === "YEARLY" ? "yearly" : "monthly"]
-      : null;
+    plan !== "FREE" && !hasSubscription ? TRIAL[cycle === "YEARLY" ? "yearly" : "monthly"] : null;
 
   const action = (() => {
     if (isCurrent) {
