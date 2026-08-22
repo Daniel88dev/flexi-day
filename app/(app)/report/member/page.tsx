@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,8 +17,17 @@ import {
 import { AvatarBubble } from "@/components/brand/avatar-bubble";
 import { MemberQuotaChart } from "@/components/report/member-quota-chart";
 import { QuotaEditDialog } from "@/components/report/quota-edit-dialog";
-import { useMemberReport } from "@/lib/api/queries";
-import { formatDays, monthlySeriesFor, totalQuotaFor } from "@/lib/report/series";
+import { useMemberReport, useReportScope } from "@/lib/api/queries";
+import {
+  calendarMonths,
+  formatDays,
+  monthlySeriesFor,
+  totalQuotaFor,
+  trailingMonths,
+  windowLabel,
+  withYear,
+  yearsInWindow,
+} from "@/lib/report/series";
 import type { ReportScopeGroup } from "@/lib/api/report-types";
 import { VACATION_KIND_LABELS, type VacationKind } from "@/lib/api/types";
 import { useTranslation } from "@/lib/i18n/use-translation";
@@ -31,12 +40,50 @@ export default function MemberReportPage() {
 
   const [editing, setEditing] = useState<ReportScopeGroup | null>(null);
 
-  const reportQuery = useMemberReport(userId, year);
-  const report = reportQuery.data;
-
   // Quotas are settled once a year is over and there is nothing to carry over
   // from yet in a future one, so only the current year is editable here.
   const isCurrentYear = year === new Date().getFullYear();
+
+  // The window the report was showing when this member was clicked, so the two
+  // charts cover the same months. Without it, a past year is shown whole and
+  // the current year rolls, which is what the report itself defaults to.
+  const period = search.get("period");
+  const rolling = period === null ? isCurrentYear : period === "rolling";
+  const slots = useMemo(
+    () => (rolling ? trailingMonths(new Date()) : calendarMonths(year)),
+    [rolling, year]
+  );
+
+  const reportQuery = useMemberReport(userId, year);
+  const scopeQuery = useReportScope();
+
+  const priorYear = yearsInWindow(slots)[0];
+  const needsPriorYear = priorYear !== year && (scopeQuery.data?.years ?? []).includes(priorYear);
+  const priorQuery = useMemberReport(userId, priorYear, needsPriorYear);
+
+  const report = reportQuery.data;
+  // Not `priorQuery.data`: a disabled query still hands back whatever the cache
+  // holds for its key, which is the very year already in `report`.
+  const prior = needsPriorYear ? priorQuery.data : undefined;
+
+  const usage = useMemo(
+    () => [
+      ...(prior ? withYear(prior.year, prior.monthly) : []),
+      ...(report ? withYear(report.year, report.monthly) : []),
+    ],
+    [report, prior]
+  );
+
+  // A cross-year window is only complete once scope has said which years hold
+  // data and the second year has landed; drawing earlier shows last year's
+  // months as zeros that then jump.
+  const spansYears = yearsInWindow(slots).length > 1;
+  const windowPending =
+    spansYears && (scopeQuery.isPending || (needsPriorYear && priorQuery.isPending));
+  // A failed scope leaves `needsPriorYear` false, which would quietly drop last
+  // year's half rather than admit it never looked.
+  const windowIncomplete =
+    (needsPriorYear && priorQuery.isError) || (spansYears && scopeQuery.isError);
 
   if (reportQuery.isPending) {
     return <p className="text-muted-foreground text-sm">{t.common.loading}</p>;
@@ -83,20 +130,33 @@ export default function MemberReportPage() {
         </div>
       </div>
 
+      {windowIncomplete ? (
+        <p role="status" className="text-muted-foreground text-sm">
+          {t.report.charts.windowIncomplete(priorYear)}
+        </p>
+      ) : null}
+
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
         <div className="space-y-4">
           {allowances.map((leaveType) => (
             <Card key={leaveType}>
               <CardHeader className="pb-2">
-                <CardTitle className="text-base">
+                <CardTitle className="flex flex-wrap items-baseline gap-2 text-base">
                   {t.report.charts.title} · {t.leaveTypes[leaveType].label}
+                  <span className="text-muted-foreground text-xs font-normal">
+                    {windowLabel(slots, t.calendar.monthsShort)}
+                  </span>
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <MemberQuotaChart
-                  series={monthlySeriesFor(report.monthly, report.member.id, [leaveType])}
-                  quota={totalQuotaFor(report.summary, report.member.id, leaveType)}
-                />
+                {windowPending ? (
+                  <p className="text-muted-foreground text-sm">{t.common.loading}</p>
+                ) : (
+                  <MemberQuotaChart
+                    series={monthlySeriesFor(usage, report.member.id, slots, [leaveType])}
+                    quota={totalQuotaFor(report.summary, report.member.id, leaveType)}
+                  />
+                )}
               </CardContent>
             </Card>
           ))}

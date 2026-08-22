@@ -99,6 +99,9 @@ export type MemberReport = {
   changes: MemberChange[];
 };
 
+/** Chart window: the trailing 12 months, or one whole calendar year. */
+export type ReportPeriod = "rolling" | number;
+
 export type ReportFilters = {
   year: number;
   groupIds?: UUID[];

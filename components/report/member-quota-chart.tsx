@@ -12,12 +12,12 @@ import {
   YAxis,
 } from "recharts";
 import type { MonthPoint } from "@/lib/report/series";
-import { formatDays } from "@/lib/report/series";
+import { formatDays, monthAxisLabel, monthlyTargetFor } from "@/lib/report/series";
 import { useTranslation } from "@/lib/i18n/use-translation";
 
 type Props = {
   series: MonthPoint[];
-  /** Total allowance for the year; drawn as a monthly-average guide line. */
+  /** Total allowance for the year; drawn as a per-month average guide line. */
   quota: number;
 };
 
@@ -33,7 +33,7 @@ function ChartTooltip({
 }: {
   active?: boolean;
   payload?: TooltipPayload;
-  monthLabels: string[];
+  monthLabels: readonly string[];
   labels: { used: string; pending: string };
 }) {
   const point = payload?.[0]?.payload;
@@ -41,7 +41,9 @@ function ChartTooltip({
 
   return (
     <div className="bg-popover text-popover-foreground rounded-lg px-3 py-2 text-xs shadow-lg ring-1 ring-black/5">
-      <p className="mb-1 font-medium">{monthLabels[point.month - 1]}</p>
+      <p className="mb-1 font-medium">
+        {monthLabels[point.month - 1]} {point.year}
+      </p>
       <p>
         {labels.used}: {formatDays(point.used)}
       </p>
@@ -57,13 +59,12 @@ function ChartTooltip({
 /**
  * Monthly leave for one member. Approved and pending days stack so the bar
  * reads as "committed", with pending visibly lighter; the dashed line is the
- * yearly allowance spread evenly across twelve months, which is what makes a
+ * allowance spread evenly across the window, which is what makes a
  * front-loaded or unused allowance obvious at a glance.
  */
 export function MemberQuotaChart({ series, quota }: Props) {
   const { t } = useTranslation();
-  const monthLabels = t.calendar.monthsShort;
-  const monthlyTarget = quota > 0 ? quota / 12 : 0;
+  const monthlyTarget = monthlyTargetFor(series, quota);
 
   return (
     <div className="h-[190px] w-full">
@@ -72,7 +73,7 @@ export function MemberQuotaChart({ series, quota }: Props) {
           <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
           <XAxis
             dataKey="month"
-            tickFormatter={(month: number) => monthLabels[month - 1] ?? String(month)}
+            tickFormatter={(month: number) => monthAxisLabel(month, series, t.calendar.monthsShort)}
             tick={{ fontSize: 11, fill: "var(--text-muted)" }}
             axisLine={false}
             tickLine={false}
@@ -87,7 +88,7 @@ export function MemberQuotaChart({ series, quota }: Props) {
             cursor={{ fill: "var(--muted)", opacity: 0.4 }}
             content={
               <ChartTooltip
-                monthLabels={monthLabels}
+                monthLabels={t.calendar.months}
                 labels={{ used: t.report.charts.used, pending: t.report.charts.pending }}
               />
             }
@@ -100,9 +101,15 @@ export function MemberQuotaChart({ series, quota }: Props) {
               strokeOpacity={0.7}
             />
           ) : null}
-          <Bar dataKey="used" stackId="days" fill="var(--c-vacation)" radius={[0, 0, 0, 0]}>
+          <Bar
+            dataKey="used"
+            stackId="days"
+            fill="var(--c-vacation)"
+            radius={[0, 0, 0, 0]}
+            isAnimationActive={false}
+          >
             {series.map((point) => (
-              <Cell key={`used-${point.month}`} />
+              <Cell key={`used-${point.year}-${point.month}`} />
             ))}
           </Bar>
           <Bar
@@ -111,6 +118,7 @@ export function MemberQuotaChart({ series, quota }: Props) {
             fill="var(--c-vacation)"
             fillOpacity={0.35}
             radius={[3, 3, 0, 0]}
+            isAnimationActive={false}
           />
         </BarChart>
       </ResponsiveContainer>

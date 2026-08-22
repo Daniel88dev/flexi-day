@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { TeamUsageChart } from "@/components/report/team-usage-chart";
-import { buildTeamMonthlySeries } from "@/lib/report/series";
+import { buildTeamMonthlySeries, calendarMonths } from "@/lib/report/series";
 import type { ReportScopeMember } from "@/lib/api/report-types";
 import { VacationKind } from "@/lib/api/types";
 
@@ -17,6 +17,7 @@ const series = buildTeamMonthlySeries(
     {
       userId: "u1",
       groupId: "g1",
+      year: 2026,
       month: 3,
       vacationType: VacationKind.Vacation,
       used: 2,
@@ -24,7 +25,8 @@ const series = buildTeamMonthlySeries(
     },
   ],
   ["u1", "u2"],
-  VacationKind.Vacation
+  VacationKind.Vacation,
+  calendarMonths(2026)
 );
 
 describe("TeamUsageChart", () => {

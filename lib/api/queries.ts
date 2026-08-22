@@ -391,18 +391,19 @@ export function useReportScope() {
   });
 }
 
-export function useReportOverview(filters: ReportFilters) {
+export function useReportOverview(filters: ReportFilters, enabled = true) {
   return useQuery({
     queryKey: qk.reportOverview(filters),
     queryFn: () => getReportOverview(filters),
+    enabled,
   });
 }
 
-export function useMemberReport(userId: string | null | undefined, year: number) {
+export function useMemberReport(userId: string | null | undefined, year: number, enabled = true) {
   return useQuery({
     queryKey: qk.memberReport(userId ?? "", year),
     queryFn: () => getMemberReport(userId!, year),
-    enabled: !!userId,
+    enabled: enabled && !!userId,
   });
 }
 

@@ -117,6 +117,8 @@ export const cs: Dictionary = {
     subtitle: "Nároky a čerpání volna napříč vašimi týmy.",
     filters: {
       year: "Rok",
+      period: "Období",
+      lastTwelveMonths: "Posledních 12 měsíců",
       groups: "Skupiny",
       members: "Členové",
       types: "Typy volna",
@@ -139,6 +141,17 @@ export const cs: Dictionary = {
     charts: {
       title: "Měsíční čerpání",
       empty: "Pro tyto filtry není zaznamenáno žádné volno.",
+      remainingSubtitle: (year: number) =>
+        `Kolik dnů má každý člen ještě k dispozici v roce ${year}.`,
+      remainingLabel: "Zbývá",
+      windowIncomplete: (year: number) =>
+        `Rok ${year} se nepodařilo načíst, měsíce z tohoto roku se zobrazují jako prázdné.`,
+      remainingEmpty: "Pro tyto filtry není nastaven žádný nárok.",
+      carriedOver: "Zbývá z minulého roku",
+      yearQuota: (year: number) => `Zbývá z roku ${year}`,
+      overdraft: "Nad rámec nároku",
+      usageSection: (type: string) => `${type} · Měsíční čerpání`,
+      remainingSection: (type: string) => `${type} · Zbývá dnů`,
       used: "Vyčerpáno",
       pending: "Ke schválení",
       quotaLine: "Měsíční průměr ročního nároku",

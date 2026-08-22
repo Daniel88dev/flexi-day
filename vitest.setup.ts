@@ -1,10 +1,15 @@
 import "@testing-library/jest-dom";
 
 // jsdom ships no ResizeObserver, and Radix primitives that measure themselves
-// (Switch, Select, …) throw on mount without it. Nothing under test depends on
-// real measurements, so a no-op is enough.
+// (Switch, Select, …) throw on mount without it. jsdom has no layout, so the
+// callback is never worth invoking — but it has to be accepted, or this double
+// silently has a different signature from the API it stands in for.
 if (!globalThis.ResizeObserver) {
   globalThis.ResizeObserver = class {
+    constructor(callback: ResizeObserverCallback) {
+      this.callback = callback;
+    }
+    private readonly callback: ResizeObserverCallback;
     observe() {}
     unobserve() {}
     disconnect() {}
