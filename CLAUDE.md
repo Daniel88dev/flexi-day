@@ -43,3 +43,20 @@ reach `out/`.
 `.claude/settings.json` runs `prettier --write` after every Write and Edit, so files reformat
 immediately after you touch them. Take the reformatted version as current rather than re-editing
 to restore your own spacing.
+
+## Agent skills
+
+### Issue tracker
+
+Issues live in this repo's GitHub Issues, reached with the `gh` CLI. See
+[`docs/agents/issue-tracker.md`](docs/agents/issue-tracker.md).
+
+### Triage labels
+
+The five canonical triage roles, each label string equal to its name. See
+[`docs/agents/triage-labels.md`](docs/agents/triage-labels.md).
+
+### Domain docs
+
+Single-context: `CONTEXT.md` and `docs/adr/` at the repo root. See
+[`docs/agents/domain.md`](docs/agents/domain.md).
