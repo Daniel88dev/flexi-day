@@ -66,6 +66,7 @@ const overviewFor = (orgId: string | null, maxMembers: number): BillingOverview 
 });
 
 vi.mock("next/navigation", () => ({
+  useRouter: () => ({ replace: vi.fn() }),
   useSearchParams: () => new URLSearchParams({ groupId: "g-1", tab: "invites" }),
 }));
 

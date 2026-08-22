@@ -23,6 +23,7 @@ let members: { userId: string; adminAccess: boolean }[] = [];
 let invites: unknown[] = [];
 
 vi.mock("next/navigation", () => ({
+  useRouter: () => ({ replace: vi.fn() }),
   useSearchParams: () => new URLSearchParams({ groupId: "g-1", tab: "invites" }),
 }));
 
@@ -106,11 +107,11 @@ describe("GroupDetailPage invites tab", () => {
     // A plain member: view access, no administration from either a membership
     // or the organization.
     group.access = { canView: true, canAdmin: false, viaOrgAdmin: false, isMember: true };
-    members = [{ userId: "u-1", adminAccess: false }];
+    members = [];
 
     renderWithClient(<GroupDetailPage />);
 
-    expect(screen.queryByRole("button", { name: "Invites" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("tab", { name: "Invites" })).not.toBeInTheDocument();
     group.access = { canView: true, canAdmin: true, viaOrgAdmin: false, isMember: true };
   });
 });

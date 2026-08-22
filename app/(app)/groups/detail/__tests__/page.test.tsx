@@ -5,6 +5,7 @@ import GroupDetailPage from "../page";
 import { renderWithClient } from "@/lib/test-utils";
 
 const updateWorkingDaysMutate = vi.fn().mockResolvedValue({});
+const routerReplace = vi.fn();
 
 const group = {
   id: "g-1",
@@ -19,7 +20,8 @@ const group = {
 };
 
 vi.mock("next/navigation", () => ({
-  useSearchParams: () => new URLSearchParams({ groupId: "g-1", tab: "quotas" }),
+  useRouter: () => ({ replace: routerReplace }),
+  useSearchParams: () => new URLSearchParams({ groupId: "g-1", tab: "settings" }),
 }));
 
 vi.mock("@/lib/auth-client", () => ({
@@ -49,7 +51,19 @@ vi.mock("@/lib/api/queries", () => ({
 describe("GroupDetailPage working days", () => {
   beforeEach(() => {
     updateWorkingDaysMutate.mockClear();
+    routerReplace.mockClear();
     group.workingDays = [1, 2, 3, 4, 5];
+  });
+
+  it("writes the selected tab back to the URL, keeping the groupId", async () => {
+    const user = userEvent.setup();
+    renderWithClient(<GroupDetailPage />);
+
+    await user.click(screen.getByRole("tab", { name: "Quotas" }));
+
+    expect(routerReplace).toHaveBeenCalledWith("/groups/detail?groupId=g-1&tab=quotas", {
+      scroll: false,
+    });
   });
 
   it("renders a toggle for every weekday, pre-selecting the group's working days", () => {

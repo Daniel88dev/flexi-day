@@ -3,9 +3,9 @@ import { scrubSupportQuery, scrubSupportUrlsInEvent } from "../scrub-support-url
 
 describe("scrubSupportQuery", () => {
   it("strips the query string from support URLs only", () => {
-    expect(scrubSupportQuery("http://localhost:8080/api/support/organizations?query=a%40b.com")).toBe(
-      "http://localhost:8080/api/support/organizations"
-    );
+    expect(
+      scrubSupportQuery("http://localhost:8080/api/support/organizations?query=a%40b.com")
+    ).toBe("http://localhost:8080/api/support/organizations");
     expect(scrubSupportQuery("GET http://x/api/support/organizations?query=jane")).toBe(
       "GET http://x/api/support/organizations"
     );

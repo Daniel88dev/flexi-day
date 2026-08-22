@@ -7,7 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Sparkles } from "lucide-react";
-import { OrganizationBadge } from "@/components/billing/organization-badge";
+import { GroupCard } from "@/components/groups/group-card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useCreateGroup, useGroups, useJoinGroup, useSubscription } from "@/lib/api/queries";
 import { planLimitFromError } from "@/lib/billing/plan-limit-error";
 import { useSession } from "@/lib/auth-client";
@@ -202,40 +203,28 @@ export default function GroupsPage() {
       <div className="space-y-3">
         <h2 className="font-heading text-lg font-semibold">{t.groups.yourGroups}</h2>
         {groupsQuery.isLoading ? (
-          <p className="text-muted-foreground text-sm">{t.common.loading}</p>
+          <div className="grid gap-3 md:grid-cols-2">
+            {[0, 1].map((i) => (
+              <Card key={i}>
+                <CardContent className="space-y-3 py-5">
+                  <Skeleton className="h-5 w-40" />
+                  <Skeleton className="h-4 w-56" />
+                  <div className="flex gap-2 pt-2">
+                    <Skeleton className="h-8 w-24 rounded-4xl" />
+                    <Skeleton className="h-8 w-24 rounded-4xl" />
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : groupsQuery.error ? (
+          <p className="text-destructive text-sm">{groupsQuery.error.message}</p>
         ) : groups.length === 0 ? (
           <p className="text-muted-foreground text-sm">{t.groups.none}</p>
         ) : (
           <div className="grid gap-3 md:grid-cols-2">
             {groups.map((g) => (
-              <Card key={g.id}>
-                <CardContent className="space-y-2 py-5">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <div className="font-heading text-base font-semibold">{g.groupName}</div>
-                      <div className="text-muted-foreground text-xs">
-                        {t.groups.defaultsSummary(g.defaultVacationDays, g.defaultHomeOfficeDays)}
-                      </div>
-                      <OrganizationBadge organization={g.organization} className="mt-1.5" />
-                    </div>
-                    {g.managerUserId === userId ? (
-                      <span className="bg-primary/10 text-primary shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase">
-                        {t.groups.manager}
-                      </span>
-                    ) : null}
-                  </div>
-                  <div className="flex gap-2 pt-1">
-                    <Button asChild size="sm" variant="outline">
-                      <Link href={`/groups/detail?groupId=${g.id}`}>{t.groups.members}</Link>
-                    </Button>
-                    <Button asChild size="sm" variant="ghost">
-                      <Link href={`/groups/detail?groupId=${g.id}&tab=quotas`}>
-                        {t.groups.quotas}
-                      </Link>
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
+              <GroupCard key={g.id} group={g} userId={userId} />
             ))}
           </div>
         )}
