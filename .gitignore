@@ -20,8 +20,6 @@
 # production
 /build
 
-# Claude Code personal instructions
-CLAUDE.local.md
 
 # misc
 .DS_Store
@@ -253,7 +251,9 @@ dist
 .yarn/install-state.gz
 .pnp.*
 
-/.claude/
+# Claude Code: share config, keep machine-local permissions out
+.claude/settings.local.json
+.claude/worktrees/
 .idea/
 
 # Sentry Config File
