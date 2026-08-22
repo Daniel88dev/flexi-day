@@ -1,18 +1,4 @@
 {
-  "hooks": {
-    "PostToolUse": [
-      {
-        "matcher": "Write|Edit",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "jq -r '.tool_input.file_path // .tool_response.filePath' | { read -r f; npx prettier --write \"$f\"; } 2>/dev/null || true",
-            "timeout": 30
-          }
-        ]
-      }
-    ]
-  },
   "permissions": {
     "allow": [
       "Bash(npm install *)",
@@ -29,6 +15,39 @@
       "mcp__plugin_playwright_playwright__browser_click",
       "mcp__plugin_playwright_playwright__browser_console_messages",
       "mcp__plugin_playwright_playwright__browser_close"
+    ],
+    "deny": [
+      "NotebookEdit",
+      "CronCreate",
+      "CronDelete",
+      "CronList",
+      "PushNotification",
+      "ReportFindings",
+      "ScheduleWakeup"
+    ]
+  },
+  "deniedMcpServers": [
+    {
+      "serverName": "claude-in-chrome"
+    }
+  ],
+  "skillListingMaxDescChars": 250,
+  "disableClaudeAiConnectors": true,
+  "disableWorkflows": true,
+  "disableBundledSkills": true,
+  "disableArtifact": true,
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -r '.tool_input.file_path // .tool_response.filePath' | { read -r f; npx prettier --write \"$f\"; } 2>/dev/null || true",
+            "timeout": 30
+          }
+        ]
+      }
     ]
   }
 }
