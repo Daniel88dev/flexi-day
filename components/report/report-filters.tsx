@@ -9,8 +9,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { MultiSelect, type MultiSelectOption } from "@/components/report/multi-select";
-import type { ReportFilters } from "@/lib/api/report-types";
-import type { ReportScope } from "@/lib/api/report-types";
+import type { ReportFilters, ReportPeriod, ReportScope } from "@/lib/api/report-types";
 import { VACATION_KIND_LABELS, VacationKind } from "@/lib/api/types";
 import { useTranslation } from "@/lib/i18n/use-translation";
 
@@ -18,11 +17,19 @@ type Props = {
   scope: ReportScope | undefined;
   filters: ReportFilters;
   onChange: (next: ReportFilters) => void;
+  /**
+   * Supplied by the report page, where the charts can span a rolling window.
+   * Omitted by the export dialog: a workbook is always one calendar year.
+   */
+  period?: ReportPeriod;
+  onPeriodChange?: (next: ReportPeriod) => void;
 };
 
 const ALL_KINDS = Object.values(VacationKind);
 
-export function ReportFiltersBar({ scope, filters, onChange }: Props) {
+const ROLLING = "rolling";
+
+export function ReportFiltersBar({ scope, filters, onChange, period, onPeriodChange }: Props) {
   const { t } = useTranslation();
 
   const groupOptions: MultiSelectOption[] = useMemo(
@@ -52,22 +59,43 @@ export function ReportFiltersBar({ scope, filters, onChange }: Props) {
   return (
     <div className="flex flex-wrap items-end gap-3">
       <div className="flex flex-col gap-1.5">
-        <span className="text-muted-foreground text-xs font-medium">{t.report.filters.year}</span>
-        <Select
-          value={String(filters.year)}
-          onValueChange={(value) => onChange({ ...filters, year: Number(value) })}
-        >
-          <SelectTrigger className="w-[120px]" aria-label={t.report.filters.year}>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {years.map((year) => (
-              <SelectItem key={year} value={String(year)}>
-                {year}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <span className="text-muted-foreground text-xs font-medium">
+          {onPeriodChange ? t.report.filters.period : t.report.filters.year}
+        </span>
+        {onPeriodChange ? (
+          <Select
+            value={period === "rolling" ? ROLLING : String(period)}
+            onValueChange={(value) => onPeriodChange(value === ROLLING ? "rolling" : Number(value))}
+          >
+            <SelectTrigger className="w-[170px]" aria-label={t.report.filters.period}>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={ROLLING}>{t.report.filters.lastTwelveMonths}</SelectItem>
+              {years.map((year) => (
+                <SelectItem key={year} value={String(year)}>
+                  {year}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        ) : (
+          <Select
+            value={String(filters.year)}
+            onValueChange={(value) => onChange({ ...filters, year: Number(value) })}
+          >
+            <SelectTrigger className="w-[120px]" aria-label={t.report.filters.year}>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {years.map((year) => (
+                <SelectItem key={year} value={String(year)}>
+                  {year}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
       </div>
 
       <MultiSelect

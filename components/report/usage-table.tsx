@@ -11,15 +11,21 @@ import {
 } from "@/components/ui/table";
 import { AvatarBubble } from "@/components/brand/avatar-bubble";
 import { formatDays, type MemberCard } from "@/lib/report/series";
+import type { ReportPeriod } from "@/lib/api/report-types";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/lib/i18n/use-translation";
 
 type Props = {
   cards: MemberCard[];
   year: number;
+  /**
+   * Carried into the detail link so a member's chart covers the same months as
+   * the team chart above it. Omitted by callers that have no period control.
+   */
+  period?: ReportPeriod;
 };
 
-export function UsageTable({ cards, year }: Props) {
+export function UsageTable({ cards, year, period }: Props) {
   const { t } = useTranslation();
 
   if (cards.length === 0) {
@@ -46,7 +52,7 @@ export function UsageTable({ cards, year }: Props) {
             <TableRow key={`${card.member.id}-${card.vacationType}`}>
               <TableCell>
                 <Link
-                  href={`/report/member?userId=${encodeURIComponent(card.member.id)}&year=${String(year)}`}
+                  href={`/report/member?userId=${encodeURIComponent(card.member.id)}&year=${String(year)}${period === undefined ? "" : `&period=${String(period)}`}`}
                   aria-label={t.report.table.openDetail(card.member.name)}
                   className="flex items-center gap-2 font-medium hover:underline"
                 >

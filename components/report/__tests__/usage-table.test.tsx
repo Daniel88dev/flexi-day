@@ -19,7 +19,6 @@ const card = (over: Partial<MemberCard> = {}): MemberCard => ({
     groupId: "g1",
   },
   vacationType: VacationKind.Vacation,
-  series: [],
   quota: 23,
   carriedOver: 3,
   yearQuota: 20,

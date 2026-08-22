@@ -115,6 +115,8 @@ export const en = {
     subtitle: "Allowances and leave usage across your teams.",
     filters: {
       year: "Year",
+      period: "Period",
+      lastTwelveMonths: "Last 12 months",
       groups: "Groups",
       members: "Members",
       types: "Leave types",
@@ -137,6 +139,16 @@ export const en = {
     charts: {
       title: "Monthly usage",
       empty: "No leave recorded for these filters.",
+      remainingSubtitle: (year: number) => `What each member still has for ${year}.`,
+      remainingLabel: "Left",
+      windowIncomplete: (year: number) =>
+        `Could not load ${year}, so months from that year are shown as empty.`,
+      remainingEmpty: "No allowance set for these filters.",
+      carriedOver: "Left from last year",
+      yearQuota: (year: number) => `Left from ${year}`,
+      overdraft: "Over allowance",
+      usageSection: (type: string) => `${type} · Monthly usage`,
+      remainingSection: (type: string) => `${type} · Days left`,
       used: "Used",
       pending: "Pending",
       quotaLine: "Monthly average of the yearly allowance",

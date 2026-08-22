@@ -14,7 +14,7 @@ import {
 import { cn } from "@/lib/utils";
 import type { ReportScopeMember } from "@/lib/api/report-types";
 import type { TeamMonthRow } from "@/lib/report/series";
-import { formatDays } from "@/lib/report/series";
+import { formatDays, monthAxisLabel } from "@/lib/report/series";
 import { useTranslation } from "@/lib/i18n/use-translation";
 
 type Props = {
@@ -36,7 +36,7 @@ function TeamTooltip({
   payload?: { payload?: TeamMonthRow }[];
   members: ReportScopeMember[];
   colors: Record<string, string>;
-  monthLabels: string[];
+  monthLabels: readonly string[];
   totalLabel: string;
 }) {
   const row = payload?.[0]?.payload;
@@ -52,7 +52,7 @@ function TeamTooltip({
   return (
     <div className="bg-popover text-popover-foreground rounded-lg px-3 py-2 text-xs shadow-lg ring-1 ring-black/5">
       <p className="mb-1 flex items-baseline justify-between gap-4 font-medium">
-        {monthLabels[row.month - 1]}
+        {monthLabels[row.month - 1]} {row.year}
         <span>
           {totalLabel}: {formatDays(Number(total.toFixed(2)))}
         </span>
@@ -80,7 +80,6 @@ function TeamTooltip({
  */
 export function TeamUsageChart({ members, series, colors }: Props) {
   const { t } = useTranslation();
-  const monthLabels = t.calendar.monthsShort;
 
   const [showBars, setShowBars] = useState(true);
   const [showLines, setShowLines] = useState(true);
@@ -129,7 +128,9 @@ export function TeamUsageChart({ members, series, colors }: Props) {
             <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
             <XAxis
               dataKey="month"
-              tickFormatter={(month: number) => monthLabels[month - 1] ?? String(month)}
+              tickFormatter={(month: number) =>
+                monthAxisLabel(month, series, t.calendar.monthsShort)
+              }
               tick={{ fontSize: 11, fill: "var(--text-muted)" }}
               axisLine={false}
               tickLine={false}
@@ -146,7 +147,7 @@ export function TeamUsageChart({ members, series, colors }: Props) {
                 <TeamTooltip
                   members={visible}
                   colors={colors}
-                  monthLabels={monthLabels}
+                  monthLabels={t.calendar.months}
                   totalLabel={t.report.charts.total}
                 />
               }
@@ -161,6 +162,7 @@ export function TeamUsageChart({ members, series, colors }: Props) {
                     stroke="var(--card)"
                     strokeWidth={1}
                     radius={index === visible.length - 1 ? [3, 3, 0, 0] : [0, 0, 0, 0]}
+                    isAnimationActive={false}
                   />
                 ))
               : null}
@@ -176,6 +178,7 @@ export function TeamUsageChart({ members, series, colors }: Props) {
                     strokeLinecap="round"
                     dot={false}
                     activeDot={{ r: 4 }}
+                    isAnimationActive={false}
                   />
                 ))
               : null}
