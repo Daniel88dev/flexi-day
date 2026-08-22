@@ -39,7 +39,10 @@ const CODES = ["aaaaa-aaaaa", "bbbbb-bbbbb"];
 beforeEach(() => {
   vi.clearAllMocks();
   twoFactorEnabled = false;
-  enableMock.mockResolvedValue({ data: { totpURI: TOTP_URI, backupCodes: CODES }, error: null });
+  enableMock.mockResolvedValue({
+    data: { method: "totp", totpURI: TOTP_URI, backupCodes: CODES },
+    error: null,
+  });
   verifyTotpMock.mockResolvedValue({ data: {}, error: null });
   verifyOtpMock.mockResolvedValue({ data: {}, error: null });
   sendOtpMock.mockResolvedValue({ data: { status: true }, error: null });
@@ -72,7 +75,9 @@ describe("TwoFactorCard", () => {
 
   it("enrolls through the authenticator path: password → codes → QR → verify", async () => {
     const user = await startEnableFlow();
-    expect(enableMock).toHaveBeenCalledWith({ password: "hunter2hunter2" });
+    // Asking for "totp" is what makes the response carry a secret at all —
+    // the "otp" branch turns 2FA on and answers with neither URI nor codes.
+    expect(enableMock).toHaveBeenCalledWith({ password: "hunter2hunter2", method: "totp" });
 
     await user.click(screen.getByRole("button", { name: /Authenticator app/ }));
     // QR + manual secret from the enable response's URI.

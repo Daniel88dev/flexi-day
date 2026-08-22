@@ -239,10 +239,17 @@ function EnableDialog({ onClose }: { onClose: () => void }) {
   async function start(password: string) {
     setBusy(true);
     setError(null);
-    const result = await authClient.twoFactor.enable({ password });
+    // `method` is explicit because only the totp branch answers with a secret
+    // and backup codes; the otp branch turns 2FA on immediately and returns
+    // neither, which is what `chooseOtp` is for.
+    const result = await authClient.twoFactor.enable({ password, method: "totp" });
     setBusy(false);
     if (result.error) {
       setError(result.error.message ?? t.settings.twoFactor.actionFailed);
+      return;
+    }
+    if (result.data.method !== "totp") {
+      setError(t.settings.twoFactor.actionFailed);
       return;
     }
     setTotpURI(result.data.totpURI);
