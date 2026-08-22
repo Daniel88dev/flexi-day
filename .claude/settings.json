@@ -26,11 +26,6 @@
       "ScheduleWakeup"
     ]
   },
-  "deniedMcpServers": [
-    {
-      "serverName": "claude-in-chrome"
-    }
-  ],
   "skillListingMaxDescChars": 250,
   "disableClaudeAiConnectors": true,
   "disableWorkflows": true,
