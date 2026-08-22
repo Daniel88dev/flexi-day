@@ -27,7 +27,9 @@ vi.mock("next/navigation", () => ({
 }));
 
 function account(providerId: string) {
-  return { id: providerId, providerId, accountId: "a1", userId: "u1", scopes: [] };
+  // The row id is deliberately unlike the provider id: `unlinkAccount` takes
+  // the former, and an id equal to the latter would hide sending the wrong one.
+  return { id: `acc-${providerId}`, providerId, accountId: "a1", userId: "u1", scopes: [] };
 }
 
 /** The row is found by its provider name, then asserted on from the inside. */
@@ -85,7 +87,7 @@ describe("ConnectedAccountsCard", () => {
     renderWithClient(<ConnectedAccountsCard />);
     await userEvent.click(await screen.findByRole("button", { name: "Disconnect Google" }));
 
-    expect(unlinkAccount).toHaveBeenCalledWith({ providerId: "google" });
+    expect(unlinkAccount).toHaveBeenCalledWith({ accountId: "acc-google" });
   });
 
   it("refuses to remove the only sign-in method", async () => {
