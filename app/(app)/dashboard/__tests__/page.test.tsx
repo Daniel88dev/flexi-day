@@ -110,7 +110,6 @@ vi.mock("@/lib/api/queries", () => ({
   useApproveVacations: () => ({ mutate: vi.fn(), isPending: false }),
   useRejectVacation: () => ({ mutate: vi.fn(), isPending: false }),
   useRejectVacations: () => ({ mutate: vi.fn(), isPending: false }),
-  useCancelVacation: () => ({ mutate: vi.fn(), isPending: false }),
   useCancelVacations: () => ({ mutate: vi.fn(), isPending: false }),
   useCommentVacation: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useCreateVacation: () => ({ mutateAsync: vi.fn(), isPending: false }),

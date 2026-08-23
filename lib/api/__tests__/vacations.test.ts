@@ -4,7 +4,6 @@ const apiMock = vi.fn();
 vi.mock("../client", () => ({ api: (...args: unknown[]) => apiMock(...args) }));
 
 import {
-  cancelVacation,
   cancelVacations,
   createVacation,
   getVacation,
@@ -39,22 +38,6 @@ describe("vacations api", () => {
   it("getVacation GETs a single request", async () => {
     await getVacation("v-1");
     expect(apiMock).toHaveBeenCalledWith("/api/vacation/v-1");
-  });
-
-  it("cancelVacation sends no body when no reason is given", async () => {
-    await cancelVacation("v-1");
-    expect(apiMock).toHaveBeenCalledWith("/api/vacation/v-1", {
-      method: "DELETE",
-      body: undefined,
-    });
-  });
-
-  it("cancelVacation sends the reason when given", async () => {
-    await cancelVacation("v-1", "Trip called off");
-    expect(apiMock).toHaveBeenCalledWith("/api/vacation/v-1", {
-      method: "DELETE",
-      body: { reason: "Trip called off" },
-    });
   });
 
   it("cancelVacations posts the id list, omitting reason when absent", async () => {

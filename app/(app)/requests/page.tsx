@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -30,6 +30,7 @@ import { VACATION_KIND_COLORS, type VacationListItem, type VacationStatus } from
 import { groupVacationRequests } from "@/lib/vacations/group-requests";
 import { dayLengthLabel } from "@/lib/vacations/day-length";
 import { useOpenVacationDetail } from "@/lib/vacations/use-vacation-detail";
+import { vacationActionErrorMessage, type VacationAction } from "@/lib/vacations/action-error";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/lib/i18n/use-translation";
 
@@ -141,6 +142,19 @@ export default function RequestsPage() {
   const cancel = useCancelVacations();
   const isMutating = approve.isPending || reject.isPending || cancel.isPending;
 
+  const [actionError, setActionError] = useState<string | null>(null);
+  const actionCallbacks = (action: VacationAction) => ({
+    onSuccess: () => setActionError(null),
+    onError: (err: Error) => setActionError(vacationActionErrorMessage(err, action, t)),
+  });
+
+  // The button that failed can be far down a long month, so bring the message
+  // into view rather than leaving the click looking ignored.
+  const errorRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (actionError) errorRef.current?.scrollIntoView?.({ block: "nearest" });
+  }, [actionError]);
+
   const vacations = useMemo<VacationListItem[]>(
     () => vacationsQuery.data ?? [],
     [vacationsQuery.data]
@@ -175,7 +189,13 @@ export default function RequestsPage() {
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {viewableGroups.length > 0 ? (
-            <Select value={scopeGroupId ?? MINE_SCOPE} onValueChange={setScopeOverride}>
+            <Select
+              value={scopeGroupId ?? MINE_SCOPE}
+              onValueChange={(value) => {
+                setScopeOverride(value);
+                setActionError(null);
+              }}
+            >
               <SelectTrigger size="sm" className="w-[190px]" aria-label={t.requests.scopeLabel}>
                 <SelectValue />
               </SelectTrigger>
@@ -196,6 +216,7 @@ export default function RequestsPage() {
             onChange={(y, m) => {
               setYear(y);
               setMonth(m);
+              setActionError(null);
             }}
           />
         </div>
@@ -205,7 +226,10 @@ export default function RequestsPage() {
         {(["all", "mine", "pending", "approved", "rejected", "cancelled"] as Filter[]).map((f) => (
           <button
             key={f}
-            onClick={() => setFilter(f)}
+            onClick={() => {
+              setFilter(f);
+              setActionError(null);
+            }}
             className={cn(
               "-mb-px border-b-2 px-3 py-2 text-sm font-medium capitalize transition-colors",
               filter === f
@@ -220,6 +244,16 @@ export default function RequestsPage() {
           </button>
         ))}
       </div>
+
+      {actionError ? (
+        <div
+          ref={errorRef}
+          role="alert"
+          className="bg-destructive/10 text-destructive border-destructive/30 rounded-2xl border px-3 py-2 text-sm"
+        >
+          {actionError}
+        </div>
+      ) : null}
 
       {vacationsQuery.isLoading ? (
         <div className="text-muted-foreground py-16 text-center text-sm">{t.common.loading}</div>
@@ -321,7 +355,9 @@ export default function RequestsPage() {
                               variant="outline"
                               className="border-green-300 text-green-700 hover:bg-green-50 dark:border-green-800 dark:text-green-400 dark:hover:bg-green-950/30"
                               disabled={isMutating}
-                              onClick={() => approve.mutate(r.vacationIds)}
+                              onClick={() =>
+                                approve.mutate(r.vacationIds, actionCallbacks("approve"))
+                              }
                             >
                               {t.requests.approve}
                             </Button>
@@ -330,7 +366,9 @@ export default function RequestsPage() {
                               variant="outline"
                               className="border-red-300 text-red-700 hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-950/30"
                               disabled={isMutating}
-                              onClick={() => reject.mutate({ ids: r.vacationIds })}
+                              onClick={() =>
+                                reject.mutate({ ids: r.vacationIds }, actionCallbacks("reject"))
+                              }
                             >
                               {t.requests.reject}
                             </Button>
@@ -342,7 +380,9 @@ export default function RequestsPage() {
                             size="xs"
                             variant="ghost"
                             disabled={isMutating}
-                            onClick={() => cancel.mutate({ ids: r.vacationIds })}
+                            onClick={() =>
+                              cancel.mutate({ ids: r.vacationIds }, actionCallbacks("cancel"))
+                            }
                           >
                             {t.requests.cancel}
                           </Button>

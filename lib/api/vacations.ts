@@ -86,18 +86,8 @@ export function rejectVacations(
   });
 }
 
-export function cancelVacation(id: string, reason?: string): Promise<{ message: string }> {
-  return api<{ message: string }>(`/api/vacation/${id}`, {
-    method: "DELETE",
-    body: reason ? { reason } : undefined,
-  });
-}
-
-export function cancelVacations(
-  ids: string[],
-  reason?: string
-): Promise<{ message: string; cancelledCount: number }> {
-  return api<{ message: string; cancelledCount: number }>(`/api/vacation/cancel`, {
+export function cancelVacations(ids: string[], reason?: string): Promise<{ message: string }> {
+  return api<{ message: string }>(`/api/vacation/cancel`, {
     method: "POST",
     body: reason ? { ids, reason } : { ids },
   });

@@ -3,6 +3,7 @@ import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { VacationDetailDialog } from "../vacation-detail-dialog";
 import { renderWithClient } from "@/lib/test-utils";
+import { ApiError } from "@/lib/api/client";
 import { VacationKind, type VacationDetail } from "@/lib/api/types";
 
 const detail: VacationDetail = {
@@ -105,6 +106,30 @@ describe("VacationDetailDialog", () => {
     await user.click(screen.getByRole("button", { name: /Cancel request/i }));
 
     expect(cancelMutate).toHaveBeenCalledWith({ ids: ["v-1"], reason: "Plans changed" });
+  });
+
+  it("translates the conflict when someone else cancelled the request first", async () => {
+    cancelMutate.mockRejectedValueOnce(
+      new ApiError(409, "One or more of these requests has already been cancelled")
+    );
+    const user = userEvent.setup();
+    renderWithClient(<VacationDetailDialog vacationId="v-1" open onOpenChange={() => {}} />);
+
+    await user.click(screen.getByRole("button", { name: /Cancel request/i }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "This request was already cancelled, so nothing changed."
+    );
+  });
+
+  it("keeps the backend's message for a failure it has no translation for", async () => {
+    cancelMutate.mockRejectedValueOnce(new ApiError(403, "You cannot cancel this request"));
+    const user = userEvent.setup();
+    renderWithClient(<VacationDetailDialog vacationId="v-1" open onOpenChange={() => {}} />);
+
+    await user.click(screen.getByRole("button", { name: /Cancel request/i }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("You cannot cancel this request");
   });
 
   it("shows the full span for a multi-day request", () => {
