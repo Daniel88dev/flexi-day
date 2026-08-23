@@ -28,6 +28,7 @@ import {
   type VacationStatus,
 } from "@/lib/api/types";
 import { dayLengthLabel } from "@/lib/vacations/day-length";
+import { vacationActionErrorMessage, type VacationAction } from "@/lib/vacations/action-error";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/lib/i18n/use-translation";
 import type { Dictionary } from "@/lib/i18n";
@@ -110,13 +111,13 @@ export function VacationDetailDialog({
     onOpenChange(nextOpen);
   }
 
-  async function run(action: () => Promise<unknown>) {
+  async function run(action: VacationAction, mutate: () => Promise<unknown>) {
     setActionError(null);
     try {
-      await action();
+      await mutate();
       setReason("");
     } catch (err) {
-      setActionError(err instanceof Error ? err.message : t.vacationDetail.actionFailed);
+      setActionError(vacationActionErrorMessage(err, action, t));
     }
   }
 
@@ -197,7 +198,11 @@ export function VacationDetailDialog({
 
             <Timeline history={detail.history} t={t} />
 
-            {actionError ? <p className="text-destructive text-sm">{actionError}</p> : null}
+            {actionError ? (
+              <p role="alert" className="text-destructive text-sm">
+                {actionError}
+              </p>
+            ) : null}
 
             <div className="space-y-2 border-t pt-4">
               <Textarea
@@ -213,7 +218,9 @@ export function VacationDetailDialog({
                   variant="secondary"
                   disabled={isMutating || reason.trim().length === 0}
                   onClick={() =>
-                    run(() => comment.mutateAsync({ id: detail.id, message: reason.trim() }))
+                    run("comment", () =>
+                      comment.mutateAsync({ id: detail.id, message: reason.trim() })
+                    )
                   }
                 >
                   {comment.isPending ? t.vacationDetail.sending : t.vacationDetail.comment}
@@ -236,7 +243,9 @@ export function VacationDetailDialog({
                         variant="outline"
                         className="border-green-300 text-green-700 hover:bg-green-50 dark:border-green-800 dark:text-green-400 dark:hover:bg-green-950/30"
                         disabled={isMutating}
-                        onClick={() => run(() => approve.mutateAsync(detail.vacationIds))}
+                        onClick={() =>
+                          run("approve", () => approve.mutateAsync(detail.vacationIds))
+                        }
                       >
                         {t.vacationDetail.approve}
                       </Button>
@@ -246,7 +255,7 @@ export function VacationDetailDialog({
                         className="border-red-300 text-red-700 hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-950/30"
                         disabled={isMutating}
                         onClick={() =>
-                          run(() =>
+                          run("reject", () =>
                             reject.mutateAsync({
                               ids: detail.vacationIds,
                               reason: reason.trim() || undefined,
@@ -264,7 +273,7 @@ export function VacationDetailDialog({
                       variant="ghost"
                       disabled={isMutating}
                       onClick={() =>
-                        run(() =>
+                        run("cancel", () =>
                           cancel.mutateAsync({
                             ids: detail.vacationIds,
                             reason: reason.trim() || undefined,

@@ -280,6 +280,7 @@ export const en = {
     decline: "Decline",
     cancelRequest: "Cancel request",
     actionFailed: "Action failed",
+    alreadyCancelled: "This request was already cancelled, so nothing changed.",
     noHistory: "No history recorded for this request — it predates request history.",
     byActor: (name: string) => ` by ${name}`,
     createdBy: (name: string) => `Created by ${name} on the member's behalf`,

@@ -3,6 +3,7 @@ import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import RequestsPage from "../page";
 import { renderWithClient } from "@/lib/test-utils";
+import { ApiError } from "@/lib/api/client";
 import { VacationKind, type VacationListItem } from "@/lib/api/types";
 
 const approveMutate = vi.fn();
@@ -105,7 +106,10 @@ describe("RequestsPage grouping", () => {
 
     await user.click(screen.getByRole("button", { name: "Approve" }));
 
-    expect(approveMutate).toHaveBeenCalledWith(["v-1", "v-2", "v-3"]);
+    expect(approveMutate).toHaveBeenCalledWith(
+      ["v-1", "v-2", "v-3"],
+      expect.objectContaining({ onError: expect.any(Function) })
+    );
   });
 
   it("rejects the whole range in one call", async () => {
@@ -114,7 +118,10 @@ describe("RequestsPage grouping", () => {
 
     await user.click(screen.getByRole("button", { name: "Reject" }));
 
-    expect(rejectMutate).toHaveBeenCalledWith({ ids: ["v-1", "v-2", "v-3"] });
+    expect(rejectMutate).toHaveBeenCalledWith(
+      { ids: ["v-1", "v-2", "v-3"] },
+      expect.objectContaining({ onError: expect.any(Function) })
+    );
   });
 });
 
@@ -161,5 +168,90 @@ describe("RequestsPage cancelled visibility", () => {
     } finally {
       vacations.pop();
     }
+  });
+});
+
+describe("RequestsPage action errors", () => {
+  // Owned by the session user, so the row offers Cancel.
+  const own = { ...day("v-7", "2026-08-21", false), userId: "approver-1" };
+
+  beforeEach(() => {
+    approveMutate.mockReset();
+    cancelMutate.mockReset();
+  });
+
+  it("translates the conflict when someone else cancelled the request first", async () => {
+    cancelMutate.mockImplementation((_vars: unknown, options?: { onError?: (e: Error) => void }) =>
+      options?.onError?.(
+        new ApiError(409, "One or more of these requests has already been cancelled")
+      )
+    );
+    vacations.push(own);
+    try {
+      const user = userEvent.setup();
+      renderWithClient(<RequestsPage />);
+
+      await user.click(screen.getByRole("button", { name: "Cancel" }));
+
+      expect(await screen.findByRole("alert")).toHaveTextContent(
+        "This request was already cancelled, so nothing changed."
+      );
+    } finally {
+      vacations.pop();
+    }
+  });
+
+  it("drops the message when the user switches to a different list", async () => {
+    cancelMutate.mockImplementation((_vars: unknown, options?: { onError?: (e: Error) => void }) =>
+      options?.onError?.(
+        new ApiError(409, "One or more of these requests has already been cancelled")
+      )
+    );
+    vacations.push(own);
+    try {
+      const user = userEvent.setup();
+      renderWithClient(<RequestsPage />);
+
+      await user.click(screen.getByRole("button", { name: "Cancel" }));
+      expect(await screen.findByRole("alert")).toBeInTheDocument();
+
+      await user.click(screen.getByRole("button", { name: /Rejected/ }));
+
+      expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    } finally {
+      vacations.pop();
+    }
+  });
+
+  it("surfaces a failed approval instead of leaving the row silent", async () => {
+    approveMutate.mockImplementation((_vars: unknown, options?: { onError?: (e: Error) => void }) =>
+      options?.onError?.(new ApiError(409, "This request has already been decided"))
+    );
+    const user = userEvent.setup();
+    renderWithClient(<RequestsPage />);
+
+    await user.click(screen.getByRole("button", { name: "Approve" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "This request has already been decided"
+    );
+  });
+
+  it("clears the message once an action succeeds", async () => {
+    approveMutate
+      .mockImplementationOnce((_vars: unknown, options?: { onError?: (e: Error) => void }) =>
+        options?.onError?.(new ApiError(500, "Failed to approve vacation"))
+      )
+      .mockImplementationOnce((_vars: unknown, options?: { onSuccess?: () => void }) =>
+        options?.onSuccess?.()
+      );
+    const user = userEvent.setup();
+    renderWithClient(<RequestsPage />);
+
+    await user.click(screen.getByRole("button", { name: "Approve" }));
+    expect(await screen.findByRole("alert")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Approve" }));
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
 });

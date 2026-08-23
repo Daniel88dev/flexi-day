@@ -282,6 +282,7 @@ export const cs: Dictionary = {
     decline: "Zamítnout",
     cancelRequest: "Zrušit žádost",
     actionFailed: "Akce selhala",
+    alreadyCancelled: "Tato žádost už byla zrušena, nic se nezměnilo.",
     noHistory:
       "Pro tuto žádost není zaznamenána žádná historie — pochází z doby před historií žádostí.",
     byActor: (name: string) => ` – ${name}`,

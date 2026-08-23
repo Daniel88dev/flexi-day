@@ -1,10 +1,10 @@
 "use client";
 
 import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
+import { ApiError } from "./client";
 import {
   approveVacation,
   approveVacations,
-  cancelVacation,
   cancelVacations,
   commentVacation,
   createVacation,
@@ -334,21 +334,16 @@ export function useRejectVacations() {
   });
 }
 
-export function useCancelVacation() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (input: string | { id: string; reason?: string }) =>
-      typeof input === "string" ? cancelVacation(input) : cancelVacation(input.id, input.reason),
-    onSuccess: () => invalidateVacationDependants(qc),
-  });
-}
-
 export function useCancelVacations() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (input: { ids: string[]; reason?: string }) =>
       cancelVacations(input.ids, input.reason),
     onSuccess: () => invalidateVacationDependants(qc),
+    // The 409 means the rows really were cancelled, just not by this request.
+    onError: (error) => {
+      if (error instanceof ApiError && error.status === 409) invalidateVacationDependants(qc);
+    },
   });
 }
 
