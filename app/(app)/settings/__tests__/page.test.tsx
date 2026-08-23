@@ -49,7 +49,7 @@ vi.mock("@/lib/auth-client", () => ({
 }));
 
 function account(providerId: string) {
-  return { id: providerId, providerId, accountId: "a", userId: "u", scopes: [] };
+  return { id: `acc-${providerId}`, providerId, accountId: "a", userId: "u", scopes: [] };
 }
 
 type Account = ReturnType<typeof account>;

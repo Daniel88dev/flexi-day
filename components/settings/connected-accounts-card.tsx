@@ -87,7 +87,11 @@ export function ConnectedAccountsCard() {
 
   const unlink = useMutation({
     mutationFn: async (provider: Provider) => {
-      const { error } = await authClient.unlinkAccount({ providerId: provider });
+      // better-auth identifies the row to drop by its own account id, not by
+      // provider, so the id comes from the list this card already renders from.
+      const account = accountsQuery.data?.find((a) => a.providerId === provider);
+      if (!account) throw new UnlinkError(undefined, "no linked account for " + provider);
+      const { error } = await authClient.unlinkAccount({ accountId: account.id });
       if (error) throw new UnlinkError(error.code, error.message);
     },
     // A previous failure's message must not outlive the attempt that replaces
@@ -101,6 +105,11 @@ export function ConnectedAccountsCard() {
     },
     onError: (err) => {
       setActionError(unlinkErrorMessage(err, t));
+      // 1.7 names the row by id, so the id this card holds can be stale — the
+      // account may already be gone, unlinked in another tab. Refetching turns
+      // a row that keeps offering a button that cannot work back into the
+      // truth, instead of leaving it stuck on "Connected".
+      void qc.invalidateQueries({ queryKey: linkedAccountsKey });
     },
   });
 

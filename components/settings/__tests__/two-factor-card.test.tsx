@@ -39,7 +39,10 @@ const CODES = ["aaaaa-aaaaa", "bbbbb-bbbbb"];
 beforeEach(() => {
   vi.clearAllMocks();
   twoFactorEnabled = false;
-  enableMock.mockResolvedValue({ data: { totpURI: TOTP_URI, backupCodes: CODES }, error: null });
+  enableMock.mockResolvedValue({
+    data: { method: "totp", totpURI: TOTP_URI, backupCodes: CODES },
+    error: null,
+  });
   verifyTotpMock.mockResolvedValue({ data: {}, error: null });
   verifyOtpMock.mockResolvedValue({ data: {}, error: null });
   sendOtpMock.mockResolvedValue({ data: { status: true }, error: null });
@@ -72,7 +75,9 @@ describe("TwoFactorCard", () => {
 
   it("enrolls through the authenticator path: password → codes → QR → verify", async () => {
     const user = await startEnableFlow();
-    expect(enableMock).toHaveBeenCalledWith({ password: "hunter2hunter2" });
+    // Asking for "totp" is what makes the response carry a secret at all —
+    // the "otp" branch turns 2FA on and answers with neither URI nor codes.
+    expect(enableMock).toHaveBeenCalledWith({ password: "hunter2hunter2", method: "totp" });
 
     await user.click(screen.getByRole("button", { name: /Authenticator app/ }));
     // QR + manual secret from the enable response's URI.
@@ -95,6 +100,24 @@ describe("TwoFactorCard", () => {
     expect(verifyOtpMock).toHaveBeenCalledWith({ code: "654321" });
     expect(verifyTotpMock).not.toHaveBeenCalled();
     expect(pushToastMock).toHaveBeenCalledWith("Two-factor authentication is on.");
+  });
+
+  it("does not pretend to have a secret when the server answers with the otp method", async () => {
+    // The dialog asks for "totp"; only that branch carries a URI and codes. If
+    // a server ever answers "otp" the old code read `undefined` off it and put
+    // an empty QR on screen, so this must stop at the password step instead.
+    enableMock.mockResolvedValue({ data: { method: "otp" }, error: null });
+    const user = userEvent.setup();
+    render(<TwoFactorCard />);
+    await user.click(screen.getByRole("button", { name: "Enable two-factor" }));
+    await user.type(screen.getByLabelText("Password"), "hunter2hunter2");
+    await user.click(screen.getByRole("button", { name: "Continue" }));
+
+    expect(await screen.findByText("Something went wrong. Try again.")).toBeInTheDocument();
+    // Asserting the absence of a backup code would be vacuous — this mock has
+    // none to render. What matters is that the dialog stayed on the password
+    // step instead of advancing to an empty backup-codes panel.
+    expect(screen.getByLabelText("Password")).toBeInTheDocument();
   });
 
   it("surfaces a wrong password without leaving the password step", async () => {
