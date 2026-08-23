@@ -90,6 +90,25 @@ describe("ConnectedAccountsCard", () => {
     expect(unlinkAccount).toHaveBeenCalledWith({ accountId: "acc-google" });
   });
 
+  it("refetches the list when an unlink fails, rather than keeping a dead button", async () => {
+    // The row is already gone server-side — unlinked in another tab — so the
+    // id this card holds is stale. Under 1.7 the unlink names a row id, so it
+    // misses; without the refetch the card would go on offering a Disconnect
+    // that can only ever fail.
+    listAccounts
+      .mockResolvedValueOnce({ data: [account("credential"), account("google")], error: null })
+      .mockResolvedValue({ data: [account("credential")], error: null });
+    unlinkAccount.mockResolvedValue({ error: { code: "ACCOUNT_NOT_FOUND", message: "gone" } });
+    renderWithClient(<ConnectedAccountsCard />);
+    await userEvent.click(await screen.findByRole("button", { name: "Disconnect Google" }));
+
+    // The refetch has to land the truth, not just fire: the row flips to "Not
+    // connected", and the error explaining the failed attempt survives it.
+    expect(await within(row("Google")).findByText("Not connected")).toBeInTheDocument();
+    expect(screen.getByRole("alert")).toBeInTheDocument();
+    expect(listAccounts).toHaveBeenCalledTimes(2);
+  });
+
   it("refuses to remove the only sign-in method", async () => {
     listAccounts.mockResolvedValue({ data: [account("google")], error: null });
     renderWithClient(<ConnectedAccountsCard />);

@@ -102,6 +102,24 @@ describe("TwoFactorCard", () => {
     expect(pushToastMock).toHaveBeenCalledWith("Two-factor authentication is on.");
   });
 
+  it("does not pretend to have a secret when the server answers with the otp method", async () => {
+    // The dialog asks for "totp"; only that branch carries a URI and codes. If
+    // a server ever answers "otp" the old code read `undefined` off it and put
+    // an empty QR on screen, so this must stop at the password step instead.
+    enableMock.mockResolvedValue({ data: { method: "otp" }, error: null });
+    const user = userEvent.setup();
+    render(<TwoFactorCard />);
+    await user.click(screen.getByRole("button", { name: "Enable two-factor" }));
+    await user.type(screen.getByLabelText("Password"), "hunter2hunter2");
+    await user.click(screen.getByRole("button", { name: "Continue" }));
+
+    expect(await screen.findByText("Something went wrong. Try again.")).toBeInTheDocument();
+    // Asserting the absence of a backup code would be vacuous — this mock has
+    // none to render. What matters is that the dialog stayed on the password
+    // step instead of advancing to an empty backup-codes panel.
+    expect(screen.getByLabelText("Password")).toBeInTheDocument();
+  });
+
   it("surfaces a wrong password without leaving the password step", async () => {
     enableMock.mockResolvedValue({
       data: null,

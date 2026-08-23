@@ -105,6 +105,11 @@ export function ConnectedAccountsCard() {
     },
     onError: (err) => {
       setActionError(unlinkErrorMessage(err, t));
+      // 1.7 names the row by id, so the id this card holds can be stale — the
+      // account may already be gone, unlinked in another tab. Refetching turns
+      // a row that keeps offering a button that cannot work back into the
+      // truth, instead of leaving it stuck on "Connected".
+      void qc.invalidateQueries({ queryKey: linkedAccountsKey });
     },
   });
 
