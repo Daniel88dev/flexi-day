@@ -1,5 +1,5 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
-import { screen } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { fireEvent, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import BillingPage from "../page";
 import { renderWithClient } from "@/lib/test-utils";
@@ -11,6 +11,8 @@ const portalMutate = vi.fn();
 const slotsMutate = vi.fn();
 
 let overview: BillingOverview;
+
+const PORTAL_URL = "https://customer-portal.paddle.com/cpl_abc123";
 
 const baseOverview = (): BillingOverview => ({
   organization: null,
@@ -46,6 +48,12 @@ vi.mock("@/lib/paddle", () => ({
   isPaddleConfigured: () => paddleConfigured,
 }));
 
+const pushToastMock = vi.fn();
+vi.mock("@/components/toast", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/components/toast")>()),
+  pushToast: (...args: unknown[]) => pushToastMock(...args),
+}));
+
 describe("BillingPage", () => {
   beforeEach(() => {
     overview = baseOverview();
@@ -53,6 +61,8 @@ describe("BillingPage", () => {
     checkoutMutate.mockReset().mockResolvedValue({ transactionId: "txn-1" });
     openCheckoutMock.mockReset().mockResolvedValue(true);
     changePlanMutate.mockReset();
+    portalMutate.mockReset().mockResolvedValue({ url: PORTAL_URL });
+    pushToastMock.mockReset();
   });
 
   it("disables Subscribe when no Paddle client token is configured", () => {
@@ -226,5 +236,117 @@ describe("BillingPage", () => {
     expect(screen.getByText(/Free trial ends on 16 October 2026/)).toBeInTheDocument();
     expect(screen.queryByText(/Renews on/)).not.toBeInTheDocument();
     expect(screen.getByText(/not part of the free trial/i)).toBeInTheDocument();
+  });
+  describe("the billing portal", () => {
+    const HERE = "http://localhost:3000/billing";
+
+    /**
+     * Stands in for the tab `handlePortal` opens before it has a URL to send
+     * there. Returns null for `noopener` for the reason `handlePortal`
+     * documents, and for `blocked` the way a popup blocker does.
+     */
+    function stubTab({ blocked = false } = {}) {
+      const tab = { location: { href: "" }, close: vi.fn(), opener: window as unknown };
+      const open = vi
+        .spyOn(window, "open")
+        .mockImplementation((_url, _target, features) =>
+          blocked || (typeof features === "string" && features.includes("noopener"))
+            ? null
+            : (tab as unknown as Window)
+        );
+      return { tab, open };
+    }
+
+    let here: { href: string };
+    let restoreLocation: () => void;
+
+    beforeEach(() => {
+      overview.organization = {
+        id: "org-1",
+        name: "Acme",
+        billingEmail: "a@b.co",
+        hasPaddleCustomer: true,
+      };
+      // A plain stand-in, so an accidental same-tab navigation is observable
+      // rather than swallowed by jsdom's unimplemented navigation.
+      const original = Object.getOwnPropertyDescriptor(window, "location")!;
+      here = { href: HERE };
+      Object.defineProperty(window, "location", { configurable: true, value: here });
+      restoreLocation = () => Object.defineProperty(window, "location", original);
+    });
+
+    afterEach(() => {
+      restoreLocation();
+      vi.restoreAllMocks();
+    });
+
+    async function clickManage() {
+      const user = userEvent.setup();
+      renderWithClient(<BillingPage />);
+      await user.click(screen.getByRole("button", { name: /Manage payment method/ }));
+    }
+
+    it("sends the portal URL to the tab it opened, leaving this one where it is", async () => {
+      const { tab, open } = stubTab();
+
+      await clickManage();
+
+      expect(open).toHaveBeenCalledWith("", "_blank");
+      expect(tab.location.href).toBe(PORTAL_URL);
+      expect(tab.opener).toBeNull();
+      expect(here.href).toBe(HERE);
+    });
+
+    it("opens the tab synchronously, so Safari keeps the user gesture", async () => {
+      const { tab, open } = stubTab();
+      let resolvePortal: (value: { url: string }) => void = () => {};
+      portalMutate.mockReturnValue(
+        new Promise<{ url: string }>((resolve) => {
+          resolvePortal = resolve;
+        })
+      );
+      renderWithClient(<BillingPage />);
+
+      // fireEvent rather than userEvent: it returns before the microtask queue
+      // runs, so an await slipped in ahead of window.open leaves this red.
+      fireEvent.click(screen.getByRole("button", { name: /Manage payment method/ }));
+      expect(open).toHaveBeenCalledTimes(1);
+
+      resolvePortal({ url: PORTAL_URL });
+      await waitFor(() => expect(tab.location.href).toBe(PORTAL_URL));
+    });
+
+    it("falls back to this tab only when the browser blocks the popup", async () => {
+      stubTab({ blocked: true });
+
+      await clickManage();
+
+      expect(here.href).toBe(PORTAL_URL);
+    });
+
+    it("closes the tab it opened and warns when the portal request fails", async () => {
+      const { tab } = stubTab();
+      portalMutate.mockRejectedValue(new Error("No billing account yet — subscribe first"));
+
+      await clickManage();
+
+      expect(tab.close).toHaveBeenCalled();
+      expect(tab.location.href).toBe("");
+      expect(here.href).toBe(HERE);
+      expect(pushToastMock).toHaveBeenCalledWith(
+        "No billing account yet — subscribe first",
+        "danger"
+      );
+    });
+
+    it("warns in our own words when the failure carries no message", async () => {
+      const { tab } = stubTab();
+      portalMutate.mockRejectedValue("not an Error");
+
+      await clickManage();
+
+      expect(tab.close).toHaveBeenCalled();
+      expect(pushToastMock).toHaveBeenCalledWith("Could not open the billing portal", "danger");
+    });
   });
 });
