@@ -233,8 +233,12 @@ export function BillingScreen() {
 
   async function handlePortal() {
     // Opened synchronously: awaiting first breaks the user-gesture chain and
-    // Safari blocks the popup outright.
-    const tab = window.open("", "_blank", "noopener");
+    // Safari blocks the popup outright. `noopener` must not go in the feature
+    // string — it makes window.open return null, which strands the blank tab
+    // and sends this one to Paddle instead. Sever the handle by hand while the
+    // new tab is still same-origin.
+    const tab = window.open("", "_blank");
+    if (tab) tab.opener = null;
     try {
       const { url } = await portal.mutateAsync();
       if (tab) tab.location.href = url;
