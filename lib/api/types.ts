@@ -15,12 +15,29 @@ export enum CalendarRecordType {
   Other = "OTHER",
 }
 
-/** The types a member can pick in the request and edit forms. */
-export const REQUESTABLE_CALENDAR_RECORD_TYPES: readonly CalendarRecordType[] = [
+/** The everyday types, one click away in the request and edit forms. */
+export const PRIMARY_CALENDAR_RECORD_TYPES: readonly CalendarRecordType[] = [
   CalendarRecordType.Vacation,
   CalendarRecordType.HomeOffice,
   CalendarRecordType.Sick,
+];
+
+/**
+ * The rarer requestable types, behind the forms' "Others" option. SickDay is
+ * deliberately absent until the sick-day benefit ships (issue #88), so the
+ * type never appears and then vanishes.
+ */
+export const OTHER_CALENDAR_RECORD_TYPES: readonly CalendarRecordType[] = [
   CalendarRecordType.PaidTimeOff,
+  CalendarRecordType.NonPaidLeave,
+  CalendarRecordType.StudyLeave,
+  CalendarRecordType.Other,
+];
+
+/** Every type a member can pick in the request and edit forms. */
+export const REQUESTABLE_CALENDAR_RECORD_TYPES: readonly CalendarRecordType[] = [
+  ...PRIMARY_CALENDAR_RECORD_TYPES,
+  ...OTHER_CALENDAR_RECORD_TYPES,
 ];
 
 export const CALENDAR_RECORD_TYPE_COLORS: Record<CalendarRecordType, string> = {

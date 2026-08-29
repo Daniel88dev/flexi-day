@@ -1,5 +1,6 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import { screen, fireEvent, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { NewRequestDialog } from "../new-request-dialog";
 import { renderWithClient } from "@/lib/test-utils";
 
@@ -53,6 +54,75 @@ describe("NewRequestDialog", () => {
     // The dialog title is "New Request" (not a button); the "+ New Request"
     // trigger button must be absent in controlled mode.
     expect(screen.queryByRole("button", { name: "+ New Request" })).toBeNull();
+  });
+
+  it("offers the three everyday types plus Others at the top level", () => {
+    renderWithClient(<NewRequestDialog open initialDate="2026-07-15" onOpenChange={() => {}} />);
+
+    for (const name of ["Vacation", "Home Office", "Sick", "Others"]) {
+      expect(screen.getByRole("tab", { name })).toBeInTheDocument();
+    }
+    expect(screen.queryByRole("tab", { name: "Paid Time Off" })).toBeNull();
+  });
+
+  it("reveals the rarer types with their dashboard colors behind Others", async () => {
+    const user = userEvent.setup();
+    renderWithClient(<NewRequestDialog open initialDate="2026-07-15" onOpenChange={() => {}} />);
+
+    await user.click(screen.getByRole("tab", { name: "Others" }));
+    await user.click(screen.getByRole("combobox", { name: "Others" }));
+
+    // The full Others set, in order — and neither Sick day (not offered until
+    // the benefit ships) nor Bank Holiday (never requestable).
+    expect(screen.getAllByRole("option").map((o) => o.textContent)).toEqual([
+      "Paid Time Off",
+      "Non-Paid Leave",
+      "Study Leave",
+      "Other",
+    ]);
+
+    const dot = screen
+      .getByRole("option", { name: "Paid Time Off" })
+      .querySelector("[aria-hidden]");
+    expect(dot?.getAttribute("style")).toContain("--c-pto");
+  });
+
+  it("submits the type picked in the Others select", async () => {
+    const user = userEvent.setup();
+    renderWithClient(<NewRequestDialog open initialDate="2026-07-15" onOpenChange={() => {}} />);
+
+    await user.click(screen.getByRole("tab", { name: "Others" }));
+    // Others open with nothing picked yet — there is no type to submit.
+    expect(screen.getByRole("button", { name: "Submit Request" })).toBeDisabled();
+
+    await user.click(screen.getByRole("combobox", { name: "Others" }));
+    await user.click(screen.getByRole("option", { name: "Study Leave" }));
+    await user.click(screen.getByRole("button", { name: "Submit Request" }));
+
+    await waitFor(() => expect(createMutate).toHaveBeenCalled());
+    expect(createMutate.mock.calls[0][0]).toMatchObject({ vacationType: "STUDY_LEAVE" });
+  });
+
+  it("blocks an Other request until a note is written", async () => {
+    const user = userEvent.setup();
+    renderWithClient(<NewRequestDialog open initialDate="2026-07-15" onOpenChange={() => {}} />);
+
+    await user.click(screen.getByRole("tab", { name: "Others" }));
+    await user.click(screen.getByRole("combobox", { name: "Others" }));
+    await user.click(screen.getByRole("option", { name: "Other" }));
+
+    expect(screen.getByRole("button", { name: "Submit Request" })).toBeDisabled();
+
+    fireEvent.change(screen.getByLabelText("Note (required for Other)"), {
+      target: { value: "Jury duty" },
+    });
+    await user.click(screen.getByRole("button", { name: "Submit Request" }));
+
+    await waitFor(() => expect(createMutate).toHaveBeenCalled());
+    expect(createMutate.mock.calls[0][0]).toMatchObject({
+      vacationType: "OTHER",
+      note: "Jury duty",
+    });
   });
 
   it("submits halfDay when the toggle is on", async () => {

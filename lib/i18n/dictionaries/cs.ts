@@ -246,6 +246,10 @@ export const cs: Dictionary = {
     selectGroup: "Vyberte skupinu…",
     noGroups: "Žádné skupiny",
     type: "Typ",
+    // Not "Ostatní": that is already the Other *type's* label, and it sits
+    // inside this group.
+    others: "Jiné",
+    selectOtherType: "Vyberte typ…",
     from: "Od",
     to: "Do",
     startTime: "Čas začátku (nepovinné)",
@@ -253,6 +257,7 @@ export const cs: Dictionary = {
     halfDay: "Půlden",
     halfDayHint: "Počítá se jako 0,5 dne z vašeho nároku.",
     note: "Poznámka (nepovinné)",
+    noteRequiredForOther: "Poznámka (u typu Ostatní povinná)",
     notePlaceholder: "Rodinný výlet, konference, …",
     submit: "Odeslat žádost",
     submitting: "Odesílání…",

@@ -20,12 +20,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import { CalendarRecordTypePicker } from "@/components/calendar-record-type-picker";
 import { useCreateVacation, useGroup, useGroups, useGroupUsers } from "@/lib/api/queries";
 import { ApiError } from "@/lib/api/client";
 import { planLimitFromError } from "@/lib/billing/plan-limit-error";
-import { CalendarRecordType, REQUESTABLE_CALENDAR_RECORD_TYPES } from "@/lib/api/types";
+import { CalendarRecordType } from "@/lib/api/types";
 import { useTranslation } from "@/lib/i18n/use-translation";
 import { useSession } from "@/lib/auth-client";
 
@@ -80,7 +80,10 @@ export function NewRequestDialog({ open, onOpenChange, initialDate }: NewRequest
   const [groupId, setGroupId] = useState("");
   const [from, setFrom] = useState(baseDate);
   const [to, setTo] = useState(baseDate);
-  const [vacationType, setVacationType] = useState<CalendarRecordType>(CalendarRecordType.Vacation);
+  // Null while the Others group is open with no type picked yet.
+  const [vacationType, setVacationType] = useState<CalendarRecordType | null>(
+    CalendarRecordType.Vacation
+  );
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
   const [halfDay, setHalfDay] = useState(false);
@@ -133,7 +136,7 @@ export function NewRequestDialog({ open, onOpenChange, initialDate }: NewRequest
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-    if (!selectedGroupId || !from || !to) return;
+    if (!selectedGroupId || !from || !to || vacationType === null) return;
     if (to < from) {
       setError(t.newRequest.endBeforeStart);
       return;
@@ -183,7 +186,15 @@ export function NewRequestDialog({ open, onOpenChange, initialDate }: NewRequest
     }
   }
 
-  const isValid = !!selectedGroupId && !!from && !!to && to >= from && !createVacation.isPending;
+  const noteRequired = vacationType === CalendarRecordType.Other;
+  const isValid =
+    !!selectedGroupId &&
+    !!from &&
+    !!to &&
+    to >= from &&
+    vacationType !== null &&
+    (!noteRequired || note.trim().length > 0) &&
+    !createVacation.isPending;
 
   return (
     <Dialog
@@ -289,41 +300,14 @@ export function NewRequestDialog({ open, onOpenChange, initialDate }: NewRequest
           ) : null}
 
           <div className="space-y-1.5">
-            <Label id="type-label" htmlFor="type">
+            <Label id="type-label" htmlFor="type-top">
               {t.newRequest.type}
             </Label>
-            {/* Four kind labels don't fit one row on phones — a select reads
-                better there than a wrapped tab grid. */}
-            <div className="sm:hidden">
-              <Select
-                value={vacationType}
-                onValueChange={(v) => setVacationType(v as CalendarRecordType)}
-              >
-                <SelectTrigger id="type" className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {REQUESTABLE_CALENDAR_RECORD_TYPES.map((k) => (
-                    <SelectItem key={k} value={k}>
-                      {t.calendarRecordTypes[k].label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <Tabs
+            <CalendarRecordTypePicker
               value={vacationType}
-              onValueChange={(v) => setVacationType(v as CalendarRecordType)}
-              className="max-sm:hidden"
-            >
-              <TabsList aria-labelledby="type-label" className="w-full">
-                {REQUESTABLE_CALENDAR_RECORD_TYPES.map((k) => (
-                  <TabsTrigger key={k} value={k}>
-                    {t.calendarRecordTypes[k].label}
-                  </TabsTrigger>
-                ))}
-              </TabsList>
-            </Tabs>
+              onChange={setVacationType}
+              idPrefix="type"
+            />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
@@ -393,10 +377,13 @@ export function NewRequestDialog({ open, onOpenChange, initialDate }: NewRequest
           ) : null}
 
           <div className="space-y-1.5">
-            <Label htmlFor="note">{t.newRequest.note}</Label>
+            <Label htmlFor="note">
+              {noteRequired ? t.newRequest.noteRequiredForOther : t.newRequest.note}
+            </Label>
             <Textarea
               id="note"
               rows={2}
+              required={noteRequired}
               value={note}
               onChange={(e) => setNote(e.target.value)}
               placeholder={t.newRequest.notePlaceholder}
