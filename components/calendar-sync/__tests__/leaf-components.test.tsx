@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/react";
-import { VacationKind } from "@/lib/api/types";
+import { CalendarRecordType } from "@/lib/api/types";
 import { TypeBadge } from "../type-badge";
 import { EmptyState } from "../empty-state";
 import { ConfirmDialog } from "../confirm-dialog";
@@ -9,7 +9,7 @@ import { SwatchPicker } from "../swatch-picker";
 
 describe("TypeBadge", () => {
   it("renders the type label", () => {
-    render(<TypeBadge type={VacationKind.Vacation} />);
+    render(<TypeBadge type={CalendarRecordType.Vacation} />);
     expect(screen.getByText("Vacation")).toBeInTheDocument();
   });
 });

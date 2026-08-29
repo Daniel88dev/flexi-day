@@ -1,5 +1,5 @@
 import type { ReportScopeMember } from "@/lib/api/report-types";
-import { VacationKind } from "@/lib/api/types";
+import { CalendarRecordType } from "@/lib/api/types";
 
 /**
  * CVD-validated categorical palette (fixed order, never re-sorted). Used when a
@@ -107,14 +107,14 @@ export function assignMemberColors(members: ReportScopeMember[]): Record<string,
  * Chart fill per leave type, reusing the palette the calendar and dashboard
  * already tint with so a vacation bar is the same purple everywhere.
  */
-export const LEAVE_TYPE_CHART_COLORS: Record<VacationKind, string> = {
-  [VacationKind.Vacation]: "var(--c-vacation)",
-  [VacationKind.HomeOffice]: "var(--c-home)",
-  [VacationKind.Sick]: "var(--c-sick)",
-  [VacationKind.SickLeave]: "var(--c-sick)",
-  [VacationKind.BankHoliday]: "var(--c-bank)",
-  [VacationKind.NonPaidLeave]: "var(--c-bank)",
-  [VacationKind.PaidTimeOff]: "var(--c-pto)",
-  [VacationKind.StudyLeave]: "var(--c-pto)",
-  [VacationKind.Other]: "var(--muted-foreground)",
+export const CALENDAR_RECORD_TYPE_CHART_COLORS: Record<CalendarRecordType, string> = {
+  [CalendarRecordType.Vacation]: "var(--c-vacation)",
+  [CalendarRecordType.HomeOffice]: "var(--c-home)",
+  [CalendarRecordType.Sick]: "var(--c-sick)",
+  [CalendarRecordType.SickDay]: "var(--c-sick)",
+  [CalendarRecordType.BankHoliday]: "var(--c-bank)",
+  [CalendarRecordType.NonPaidLeave]: "var(--c-bank)",
+  [CalendarRecordType.PaidTimeOff]: "var(--c-pto)",
+  [CalendarRecordType.StudyLeave]: "var(--c-pto)",
+  [CalendarRecordType.Other]: "var(--muted-foreground)",
 };

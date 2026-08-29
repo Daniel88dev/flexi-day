@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { VacationKind } from "@/lib/api/types";
+import { CalendarRecordType } from "@/lib/api/types";
 import type { CalendarSyncConfig } from "@/lib/api/calendar-sync";
 import type { SwatchKey } from "../meta";
 import {
@@ -25,12 +25,12 @@ describe("swatch", () => {
 });
 
 describe("TYPE_META / TYPE_ORDER", () => {
-  it("covers every vacation kind", () => {
-    for (const kind of Object.values(VacationKind)) {
+  it("covers every calendar record type", () => {
+    for (const kind of Object.values(CalendarRecordType)) {
       expect(TYPE_META[kind]).toBeDefined();
       expect(TYPE_ORDER).toContain(kind);
     }
-    expect(TYPE_ORDER).toHaveLength(Object.values(VacationKind).length);
+    expect(TYPE_ORDER).toHaveLength(Object.values(CalendarRecordType).length);
   });
 });
 
@@ -60,25 +60,28 @@ describe("colorFor", () => {
   it("uses the mine color for the owner when distinguishing in TEAM scope", () => {
     const colors: Record<string, SwatchKey> = {
       ...base.colors,
-      [`${VacationKind.Vacation}_mine`]: "rose",
+      [`${CalendarRecordType.Vacation}_mine`]: "rose",
     };
-    expect(colorFor({ ...base, colors }, VacationKind.Vacation, true)).toBe(swatch("rose"));
+    expect(colorFor({ ...base, colors }, CalendarRecordType.Vacation, true)).toBe(swatch("rose"));
   });
   it("uses the base color for others", () => {
-    const colors: Record<string, SwatchKey> = { ...base.colors, [VacationKind.Vacation]: "blue" };
+    const colors: Record<string, SwatchKey> = {
+      ...base.colors,
+      [CalendarRecordType.Vacation]: "blue",
+    };
     const cfg = { ...base, colors };
-    expect(colorFor(cfg, VacationKind.Vacation, false)).toBe(swatch("blue"));
+    expect(colorFor(cfg, CalendarRecordType.Vacation, false)).toBe(swatch("blue"));
   });
   it("ignores the mine color when not distinguishing", () => {
     const cfg = { distinguishMine: false, scope: "TEAM" as const, colors: base.colors };
-    expect(colorFor(cfg, VacationKind.Vacation, true)).toBe(
-      swatch(base.colors[VacationKind.Vacation])
+    expect(colorFor(cfg, CalendarRecordType.Vacation, true)).toBe(
+      swatch(base.colors[CalendarRecordType.Vacation])
     );
   });
   it("ignores the mine color in ME scope", () => {
     const cfg = { distinguishMine: true, scope: "ME" as const, colors: base.colors };
-    expect(colorFor(cfg, VacationKind.Vacation, true)).toBe(
-      swatch(base.colors[VacationKind.Vacation])
+    expect(colorFor(cfg, CalendarRecordType.Vacation, true)).toBe(
+      swatch(base.colors[CalendarRecordType.Vacation])
     );
   });
 });
@@ -87,24 +90,28 @@ describe("builderToInput", () => {
   it("trims the name and maps included types to color entries", () => {
     const cfg = newBuilderConfig();
     cfg.name = "  My feed  ";
-    cfg.types = [VacationKind.Vacation, VacationKind.Sick];
-    cfg.colors = { ...cfg.colors, [VacationKind.Vacation]: "rose", [VacationKind.Sick]: "teal" };
+    cfg.types = [CalendarRecordType.Vacation, CalendarRecordType.Sick];
+    cfg.colors = {
+      ...cfg.colors,
+      [CalendarRecordType.Vacation]: "rose",
+      [CalendarRecordType.Sick]: "teal",
+    };
     const input = builderToInput(cfg);
     expect(input.name).toBe("My feed");
     expect(input.types).toEqual([
-      { type: VacationKind.Vacation, color: "rose" },
-      { type: VacationKind.Sick, color: "teal" },
+      { type: CalendarRecordType.Vacation, color: "rose" },
+      { type: CalendarRecordType.Sick, color: "teal" },
     ]);
   });
 
   it("includes mineColor only when distinguishMine is on", () => {
     const cfg = newBuilderConfig();
-    cfg.types = [VacationKind.Vacation];
+    cfg.types = [CalendarRecordType.Vacation];
     cfg.distinguishMine = true;
-    cfg.colors = { ...cfg.colors, [`${VacationKind.Vacation}_mine`]: "plum" };
+    cfg.colors = { ...cfg.colors, [`${CalendarRecordType.Vacation}_mine`]: "plum" };
     expect(builderToInput(cfg).types[0]).toEqual({
-      type: VacationKind.Vacation,
-      color: cfg.colors[VacationKind.Vacation],
+      type: CalendarRecordType.Vacation,
+      color: cfg.colors[CalendarRecordType.Vacation],
       mineColor: "plum",
     });
   });
@@ -119,8 +126,18 @@ describe("configToBuilder", () => {
       distinguishMine: true,
       teamIds: ["t1", "t2"],
       types: [
-        { type: VacationKind.Vacation, label: "Vacation", color: "rose", mineColor: "violet" },
-        { type: VacationKind.PaidTimeOff, label: "Paid time off", color: "blue", mineColor: null },
+        {
+          type: CalendarRecordType.Vacation,
+          label: "Vacation",
+          color: "rose",
+          mineColor: "violet",
+        },
+        {
+          type: CalendarRecordType.PaidTimeOff,
+          label: "Paid time off",
+          color: "blue",
+          mineColor: null,
+        },
       ],
       feedUrl: "https://api.flexiday.app/calendars/abc.ics",
       tokenMasked: false,
@@ -132,9 +149,9 @@ describe("configToBuilder", () => {
     expect(b.id).toBe("cfg-1");
     expect(b.scope).toBe("TEAM");
     expect(b.teamIds).toEqual(["t1", "t2"]);
-    expect(b.types).toEqual([VacationKind.Vacation, VacationKind.PaidTimeOff]);
-    expect(b.colors[VacationKind.Vacation]).toBe("rose");
-    expect(b.colors[`${VacationKind.Vacation}_mine`]).toBe("violet");
+    expect(b.types).toEqual([CalendarRecordType.Vacation, CalendarRecordType.PaidTimeOff]);
+    expect(b.colors[CalendarRecordType.Vacation]).toBe("rose");
+    expect(b.colors[`${CalendarRecordType.Vacation}_mine`]).toBe("violet");
     expect(b.feedUrl).toBe(api.feedUrl);
   });
 
@@ -145,7 +162,9 @@ describe("configToBuilder", () => {
       scope: "ME",
       distinguishMine: false,
       teamIds: [],
-      types: [{ type: VacationKind.Vacation, label: "Vacation", color: "violet", mineColor: null }],
+      types: [
+        { type: CalendarRecordType.Vacation, label: "Vacation", color: "violet", mineColor: null },
+      ],
       feedUrl: "https://api.flexiday.app/calendars/abc123456••••.ics",
       tokenMasked: true,
       lastFetchedAt: null,

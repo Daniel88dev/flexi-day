@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  activeLeaveTypes,
+  activeRecordTypes,
   buildMemberRemaining,
   buildMemberCards,
   buildTeamMonthlySeries,
@@ -17,7 +17,7 @@ import {
 } from "@/lib/report/series";
 import type { DatedUsage } from "@/lib/report/series";
 import type { MonthlyUsage, ReportScopeMember, ReportSummaryRow } from "@/lib/api/report-types";
-import { VacationKind } from "@/lib/api/types";
+import { CalendarRecordType } from "@/lib/api/types";
 
 const YEAR = 2026;
 const months = calendarMonths(YEAR);
@@ -27,7 +27,7 @@ const usage = (over: Partial<DatedUsage> = {}): DatedUsage => ({
   groupId: "g1",
   year: YEAR,
   month: 3,
-  vacationType: VacationKind.Vacation,
+  vacationType: CalendarRecordType.Vacation,
   used: 2,
   pending: 1,
   ...over,
@@ -36,7 +36,7 @@ const usage = (over: Partial<DatedUsage> = {}): DatedUsage => ({
 const summaryRow = (over: Partial<ReportSummaryRow> = {}): ReportSummaryRow => ({
   userId: "u1",
   groupId: "g1",
-  vacationType: VacationKind.Vacation,
+  vacationType: CalendarRecordType.Vacation,
   carriedOverDays: 3,
   yearQuota: 20,
   usedToDate: 5,
@@ -86,9 +86,9 @@ describe("monthlySeriesFor", () => {
   });
 
   it("applies the leave type filter", () => {
-    const rows = [usage(), usage({ vacationType: VacationKind.Sick, used: 4 })];
+    const rows = [usage(), usage({ vacationType: CalendarRecordType.Sick, used: 4 })];
 
-    expect(monthlySeriesFor(rows, "u1", months, [VacationKind.Sick])[2]?.used).toBe(4);
+    expect(monthlySeriesFor(rows, "u1", months, [CalendarRecordType.Sick])[2]?.used).toBe(4);
   });
 
   it("treats an empty type filter as no filter", () => {
@@ -98,35 +98,43 @@ describe("monthlySeriesFor", () => {
 
 describe("totalQuotaFor", () => {
   it("adds carry-over to the yearly allowance", () => {
-    expect(totalQuotaFor([summaryRow()], "u1", VacationKind.Vacation)).toBe(23);
+    expect(totalQuotaFor([summaryRow()], "u1", CalendarRecordType.Vacation)).toBe(23);
   });
 
   it("sums a member's allowance across groups", () => {
     const rows = [summaryRow(), summaryRow({ groupId: "g2", yearQuota: 10, carriedOverDays: 0 })];
 
-    expect(totalQuotaFor(rows, "u1", VacationKind.Vacation)).toBe(33);
+    expect(totalQuotaFor(rows, "u1", CalendarRecordType.Vacation)).toBe(33);
   });
 
   it("returns 0 for a member with no allowance rows", () => {
-    expect(totalQuotaFor([summaryRow()], "unknown", VacationKind.Vacation)).toBe(0);
+    expect(totalQuotaFor([summaryRow()], "unknown", CalendarRecordType.Vacation)).toBe(0);
   });
 
   it("counts only the requested allowance", () => {
     const rows = [
       summaryRow(),
-      summaryRow({ vacationType: VacationKind.HomeOffice, yearQuota: 10, carriedOverDays: 0 }),
+      summaryRow({
+        vacationType: CalendarRecordType.HomeOffice,
+        yearQuota: 10,
+        carriedOverDays: 0,
+      }),
     ];
 
-    expect(totalQuotaFor(rows, "u1", VacationKind.HomeOffice)).toBe(10);
+    expect(totalQuotaFor(rows, "u1", CalendarRecordType.HomeOffice)).toBe(10);
   });
 
   it("never lets one allowance top up another", () => {
     const rows = [
       summaryRow({ yearQuota: 25, carriedOverDays: 3 }),
-      summaryRow({ vacationType: VacationKind.HomeOffice, yearQuota: 10, carriedOverDays: 0 }),
+      summaryRow({
+        vacationType: CalendarRecordType.HomeOffice,
+        yearQuota: 10,
+        carriedOverDays: 0,
+      }),
     ];
 
-    expect(totalQuotaFor(rows, "u1", VacationKind.Vacation)).toBe(28);
+    expect(totalQuotaFor(rows, "u1", CalendarRecordType.Vacation)).toBe(28);
   });
 });
 
@@ -161,7 +169,7 @@ describe("buildMemberCards", () => {
       [
         summaryRow({ yearQuota: 25, carriedOverDays: 3, usedToDate: 33, remaining: -5 }),
         summaryRow({
-          vacationType: VacationKind.HomeOffice,
+          vacationType: CalendarRecordType.HomeOffice,
           yearQuota: 10,
           carriedOverDays: 0,
           usedToDate: 0,
@@ -174,11 +182,11 @@ describe("buildMemberCards", () => {
 
     expect(cards).toHaveLength(2);
     // An untouched home-office allowance must not mask the vacation overdraft.
-    expect(cards.find((c) => c.vacationType === VacationKind.Vacation)).toMatchObject({
+    expect(cards.find((c) => c.vacationType === CalendarRecordType.Vacation)).toMatchObject({
       quota: 28,
       remaining: -5,
     });
-    expect(cards.find((c) => c.vacationType === VacationKind.HomeOffice)).toMatchObject({
+    expect(cards.find((c) => c.vacationType === CalendarRecordType.HomeOffice)).toMatchObject({
       quota: 10,
       remaining: 10,
     });
@@ -218,35 +226,40 @@ describe("formatDays", () => {
   });
 });
 
-describe("activeLeaveTypes", () => {
+describe("activeRecordTypes", () => {
   it("returns types in first-seen summary order", () => {
     const rows = [
-      summaryRow({ vacationType: VacationKind.HomeOffice }),
-      summaryRow({ vacationType: VacationKind.Vacation }),
-      summaryRow({ vacationType: VacationKind.HomeOffice, userId: "u2" }),
+      summaryRow({ vacationType: CalendarRecordType.HomeOffice }),
+      summaryRow({ vacationType: CalendarRecordType.Vacation }),
+      summaryRow({ vacationType: CalendarRecordType.HomeOffice, userId: "u2" }),
     ];
 
-    expect(activeLeaveTypes(rows)).toEqual([VacationKind.HomeOffice, VacationKind.Vacation]);
+    expect(activeRecordTypes(rows)).toEqual([
+      CalendarRecordType.HomeOffice,
+      CalendarRecordType.Vacation,
+    ]);
   });
 
   it("respects the type filter", () => {
     const rows = [
-      summaryRow({ vacationType: VacationKind.HomeOffice }),
-      summaryRow({ vacationType: VacationKind.Vacation }),
+      summaryRow({ vacationType: CalendarRecordType.HomeOffice }),
+      summaryRow({ vacationType: CalendarRecordType.Vacation }),
     ];
 
-    expect(activeLeaveTypes(rows, [VacationKind.Vacation])).toEqual([VacationKind.Vacation]);
+    expect(activeRecordTypes(rows, [CalendarRecordType.Vacation])).toEqual([
+      CalendarRecordType.Vacation,
+    ]);
   });
 
   it("falls back to the filter, then to Vacation, when the summary is empty", () => {
-    expect(activeLeaveTypes([], [VacationKind.Sick])).toEqual([VacationKind.Sick]);
-    expect(activeLeaveTypes([])).toEqual([VacationKind.Vacation]);
+    expect(activeRecordTypes([], [CalendarRecordType.Sick])).toEqual([CalendarRecordType.Sick]);
+    expect(activeRecordTypes([])).toEqual([CalendarRecordType.Vacation]);
   });
 });
 
 describe("buildTeamMonthlySeries", () => {
   it("returns twelve rows with every member zero-filled", () => {
-    const rows = buildTeamMonthlySeries([], ["u1", "u2"], VacationKind.Vacation, months);
+    const rows = buildTeamMonthlySeries([], ["u1", "u2"], CalendarRecordType.Vacation, months);
 
     expect(rows).toHaveLength(12);
     expect(rows.map((r) => r.month)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]);
@@ -257,7 +270,7 @@ describe("buildTeamMonthlySeries", () => {
     const rows = buildTeamMonthlySeries(
       [usage(), usage({ groupId: "g2", used: 0.5, pending: 0 })],
       ["u1"],
-      VacationKind.Vacation,
+      CalendarRecordType.Vacation,
       months
     );
 
@@ -266,9 +279,9 @@ describe("buildTeamMonthlySeries", () => {
 
   it("ignores other leave types and members outside the id list", () => {
     const rows = buildTeamMonthlySeries(
-      [usage({ vacationType: VacationKind.HomeOffice }), usage({ userId: "ghost" })],
+      [usage({ vacationType: CalendarRecordType.HomeOffice }), usage({ userId: "ghost" })],
       ["u1"],
-      VacationKind.Vacation,
+      CalendarRecordType.Vacation,
       months
     );
 
@@ -334,7 +347,7 @@ describe("withYear", () => {
       userId: "u1",
       groupId: "g1",
       month: 3,
-      vacationType: VacationKind.Vacation,
+      vacationType: CalendarRecordType.Vacation,
       used: 2,
       pending: 1,
     };
@@ -393,7 +406,7 @@ describe("buildMemberRemaining", () => {
     const bars = buildMemberRemaining(
       [member("u1", "Ada")],
       [summaryRow({ carriedOverDays: 3, yearQuota: 20, usedToDate: 4, plannedRemaining: 3 })],
-      VacationKind.Vacation
+      CalendarRecordType.Vacation
     );
 
     expect(bars[0]).toMatchObject({ usedToDate: 4, planned: 3, used: 7, remaining: 16 });
@@ -403,7 +416,7 @@ describe("buildMemberRemaining", () => {
     const bars = buildMemberRemaining(
       [member("u1", "Ada")],
       [summaryRow({ carriedOverDays: 3, yearQuota: 20, usedToDate: 0, plannedRemaining: 0 })],
-      VacationKind.Vacation
+      CalendarRecordType.Vacation
     );
 
     expect(bars[0]).toMatchObject({
@@ -418,7 +431,7 @@ describe("buildMemberRemaining", () => {
     const bars = buildMemberRemaining(
       [member("u1", "Ada")],
       [summaryRow({ carriedOverDays: 3, yearQuota: 20, usedToDate: 2, plannedRemaining: 0 })],
-      VacationKind.Vacation
+      CalendarRecordType.Vacation
     );
 
     expect(bars[0]).toMatchObject({ carriedOverLeft: 1, yearLeft: 20, remaining: 21 });
@@ -428,7 +441,7 @@ describe("buildMemberRemaining", () => {
     const bars = buildMemberRemaining(
       [member("u1", "Ada")],
       [summaryRow({ carriedOverDays: 3, yearQuota: 20, usedToDate: 5, plannedRemaining: 0 })],
-      VacationKind.Vacation
+      CalendarRecordType.Vacation
     );
 
     expect(bars[0]).toMatchObject({ carriedOverLeft: 0, yearLeft: 18, remaining: 18 });
@@ -446,7 +459,7 @@ describe("buildMemberRemaining", () => {
           pending: 5,
         }),
       ],
-      VacationKind.Vacation
+      CalendarRecordType.Vacation
     );
 
     expect(bars[0]).toMatchObject({ used: 7, pending: 5, yearLeft: 13, remaining: 13 });
@@ -456,7 +469,7 @@ describe("buildMemberRemaining", () => {
     const bars = buildMemberRemaining(
       [member("u1", "Ada")],
       [summaryRow({ carriedOverDays: 3, yearQuota: 20, usedToDate: 26, plannedRemaining: 0 })],
-      VacationKind.Vacation
+      CalendarRecordType.Vacation
     );
 
     expect(bars[0]).toMatchObject({
@@ -480,7 +493,7 @@ describe("buildMemberRemaining", () => {
           plannedRemaining: 0,
         }),
       ],
-      VacationKind.Vacation
+      CalendarRecordType.Vacation
     );
 
     expect(bars).toHaveLength(1);
@@ -493,14 +506,14 @@ describe("buildMemberRemaining", () => {
       [
         summaryRow({ carriedOverDays: 3, yearQuota: 20, usedToDate: 0, plannedRemaining: 0 }),
         summaryRow({
-          vacationType: VacationKind.HomeOffice,
+          vacationType: CalendarRecordType.HomeOffice,
           carriedOverDays: 0,
           yearQuota: 10,
           usedToDate: 0,
           plannedRemaining: 0,
         }),
       ],
-      VacationKind.Vacation
+      CalendarRecordType.Vacation
     );
 
     expect(bars[0]?.remaining).toBe(23);
@@ -515,7 +528,7 @@ describe("buildMemberRemaining", () => {
         summaryRow({ userId: "u2", yearQuota: 25, ...zeroed }),
         summaryRow({ userId: "u3", yearQuota: 10, ...zeroed }),
       ],
-      VacationKind.Vacation
+      CalendarRecordType.Vacation
     );
 
     expect(bars.map((bar: { member: { name: string } }) => bar.member.name)).toEqual([
@@ -526,7 +539,11 @@ describe("buildMemberRemaining", () => {
   });
 
   it("keeps a member with no allowance rows on a zeroed bar", () => {
-    const bars = buildMemberRemaining([member("u9", "New Joiner")], [], VacationKind.Vacation);
+    const bars = buildMemberRemaining(
+      [member("u9", "New Joiner")],
+      [],
+      CalendarRecordType.Vacation
+    );
 
     expect(bars[0]).toMatchObject({ carriedOverLeft: 0, yearLeft: 0, remaining: 0 });
   });
@@ -544,7 +561,7 @@ describe("buildMemberRemaining", () => {
           plannedRemaining: 0,
         }),
       ],
-      VacationKind.Vacation
+      CalendarRecordType.Vacation
     );
 
     expect(bars[0]?.carriedOverLeft).toBe(0.3);

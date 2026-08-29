@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
-import { VacationKind } from "@/lib/api/types";
+import { CalendarRecordType } from "@/lib/api/types";
 import type { CalendarSyncConfig } from "@/lib/api/calendar-sync";
 import { CalCard } from "../cal-card";
 
@@ -11,8 +11,8 @@ const config: CalendarSyncConfig = {
   distinguishMine: false,
   teamIds: [],
   types: [
-    { type: VacationKind.Vacation, label: "Vacation", color: "violet", mineColor: null },
-    { type: VacationKind.Sick, label: "Sick", color: "coral", mineColor: null },
+    { type: CalendarRecordType.Vacation, label: "Vacation", color: "violet", mineColor: null },
+    { type: CalendarRecordType.Sick, label: "Sick", color: "coral", mineColor: null },
   ],
   feedUrl: "https://api.flexiday.app/calendars/flx_live_0•••••.ics",
   tokenMasked: true,

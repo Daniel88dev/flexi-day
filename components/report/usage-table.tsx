@@ -66,7 +66,7 @@ export function UsageTable({ cards, year, period }: Props) {
                 </Link>
               </TableCell>
               <TableCell className="text-sm whitespace-nowrap">
-                {t.leaveTypes[card.vacationType].label}
+                {t.calendarRecordTypes[card.vacationType].label}
               </TableCell>
               <TableCell className="text-right tabular-nums">
                 {formatDays(card.carriedOver)}

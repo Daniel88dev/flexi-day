@@ -3,7 +3,7 @@ import { screen } from "@testing-library/react";
 import { UsageTable } from "../usage-table";
 import { renderWithClient } from "@/lib/test-utils";
 import type { MemberCard } from "@/lib/report/series";
-import { VacationKind } from "@/lib/api/types";
+import { CalendarRecordType } from "@/lib/api/types";
 
 vi.mock("next/navigation", () => ({
   usePathname: () => "/report",
@@ -18,7 +18,7 @@ const card = (over: Partial<MemberCard> = {}): MemberCard => ({
     avatarColor: "hsl(200, 65%, 50%)",
     groupId: "g1",
   },
-  vacationType: VacationKind.Vacation,
+  vacationType: CalendarRecordType.Vacation,
   quota: 23,
   carriedOver: 3,
   yearQuota: 20,

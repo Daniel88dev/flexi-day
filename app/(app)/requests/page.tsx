@@ -26,7 +26,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useSession } from "@/lib/auth-client";
-import { VACATION_KIND_COLORS, type VacationListItem, type VacationStatus } from "@/lib/api/types";
+import {
+  CALENDAR_RECORD_TYPE_COLORS,
+  type VacationListItem,
+  type VacationStatus,
+} from "@/lib/api/types";
 import { groupVacationRequests } from "@/lib/vacations/group-requests";
 import { dayLengthLabel } from "@/lib/vacations/day-length";
 import { useOpenVacationDetail } from "@/lib/vacations/use-vacation-detail";
@@ -310,10 +314,10 @@ export default function RequestsPage() {
                       <span
                         className={cn(
                           "rounded-full px-2 py-0.5 text-xs font-medium",
-                          VACATION_KIND_COLORS[r.vacationType]
+                          CALENDAR_RECORD_TYPE_COLORS[r.vacationType]
                         )}
                       >
-                        {t.leaveTypes[r.vacationType].label}
+                        {t.calendarRecordTypes[r.vacationType].label}
                       </span>
                     </TableCell>
                     <TableCell className="text-sm whitespace-nowrap">

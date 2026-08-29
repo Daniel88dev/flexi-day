@@ -39,7 +39,7 @@ export function BalanceWidget({ year }: BalanceWidgetProps) {
             // Deliberately unclamped: an overdraft has to be visible here too.
             const left = b.allocated - b.used;
             const pct = b.allocated > 0 ? Math.min(100, (b.used / b.allocated) * 100) : 0;
-            const label = t.leaveTypes[b.type].label;
+            const label = t.calendarRecordTypes[b.type].label;
             return (
               <div key={b.type}>
                 <div className="mb-2 flex items-baseline justify-between">

@@ -2,7 +2,7 @@ import { describe, expect, it, vi, beforeEach } from "vitest";
 import { screen, fireEvent, waitFor } from "@testing-library/react";
 import { EditRequestDialog } from "../edit-request-dialog";
 import { renderWithClient } from "@/lib/test-utils";
-import { VacationKind, type VacationDetail } from "@/lib/api/types";
+import { CalendarRecordType, type VacationDetail } from "@/lib/api/types";
 
 const updateMutate = vi.fn().mockResolvedValue([]);
 
@@ -21,7 +21,7 @@ const detail: VacationDetail = {
   vacationIds: ["v-1"],
   startTime: "09:00:00",
   endTime: "17:00:00",
-  vacationType: VacationKind.Vacation,
+  vacationType: CalendarRecordType.Vacation,
   halfDay: false,
   note: null,
   rejectionReason: null,
@@ -86,7 +86,7 @@ describe("EditRequestDialog", () => {
     const onOpenChange = vi.fn();
     renderWithClient(
       <EditRequestDialog
-        detail={{ ...detail, vacationType: VacationKind.StudyLeave }}
+        detail={{ ...detail, vacationType: CalendarRecordType.StudyLeave }}
         open
         onOpenChange={onOpenChange}
       />

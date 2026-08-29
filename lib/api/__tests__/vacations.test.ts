@@ -12,7 +12,7 @@ import {
   approveVacations,
   updateVacation,
 } from "../vacations";
-import { VacationKind, vacationStatus, type Vacation } from "../types";
+import { CalendarRecordType, vacationStatus, type Vacation } from "../types";
 
 describe("vacations api", () => {
   beforeEach(() => {
@@ -102,10 +102,14 @@ describe("vacations api", () => {
   });
 
   it("updateVacation PATCHes the collection with ids and the changed fields", async () => {
-    await updateVacation({ ids: ["v-1", "v-2"], vacationType: VacationKind.Sick, halfDay: true });
+    await updateVacation({
+      ids: ["v-1", "v-2"],
+      vacationType: CalendarRecordType.Sick,
+      halfDay: true,
+    });
     expect(apiMock).toHaveBeenCalledWith("/api/vacation", {
       method: "PATCH",
-      body: { ids: ["v-1", "v-2"], vacationType: VacationKind.Sick, halfDay: true },
+      body: { ids: ["v-1", "v-2"], vacationType: CalendarRecordType.Sick, halfDay: true },
     });
   });
 });

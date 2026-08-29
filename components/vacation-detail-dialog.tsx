@@ -20,7 +20,7 @@ import {
   useVacation,
 } from "@/lib/api/queries";
 import {
-  VACATION_KIND_COLORS,
+  CALENDAR_RECORD_TYPE_COLORS,
   vacationStatus,
   type VacationDetail,
   type VacationEvent,
@@ -147,10 +147,10 @@ export function VacationDetailDialog({
               <span
                 className={cn(
                   "rounded-full px-2 py-0.5 text-xs font-medium",
-                  VACATION_KIND_COLORS[detail.vacationType]
+                  CALENDAR_RECORD_TYPE_COLORS[detail.vacationType]
                 )}
               >
-                {t.leaveTypes[detail.vacationType].label}
+                {t.calendarRecordTypes[detail.vacationType].label}
               </span>
               <span
                 className={cn(

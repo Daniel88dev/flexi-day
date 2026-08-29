@@ -1,64 +1,58 @@
-import { VacationKind } from "@/lib/api/types";
-
-export type LeaveTypeKey =
-  | VacationKind.Vacation
-  | VacationKind.HomeOffice
-  | VacationKind.Sick
-  | VacationKind.BankHoliday
-  | VacationKind.PaidTimeOff;
+import { CalendarRecordType } from "@/lib/api/types";
 
 export interface LeaveMeta {
-  id: LeaveTypeKey;
+  id: CalendarRecordType;
   label: string;
   short: string;
   cssVar: string;
 }
 
-export const LEAVE_META: Record<LeaveTypeKey, LeaveMeta> = {
-  [VacationKind.Vacation]: {
-    id: VacationKind.Vacation,
+// Deliberately partial: only the types the dashboard renders first-class today.
+export const LEAVE_META: Partial<Record<CalendarRecordType, LeaveMeta>> = {
+  [CalendarRecordType.Vacation]: {
+    id: CalendarRecordType.Vacation,
     label: "Vacation",
     short: "Vac",
     cssVar: "var(--c-vacation)",
   },
-  [VacationKind.HomeOffice]: {
-    id: VacationKind.HomeOffice,
+  [CalendarRecordType.HomeOffice]: {
+    id: CalendarRecordType.HomeOffice,
     label: "Home Office",
     short: "WFH",
     cssVar: "var(--c-home)",
   },
-  [VacationKind.Sick]: {
-    id: VacationKind.Sick,
+  [CalendarRecordType.Sick]: {
+    id: CalendarRecordType.Sick,
     label: "Sick",
     short: "Sick",
     cssVar: "var(--c-sick)",
   },
-  [VacationKind.BankHoliday]: {
-    id: VacationKind.BankHoliday,
+  [CalendarRecordType.BankHoliday]: {
+    id: CalendarRecordType.BankHoliday,
     label: "Bank Holiday",
     short: "Bank",
     cssVar: "var(--c-bank)",
   },
-  [VacationKind.PaidTimeOff]: {
-    id: VacationKind.PaidTimeOff,
+  [CalendarRecordType.PaidTimeOff]: {
+    id: CalendarRecordType.PaidTimeOff,
     label: "Paid Time Off",
     short: "PTO",
     cssVar: "var(--c-pto)",
   },
 };
 
-export const DEFAULT_LEAVE_TYPES: LeaveTypeKey[] = [
-  VacationKind.Vacation,
-  VacationKind.HomeOffice,
-  VacationKind.Sick,
-  VacationKind.BankHoliday,
-  VacationKind.PaidTimeOff,
+export const DEFAULT_LEAVE_TYPES: CalendarRecordType[] = [
+  CalendarRecordType.Vacation,
+  CalendarRecordType.HomeOffice,
+  CalendarRecordType.Sick,
+  CalendarRecordType.BankHoliday,
+  CalendarRecordType.PaidTimeOff,
 ];
 
-export function leaveMetaFor(kind: VacationKind): LeaveMeta {
+export function leaveMetaFor(kind: CalendarRecordType): LeaveMeta {
   return (
-    LEAVE_META[kind as LeaveTypeKey] ?? {
-      id: kind as LeaveTypeKey,
+    LEAVE_META[kind] ?? {
+      id: kind,
       label: kind,
       short: kind.slice(0, 3),
       cssVar: "var(--text-muted)",

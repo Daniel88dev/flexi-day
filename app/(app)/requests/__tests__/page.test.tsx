@@ -4,7 +4,7 @@ import userEvent from "@testing-library/user-event";
 import RequestsPage from "../page";
 import { renderWithClient } from "@/lib/test-utils";
 import { ApiError } from "@/lib/api/client";
-import { VacationKind, type VacationListItem } from "@/lib/api/types";
+import { CalendarRecordType, type VacationListItem } from "@/lib/api/types";
 
 const approveMutate = vi.fn();
 const rejectMutate = vi.fn();
@@ -20,7 +20,7 @@ function day(id: string, requestedDay: string, canApprove = true): VacationListI
     requestedDay,
     startTime: null,
     endTime: null,
-    vacationType: VacationKind.Vacation,
+    vacationType: CalendarRecordType.Vacation,
     halfDay: false,
     note: null,
     rejectionReason: null,

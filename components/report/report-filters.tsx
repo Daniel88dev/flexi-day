@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/select";
 import { MultiSelect, type MultiSelectOption } from "@/components/report/multi-select";
 import type { ReportFilters, ReportPeriod, ReportScope } from "@/lib/api/report-types";
-import { VacationKind } from "@/lib/api/types";
+import { CalendarRecordType } from "@/lib/api/types";
 import { useTranslation } from "@/lib/i18n/use-translation";
 
 type Props = {
@@ -25,7 +25,7 @@ type Props = {
   onPeriodChange?: (next: ReportPeriod) => void;
 };
 
-const ALL_KINDS = Object.values(VacationKind);
+const ALL_KINDS = Object.values(CalendarRecordType);
 
 const ROLLING = "rolling";
 
@@ -50,7 +50,7 @@ export function ReportFiltersBar({ scope, filters, onChange, period, onPeriodCha
   }, [scope, filters.groupIds]);
 
   const typeOptions: MultiSelectOption[] = useMemo(
-    () => ALL_KINDS.map((kind) => ({ value: kind, label: t.leaveTypes[kind].label })),
+    () => ALL_KINDS.map((kind) => ({ value: kind, label: t.calendarRecordTypes[kind].label })),
     [t]
   );
 
@@ -133,7 +133,7 @@ export function ReportFiltersBar({ scope, filters, onChange, period, onPeriodCha
         allLabel={t.report.filters.allTypes}
         options={typeOptions}
         selected={filters.types ?? []}
-        onChange={(types) => onChange({ ...filters, types: types as VacationKind[] })}
+        onChange={(types) => onChange({ ...filters, types: types as CalendarRecordType[] })}
       />
     </div>
   );

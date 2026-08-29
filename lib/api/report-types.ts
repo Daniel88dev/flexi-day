@@ -1,4 +1,4 @@
-import type { Iso, IsoDate, UserSummary, UUID, VacationKind } from "./types";
+import type { Iso, IsoDate, UserSummary, UUID, CalendarRecordType } from "./types";
 
 /**
  * How much of a group the caller may report on. `all` means every member
@@ -29,7 +29,7 @@ export type MonthlyUsage = {
   groupId: UUID;
   /** 1-12. */
   month: number;
-  vacationType: VacationKind;
+  vacationType: CalendarRecordType;
   used: number;
   pending: number;
 };
@@ -38,7 +38,7 @@ export type MonthlyUsage = {
 export type ReportSummaryRow = {
   userId: UUID;
   groupId: UUID;
-  vacationType: VacationKind;
+  vacationType: CalendarRecordType;
   carriedOverDays: number;
   yearQuota: number;
   usedToDate: number;
@@ -60,7 +60,7 @@ export type ReportBooking = {
   userName: string;
   groupId: UUID;
   groupName: string;
-  vacationType: VacationKind;
+  vacationType: CalendarRecordType;
   from: IsoDate;
   to: IsoDate;
   days: number;
@@ -106,5 +106,5 @@ export type ReportFilters = {
   year: number;
   groupIds?: UUID[];
   userIds?: UUID[];
-  types?: VacationKind[];
+  types?: CalendarRecordType[];
 };

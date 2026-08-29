@@ -1,4 +1,4 @@
-import { VacationKind } from "@/lib/api/types";
+import { CalendarRecordType } from "@/lib/api/types";
 import type { Dictionary } from "./en";
 
 /**
@@ -50,17 +50,17 @@ export const cs: Dictionary = {
     cancelled: "Zrušeno",
   },
 
-  leaveTypes: {
-    [VacationKind.Vacation]: { label: "Dovolená", short: "Dov" },
-    [VacationKind.HomeOffice]: { label: "Home Office", short: "HO" },
-    [VacationKind.Sick]: { label: "Nemoc", short: "Nem" },
-    [VacationKind.BankHoliday]: { label: "Státní svátek", short: "Svátek" },
-    [VacationKind.NonPaidLeave]: { label: "Neplacené volno", short: "Neplac." },
-    [VacationKind.PaidTimeOff]: { label: "Placené volno", short: "PV" },
-    [VacationKind.SickLeave]: { label: "Nemocenská", short: "Nem" },
-    [VacationKind.StudyLeave]: { label: "Studijní volno", short: "Studium" },
-    [VacationKind.Other]: { label: "Ostatní", short: "Ostatní" },
-  } as Record<VacationKind, { label: string; short: string }>,
+  calendarRecordTypes: {
+    [CalendarRecordType.Vacation]: { label: "Dovolená", short: "Dov" },
+    [CalendarRecordType.HomeOffice]: { label: "Home Office", short: "HO" },
+    [CalendarRecordType.Sick]: { label: "Nemoc", short: "Nem" },
+    [CalendarRecordType.BankHoliday]: { label: "Státní svátek", short: "Svátek" },
+    [CalendarRecordType.NonPaidLeave]: { label: "Neplacené volno", short: "Neplac." },
+    [CalendarRecordType.PaidTimeOff]: { label: "Placené volno", short: "PV" },
+    [CalendarRecordType.SickDay]: { label: "Zdravotní volno", short: "Zdrav." },
+    [CalendarRecordType.StudyLeave]: { label: "Studijní volno", short: "Studium" },
+    [CalendarRecordType.Other]: { label: "Ostatní", short: "Ostatní" },
+  } satisfies Record<CalendarRecordType, { label: string; short: string }>,
 
   calendar: {
     months: [

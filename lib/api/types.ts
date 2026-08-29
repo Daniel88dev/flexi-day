@@ -3,31 +3,42 @@ export type IsoDate = string;
 export type IsoTime = string;
 export type UUID = string;
 
-export enum VacationKind {
+export enum CalendarRecordType {
   Vacation = "VACATION",
   HomeOffice = "HOME_OFFICE",
   Sick = "SICK",
   BankHoliday = "BANK_HOLIDAY",
   NonPaidLeave = "NON_PAID_LEAVE",
   PaidTimeOff = "PAID_TIME_OFF",
-  SickLeave = "SICK_LEAVE",
+  SickDay = "SICK_DAY",
   StudyLeave = "STUDY_LEAVE",
   Other = "OTHER",
 }
 
-export const VACATION_KIND_COLORS: Record<VacationKind, string> = {
-  [VacationKind.Vacation]: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300",
-  [VacationKind.HomeOffice]: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300",
-  [VacationKind.Sick]: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300",
-  [VacationKind.SickLeave]: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300",
-  [VacationKind.BankHoliday]:
+/** The types a member can pick in the request and edit forms. */
+export const REQUESTABLE_CALENDAR_RECORD_TYPES: readonly CalendarRecordType[] = [
+  CalendarRecordType.Vacation,
+  CalendarRecordType.HomeOffice,
+  CalendarRecordType.Sick,
+  CalendarRecordType.PaidTimeOff,
+];
+
+export const CALENDAR_RECORD_TYPE_COLORS: Record<CalendarRecordType, string> = {
+  [CalendarRecordType.Vacation]: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300",
+  [CalendarRecordType.HomeOffice]:
+    "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300",
+  [CalendarRecordType.Sick]: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300",
+  [CalendarRecordType.SickDay]: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300",
+  [CalendarRecordType.BankHoliday]:
     "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300",
-  [VacationKind.NonPaidLeave]:
+  [CalendarRecordType.NonPaidLeave]:
     "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300",
-  [VacationKind.PaidTimeOff]: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300",
-  [VacationKind.StudyLeave]:
+  [CalendarRecordType.PaidTimeOff]:
+    "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300",
+  [CalendarRecordType.StudyLeave]:
     "bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300",
-  [VacationKind.Other]: "bg-slate-100 text-slate-800 dark:bg-slate-800/40 dark:text-slate-300",
+  [CalendarRecordType.Other]:
+    "bg-slate-100 text-slate-800 dark:bg-slate-800/40 dark:text-slate-300",
 };
 
 export type UserSummary = {
@@ -44,7 +55,7 @@ export type Vacation = {
   requestedDay: IsoDate;
   startTime: IsoTime | null;
   endTime: IsoTime | null;
-  vacationType: VacationKind;
+  vacationType: CalendarRecordType;
   /** Counts 0.5 against the allowance instead of a full day. */
   halfDay: boolean;
   note: string | null;
@@ -219,7 +230,7 @@ export type CreateVacationInput = {
   userId?: UUID;
   from: IsoDate;
   to: IsoDate;
-  vacationType?: VacationKind;
+  vacationType?: CalendarRecordType;
   startTime?: IsoTime | null;
   endTime?: IsoTime | null;
   halfDay?: boolean;
@@ -231,7 +242,7 @@ export type CreateVacationInput = {
 /** Admin edit of one member's day rows; only per-day fields, never dates. */
 export type UpdateVacationInput = {
   ids: UUID[];
-  vacationType?: VacationKind;
+  vacationType?: CalendarRecordType;
   startTime?: IsoTime | null;
   endTime?: IsoTime | null;
   halfDay?: boolean;
@@ -261,7 +272,7 @@ export type PendingApproval = {
   user: UserSummary;
   groupId: UUID;
   groupName: string;
-  vacationType: VacationKind;
+  vacationType: CalendarRecordType;
   from: IsoDate;
   to: IsoDate;
   businessDays: number;
@@ -278,7 +289,7 @@ export type DashboardSummary = {
 };
 
 export type BalanceBucket = {
-  type: VacationKind;
+  type: CalendarRecordType;
   allocated: number;
   used: number;
   pending: number;

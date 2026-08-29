@@ -9,12 +9,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { DEFAULT_LEAVE_TYPES, leaveMetaFor, type LeaveTypeKey } from "@/lib/demo/leave-meta";
+import type { CalendarRecordType } from "@/lib/api/types";
+import { DEFAULT_LEAVE_TYPES, leaveMetaFor } from "@/lib/demo/leave-meta";
 import { useTranslation } from "@/lib/i18n/use-translation";
 
 interface LeaveTypeFilterProps {
-  value: Set<LeaveTypeKey>;
-  onChange: (next: Set<LeaveTypeKey>) => void;
+  value: Set<CalendarRecordType>;
+  onChange: (next: Set<CalendarRecordType>) => void;
 }
 
 /**
@@ -25,7 +26,7 @@ interface LeaveTypeFilterProps {
 export function LeaveTypeFilter({ value, onChange }: LeaveTypeFilterProps) {
   const { t } = useTranslation();
 
-  function toggle(id: LeaveTypeKey) {
+  function toggle(id: CalendarRecordType) {
     const next = new Set(value);
     if (next.has(id)) next.delete(id);
     else next.add(id);
@@ -67,7 +68,7 @@ export function LeaveTypeFilter({ value, onChange }: LeaveTypeFilterProps) {
                 className="h-[7px] w-[7px] rounded-full"
                 style={{ background: on ? meta.cssVar : "var(--text-faint)" }}
               />
-              {t.leaveTypes[id].label}
+              {t.calendarRecordTypes[id].label}
             </button>
           );
         })}
@@ -114,7 +115,7 @@ export function LeaveTypeFilter({ value, onChange }: LeaveTypeFilterProps) {
                   className="h-[9px] w-[9px] shrink-0 rounded-full"
                   style={{ background: meta.cssVar, opacity: on ? 1 : 0.45 }}
                 />
-                {t.leaveTypes[id].label}
+                {t.calendarRecordTypes[id].label}
               </DropdownMenuCheckboxItem>
             );
           })}

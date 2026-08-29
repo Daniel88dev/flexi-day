@@ -1,11 +1,11 @@
-import { VacationKind } from "@/lib/api/types";
+import { CalendarRecordType } from "@/lib/api/types";
 import type { VacationListItem } from "@/lib/api/types";
 import { colorFor, type BuilderConfig } from "./meta";
 
 /** One contiguous block of time off, ready to render in the builder preview. */
 export type PreviewEntry = {
   id: string;
-  type: VacationKind;
+  type: CalendarRecordType;
   from: number; // day-of-month, inclusive
   to: number; // day-of-month, inclusive
   name: string; // owner display name
@@ -29,7 +29,7 @@ export function feedVacations(
     if (!v.requestedDay.startsWith(prefix)) return false;
     if (!typeSet.has(v.vacationType)) return false;
     // Bank holidays are company-wide — always included when their type is on.
-    if (v.vacationType === VacationKind.BankHoliday) return true;
+    if (v.vacationType === CalendarRecordType.BankHoliday) return true;
     if (config.scope === "ME") return v.userId === currentUserId;
     return teamSet.has(v.groupId);
   });

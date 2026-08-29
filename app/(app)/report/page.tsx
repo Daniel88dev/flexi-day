@@ -15,7 +15,7 @@ import { UsageTable } from "@/components/report/usage-table";
 import { ExportDialog } from "@/components/report/export-dialog";
 import { useReportOverview, useReportScope } from "@/lib/api/queries";
 import {
-  activeLeaveTypes,
+  activeRecordTypes,
   buildMemberCards,
   buildMemberRemaining,
   buildTeamMonthlySeries,
@@ -26,7 +26,7 @@ import {
   withYear,
   yearsInWindow,
 } from "@/lib/report/series";
-import { assignMemberColors, LEAVE_TYPE_CHART_COLORS } from "@/lib/report/colors";
+import { assignMemberColors, CALENDAR_RECORD_TYPE_CHART_COLORS } from "@/lib/report/colors";
 import type { ReportFilters, ReportPeriod, ReportScopeMember } from "@/lib/api/report-types";
 import { useTranslation } from "@/lib/i18n/use-translation";
 
@@ -88,8 +88,8 @@ export default function ReportPage() {
 
   const memberColors = useMemo(() => assignMemberColors(overview?.members ?? []), [overview]);
 
-  const leaveTypes = useMemo(
-    () => (overview ? activeLeaveTypes(overview.summary, filters.types) : []),
+  const recordTypes = useMemo(
+    () => (overview ? activeRecordTypes(overview.summary, filters.types) : []),
     [overview, filters.types]
   );
 
@@ -101,8 +101,8 @@ export default function ReportPage() {
     if (!overview || chartMembers.length === 0) return [];
     const memberIds = chartMembers.map((member) => member.id);
 
-    return leaveTypes.flatMap((type, index) => {
-      const label = t.leaveTypes[type].label;
+    return recordTypes.flatMap((type, index) => {
+      const label = t.calendarRecordTypes[type].label;
       const series = buildTeamMonthlySeries(usage, memberIds, type, slots);
       const total = series.reduce(
         (sum, row) => sum + memberIds.reduce((rowSum, id) => rowSum + row[id], 0),
@@ -130,13 +130,13 @@ export default function ReportPage() {
             <TeamRemainingChart
               remaining={buildMemberRemaining(chartMembers, overview.summary, type)}
               year={filters.year}
-              color={LEAVE_TYPE_CHART_COLORS[type]}
+              color={CALENDAR_RECORD_TYPE_CHART_COLORS[type]}
             />
           ),
         },
       ];
     });
-  }, [overview, chartMembers, leaveTypes, usage, slots, memberColors, filters.year, t]);
+  }, [overview, chartMembers, recordTypes, usage, slots, memberColors, filters.year, t]);
 
   // Remounts the accordion when the set of panels changes, so a filter that
   // swaps leave types lands on "usage open, days-left closed" again instead of

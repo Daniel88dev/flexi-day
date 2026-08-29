@@ -2,8 +2,8 @@
 
 import { AvatarBubble } from "@/components/brand/avatar-bubble";
 import { LeaveTag } from "@/components/dashboard/leave-tag";
-import { DEFAULT_LEAVE_TYPES, type LeaveTypeKey } from "@/lib/demo/leave-meta";
-import { vacationStatus, VacationKind, type VacationListItem } from "@/lib/api/types";
+import { DEFAULT_LEAVE_TYPES } from "@/lib/demo/leave-meta";
+import { vacationStatus, CalendarRecordType, type VacationListItem } from "@/lib/api/types";
 import { useTranslation } from "@/lib/i18n/use-translation";
 
 interface OutTodayWidgetProps {
@@ -20,19 +20,21 @@ export function OutTodayWidget({ vacations, todayDay }: OutTodayWidgetProps) {
   const considerToday = todayDay !== null;
 
   const seen = new Set<string>();
-  const out: Array<{ user: VacationListItem["user"]; type: LeaveTypeKey }> = [];
+  const out: Array<{ user: VacationListItem["user"]; type: CalendarRecordType }> = [];
   if (considerToday) {
     for (const v of vacations) {
       if (v.requestedDay !== todayIso) continue;
       if (vacationStatus(v) !== "approved") continue;
-      if (v.vacationType === VacationKind.BankHoliday) continue;
+      if (v.vacationType === CalendarRecordType.BankHoliday) continue;
       if (seen.has(v.userId)) continue;
       seen.add(v.userId);
       out.push({
         user: v.user,
-        type: (DEFAULT_LEAVE_TYPES.includes(v.vacationType as LeaveTypeKey)
+        // Types the dashboard doesn't render first-class still coerce to
+        // Vacation here, as they did before the rename.
+        type: DEFAULT_LEAVE_TYPES.includes(v.vacationType)
           ? v.vacationType
-          : VacationKind.Vacation) as LeaveTypeKey,
+          : CalendarRecordType.Vacation,
       });
     }
   }

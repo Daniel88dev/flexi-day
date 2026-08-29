@@ -63,7 +63,7 @@ export function ApprovalsWidget() {
       ) : (
         <div className="flex flex-col gap-3.5">
           {items.map((a) => {
-            const typeLabel = t.leaveTypes[a.vacationType].label;
+            const typeLabel = t.calendarRecordTypes[a.vacationType].label;
             const rowKey = a.vacationIds[0] ?? `${a.user.id}-${a.from}`;
             return (
               <div key={rowKey} className="flex items-start gap-3">

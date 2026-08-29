@@ -4,7 +4,7 @@ import MemberReportPage from "../page";
 import { renderWithClient } from "@/lib/test-utils";
 import { I18nProvider } from "@/lib/i18n/i18n-provider";
 import type { MemberReport } from "@/lib/api/report-types";
-import { VacationKind } from "@/lib/api/types";
+import { CalendarRecordType } from "@/lib/api/types";
 
 const currentYear = 2026;
 const priorYear = 2025;
@@ -41,7 +41,7 @@ const report: MemberReport = {
     {
       userId: "u1",
       groupId: "g1",
-      vacationType: VacationKind.Vacation,
+      vacationType: CalendarRecordType.Vacation,
       carriedOverDays: 3,
       yearQuota: 20,
       usedToDate: 0,
@@ -57,7 +57,7 @@ const report: MemberReport = {
       userName: "Ada Lovelace",
       groupId: "g1",
       groupName: "Engineering",
-      vacationType: VacationKind.Vacation,
+      vacationType: CalendarRecordType.Vacation,
       from: "2026-03-12",
       to: "2026-03-14",
       days: 3,
@@ -112,7 +112,7 @@ const priorReport: MemberReport = {
       userId: "u1",
       groupId: "g1",
       month: 10,
-      vacationType: VacationKind.Vacation,
+      vacationType: CalendarRecordType.Vacation,
       used: 4,
       pending: 0,
     },
@@ -120,7 +120,7 @@ const priorReport: MemberReport = {
       userId: "u1",
       groupId: "g1",
       month: 3,
-      vacationType: VacationKind.Vacation,
+      vacationType: CalendarRecordType.Vacation,
       used: 5,
       pending: 0,
     },

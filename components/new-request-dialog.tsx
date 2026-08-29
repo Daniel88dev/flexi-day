@@ -25,7 +25,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useCreateVacation, useGroup, useGroups, useGroupUsers } from "@/lib/api/queries";
 import { ApiError } from "@/lib/api/client";
 import { planLimitFromError } from "@/lib/billing/plan-limit-error";
-import { VacationKind } from "@/lib/api/types";
+import { CalendarRecordType, REQUESTABLE_CALENDAR_RECORD_TYPES } from "@/lib/api/types";
 import { useTranslation } from "@/lib/i18n/use-translation";
 import { useSession } from "@/lib/auth-client";
 
@@ -51,13 +51,6 @@ function extractConflictingDays(err: ApiError): string[] {
   if (!Array.isArray(raw)) return [];
   return raw.filter((d): d is string => typeof d === "string");
 }
-
-const REQUESTABLE_KINDS: VacationKind[] = [
-  VacationKind.Vacation,
-  VacationKind.HomeOffice,
-  VacationKind.Sick,
-  VacationKind.PaidTimeOff,
-];
 
 /** Radix Select items cannot carry an empty value, so "myself" needs a sentinel. */
 const SELF = "__self__";
@@ -87,7 +80,7 @@ export function NewRequestDialog({ open, onOpenChange, initialDate }: NewRequest
   const [groupId, setGroupId] = useState("");
   const [from, setFrom] = useState(baseDate);
   const [to, setTo] = useState(baseDate);
-  const [vacationType, setVacationType] = useState<VacationKind>(VacationKind.Vacation);
+  const [vacationType, setVacationType] = useState<CalendarRecordType>(CalendarRecordType.Vacation);
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
   const [halfDay, setHalfDay] = useState(false);
@@ -125,7 +118,7 @@ export function NewRequestDialog({ open, onOpenChange, initialDate }: NewRequest
     setGroupId("");
     setFrom(baseDate);
     setTo(baseDate);
-    setVacationType(VacationKind.Vacation);
+    setVacationType(CalendarRecordType.Vacation);
     setStartTime("");
     setEndTime("");
     setHalfDay(false);
@@ -304,15 +297,15 @@ export function NewRequestDialog({ open, onOpenChange, initialDate }: NewRequest
             <div className="sm:hidden">
               <Select
                 value={vacationType}
-                onValueChange={(v) => setVacationType(v as VacationKind)}
+                onValueChange={(v) => setVacationType(v as CalendarRecordType)}
               >
                 <SelectTrigger id="type" className="w-full">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {REQUESTABLE_KINDS.map((k) => (
+                  {REQUESTABLE_CALENDAR_RECORD_TYPES.map((k) => (
                     <SelectItem key={k} value={k}>
-                      {t.leaveTypes[k].label}
+                      {t.calendarRecordTypes[k].label}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -320,13 +313,13 @@ export function NewRequestDialog({ open, onOpenChange, initialDate }: NewRequest
             </div>
             <Tabs
               value={vacationType}
-              onValueChange={(v) => setVacationType(v as VacationKind)}
+              onValueChange={(v) => setVacationType(v as CalendarRecordType)}
               className="max-sm:hidden"
             >
               <TabsList aria-labelledby="type-label" className="w-full">
-                {REQUESTABLE_KINDS.map((k) => (
+                {REQUESTABLE_CALENDAR_RECORD_TYPES.map((k) => (
                   <TabsTrigger key={k} value={k}>
-                    {t.leaveTypes[k].label}
+                    {t.calendarRecordTypes[k].label}
                   </TabsTrigger>
                 ))}
               </TabsList>

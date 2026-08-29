@@ -45,7 +45,7 @@ export function HeroPreview() {
               return (
                 <span
                   key={kind}
-                  title={t.leaveTypes[kind].label}
+                  title={t.calendarRecordTypes[kind].label}
                   className="block h-[9px] w-[9px] rounded-full"
                   style={{ background: m.cssVar }}
                 />

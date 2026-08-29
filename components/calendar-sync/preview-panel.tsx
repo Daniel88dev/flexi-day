@@ -224,7 +224,7 @@ function MonthPreview({ entries, geometry }: { entries: PreviewEntry[]; geometry
                   return (
                     <div key={i} style={{ gridColumn: `${b.sc} / ${b.ec}`, gridRow: b.lane + 1 }}>
                       <div
-                        title={`${b.name} · ${t.leaveTypes[b.type].label}`}
+                        title={`${b.name} · ${t.calendarRecordTypes[b.type].label}`}
                         className="flex items-center gap-[3px] overflow-hidden text-[9px] font-bold whitespace-nowrap"
                         style={{
                           height: 15,
@@ -311,7 +311,7 @@ function AgendaPreview({ entries, monthLabel }: { entries: PreviewEntry[]; month
             </span>
             <div className="min-w-0 flex-1">
               <div className="truncate text-[13.5px] font-semibold">
-                {e.name} — {t.leaveTypes[e.type].label}
+                {e.name} — {t.calendarRecordTypes[e.type].label}
               </div>
               {e.note ? (
                 <div className="truncate text-xs" style={{ color: "var(--text-faint)" }}>

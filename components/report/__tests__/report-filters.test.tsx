@@ -42,7 +42,7 @@ describe("ReportFiltersBar", () => {
       "Státní svátek",
       "Neplacené volno",
       "Placené volno",
-      "Nemocenská",
+      "Zdravotní volno",
       "Studijní volno",
       "Ostatní",
     ]) {

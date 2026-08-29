@@ -29,7 +29,7 @@ import {
   yearsInWindow,
 } from "@/lib/report/series";
 import type { ReportScopeGroup } from "@/lib/api/report-types";
-import type { VacationKind } from "@/lib/api/types";
+import type { CalendarRecordType } from "@/lib/api/types";
 import { useTranslation } from "@/lib/i18n/use-translation";
 
 export default function MemberReportPage() {
@@ -103,7 +103,7 @@ export default function MemberReportPage() {
   }
 
   // One chart per allowance; they are independent budgets and must not merge.
-  const allowances: VacationKind[] = [];
+  const allowances: CalendarRecordType[] = [];
   for (const row of report.summary) {
     if (!allowances.includes(row.vacationType)) allowances.push(row.vacationType);
   }
@@ -138,11 +138,11 @@ export default function MemberReportPage() {
 
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
         <div className="space-y-4">
-          {allowances.map((leaveType) => (
-            <Card key={leaveType}>
+          {allowances.map((recordType) => (
+            <Card key={recordType}>
               <CardHeader className="pb-2">
                 <CardTitle className="flex flex-wrap items-baseline gap-2 text-base">
-                  {t.report.charts.title} · {t.leaveTypes[leaveType].label}
+                  {t.report.charts.title} · {t.calendarRecordTypes[recordType].label}
                   <span className="text-muted-foreground text-xs font-normal">
                     {windowLabel(slots, t.calendar.monthsShort)}
                   </span>
@@ -153,8 +153,8 @@ export default function MemberReportPage() {
                   <p className="text-muted-foreground text-sm">{t.common.loading}</p>
                 ) : (
                   <MemberQuotaChart
-                    series={monthlySeriesFor(usage, report.member.id, slots, [leaveType])}
-                    quota={totalQuotaFor(report.summary, report.member.id, leaveType)}
+                    series={monthlySeriesFor(usage, report.member.id, slots, [recordType])}
+                    quota={totalQuotaFor(report.summary, report.member.id, recordType)}
                   />
                 )}
               </CardContent>
@@ -225,7 +225,7 @@ export default function MemberReportPage() {
                 <TableBody>
                   {report.bookings.map((booking) => (
                     <TableRow key={`${booking.groupId}-${booking.from}-${booking.vacationType}`}>
-                      <TableCell>{t.leaveTypes[booking.vacationType].label}</TableCell>
+                      <TableCell>{t.calendarRecordTypes[booking.vacationType].label}</TableCell>
                       <TableCell>{booking.groupName}</TableCell>
                       <TableCell className="whitespace-nowrap">
                         {booking.from === booking.to

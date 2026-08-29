@@ -3,7 +3,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { TeamUsageChart } from "@/components/report/team-usage-chart";
 import { buildTeamMonthlySeries, calendarMonths } from "@/lib/report/series";
 import type { ReportScopeMember } from "@/lib/api/report-types";
-import { VacationKind } from "@/lib/api/types";
+import { CalendarRecordType } from "@/lib/api/types";
 
 const members: ReportScopeMember[] = [
   { id: "u1", name: "Ada", initials: "AD", avatarColor: "hsl(200, 65%, 50%)", groupId: "g1" },
@@ -19,13 +19,13 @@ const series = buildTeamMonthlySeries(
       groupId: "g1",
       year: 2026,
       month: 3,
-      vacationType: VacationKind.Vacation,
+      vacationType: CalendarRecordType.Vacation,
       used: 2,
       pending: 1,
     },
   ],
   ["u1", "u2"],
-  VacationKind.Vacation,
+  CalendarRecordType.Vacation,
   calendarMonths(2026)
 );
 

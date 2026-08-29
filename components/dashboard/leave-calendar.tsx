@@ -3,15 +3,15 @@
 import { useState } from "react";
 import { AvatarBubble } from "@/components/brand/avatar-bubble";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { leaveMetaFor, type LeaveTypeKey } from "@/lib/demo/leave-meta";
-import { VacationKind, type UserSummary } from "@/lib/api/types";
+import { leaveMetaFor } from "@/lib/demo/leave-meta";
+import { CalendarRecordType, type UserSummary } from "@/lib/api/types";
 import { useTranslation } from "@/lib/i18n/use-translation";
 
 export interface CalendarRange {
   id: string;
   who: string; // person id, or 'all' for bank holidays
   user?: UserSummary; // present when row represents a real user
-  type: LeaveTypeKey;
+  type: CalendarRecordType;
   from: number; // day-of-month, inclusive
   to: number;
   note?: string;
@@ -26,7 +26,7 @@ interface LeaveCalendarProps {
   firstWeekdayMondayIdx: number; // 0..6 (Monday=0)
   todayDay?: number | null;
   ranges: CalendarRange[];
-  filter?: Set<LeaveTypeKey>;
+  filter?: Set<CalendarRecordType>;
   mini?: boolean;
   /** Makes bars clickable; receives the first vacation id of the range. */
   onSelect?: (vacationId: string) => void;
@@ -77,7 +77,7 @@ function CalBar({
   const meta = leaveMetaFor(range.type);
   const u = range.user;
   const everyone = t.calendar.everyone;
-  const typeLabel = t.leaveTypes[range.type].label;
+  const typeLabel = t.calendarRecordTypes[range.type].label;
   const displayName = u ? firstName(u.name) : everyone;
   const title = `${u ? u.name : everyone} · ${typeLabel}${range.note ? ` · ${range.note}` : ""}${
     range.mirroredFrom ? ` · ${t.calendar.mirroredFrom(range.mirroredFrom)}` : ""
@@ -209,7 +209,7 @@ function MoreChip({
                   className="block truncate text-[11.5px]"
                   style={{ color: "var(--text-muted)" }}
                 >
-                  {t.leaveTypes[range.type].label}
+                  {t.calendarRecordTypes[range.type].label}
                   {range.mirroredFrom ? ` · ${t.calendar.mirroredFrom(range.mirroredFrom)}` : ""}
                 </span>
               </span>
@@ -337,11 +337,12 @@ export function LeaveCalendar({
         const weekEnd = weekDayNums[weekDayNums.length - 1];
 
         const bank = active.filter(
-          (e) => e.type === VacationKind.BankHoliday && e.from <= weekEnd && e.to >= weekStart
+          (e) => e.type === CalendarRecordType.BankHoliday && e.from <= weekEnd && e.to >= weekStart
         );
         const barsRaw: PlacedBar[] = active
           .filter(
-            (e) => e.type !== VacationKind.BankHoliday && e.from <= weekEnd && e.to >= weekStart
+            (e) =>
+              e.type !== CalendarRecordType.BankHoliday && e.from <= weekEnd && e.to >= weekStart
           )
           .map((e) => {
             const cf = Math.max(e.from, weekStart);
@@ -495,7 +496,7 @@ export function LeaveCalendar({
                     <BankHolidayPill
                       label={
                         mini
-                          ? t.leaveTypes[VacationKind.BankHoliday].short
+                          ? t.calendarRecordTypes[CalendarRecordType.BankHoliday].short
                           : (e.note ?? t.calendar.bankHoliday)
                       }
                       names={(e.note ?? t.calendar.bankHoliday).split(" · ")}
@@ -562,7 +563,7 @@ export function groupConsecutiveByUserType<
   T extends {
     id?: string;
     userId: string;
-    vacationType: LeaveTypeKey;
+    vacationType: CalendarRecordType;
     requestedDay: string;
     user?: UserSummary;
     note?: string | null;

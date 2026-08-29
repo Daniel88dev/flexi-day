@@ -23,15 +23,13 @@ import {
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { useUpdateVacation } from "@/lib/api/queries";
-import { VacationKind, type UpdateVacationInput, type VacationDetail } from "@/lib/api/types";
+import {
+  CalendarRecordType,
+  REQUESTABLE_CALENDAR_RECORD_TYPES,
+  type UpdateVacationInput,
+  type VacationDetail,
+} from "@/lib/api/types";
 import { useTranslation } from "@/lib/i18n/use-translation";
-
-const REQUESTABLE_KINDS: VacationKind[] = [
-  VacationKind.Vacation,
-  VacationKind.HomeOffice,
-  VacationKind.Sick,
-  VacationKind.PaidTimeOff,
-];
 
 /** Backend times are HH:MM:SS; `<input type="time">` wants HH:MM. */
 function toInputTime(value: string | null): string {
@@ -64,7 +62,7 @@ export function EditRequestDialog({
   const { t } = useTranslation();
   const updateVacation = useUpdateVacation();
 
-  const [vacationType, setVacationType] = useState<VacationKind>(detail.vacationType);
+  const [vacationType, setVacationType] = useState<CalendarRecordType>(detail.vacationType);
   const [startTime, setStartTime] = useState(toInputTime(detail.startTime));
   const [endTime, setEndTime] = useState(toInputTime(detail.endTime));
   const [halfDay, setHalfDay] = useState(detail.halfDay);
@@ -76,9 +74,9 @@ export function EditRequestDialog({
   // The API can create kinds this picker does not offer (e.g. StudyLeave). The
   // record's own kind must always be a tab: with no active tab, Radix's roving
   // focus would land on the first trigger and silently rewrite the type.
-  const kinds = REQUESTABLE_KINDS.includes(detail.vacationType)
-    ? REQUESTABLE_KINDS
-    : [...REQUESTABLE_KINDS, detail.vacationType];
+  const kinds = REQUESTABLE_CALENDAR_RECORD_TYPES.includes(detail.vacationType)
+    ? REQUESTABLE_CALENDAR_RECORD_TYPES
+    : [...REQUESTABLE_CALENDAR_RECORD_TYPES, detail.vacationType];
 
   function close(nextOpen: boolean) {
     if (!nextOpen) {
@@ -152,7 +150,7 @@ export function EditRequestDialog({
             <div className="sm:hidden">
               <Select
                 value={vacationType}
-                onValueChange={(v) => setVacationType(v as VacationKind)}
+                onValueChange={(v) => setVacationType(v as CalendarRecordType)}
               >
                 <SelectTrigger id="edit-type" className="w-full">
                   <SelectValue />
@@ -160,7 +158,7 @@ export function EditRequestDialog({
                 <SelectContent>
                   {kinds.map((k) => (
                     <SelectItem key={k} value={k}>
-                      {t.leaveTypes[k].label}
+                      {t.calendarRecordTypes[k].label}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -168,7 +166,7 @@ export function EditRequestDialog({
             </div>
             <Tabs
               value={vacationType}
-              onValueChange={(v) => setVacationType(v as VacationKind)}
+              onValueChange={(v) => setVacationType(v as CalendarRecordType)}
               className="max-sm:hidden"
             >
               <TabsList
@@ -177,7 +175,7 @@ export function EditRequestDialog({
               >
                 {kinds.map((k) => (
                   <TabsTrigger key={k} value={k}>
-                    {t.leaveTypes[k].label}
+                    {t.calendarRecordTypes[k].label}
                   </TabsTrigger>
                 ))}
               </TabsList>

@@ -1,6 +1,6 @@
 "use client";
 
-import { type VacationKind } from "@/lib/api/types";
+import { type CalendarRecordType } from "@/lib/api/types";
 import { swatch, TYPE_META } from "@/lib/calendar-sync/meta";
 import { useTranslation } from "@/lib/i18n/use-translation";
 
@@ -10,7 +10,7 @@ export function TypeBadge({
   color,
   small,
 }: {
-  type: VacationKind;
+  type: CalendarRecordType;
   color?: string; // resolved CSS color; defaults to the type's default swatch
   small?: boolean;
 }) {
@@ -29,7 +29,7 @@ export function TypeBadge({
       }}
     >
       <Icon size={small ? 12 : 13} style={{ color: c }} />
-      {t.leaveTypes[type].label}
+      {t.calendarRecordTypes[type].label}
     </span>
   );
 }

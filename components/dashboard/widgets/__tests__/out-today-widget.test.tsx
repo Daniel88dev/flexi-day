@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { OutTodayWidget } from "../out-today-widget";
-import { VacationKind, type VacationListItem } from "@/lib/api/types";
+import { CalendarRecordType, type VacationListItem } from "@/lib/api/types";
 
 function buildVacation(overrides: Partial<VacationListItem>): VacationListItem {
   return {
@@ -11,7 +11,7 @@ function buildVacation(overrides: Partial<VacationListItem>): VacationListItem {
     requestedDay: "2026-06-13",
     startTime: null,
     endTime: null,
-    vacationType: VacationKind.Vacation,
+    vacationType: CalendarRecordType.Vacation,
     halfDay: false,
     note: null,
     rejectionReason: null,
