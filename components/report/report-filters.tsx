@@ -25,7 +25,11 @@ type Props = {
   onPeriodChange?: (next: ReportPeriod) => void;
 };
 
-const ALL_KINDS = Object.values(CalendarRecordType);
+// Bank holiday is not offered: a company-wide closure is not leave anyone
+// took, and the backend's export endpoint rejects it as a filter value.
+const FILTERABLE_KINDS = Object.values(CalendarRecordType).filter(
+  (kind) => kind !== CalendarRecordType.BankHoliday
+);
 
 const ROLLING = "rolling";
 
@@ -50,7 +54,8 @@ export function ReportFiltersBar({ scope, filters, onChange, period, onPeriodCha
   }, [scope, filters.groupIds]);
 
   const typeOptions: MultiSelectOption[] = useMemo(
-    () => ALL_KINDS.map((kind) => ({ value: kind, label: t.calendarRecordTypes[kind].label })),
+    () =>
+      FILTERABLE_KINDS.map((kind) => ({ value: kind, label: t.calendarRecordTypes[kind].label })),
     [t]
   );
 

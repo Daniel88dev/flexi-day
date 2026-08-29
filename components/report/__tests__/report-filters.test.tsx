@@ -24,7 +24,7 @@ describe("ReportFiltersBar", () => {
     window.localStorage.clear();
   });
 
-  it("lists every type in Czech when the Czech locale is active", async () => {
+  it("lists every filterable type in Czech, without bank holiday", async () => {
     window.localStorage.setItem("flexiday-locale", "cs");
 
     renderWithClient(
@@ -39,7 +39,6 @@ describe("ReportFiltersBar", () => {
       "Dovolená",
       "Home Office",
       "Nemoc",
-      "Státní svátek",
       "Neplacené volno",
       "Placené volno",
       "Zdravotní volno",
@@ -48,6 +47,10 @@ describe("ReportFiltersBar", () => {
     ]) {
       expect(screen.getByRole("option", { name: label })).toBeInTheDocument();
     }
+
+    // A company-wide closure is not leave anyone took; the export endpoint
+    // rejects it, so the shared filter bar must not offer it.
+    expect(screen.queryByRole("option", { name: "Státní svátek" })).not.toBeInTheDocument();
   });
 
   it("offers the rolling window alongside each year when a period is controlled", () => {
