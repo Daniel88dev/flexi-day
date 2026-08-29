@@ -1,7 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { screen } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import MemberReportPage from "../page";
 import { renderWithClient } from "@/lib/test-utils";
+import { I18nProvider } from "@/lib/i18n/i18n-provider";
 import type { MemberReport } from "@/lib/api/report-types";
 import { VacationKind } from "@/lib/api/types";
 
@@ -142,6 +143,7 @@ describe("MemberReportPage", () => {
 
   afterEach(() => {
     vi.useRealTimers();
+    window.localStorage.clear();
   });
 
   it("renders the member's bookings", () => {
@@ -150,6 +152,19 @@ describe("MemberReportPage", () => {
     expect(screen.getByRole("heading", { name: "Ada Lovelace" })).toBeInTheDocument();
     expect(screen.getByText("2026-03-12 – 2026-03-14")).toBeInTheDocument();
     expect(screen.getByText("Approved")).toBeInTheDocument();
+  });
+
+  it("renders the booking's type from the dictionary when Czech is active", async () => {
+    window.localStorage.setItem("flexiday-locale", "cs");
+
+    renderWithClient(
+      <I18nProvider>
+        <MemberReportPage />
+      </I18nProvider>
+    );
+
+    const row = screen.getByText("2026-03-12 – 2026-03-14").closest("tr");
+    await waitFor(() => expect(row).toHaveTextContent("Dovolená"));
   });
 
   it("merges last year's half of the rolling window into each chart", () => {

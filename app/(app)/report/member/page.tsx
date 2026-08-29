@@ -29,7 +29,7 @@ import {
   yearsInWindow,
 } from "@/lib/report/series";
 import type { ReportScopeGroup } from "@/lib/api/report-types";
-import { VACATION_KIND_LABELS, type VacationKind } from "@/lib/api/types";
+import type { VacationKind } from "@/lib/api/types";
 import { useTranslation } from "@/lib/i18n/use-translation";
 
 export default function MemberReportPage() {
@@ -225,7 +225,7 @@ export default function MemberReportPage() {
                 <TableBody>
                   {report.bookings.map((booking) => (
                     <TableRow key={`${booking.groupId}-${booking.from}-${booking.vacationType}`}>
-                      <TableCell>{VACATION_KIND_LABELS[booking.vacationType]}</TableCell>
+                      <TableCell>{t.leaveTypes[booking.vacationType].label}</TableCell>
                       <TableCell>{booking.groupName}</TableCell>
                       <TableCell className="whitespace-nowrap">
                         {booking.from === booking.to

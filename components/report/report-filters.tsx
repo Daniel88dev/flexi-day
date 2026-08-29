@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/select";
 import { MultiSelect, type MultiSelectOption } from "@/components/report/multi-select";
 import type { ReportFilters, ReportPeriod, ReportScope } from "@/lib/api/report-types";
-import { VACATION_KIND_LABELS, VacationKind } from "@/lib/api/types";
+import { VacationKind } from "@/lib/api/types";
 import { useTranslation } from "@/lib/i18n/use-translation";
 
 type Props = {
@@ -49,10 +49,10 @@ export function ReportFiltersBar({ scope, filters, onChange, period, onPeriodCha
     return Array.from(byId.values()).sort((a, b) => a.label.localeCompare(b.label));
   }, [scope, filters.groupIds]);
 
-  const typeOptions: MultiSelectOption[] = ALL_KINDS.map((kind) => ({
-    value: kind,
-    label: VACATION_KIND_LABELS[kind],
-  }));
+  const typeOptions: MultiSelectOption[] = useMemo(
+    () => ALL_KINDS.map((kind) => ({ value: kind, label: t.leaveTypes[kind].label })),
+    [t]
+  );
 
   const years = scope?.years?.length ? scope.years : [filters.year];
 

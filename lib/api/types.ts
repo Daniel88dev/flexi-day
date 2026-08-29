@@ -15,18 +15,6 @@ export enum VacationKind {
   Other = "OTHER",
 }
 
-export const VACATION_KIND_LABELS: Record<VacationKind, string> = {
-  [VacationKind.Vacation]: "Vacation",
-  [VacationKind.HomeOffice]: "Home Office",
-  [VacationKind.Sick]: "Sick",
-  [VacationKind.BankHoliday]: "Bank Holiday",
-  [VacationKind.NonPaidLeave]: "Non-Paid Leave",
-  [VacationKind.PaidTimeOff]: "Paid Time Off",
-  [VacationKind.SickLeave]: "Sick Leave",
-  [VacationKind.StudyLeave]: "Study Leave",
-  [VacationKind.Other]: "Other",
-};
-
 export const VACATION_KIND_COLORS: Record<VacationKind, string> = {
   [VacationKind.Vacation]: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300",
   [VacationKind.HomeOffice]: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300",
