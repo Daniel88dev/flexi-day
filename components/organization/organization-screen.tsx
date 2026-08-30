@@ -2,11 +2,12 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Building2, ShieldCheck, Users } from "lucide-react";
+import { Building2, HeartPulse, ShieldCheck, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { pushToast } from "@/components/toast";
 import {
   useAddOrganizationAdmin,
@@ -121,6 +122,7 @@ function OrganizationDetailView({
       <div className="grid gap-4 md:grid-cols-2">
         <DetailsCard detail={detail} organizationId={organizationId} />
         <PlanCard detail={detail} />
+        <SickDayBenefitCard detail={detail} organizationId={organizationId} />
       </div>
       <GroupsCard detail={detail} />
       <AdminsCard detail={detail} organizationId={organizationId} />
@@ -261,6 +263,67 @@ function PlanCard({ detail }: { detail: OrganizationDetail }) {
             <Link href="/billing">{t.organization.manageBilling}</Link>
           </Button>
         ) : null}
+      </CardContent>
+    </Card>
+  );
+}
+
+function SickDayBenefitCard({
+  detail,
+  organizationId,
+}: {
+  detail: OrganizationDetail;
+  organizationId: string | null;
+}) {
+  const { t } = useTranslation();
+  const update = useUpdateOrganization(organizationId);
+  const [error, setError] = useState<string | null>(null);
+
+  const enabled = detail.organization.sickDayBenefitEnabled;
+  const paid = detail.plan.plan !== "FREE";
+
+  // A backend predating the benefit never returns the flag — no card at all
+  // beats a toggle whose save the server would reject.
+  if (enabled === undefined) return null;
+
+  async function handleToggle(next: boolean) {
+    setError(null);
+    try {
+      await update.mutateAsync({ sickDayBenefitEnabled: next });
+      pushToast(t.organization.saved);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t.organization.saveFailed);
+    }
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <HeartPulse className="h-4 w-4" aria-hidden />
+          {t.organization.sickDayTitle}
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <div className="flex items-center justify-between gap-3">
+          <Label htmlFor="sickDayBenefit">{t.organization.sickDayLabel}</Label>
+          <Switch
+            id="sickDayBenefit"
+            checked={enabled}
+            // Enabling needs a paid plan; switching off is never gated.
+            disabled={update.isPending || (!paid && !enabled)}
+            onCheckedChange={(next) => void handleToggle(next)}
+          />
+        </div>
+        <p className="text-muted-foreground text-xs">{t.organization.sickDayHint}</p>
+        {!paid && enabled ? (
+          <p className="text-destructive text-xs">{t.organization.sickDayDormant}</p>
+        ) : (
+          <p className="text-muted-foreground text-xs font-semibold">
+            {t.organization.sickDayPaidOnly}
+          </p>
+        )}
+        {error ? <p className="text-destructive text-sm">{error}</p> : null}
       </CardContent>
     </Card>
   );

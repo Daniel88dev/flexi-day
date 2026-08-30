@@ -192,6 +192,14 @@ export default function MemberReportPage() {
                     <dd className="text-foreground text-right tabular-nums">
                       {formatDays(groupQuota?.homeOfficeDays ?? 0)}
                     </dd>
+                    {(groupQuota?.sickDays ?? 0) > 0 ? (
+                      <>
+                        <dt>{t.report.quotaDialog.sickDays}</dt>
+                        <dd className="text-foreground text-right tabular-nums">
+                          {formatDays(groupQuota?.sickDays ?? 0)}
+                        </dd>
+                      </>
+                    ) : null}
                   </dl>
                 </div>
               );

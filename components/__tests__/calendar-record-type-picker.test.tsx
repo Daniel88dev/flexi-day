@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { CalendarRecordTypePicker } from "../calendar-record-type-picker";
 import { CalendarRecordType } from "@/lib/api/types";
 
@@ -28,5 +29,24 @@ describe("CalendarRecordTypePicker", () => {
       />
     );
     expect(screen.getAllByRole("combobox")).toHaveLength(1);
+  });
+
+  it("offers Sick day under Others when the benefit is active", async () => {
+    const user = userEvent.setup();
+    render(
+      <CalendarRecordTypePicker value={null} onChange={() => {}} idPrefix="type" offerSickDay />
+    );
+
+    await user.click(screen.getByRole("combobox", { name: "Others" }));
+    expect(screen.getByRole("option", { name: "Sick day" })).toBeInTheDocument();
+  });
+
+  it("keeps Sick day out of Others by default", async () => {
+    const user = userEvent.setup();
+    render(<CalendarRecordTypePicker value={null} onChange={() => {}} idPrefix="type" />);
+
+    await user.click(screen.getByRole("combobox", { name: "Others" }));
+    expect(screen.getByRole("option", { name: "Other" })).toBeInTheDocument();
+    expect(screen.queryByRole("option", { name: "Sick day" })).toBeNull();
   });
 });

@@ -6,6 +6,7 @@ import { renderWithClient } from "@/lib/test-utils";
 
 const createMutate = vi.fn().mockResolvedValue({});
 let canAdmin = false;
+let sickDayActive = false;
 let members: unknown[] = [];
 
 vi.mock("@/lib/api/queries", () => ({
@@ -15,6 +16,7 @@ vi.mock("@/lib/api/queries", () => ({
     data: {
       id: "g-1",
       groupName: "Platform",
+      organization: { sickDayBenefitActive: sickDayActive },
       access: { canView: true, canAdmin, viaOrgAdmin: false, isMember: true },
     },
     isLoading: false,
@@ -38,7 +40,18 @@ describe("NewRequestDialog", () => {
   beforeEach(() => {
     createMutate.mockClear();
     canAdmin = false;
+    sickDayActive = false;
     members = [];
+  });
+
+  it("offers Sick day under Others only for a group whose benefit is active", async () => {
+    sickDayActive = true;
+    const user = userEvent.setup();
+    renderWithClient(<NewRequestDialog open initialDate="2026-07-15" onOpenChange={() => {}} />);
+
+    await user.click(screen.getByRole("tab", { name: "Others" }));
+    await user.click(screen.getByRole("combobox", { name: "Others" }));
+    expect(screen.getByRole("option", { name: "Sick day" })).toBeInTheDocument();
   });
 
   it("seeds From and To with initialDate when opened with a preset day", () => {

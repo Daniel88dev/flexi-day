@@ -23,12 +23,12 @@ export const LEAVE_META: Record<CalendarRecordType, LeaveMeta> = {
 };
 
 /**
- * Chip order on the dashboard filter and legend: the everyday types, bank
- * holiday, then the rarer requestable ones. SickDay joins when the sick-day
- * benefit ships (issue #88).
+ * Chip order on the dashboard filter and legend: the everyday types, sick day
+ * and bank holiday, then the rarer requestable ones.
  */
 export const DEFAULT_LEAVE_TYPES: CalendarRecordType[] = [
   ...PRIMARY_CALENDAR_RECORD_TYPES,
+  CalendarRecordType.SickDay,
   CalendarRecordType.BankHoliday,
   ...OTHER_CALENDAR_RECORD_TYPES,
 ];

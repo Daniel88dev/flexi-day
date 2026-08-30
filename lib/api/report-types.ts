@@ -85,6 +85,8 @@ export type ReportQuotaRow = {
   groupId: UUID;
   vacationDays: number;
   homeOfficeDays: number;
+  /** Sick day benefit allowance; absent from a backend predating the benefit. */
+  sickDays?: number;
   carriedOverDays: number;
 };
 

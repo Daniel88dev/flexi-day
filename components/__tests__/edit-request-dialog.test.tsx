@@ -6,9 +6,15 @@ import { renderWithClient } from "@/lib/test-utils";
 import { CalendarRecordType, type VacationDetail } from "@/lib/api/types";
 
 const updateMutate = vi.fn().mockResolvedValue([]);
+let sickDayActive = false;
 
 vi.mock("@/lib/api/queries", () => ({
   useUpdateVacation: () => ({ mutateAsync: updateMutate, isPending: false }),
+  useGroup: () => ({
+    data: { id: "g-1", organization: { sickDayBenefitActive: sickDayActive } },
+    isLoading: false,
+    error: null,
+  }),
 }));
 
 const detail: VacationDetail = {
@@ -49,6 +55,17 @@ const detail: VacationDetail = {
 describe("EditRequestDialog", () => {
   beforeEach(() => {
     updateMutate.mockClear();
+    sickDayActive = false;
+  });
+
+  it("offers Sick day under Others when the group's benefit is active", async () => {
+    sickDayActive = true;
+    const user = userEvent.setup();
+    renderWithClient(<EditRequestDialog detail={detail} open onOpenChange={() => {}} />);
+
+    await user.click(screen.getByRole("tab", { name: "Others" }));
+    await user.click(screen.getByRole("combobox", { name: "Others" }));
+    expect(screen.getByRole("option", { name: "Sick day" })).toBeInTheDocument();
   });
 
   it("renders prefilled per-day fields", () => {

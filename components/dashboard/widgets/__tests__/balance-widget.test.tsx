@@ -10,6 +10,7 @@ const summary: BalanceSummary = {
     { type: CalendarRecordType.Vacation, allocated: 25, used: 9, pending: 2 },
     { type: CalendarRecordType.HomeOffice, allocated: 60, used: 12, pending: 0 },
     { type: CalendarRecordType.Sick, allocated: 0, used: 1, pending: 0 },
+    { type: CalendarRecordType.SickDay, allocated: 5, used: 2, pending: 0 },
   ],
 };
 
@@ -25,5 +26,11 @@ describe("BalanceWidget", () => {
     expect(screen.getByText("Home Office")).toBeInTheDocument();
     expect(screen.queryByText("Sick")).not.toBeInTheDocument();
     expect(screen.getByText("16")).toBeInTheDocument(); // 25 - 9 left
+  });
+
+  it("renders a sick day bucket like any other allocated type", () => {
+    renderWithClient(<BalanceWidget year={2026} />);
+    expect(screen.getByText("Sick day")).toBeInTheDocument();
+    expect(screen.getByText("3")).toBeInTheDocument(); // 5 - 2 left
   });
 });

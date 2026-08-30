@@ -76,6 +76,7 @@ vi.mock("@/lib/api/queries", () => ({
   useCancelVacations: () => ({ mutateAsync: cancelMutate, isPending: false }),
   useCommentVacation: () => ({ mutateAsync: commentMutate, isPending: false }),
   useUpdateVacation: () => ({ mutateAsync: vi.fn().mockResolvedValue([]), isPending: false }),
+  useGroup: () => ({ data: undefined, isLoading: false, error: null }),
 }));
 
 describe("VacationDetailDialog", () => {

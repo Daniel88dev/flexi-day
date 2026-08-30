@@ -25,7 +25,7 @@ import { CalendarRecordTypePicker } from "@/components/calendar-record-type-pick
 import { useCreateVacation, useGroup, useGroups, useGroupUsers } from "@/lib/api/queries";
 import { ApiError } from "@/lib/api/client";
 import { planLimitFromError } from "@/lib/billing/plan-limit-error";
-import { CalendarRecordType } from "@/lib/api/types";
+import { CalendarRecordType, sickDayBenefitActive } from "@/lib/api/types";
 import { useTranslation } from "@/lib/i18n/use-translation";
 import { useSession } from "@/lib/auth-client";
 
@@ -307,6 +307,7 @@ export function NewRequestDialog({ open, onOpenChange, initialDate }: NewRequest
               value={vacationType}
               onChange={setVacationType}
               idPrefix="type"
+              offerSickDay={sickDayBenefitActive(groupDetail.data)}
             />
           </div>
 

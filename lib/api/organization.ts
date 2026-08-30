@@ -39,6 +39,8 @@ export type OrganizationDetail = {
     isOwner: boolean;
     /** Null for a delegated admin — the billing address is owner-only. */
     billingEmail: string | null;
+    /** Optional because the repos deploy independently; absent hides the benefit card. */
+    sickDayBenefitEnabled?: boolean;
     createdAt: Iso;
   };
   plan: {
@@ -70,7 +72,14 @@ export function updateOrganization(input: {
   organizationId?: string | null;
   name?: string;
   billingEmail?: string;
-}): Promise<{ id: UUID; name: string; isOwner: boolean; billingEmail: string | null }> {
+  sickDayBenefitEnabled?: boolean;
+}): Promise<{
+  id: UUID;
+  name: string;
+  isOwner: boolean;
+  billingEmail: string | null;
+  sickDayBenefitEnabled?: boolean;
+}> {
   const { organizationId, ...body } = input;
   return api(scoped(`/api/organization`, organizationId), { method: "PATCH", body });
 }

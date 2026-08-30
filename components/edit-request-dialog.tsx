@@ -15,8 +15,13 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { CalendarRecordTypePicker } from "@/components/calendar-record-type-picker";
-import { useUpdateVacation } from "@/lib/api/queries";
-import { CalendarRecordType, type UpdateVacationInput, type VacationDetail } from "@/lib/api/types";
+import { useGroup, useUpdateVacation } from "@/lib/api/queries";
+import {
+  CalendarRecordType,
+  sickDayBenefitActive,
+  type UpdateVacationInput,
+  type VacationDetail,
+} from "@/lib/api/types";
 import { useTranslation } from "@/lib/i18n/use-translation";
 
 /** Backend times are HH:MM:SS; `<input type="time">` wants HH:MM. */
@@ -49,6 +54,9 @@ export function EditRequestDialog({
 }) {
   const { t } = useTranslation();
   const updateVacation = useUpdateVacation();
+  // Only for the benefit gate on the type picker; undefined while loading
+  // means SickDay is not offered rather than flashing in.
+  const groupDetail = useGroup(open ? detail.groupId : null);
 
   // Null while the Others group is open with no type picked yet.
   const [vacationType, setVacationType] = useState<CalendarRecordType | null>(detail.vacationType);
@@ -138,6 +146,7 @@ export function EditRequestDialog({
               onChange={setVacationType}
               idPrefix="edit-type"
               extraKind={detail.vacationType}
+              offerSickDay={sickDayBenefitActive(groupDetail.data)}
             />
           </div>
 

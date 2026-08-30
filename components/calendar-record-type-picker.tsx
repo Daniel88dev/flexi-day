@@ -30,6 +30,7 @@ export function CalendarRecordTypePicker({
   onChange,
   idPrefix,
   extraKind,
+  offerSickDay,
 }: {
   value: CalendarRecordType | null;
   onChange: (value: CalendarRecordType | null) => void;
@@ -41,15 +42,20 @@ export function CalendarRecordTypePicker({
    * silently rewrite the type.
    */
   extraKind?: CalendarRecordType;
+  /** Offer SickDay under Others — only for a group whose organization has the benefit active. */
+  offerSickDay?: boolean;
 }) {
   const { t } = useTranslation();
 
+  const baseKinds = offerSickDay
+    ? [CalendarRecordType.SickDay, ...OTHER_CALENDAR_RECORD_TYPES]
+    : OTHER_CALENDAR_RECORD_TYPES;
   const otherKinds =
     extraKind !== undefined &&
     !PRIMARY_CALENDAR_RECORD_TYPES.includes(extraKind) &&
-    !OTHER_CALENDAR_RECORD_TYPES.includes(extraKind)
-      ? [...OTHER_CALENDAR_RECORD_TYPES, extraKind]
-      : OTHER_CALENDAR_RECORD_TYPES;
+    !baseKinds.includes(extraKind)
+      ? [...baseKinds, extraKind]
+      : baseKinds;
 
   const topValue = value !== null && PRIMARY_CALENDAR_RECORD_TYPES.includes(value) ? value : OTHERS;
   const handleTopChange = (v: string) => onChange(v === OTHERS ? null : (v as CalendarRecordType));

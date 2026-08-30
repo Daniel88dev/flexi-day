@@ -161,7 +161,19 @@ export type GroupOrganization = {
   status: "active" | "trialing" | "past_due" | "paused" | "canceled" | null;
   /** False on Free, and once a lapsed plan's grace has run out. */
   active: boolean;
+  /**
+   * Sick day toggle AND a paid plan — false while the benefit is dormant.
+   * Optional because the repos deploy independently; absent means not offered.
+   */
+  sickDayBenefitActive?: boolean;
 };
+
+/** Whether a group's organization offers Sick day right now; false when unknown. */
+export function sickDayBenefitActive(
+  group: { organization?: GroupOrganization | null } | null | undefined
+): boolean {
+  return group?.organization?.sickDayBenefitActive === true;
+}
 
 export type Group = {
   id: UUID;
@@ -171,6 +183,8 @@ export type Group = {
   groupName: string;
   defaultVacationDays: number;
   defaultHomeOfficeDays: number;
+  /** Starting Sick day allowance; only meaningful while the benefit is active. */
+  defaultSickDays?: number;
   /** Weekdays counted as working days, as JS `Date.getDay()` numbers (0=Sun … 6=Sat). */
   workingDays: number[];
   /** ISO 3166-1 alpha-2 country whose public holidays show on the dashboard; null = off. */
@@ -235,6 +249,8 @@ export type UserYearQuota = {
   relatedYear: string;
   vacationDays: number;
   homeOfficeDays: number;
+  /** Sick day benefit allowance; never carried over. */
+  sickDays?: number;
   /** Unused vacation days rolled forward from the previous year. */
   carriedOverDays: number;
   createdAt: Iso;
@@ -348,6 +364,8 @@ export type SetUserQuotaInput = {
   year: number;
   vacationDays: number;
   homeOfficeDays: number;
+  /** Omitted (not zero) when the benefit is hidden, so saves never wipe a stored allowance. */
+  sickDays?: number;
   carriedOverDays?: number;
 };
 
@@ -362,6 +380,8 @@ export type UpdateGroupQuotasInput = {
   groupId: UUID;
   defaultVacationDays: number;
   defaultHomeOfficeDays: number;
+  /** Omitted (not zero) when the benefit is hidden, so saves never wipe a stored default. */
+  defaultSickDays?: number;
 };
 
 export type UpdateGroupWorkingDaysInput = {

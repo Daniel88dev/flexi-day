@@ -13,8 +13,9 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useCarryOverSuggestion, useSetUserQuota } from "@/lib/api/queries";
+import { useCarryOverSuggestion, useGroup, useSetUserQuota } from "@/lib/api/queries";
 import type { ReportQuotaRow, ReportScopeGroup } from "@/lib/api/report-types";
+import { sickDayBenefitActive } from "@/lib/api/types";
 import { useTranslation } from "@/lib/i18n/use-translation";
 
 type Props = {
@@ -40,10 +41,15 @@ export function QuotaEditDialog({ open, onOpenChange, userId, year, group, quota
   // the initial values below are re-seeded on every open by the remount.
   const [vacationDays, setVacationDays] = useState(String(quota?.vacationDays ?? 0));
   const [homeOfficeDays, setHomeOfficeDays] = useState(String(quota?.homeOfficeDays ?? 0));
+  const [sickDays, setSickDays] = useState(String(quota?.sickDays ?? 0));
   const [carriedOverDays, setCarriedOverDays] = useState(String(quota?.carriedOverDays ?? 0));
   const [error, setError] = useState<string | null>(null);
 
   const suggestion = useCarryOverSuggestion(group.groupId, userId, year, open);
+  // The report scope carries no organization, so the benefit gate comes from
+  // the group's own badge.
+  const groupQuery = useGroup(open ? group.groupId : null);
+  const sickDayActive = sickDayBenefitActive(groupQuery.data);
 
   function handleSave() {
     setError(null);
@@ -54,6 +60,7 @@ export function QuotaEditDialog({ open, onOpenChange, userId, year, group, quota
         year,
         vacationDays: Number(vacationDays) || 0,
         homeOfficeDays: Number(homeOfficeDays) || 0,
+        ...(sickDayActive ? { sickDays: Number(sickDays) || 0 } : {}),
         carriedOverDays: Number(carriedOverDays) || 0,
       },
       {
@@ -101,6 +108,19 @@ export function QuotaEditDialog({ open, onOpenChange, userId, year, group, quota
                 onChange={(event) => setHomeOfficeDays(event.target.value)}
               />
             </div>
+            {sickDayActive ? (
+              <div className="space-y-1.5">
+                <Label htmlFor="quota-sick-days">{t.report.quotaDialog.sickDays}</Label>
+                <Input
+                  id="quota-sick-days"
+                  type="number"
+                  min={0}
+                  max={365}
+                  value={sickDays}
+                  onChange={(event) => setSickDays(event.target.value)}
+                />
+              </div>
+            ) : null}
           </div>
 
           <div className="space-y-1.5">
