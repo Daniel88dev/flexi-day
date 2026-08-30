@@ -1,8 +1,9 @@
 "use client";
 
-import { type VacationKind } from "@/lib/api/types";
-import { swatch, TYPE_META } from "@/lib/calendar-sync/meta";
+import { type CalendarRecordType } from "@/lib/api/types";
+import { swatch, typeMetaFor } from "@/lib/calendar-sync/meta";
 import { useTranslation } from "@/lib/i18n/use-translation";
+import { recordTypeLabel } from "@/lib/i18n/record-type-label";
 
 /** A pill showing a record type's icon + label, tinted with its feed color. */
 export function TypeBadge({
@@ -10,13 +11,14 @@ export function TypeBadge({
   color,
   small,
 }: {
-  type: VacationKind;
+  type: CalendarRecordType;
   color?: string; // resolved CSS color; defaults to the type's default swatch
   small?: boolean;
 }) {
   const { t } = useTranslation();
-  const Icon = TYPE_META[type].icon;
-  const c = color ?? swatch(TYPE_META[type].def);
+  const meta = typeMetaFor(type);
+  const Icon = meta.icon;
+  const c = color ?? swatch(meta.def);
   return (
     <span
       className="inline-flex items-center gap-1.5 rounded-full font-semibold"
@@ -29,7 +31,7 @@ export function TypeBadge({
       }}
     >
       <Icon size={small ? 12 : 13} style={{ color: c }} />
-      {t.leaveTypes[type].label}
+      {recordTypeLabel(t.calendarRecordTypes, type)}
     </span>
   );
 }

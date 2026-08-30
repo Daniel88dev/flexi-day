@@ -1,5 +1,5 @@
 import type { CalendarRange } from "@/components/dashboard/leave-calendar";
-import { VacationKind, type BankHoliday } from "@/lib/api/types";
+import { CalendarRecordType, type BankHoliday } from "@/lib/api/types";
 
 /**
  * Turns bank holidays into calendar ranges for one visible month. Same-day
@@ -29,7 +29,7 @@ export function bankHolidaysToRanges(
       return {
         id: `bh-${date}`,
         who: "all",
-        type: VacationKind.BankHoliday,
+        type: CalendarRecordType.BankHoliday,
         from: day,
         to: day,
         note: names.join(" · "),

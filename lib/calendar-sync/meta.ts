@@ -10,7 +10,7 @@ import {
   Thermometer,
   Wallet,
 } from "lucide-react";
-import { VacationKind } from "@/lib/api/types";
+import { CalendarRecordType } from "@/lib/api/types";
 import type {
   CalendarSyncConfig,
   CalendarSyncInput,
@@ -43,40 +43,50 @@ const PALETTE_BY_KEY: Record<string, (typeof PALETTE)[number]> = Object.fromEntr
 /** Resolve a swatch key to its CSS color, falling back to the first swatch. */
 export const swatch = (key: string): string => (PALETTE_BY_KEY[key] ?? PALETTE[0]).css;
 
-/** Per-type icon + default swatch. Extensible: every {@link VacationKind} maps here. */
-export const TYPE_META: Record<VacationKind, { icon: LucideIcon; def: SwatchKey }> = {
-  [VacationKind.Vacation]: { icon: Plane, def: "violet" },
-  [VacationKind.HomeOffice]: { icon: House, def: "green" },
-  [VacationKind.Sick]: { icon: HeartPulse, def: "coral" },
-  [VacationKind.BankHoliday]: { icon: Star, def: "amber" },
-  [VacationKind.PaidTimeOff]: { icon: CalendarDays, def: "blue" },
-  [VacationKind.SickLeave]: { icon: Thermometer, def: "rose" },
-  [VacationKind.StudyLeave]: { icon: GraduationCap, def: "indigo" },
-  [VacationKind.NonPaidLeave]: { icon: Wallet, def: "slate" },
-  [VacationKind.Other]: { icon: CircleDashed, def: "teal" },
+/** Per-type icon + default swatch. Extensible: every {@link CalendarRecordType} maps here. */
+export const TYPE_META: Record<CalendarRecordType, { icon: LucideIcon; def: SwatchKey }> = {
+  [CalendarRecordType.Vacation]: { icon: Plane, def: "violet" },
+  [CalendarRecordType.HomeOffice]: { icon: House, def: "green" },
+  [CalendarRecordType.Sick]: { icon: HeartPulse, def: "coral" },
+  [CalendarRecordType.BankHoliday]: { icon: Star, def: "amber" },
+  [CalendarRecordType.PaidTimeOff]: { icon: CalendarDays, def: "blue" },
+  [CalendarRecordType.SickDay]: { icon: Thermometer, def: "rose" },
+  [CalendarRecordType.StudyLeave]: { icon: GraduationCap, def: "indigo" },
+  [CalendarRecordType.NonPaidLeave]: { icon: Wallet, def: "slate" },
+  [CalendarRecordType.Other]: { icon: CircleDashed, def: "teal" },
 };
 
+/**
+ * Total accessor: stored configs outlive builds, so a type saved by a newer
+ * build (or added by a newer backend) must render, not crash.
+ */
+const UNKNOWN_TYPE_META = { icon: CircleDashed, def: "slate" as SwatchKey };
+
+export function typeMetaFor(type: CalendarRecordType): { icon: LucideIcon; def: SwatchKey } {
+  return TYPE_META[type] ?? UNKNOWN_TYPE_META;
+}
+
 /** Display order of record types in the builder. */
-export const TYPE_ORDER: VacationKind[] = [
-  VacationKind.Vacation,
-  VacationKind.HomeOffice,
-  VacationKind.PaidTimeOff,
-  VacationKind.Sick,
-  VacationKind.SickLeave,
-  VacationKind.BankHoliday,
-  VacationKind.StudyLeave,
-  VacationKind.NonPaidLeave,
-  VacationKind.Other,
+export const TYPE_ORDER: CalendarRecordType[] = [
+  CalendarRecordType.Vacation,
+  CalendarRecordType.HomeOffice,
+  CalendarRecordType.PaidTimeOff,
+  CalendarRecordType.Sick,
+  CalendarRecordType.SickDay,
+  CalendarRecordType.BankHoliday,
+  CalendarRecordType.StudyLeave,
+  CalendarRecordType.NonPaidLeave,
+  CalendarRecordType.Other,
 ];
 
 /** Distinct default swatches for the owner's own records when `distinguishMine`. */
-const MINE_DEFAULTS: Partial<Record<VacationKind, SwatchKey>> = {
-  [VacationKind.Vacation]: "plum",
-  [VacationKind.PaidTimeOff]: "teal",
-  [VacationKind.HomeOffice]: "indigo",
+const MINE_DEFAULTS: Partial<Record<CalendarRecordType, SwatchKey>> = {
+  [CalendarRecordType.Vacation]: "plum",
+  [CalendarRecordType.PaidTimeOff]: "teal",
+  [CalendarRecordType.HomeOffice]: "indigo",
 };
 
-const mineKey = (type: VacationKind) => `${type}_mine`;
+const mineKey = (type: CalendarRecordType) => `${type}_mine`;
 
 /** The builder's working config — a superset of the API shape, editable in place. */
 export type BuilderConfig = {
@@ -85,7 +95,7 @@ export type BuilderConfig = {
   scope: CalendarSyncScope;
   teamIds: string[];
   distinguishMine: boolean;
-  types: VacationKind[];
+  types: CalendarRecordType[];
   colors: Record<string, SwatchKey>; // keyed by `${type}` and `${type}_mine`
   feedUrl: string | null;
   tokenMasked: boolean;
@@ -109,7 +119,7 @@ export function newBuilderConfig(defaultTeamIds: string[] = []): BuilderConfig {
     scope: "ME",
     teamIds: defaultTeamIds.slice(0, 1),
     distinguishMine: false,
-    types: [VacationKind.Vacation, VacationKind.PaidTimeOff, VacationKind.Sick],
+    types: [CalendarRecordType.Vacation, CalendarRecordType.PaidTimeOff, CalendarRecordType.Sick],
     colors: defaultColors(),
     feedUrl: null,
     tokenMasked: false,
@@ -146,8 +156,8 @@ export function builderToInput(cfg: BuilderConfig): CalendarSyncInput {
     teamIds: cfg.teamIds,
     types: cfg.types.map((type) => ({
       type,
-      color: cfg.colors[type] ?? TYPE_META[type].def,
-      ...(sendMine ? { mineColor: cfg.colors[mineKey(type)] ?? TYPE_META[type].def } : {}),
+      color: cfg.colors[type] ?? typeMetaFor(type).def,
+      ...(sendMine ? { mineColor: cfg.colors[mineKey(type)] ?? typeMetaFor(type).def } : {}),
     })),
   };
 }
@@ -155,13 +165,13 @@ export function builderToInput(cfg: BuilderConfig): CalendarSyncInput {
 /** Resolve the CSS color for an entry, honouring the "distinguish mine" split. */
 export function colorFor(
   cfg: Pick<BuilderConfig, "distinguishMine" | "scope" | "colors">,
-  type: VacationKind,
+  type: CalendarRecordType,
   isMine: boolean
 ): string {
   if (cfg.distinguishMine && cfg.scope === "TEAM" && isMine && cfg.colors[mineKey(type)]) {
     return swatch(cfg.colors[mineKey(type)]);
   }
-  return swatch(cfg.colors[type] ?? TYPE_META[type].def);
+  return swatch(cfg.colors[type] ?? typeMetaFor(type).def);
 }
 
 function isSwatchKey(v: string): v is SwatchKey {

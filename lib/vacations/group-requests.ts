@@ -1,7 +1,7 @@
 import {
   vacationStatus,
   type UserSummary,
-  type VacationKind,
+  type CalendarRecordType,
   type VacationListItem,
   type VacationStatus,
 } from "@/lib/api/types";
@@ -12,7 +12,7 @@ export interface RequestGroup {
   userId: string;
   user: UserSummary;
   groupId: string;
-  vacationType: VacationKind;
+  vacationType: CalendarRecordType;
   status: VacationStatus;
   from: string;
   to: string;

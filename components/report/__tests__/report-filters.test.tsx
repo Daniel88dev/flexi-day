@@ -1,7 +1,8 @@
-import { describe, expect, it, vi } from "vitest";
-import { screen } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { fireEvent, screen } from "@testing-library/react";
 import { ReportFiltersBar } from "@/components/report/report-filters";
 import { renderWithClient } from "@/lib/test-utils";
+import { I18nProvider } from "@/lib/i18n/i18n-provider";
 import type { ReportScope } from "@/lib/api/report-types";
 
 const scope: ReportScope = {
@@ -19,6 +20,39 @@ const scope: ReportScope = {
 };
 
 describe("ReportFiltersBar", () => {
+  afterEach(() => {
+    window.localStorage.clear();
+  });
+
+  it("lists every filterable type in Czech, without bank holiday", async () => {
+    window.localStorage.setItem("flexiday-locale", "cs");
+
+    renderWithClient(
+      <I18nProvider>
+        <ReportFiltersBar scope={scope} filters={{ year: 2026 }} onChange={vi.fn()} />
+      </I18nProvider>
+    );
+
+    fireEvent.click(await screen.findByRole("button", { name: "Typy volna" }));
+
+    for (const label of [
+      "Dovolená",
+      "Home Office",
+      "Nemoc",
+      "Neplacené volno",
+      "Placené volno",
+      "Zdravotní volno",
+      "Studijní volno",
+      "Ostatní",
+    ]) {
+      expect(screen.getByRole("option", { name: label })).toBeInTheDocument();
+    }
+
+    // A company-wide closure is not leave anyone took; the export endpoint
+    // rejects it, so the shared filter bar must not offer it.
+    expect(screen.queryByRole("option", { name: "Státní svátek" })).not.toBeInTheDocument();
+  });
+
   it("offers the rolling window alongside each year when a period is controlled", () => {
     renderWithClient(
       <ReportFiltersBar

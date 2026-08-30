@@ -3,7 +3,7 @@ import { render, screen } from "@testing-library/react";
 import { TeamRemainingChart } from "@/components/report/team-remaining-chart";
 import { buildMemberRemaining } from "@/lib/report/series";
 import type { ReportScopeMember, ReportSummaryRow } from "@/lib/api/report-types";
-import { VacationKind } from "@/lib/api/types";
+import { CalendarRecordType } from "@/lib/api/types";
 
 const members: ReportScopeMember[] = [
   { id: "u1", name: "Ada", initials: "AD", avatarColor: "hsl(200, 65%, 50%)", groupId: "g1" },
@@ -13,7 +13,7 @@ const members: ReportScopeMember[] = [
 const row = (over: Partial<ReportSummaryRow>): ReportSummaryRow => ({
   userId: "u1",
   groupId: "g1",
-  vacationType: VacationKind.Vacation,
+  vacationType: CalendarRecordType.Vacation,
   carriedOverDays: 3,
   yearQuota: 20,
   usedToDate: 2,
@@ -24,7 +24,7 @@ const row = (over: Partial<ReportSummaryRow>): ReportSummaryRow => ({
 });
 
 const build = (summary: ReportSummaryRow[]) =>
-  buildMemberRemaining(members, summary, VacationKind.Vacation);
+  buildMemberRemaining(members, summary, CalendarRecordType.Vacation);
 
 describe("TeamRemainingChart", () => {
   it("labels both stacked sections in the legend", () => {
@@ -58,15 +58,15 @@ describe("TeamRemainingChart", () => {
     const homeOffice = buildMemberRemaining(
       members,
       [
-        row({ vacationType: VacationKind.HomeOffice, carriedOverDays: 0, yearQuota: 10 }),
+        row({ vacationType: CalendarRecordType.HomeOffice, carriedOverDays: 0, yearQuota: 10 }),
         row({
           userId: "u2",
-          vacationType: VacationKind.HomeOffice,
+          vacationType: CalendarRecordType.HomeOffice,
           carriedOverDays: 0,
           yearQuota: 10,
         }),
       ],
-      VacationKind.HomeOffice
+      CalendarRecordType.HomeOffice
     );
 
     render(<TeamRemainingChart remaining={homeOffice} year={2026} color="var(--c-home)" />);
@@ -81,7 +81,7 @@ describe("TeamRemainingChart", () => {
     const overdrawn = buildMemberRemaining(
       members,
       [row({ carriedOverDays: 0, yearQuota: 0, usedToDate: 5 })],
-      VacationKind.Vacation
+      CalendarRecordType.Vacation
     );
 
     render(<TeamRemainingChart remaining={overdrawn} year={2026} color="var(--c-vacation)" />);
@@ -93,7 +93,7 @@ describe("TeamRemainingChart", () => {
   it("says so when nobody has an allowance instead of drawing an empty axis", () => {
     render(
       <TeamRemainingChart
-        remaining={buildMemberRemaining(members, [], VacationKind.Sick)}
+        remaining={buildMemberRemaining(members, [], CalendarRecordType.Sick)}
         year={2026}
         color="var(--c-sick)"
       />

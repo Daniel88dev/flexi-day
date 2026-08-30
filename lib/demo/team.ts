@@ -1,7 +1,6 @@
 // Static placeholders used only on the public landing page (avatars + hero calendar preview).
 // Authenticated app surfaces use real API data — do not import this from anywhere under app/(app).
-import { VacationKind } from "@/lib/api/types";
-import type { LeaveTypeKey } from "./leave-meta";
+import { CalendarRecordType } from "@/lib/api/types";
 
 const AV = {
   violet: "linear-gradient(135deg,#8b6ce8,#6d4fd0)",
@@ -126,32 +125,46 @@ export const demoById = (id: string): DemoPerson | undefined => DEMO_TEAM.find((
 export interface DemoLeave {
   id: string;
   who: string;
-  type: LeaveTypeKey;
+  type: CalendarRecordType;
   from: number;
   to: number;
   note?: string;
 }
 
 export const DEMO_LEAVE: DemoLeave[] = [
-  { id: "l1", who: "mr", type: VacationKind.Vacation, from: 8, to: 19, note: "Sardinia" },
-  { id: "l2", who: "sa", type: VacationKind.Vacation, from: 11, to: 16, note: "Family trip" },
-  { id: "l3", who: "lo", type: VacationKind.Sick, from: 9, to: 9, note: "Flu" },
-  { id: "l4", who: "ak", type: VacationKind.HomeOffice, from: 15, to: 17, note: "Focus week" },
-  { id: "l5", who: "tb", type: VacationKind.HomeOffice, from: 10, to: 10 },
-  { id: "l6", who: "tb", type: VacationKind.HomeOffice, from: 17, to: 17 },
-  { id: "l7", who: "yt", type: VacationKind.PaidTimeOff, from: 22, to: 23, note: "Long weekend" },
-  { id: "l8", who: "nw", type: VacationKind.Vacation, from: 24, to: 30, note: "Wedding" },
-  { id: "l9", who: "ep", type: VacationKind.Vacation, from: 29, to: 30 },
-  { id: "l10", who: "pn", type: VacationKind.PaidTimeOff, from: 18, to: 18 },
+  { id: "l1", who: "mr", type: CalendarRecordType.Vacation, from: 8, to: 19, note: "Sardinia" },
+  { id: "l2", who: "sa", type: CalendarRecordType.Vacation, from: 11, to: 16, note: "Family trip" },
+  { id: "l3", who: "lo", type: CalendarRecordType.Sick, from: 9, to: 9, note: "Flu" },
+  {
+    id: "l4",
+    who: "ak",
+    type: CalendarRecordType.HomeOffice,
+    from: 15,
+    to: 17,
+    note: "Focus week",
+  },
+  { id: "l5", who: "tb", type: CalendarRecordType.HomeOffice, from: 10, to: 10 },
+  { id: "l6", who: "tb", type: CalendarRecordType.HomeOffice, from: 17, to: 17 },
+  {
+    id: "l7",
+    who: "yt",
+    type: CalendarRecordType.PaidTimeOff,
+    from: 22,
+    to: 23,
+    note: "Long weekend",
+  },
+  { id: "l8", who: "nw", type: CalendarRecordType.Vacation, from: 24, to: 30, note: "Wedding" },
+  { id: "l9", who: "ep", type: CalendarRecordType.Vacation, from: 29, to: 30 },
+  { id: "l10", who: "pn", type: CalendarRecordType.PaidTimeOff, from: 18, to: 18 },
   {
     id: "l11",
     who: "all",
-    type: VacationKind.BankHoliday,
+    type: CalendarRecordType.BankHoliday,
     from: 1,
     to: 1,
     note: "Spring Bank Holiday",
   },
-  { id: "l12", who: "dh", type: VacationKind.HomeOffice, from: 12, to: 12 },
+  { id: "l12", who: "dh", type: CalendarRecordType.HomeOffice, from: 12, to: 12 },
 ];
 
 export const DEMO_MONTH = { year: 2026, monthIdx: 5, label: "June 2026", today: 13 };

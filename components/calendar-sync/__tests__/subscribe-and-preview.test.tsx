@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/react";
-import { VacationKind } from "@/lib/api/types";
+import { CalendarRecordType } from "@/lib/api/types";
 import { SubscribePanel } from "../subscribe-panel";
 import { PreviewPanel } from "../preview-panel";
 import type { PreviewEntry } from "@/lib/calendar-sync/preview";
@@ -45,7 +45,7 @@ describe("PreviewPanel", () => {
     const entries: PreviewEntry[] = [
       {
         id: "p0",
-        type: VacationKind.Vacation,
+        type: CalendarRecordType.Vacation,
         from: 10,
         to: 12,
         name: "You",

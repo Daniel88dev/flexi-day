@@ -4,7 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { VacationDetailDialog } from "../vacation-detail-dialog";
 import { renderWithClient } from "@/lib/test-utils";
 import { ApiError } from "@/lib/api/client";
-import { VacationKind, type VacationDetail } from "@/lib/api/types";
+import { CalendarRecordType, type VacationDetail } from "@/lib/api/types";
 
 const detail: VacationDetail = {
   id: "v-1",
@@ -17,7 +17,7 @@ const detail: VacationDetail = {
   vacationIds: ["v-1"],
   startTime: null,
   endTime: null,
-  vacationType: VacationKind.Vacation,
+  vacationType: CalendarRecordType.Vacation,
   halfDay: false,
   note: "Family trip",
   rejectionReason: null,
@@ -76,6 +76,7 @@ vi.mock("@/lib/api/queries", () => ({
   useCancelVacations: () => ({ mutateAsync: cancelMutate, isPending: false }),
   useCommentVacation: () => ({ mutateAsync: commentMutate, isPending: false }),
   useUpdateVacation: () => ({ mutateAsync: vi.fn().mockResolvedValue([]), isPending: false }),
+  useGroup: () => ({ data: undefined, isLoading: false, error: null }),
 }));
 
 describe("VacationDetailDialog", () => {

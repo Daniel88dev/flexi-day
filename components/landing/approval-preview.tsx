@@ -3,7 +3,7 @@
 import { Check } from "lucide-react";
 import { AvatarBubble } from "@/components/brand/avatar-bubble";
 import { DEMO_TEAM } from "@/lib/demo/team";
-import { VacationKind } from "@/lib/api/types";
+import { CalendarRecordType } from "@/lib/api/types";
 import { useTranslation } from "@/lib/i18n/use-translation";
 
 /** Decorative mini approval card for the landing bento; real components, no interactivity. */
@@ -21,7 +21,8 @@ export function ApprovalPreview() {
         <div className="min-w-0 flex-1">
           <div className="text-[13.5px] font-semibold">{p.name}</div>
           <div className="text-[12px]" style={{ color: "var(--text-faint)" }}>
-            {t.leaveTypes[VacationKind.Vacation].label} · {t.landing.approvalPreviewDates}
+            {t.calendarRecordTypes[CalendarRecordType.Vacation].label} ·{" "}
+            {t.landing.approvalPreviewDates}
           </div>
         </div>
       </div>

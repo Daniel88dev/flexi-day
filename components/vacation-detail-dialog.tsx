@@ -20,9 +20,8 @@ import {
   useVacation,
 } from "@/lib/api/queries";
 import {
-  VACATION_KIND_COLORS,
+  CALENDAR_RECORD_TYPE_COLORS,
   vacationStatus,
-  type VacationDetail,
   type VacationEvent,
   type VacationEventKind,
   type VacationStatus,
@@ -33,6 +32,7 @@ import { cn } from "@/lib/utils";
 import { useTranslation } from "@/lib/i18n/use-translation";
 import type { Dictionary } from "@/lib/i18n";
 import { EditRequestDialog } from "@/components/edit-request-dialog";
+import { recordTypeLabel } from "@/lib/i18n/record-type-label";
 
 const STATUS_BADGE: Record<VacationStatus, string> = {
   pending: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300",
@@ -147,10 +147,10 @@ export function VacationDetailDialog({
               <span
                 className={cn(
                   "rounded-full px-2 py-0.5 text-xs font-medium",
-                  VACATION_KIND_COLORS[detail.vacationType]
+                  CALENDAR_RECORD_TYPE_COLORS[detail.vacationType]
                 )}
               >
-                {t.leaveTypes[detail.vacationType].label}
+                {recordTypeLabel(t.calendarRecordTypes, detail.vacationType)}
               </span>
               <span
                 className={cn(

@@ -1,18 +1,19 @@
 "use client";
 
 import { leaveMetaFor } from "@/lib/demo/leave-meta";
-import type { VacationKind } from "@/lib/api/types";
+import type { CalendarRecordType } from "@/lib/api/types";
 import { useTranslation } from "@/lib/i18n/use-translation";
+import { recordTypeLabel } from "@/lib/i18n/record-type-label";
 
 interface LeaveTagProps {
-  type: VacationKind;
+  type: CalendarRecordType;
   small?: boolean;
 }
 
 export function LeaveTag({ type, small }: LeaveTagProps) {
   const { t } = useTranslation();
   const meta = leaveMetaFor(type);
-  const label = t.leaveTypes[type].label;
+  const label = recordTypeLabel(t.calendarRecordTypes, type);
   return (
     <span
       className="inline-flex items-center gap-1.5 rounded-full font-semibold"

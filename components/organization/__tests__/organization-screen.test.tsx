@@ -51,6 +51,7 @@ const baseDetail = (): OrganizationDetail => ({
     name: "Acme",
     isOwner: true,
     billingEmail: "billing@acme.test",
+    sickDayBenefitEnabled: false,
     createdAt: "2026-01-01T00:00:00.000Z",
   },
   plan: {
@@ -196,6 +197,57 @@ describe("OrganizationScreen", () => {
       candidates = [];
       renderWithClient(<OrganizationScreen />);
       expect(screen.getByText(/already an administrator/i)).toBeInTheDocument();
+    });
+  });
+
+  describe("sick day benefit", () => {
+    it("toggles the benefit on a paid plan", async () => {
+      const user = userEvent.setup();
+      renderWithClient(<OrganizationScreen />);
+
+      const toggle = screen.getByRole("switch", { name: "Offer paid sick days" });
+      expect(toggle).not.toBeDisabled();
+      expect(toggle).not.toBeChecked();
+      // The plan note explains a restriction; a paid organization has none.
+      expect(screen.queryByText("Available on paid plans.")).not.toBeInTheDocument();
+
+      await user.click(toggle);
+      expect(updateOrganization).toHaveBeenCalledWith({ sickDayBenefitEnabled: true });
+    });
+
+    it("disables the toggle on the free plan and labels it paid-only", () => {
+      const base = baseDetail();
+      detail = { ...base, plan: { ...base.plan, plan: "FREE", status: null } };
+      renderWithClient(<OrganizationScreen />);
+
+      expect(screen.getByRole("switch", { name: "Offer paid sick days" })).toBeDisabled();
+      expect(screen.getByText("Available on paid plans.")).toBeInTheDocument();
+    });
+
+    it("shows an enabled benefit as dormant after a lapse, still switchable off", () => {
+      const base = baseDetail();
+      detail = {
+        ...base,
+        organization: { ...base.organization, sickDayBenefitEnabled: true },
+        plan: { ...base.plan, plan: "FREE", status: "canceled" },
+      };
+      renderWithClient(<OrganizationScreen />);
+
+      const toggle = screen.getByRole("switch", { name: "Offer paid sick days" });
+      expect(toggle).toBeChecked();
+      expect(toggle).not.toBeDisabled();
+      expect(screen.getByText(/dormant/i)).toBeInTheDocument();
+    });
+
+    it("hides the card when the backend predates the benefit", () => {
+      const base = baseDetail();
+      detail = {
+        ...base,
+        organization: { ...base.organization, sickDayBenefitEnabled: undefined },
+      };
+      renderWithClient(<OrganizationScreen />);
+
+      expect(screen.queryByText("Sick day benefit")).not.toBeInTheDocument();
     });
   });
 

@@ -4,7 +4,7 @@ import userEvent from "@testing-library/user-event";
 import DashboardPage from "../page";
 import { renderWithClient } from "@/lib/test-utils";
 import {
-  VacationKind,
+  CalendarRecordType,
   type BankHoliday,
   type UserSettings,
   type VacationListItem,
@@ -31,7 +31,7 @@ function day(
     requestedDay,
     startTime: null,
     endTime: null,
-    vacationType: VacationKind.Vacation,
+    vacationType: CalendarRecordType.Vacation,
     halfDay: false,
     note: null,
     rejectionReason: null,

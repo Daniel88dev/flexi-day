@@ -1,4 +1,4 @@
-import { VacationKind } from "@/lib/api/types";
+import { CalendarRecordType } from "@/lib/api/types";
 
 /**
  * English is the source of truth: its inferred shape becomes the `Dictionary`
@@ -45,18 +45,18 @@ export const en = {
     cancelled: "Cancelled",
   },
 
-  /** Leave-type names, keyed by the API's VacationKind values. */
-  leaveTypes: {
-    [VacationKind.Vacation]: { label: "Vacation", short: "Vac" },
-    [VacationKind.HomeOffice]: { label: "Home Office", short: "WFH" },
-    [VacationKind.Sick]: { label: "Sick", short: "Sick" },
-    [VacationKind.BankHoliday]: { label: "Bank Holiday", short: "Bank" },
-    [VacationKind.NonPaidLeave]: { label: "Non-Paid Leave", short: "Unpaid" },
-    [VacationKind.PaidTimeOff]: { label: "Paid Time Off", short: "PTO" },
-    [VacationKind.SickLeave]: { label: "Sick Leave", short: "Sick" },
-    [VacationKind.StudyLeave]: { label: "Study Leave", short: "Study" },
-    [VacationKind.Other]: { label: "Other", short: "Other" },
-  } as Record<VacationKind, { label: string; short: string }>,
+  /** Record-type names, keyed by the API's CalendarRecordType values. */
+  calendarRecordTypes: {
+    [CalendarRecordType.Vacation]: { label: "Vacation", short: "Vac" },
+    [CalendarRecordType.HomeOffice]: { label: "Home Office", short: "WFH" },
+    [CalendarRecordType.Sick]: { label: "Sick", short: "Sick" },
+    [CalendarRecordType.BankHoliday]: { label: "Bank Holiday", short: "Bank" },
+    [CalendarRecordType.NonPaidLeave]: { label: "Non-Paid Leave", short: "Unpaid" },
+    [CalendarRecordType.PaidTimeOff]: { label: "Paid Time Off", short: "PTO" },
+    [CalendarRecordType.SickDay]: { label: "Sick day", short: "SickD" },
+    [CalendarRecordType.StudyLeave]: { label: "Study Leave", short: "Study" },
+    [CalendarRecordType.Other]: { label: "Other", short: "Other" },
+  } satisfies Record<CalendarRecordType, { label: string; short: string }>,
 
   calendar: {
     /** Full month names, January-first. */
@@ -200,6 +200,7 @@ export const en = {
       group: "Group",
       vacationDays: "Vacation days",
       homeOfficeDays: "Home office days",
+      sickDays: "Sick days",
       carriedOver: "Carried over from previous year",
       suggestion: (n: number, year: number) => `${n} unused in ${year}`,
       useSuggestion: "Use suggestion",
@@ -245,6 +246,8 @@ export const en = {
     selectGroup: "Select group…",
     noGroups: "No groups available",
     type: "Type",
+    others: "Others",
+    selectOtherType: "Select type…",
     from: "From",
     to: "To",
     startTime: "Start time (optional)",
@@ -252,6 +255,7 @@ export const en = {
     halfDay: "Half day",
     halfDayHint: "Counts as 0.5 days against your allowance.",
     note: "Note (optional)",
+    noteRequiredForOther: "Note (required for Other)",
     notePlaceholder: "Family trip, conference, …",
     submit: "Submit Request",
     submitting: "Submitting…",
@@ -396,6 +400,7 @@ export const en = {
       joined: "Joined",
       vacationDays: "Vacation days",
       homeOfficeDays: "Home office days",
+      sickDays: "Sick days",
       actions: "Actions",
     },
     yes: "Yes",
@@ -403,10 +408,12 @@ export const en = {
     default: "(default)",
     vacationDaysFor: (name: string) => `Vacation days for ${name}`,
     homeOfficeDaysFor: (name: string) => `Home office days for ${name}`,
+    sickDaysFor: (name: string) => `Sick days for ${name}`,
     saveQuotaFailed: "Could not save quota",
     groupDefaults: "Group defaults",
     vacationDays: "Vacation days",
     homeOfficeDays: "Home office days",
+    sickDays: "Sick days",
     saveDefaults: "Save defaults",
     defaultsUpdated: "Defaults updated.",
     saveDefaultsFailed: "Could not save defaults",
@@ -596,6 +603,7 @@ export const en = {
     },
     prevMonth: "Previous month",
     nextMonth: "Next month",
+    legend: "Calendar legend",
     filter: {
       label: "Filter leave types",
       allTypes: "All types",
@@ -797,6 +805,13 @@ export const en = {
     planLimits: (groups: number, members: number) =>
       `${groups} groups · ${members} people per group`,
     manageBilling: "Manage billing",
+    sickDayTitle: "Sick day benefit",
+    sickDayLabel: "Offer paid sick days",
+    sickDayHint:
+      "Members can request Sick days against a yearly allowance that group admins set in each group's Quotas tab.",
+    sickDayPaidOnly: "Available on paid plans.",
+    sickDayDormant:
+      "The subscription has lapsed, so the benefit is dormant — nothing is deleted, and re-subscribing restores it.",
     groupsTitle: "Groups",
     groupsNone: "This organization has no groups yet.",
     groupMembers: (n: number) => `${n} ${n === 1 ? "member" : "members"}`,

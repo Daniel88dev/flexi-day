@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { bankHolidaysToRanges } from "@/lib/holidays";
-import { VacationKind, type BankHoliday } from "@/lib/api/types";
+import { CalendarRecordType, type BankHoliday } from "@/lib/api/types";
 
 const holiday = (date: string, name: string, country = "CZ"): BankHoliday => ({
   date,
@@ -20,7 +20,7 @@ describe("bankHolidaysToRanges", () => {
       {
         id: "bh-2026-08-15",
         who: "all",
-        type: VacationKind.BankHoliday,
+        type: CalendarRecordType.BankHoliday,
         from: 15,
         to: 15,
         note: "Assumption Day",

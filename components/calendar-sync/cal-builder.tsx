@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import type { CalendarSyncConfig, CalendarSyncInput } from "@/lib/api/calendar-sync";
 import type { Group, VacationListItem } from "@/lib/api/types";
-import { VacationKind } from "@/lib/api/types";
+import { CalendarRecordType } from "@/lib/api/types";
 import { useTranslation } from "@/lib/i18n/use-translation";
 import {
   builderToInput,
@@ -44,8 +44,8 @@ function TypeRow({
   onColor,
 }: {
   config: BuilderConfig;
-  type: VacationKind;
-  onToggle: (t: VacationKind) => void;
+  type: CalendarRecordType;
+  onToggle: (t: CalendarRecordType) => void;
   onColor: (key: string, v: SwatchKey) => void;
 }) {
   const { t } = useTranslation();
@@ -53,7 +53,7 @@ function TypeRow({
   const on = config.types.includes(type);
   const split = config.distinguishMine && config.scope === "TEAM";
   const baseColor = swatch(config.colors[type]);
-  const typeLabel = t.leaveTypes[type].label;
+  const typeLabel = t.calendarRecordTypes[type].label;
   return (
     <div
       className="flex items-center gap-3 rounded-xl"
@@ -164,7 +164,7 @@ export function CalBuilder({
   const nameError = touched && !config.name.trim();
   const teamError = touched && config.scope === "TEAM" && config.teamIds.length === 0;
 
-  const toggleType = (id: VacationKind) =>
+  const toggleType = (id: CalendarRecordType) =>
     patch({
       types: config.types.includes(id)
         ? config.types.filter((x) => x !== id)

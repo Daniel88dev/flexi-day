@@ -3,43 +3,70 @@ export type IsoDate = string;
 export type IsoTime = string;
 export type UUID = string;
 
-export enum VacationKind {
+export enum CalendarRecordType {
   Vacation = "VACATION",
   HomeOffice = "HOME_OFFICE",
   Sick = "SICK",
   BankHoliday = "BANK_HOLIDAY",
   NonPaidLeave = "NON_PAID_LEAVE",
   PaidTimeOff = "PAID_TIME_OFF",
-  SickLeave = "SICK_LEAVE",
+  SickDay = "SICK_DAY",
   StudyLeave = "STUDY_LEAVE",
   Other = "OTHER",
 }
 
-export const VACATION_KIND_LABELS: Record<VacationKind, string> = {
-  [VacationKind.Vacation]: "Vacation",
-  [VacationKind.HomeOffice]: "Home Office",
-  [VacationKind.Sick]: "Sick",
-  [VacationKind.BankHoliday]: "Bank Holiday",
-  [VacationKind.NonPaidLeave]: "Non-Paid Leave",
-  [VacationKind.PaidTimeOff]: "Paid Time Off",
-  [VacationKind.SickLeave]: "Sick Leave",
-  [VacationKind.StudyLeave]: "Study Leave",
-  [VacationKind.Other]: "Other",
-};
+const CALENDAR_RECORD_TYPE_VALUES = new Set<string>(Object.values(CalendarRecordType));
 
-export const VACATION_KIND_COLORS: Record<VacationKind, string> = {
-  [VacationKind.Vacation]: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300",
-  [VacationKind.HomeOffice]: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300",
-  [VacationKind.Sick]: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300",
-  [VacationKind.SickLeave]: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300",
-  [VacationKind.BankHoliday]:
+/**
+ * The repos deploy independently, so a newer backend can serve enum members
+ * this build has never heard of. Surfaces that index meta or labels by type
+ * filter through this instead of crashing on the unknown value.
+ */
+export function isKnownCalendarRecordType(value: string): value is CalendarRecordType {
+  return CALENDAR_RECORD_TYPE_VALUES.has(value);
+}
+
+/** The everyday types, one click away in the request and edit forms. */
+export const PRIMARY_CALENDAR_RECORD_TYPES: readonly CalendarRecordType[] = [
+  CalendarRecordType.Vacation,
+  CalendarRecordType.HomeOffice,
+  CalendarRecordType.Sick,
+];
+
+/**
+ * The rarer requestable types, behind the forms' "Others" option. SickDay is
+ * deliberately absent until the sick-day benefit ships (issue #88), so the
+ * type never appears and then vanishes.
+ */
+export const OTHER_CALENDAR_RECORD_TYPES: readonly CalendarRecordType[] = [
+  CalendarRecordType.PaidTimeOff,
+  CalendarRecordType.NonPaidLeave,
+  CalendarRecordType.StudyLeave,
+  CalendarRecordType.Other,
+];
+
+/** Every type a member can pick in the request and edit forms. */
+export const REQUESTABLE_CALENDAR_RECORD_TYPES: readonly CalendarRecordType[] = [
+  ...PRIMARY_CALENDAR_RECORD_TYPES,
+  ...OTHER_CALENDAR_RECORD_TYPES,
+];
+
+export const CALENDAR_RECORD_TYPE_COLORS: Record<CalendarRecordType, string> = {
+  [CalendarRecordType.Vacation]: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300",
+  [CalendarRecordType.HomeOffice]:
+    "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300",
+  [CalendarRecordType.Sick]: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300",
+  [CalendarRecordType.SickDay]: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300",
+  [CalendarRecordType.BankHoliday]:
     "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300",
-  [VacationKind.NonPaidLeave]:
+  [CalendarRecordType.NonPaidLeave]:
     "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300",
-  [VacationKind.PaidTimeOff]: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300",
-  [VacationKind.StudyLeave]:
+  [CalendarRecordType.PaidTimeOff]:
+    "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300",
+  [CalendarRecordType.StudyLeave]:
     "bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300",
-  [VacationKind.Other]: "bg-slate-100 text-slate-800 dark:bg-slate-800/40 dark:text-slate-300",
+  [CalendarRecordType.Other]:
+    "bg-slate-100 text-slate-800 dark:bg-slate-800/40 dark:text-slate-300",
 };
 
 export type UserSummary = {
@@ -56,7 +83,7 @@ export type Vacation = {
   requestedDay: IsoDate;
   startTime: IsoTime | null;
   endTime: IsoTime | null;
-  vacationType: VacationKind;
+  vacationType: CalendarRecordType;
   /** Counts 0.5 against the allowance instead of a full day. */
   halfDay: boolean;
   note: string | null;
@@ -145,7 +172,19 @@ export type GroupOrganization = {
   status: "active" | "trialing" | "past_due" | "paused" | "canceled" | null;
   /** False on Free, and once a lapsed plan's grace has run out. */
   active: boolean;
+  /**
+   * Sick day toggle AND a paid plan — false while the benefit is dormant.
+   * Optional because the repos deploy independently; absent means not offered.
+   */
+  sickDayBenefitActive?: boolean;
 };
+
+/** Whether a group's organization offers Sick day right now; false when unknown. */
+export function sickDayBenefitActive(
+  group: { organization?: GroupOrganization | null } | null | undefined
+): boolean {
+  return group?.organization?.sickDayBenefitActive === true;
+}
 
 export type Group = {
   id: UUID;
@@ -155,6 +194,8 @@ export type Group = {
   groupName: string;
   defaultVacationDays: number;
   defaultHomeOfficeDays: number;
+  /** Starting Sick day allowance; only meaningful while the benefit is active. */
+  defaultSickDays?: number;
   /** Weekdays counted as working days, as JS `Date.getDay()` numbers (0=Sun … 6=Sat). */
   workingDays: number[];
   /** ISO 3166-1 alpha-2 country whose public holidays show on the dashboard; null = off. */
@@ -219,6 +260,8 @@ export type UserYearQuota = {
   relatedYear: string;
   vacationDays: number;
   homeOfficeDays: number;
+  /** Sick day benefit allowance; never carried over. */
+  sickDays?: number;
   /** Unused vacation days rolled forward from the previous year. */
   carriedOverDays: number;
   createdAt: Iso;
@@ -231,7 +274,7 @@ export type CreateVacationInput = {
   userId?: UUID;
   from: IsoDate;
   to: IsoDate;
-  vacationType?: VacationKind;
+  vacationType?: CalendarRecordType;
   startTime?: IsoTime | null;
   endTime?: IsoTime | null;
   halfDay?: boolean;
@@ -243,7 +286,7 @@ export type CreateVacationInput = {
 /** Admin edit of one member's day rows; only per-day fields, never dates. */
 export type UpdateVacationInput = {
   ids: UUID[];
-  vacationType?: VacationKind;
+  vacationType?: CalendarRecordType;
   startTime?: IsoTime | null;
   endTime?: IsoTime | null;
   halfDay?: boolean;
@@ -273,7 +316,7 @@ export type PendingApproval = {
   user: UserSummary;
   groupId: UUID;
   groupName: string;
-  vacationType: VacationKind;
+  vacationType: CalendarRecordType;
   from: IsoDate;
   to: IsoDate;
   businessDays: number;
@@ -290,7 +333,7 @@ export type DashboardSummary = {
 };
 
 export type BalanceBucket = {
-  type: VacationKind;
+  type: CalendarRecordType;
   allocated: number;
   used: number;
   pending: number;
@@ -332,6 +375,8 @@ export type SetUserQuotaInput = {
   year: number;
   vacationDays: number;
   homeOfficeDays: number;
+  /** Omitted (not zero) when the benefit is hidden, so saves never wipe a stored allowance. */
+  sickDays?: number;
   carriedOverDays?: number;
 };
 
@@ -346,6 +391,8 @@ export type UpdateGroupQuotasInput = {
   groupId: UUID;
   defaultVacationDays: number;
   defaultHomeOfficeDays: number;
+  /** Omitted (not zero) when the benefit is hidden, so saves never wipe a stored default. */
+  defaultSickDays?: number;
 };
 
 export type UpdateGroupWorkingDaysInput = {

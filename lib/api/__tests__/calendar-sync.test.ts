@@ -12,14 +12,14 @@ import {
   updateCalendarSync,
   type CalendarSyncInput,
 } from "../calendar-sync";
-import { VacationKind } from "../types";
+import { CalendarRecordType } from "../types";
 
 const input: CalendarSyncInput = {
   name: "My feed",
   scope: "TEAM",
   distinguishMine: true,
   teamIds: ["t1"],
-  types: [{ type: VacationKind.Vacation, color: "violet", mineColor: "plum" }],
+  types: [{ type: CalendarRecordType.Vacation, color: "violet", mineColor: "plum" }],
 };
 
 describe("calendar-sync api", () => {

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { groupVacationRequests } from "../group-requests";
-import { VacationKind, type VacationListItem } from "@/lib/api/types";
+import { CalendarRecordType, type VacationListItem } from "@/lib/api/types";
 
 const user = { id: "u-1", name: "Dana", initials: "DA", avatarColor: "hsl(0 0% 50%)" };
 
@@ -12,7 +12,7 @@ function vac(
     groupId: "g-1",
     startTime: null,
     endTime: null,
-    vacationType: VacationKind.Vacation,
+    vacationType: CalendarRecordType.Vacation,
     halfDay: false,
     note: null,
     rejectionReason: null,
@@ -94,8 +94,8 @@ describe("groupVacationRequests", () => {
 
   it("does not merge different leave types on adjacent days", () => {
     const groups = groupVacationRequests([
-      vac({ id: "a", requestedDay: "2026-08-17", vacationType: VacationKind.Vacation }),
-      vac({ id: "b", requestedDay: "2026-08-18", vacationType: VacationKind.HomeOffice }),
+      vac({ id: "a", requestedDay: "2026-08-17", vacationType: CalendarRecordType.Vacation }),
+      vac({ id: "b", requestedDay: "2026-08-18", vacationType: CalendarRecordType.HomeOffice }),
     ]);
 
     expect(groups).toHaveLength(2);

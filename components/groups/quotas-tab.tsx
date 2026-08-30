@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/table";
 import { AvatarBubble } from "@/components/brand/avatar-bubble";
 import { useGroupUsers, useQuotas, useSetUserQuota, useUpdateGroupQuotas } from "@/lib/api/queries";
-import type { Group } from "@/lib/api/types";
+import { sickDayBenefitActive, type Group } from "@/lib/api/types";
 import { useTranslation } from "@/lib/i18n/use-translation";
 
 /**
@@ -36,15 +36,21 @@ export function QuotasTab({
   const { t } = useTranslation();
   const currentYear = new Date().getFullYear();
   const [year, setYear] = useState(currentYear);
+  const sickDayActive = sickDayBenefitActive(group);
 
   const quotasQuery = useQuotas(groupId, { year });
   const membersQuery = useGroupUsers(groupId);
   const setQuota = useSetUserQuota();
 
   const [editing, setEditing] = useState<string | null>(null);
-  const [draft, setDraft] = useState<{ vacationDays: number | ""; homeOfficeDays: number | "" }>({
+  const [draft, setDraft] = useState<{
+    vacationDays: number | "";
+    homeOfficeDays: number | "";
+    sickDays: number | "";
+  }>({
     vacationDays: "",
     homeOfficeDays: "",
+    sickDays: "",
   });
   const [saveError, setSaveError] = useState<string | null>(null);
 
@@ -61,6 +67,7 @@ export function QuotasTab({
     setDraft({
       vacationDays: quota?.vacationDays ?? group?.defaultVacationDays ?? 0,
       homeOfficeDays: quota?.homeOfficeDays ?? group?.defaultHomeOfficeDays ?? 0,
+      sickDays: quota?.sickDays ?? group?.defaultSickDays ?? 0,
     });
   }
 
@@ -73,6 +80,9 @@ export function QuotasTab({
         year,
         vacationDays: typeof draft.vacationDays === "number" ? draft.vacationDays : 0,
         homeOfficeDays: typeof draft.homeOfficeDays === "number" ? draft.homeOfficeDays : 0,
+        ...(sickDayActive
+          ? { sickDays: typeof draft.sickDays === "number" ? draft.sickDays : 0 }
+          : {}),
       });
       setEditing(null);
     } catch (err) {
@@ -112,6 +122,7 @@ export function QuotasTab({
                 <TableHead>{t.groupDetail.columns.member}</TableHead>
                 <TableHead>{t.groupDetail.columns.vacationDays}</TableHead>
                 <TableHead>{t.groupDetail.columns.homeOfficeDays}</TableHead>
+                {sickDayActive ? <TableHead>{t.groupDetail.columns.sickDays}</TableHead> : null}
                 {isAdmin ? (
                   <TableHead className="text-right">{t.groupDetail.columns.actions}</TableHead>
                 ) : null}
@@ -162,6 +173,19 @@ export function QuotasTab({
                         />
                       )}
                     </TableCell>
+                    {sickDayActive ? (
+                      <TableCell>
+                        {isEditingRow ? (
+                          <QuotaInput
+                            label={t.groupDetail.sickDaysFor(m.user.name)}
+                            value={draft.sickDays}
+                            onChange={(sickDays) => setDraft((d) => ({ ...d, sickDays }))}
+                          />
+                        ) : (
+                          <QuotaValue value={quota?.sickDays} fallback={group?.defaultSickDays} />
+                        )}
+                      </TableCell>
+                    ) : null}
                     {isAdmin ? (
                       <TableCell className="text-right">
                         {isEditingRow ? (
@@ -236,8 +260,10 @@ function QuotaInput({
 function GroupDefaultsCard({ group }: { group?: Group }) {
   const { t } = useTranslation();
   const updateQuotas = useUpdateGroupQuotas();
+  const sickDayActive = sickDayBenefitActive(group);
   const [vacation, setVacation] = useState<number | "">(group?.defaultVacationDays ?? 20);
   const [homeOffice, setHomeOffice] = useState<number | "">(group?.defaultHomeOfficeDays ?? 0);
+  const [sick, setSick] = useState<number | "">(group?.defaultSickDays ?? 0);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
 
@@ -253,6 +279,7 @@ function GroupDefaultsCard({ group }: { group?: Group }) {
         groupId: group.id,
         defaultVacationDays: typeof vacation === "number" ? vacation : 0,
         defaultHomeOfficeDays: typeof homeOffice === "number" ? homeOffice : 0,
+        ...(sickDayActive ? { defaultSickDays: typeof sick === "number" ? sick : 0 } : {}),
       });
       setSaved(true);
     } catch (err) {
@@ -291,6 +318,20 @@ function GroupDefaultsCard({ group }: { group?: Group }) {
               onChange={(e) => setHomeOffice(e.target.value === "" ? "" : Number(e.target.value))}
             />
           </div>
+          {sickDayActive ? (
+            <div className="space-y-1.5">
+              <Label htmlFor="defaultSickDays">{t.groupDetail.sickDays}</Label>
+              <Input
+                id="defaultSickDays"
+                type="number"
+                min={0}
+                max={365}
+                className="w-28"
+                value={sick}
+                onChange={(e) => setSick(e.target.value === "" ? "" : Number(e.target.value))}
+              />
+            </div>
+          ) : null}
           <Button type="submit" disabled={updateQuotas.isPending}>
             {updateQuotas.isPending ? t.common.saving : t.groupDetail.saveDefaults}
           </Button>

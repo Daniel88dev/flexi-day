@@ -3,6 +3,7 @@
 import { useMyBalances } from "@/lib/api/queries";
 import { leaveMetaFor } from "@/lib/demo/leave-meta";
 import { useTranslation } from "@/lib/i18n/use-translation";
+import { recordTypeLabel } from "@/lib/i18n/record-type-label";
 
 interface BalanceWidgetProps {
   year: number;
@@ -39,7 +40,7 @@ export function BalanceWidget({ year }: BalanceWidgetProps) {
             // Deliberately unclamped: an overdraft has to be visible here too.
             const left = b.allocated - b.used;
             const pct = b.allocated > 0 ? Math.min(100, (b.used / b.allocated) * 100) : 0;
-            const label = t.leaveTypes[b.type].label;
+            const label = recordTypeLabel(t.calendarRecordTypes, b.type);
             return (
               <div key={b.type}>
                 <div className="mb-2 flex items-baseline justify-between">
