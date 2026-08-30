@@ -115,6 +115,15 @@ export function NewRequestDialog({ open, onOpenChange, initialDate }: NewRequest
 
   const onBehalf = canAdmin && forUserId !== SELF;
 
+  const offerSickDay = sickDayBenefitActive(groupDetail.data);
+  // Derived, not reset in an effect: a Sick day selection must not survive a
+  // switch to a group without the benefit — the picker would no longer offer
+  // it and the backend would 422 the submit.
+  const effectiveType =
+    vacationType === CalendarRecordType.SickDay && !offerSickDay
+      ? CalendarRecordType.Vacation
+      : vacationType;
+
   const isSingleDay = from === to;
 
   function resetForm() {
@@ -136,7 +145,7 @@ export function NewRequestDialog({ open, onOpenChange, initialDate }: NewRequest
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-    if (!selectedGroupId || !from || !to || vacationType === null) return;
+    if (!selectedGroupId || !from || !to || effectiveType === null) return;
     if (to < from) {
       setError(t.newRequest.endBeforeStart);
       return;
@@ -148,7 +157,7 @@ export function NewRequestDialog({ open, onOpenChange, initialDate }: NewRequest
         ...(onBehalf ? { userId: forUserId, autoApprove } : {}),
         from,
         to,
-        vacationType,
+        vacationType: effectiveType,
         startTime: startTime || null,
         endTime: endTime || null,
         // The backend stamps halfDay onto every day it creates, so a range
@@ -186,13 +195,13 @@ export function NewRequestDialog({ open, onOpenChange, initialDate }: NewRequest
     }
   }
 
-  const noteRequired = vacationType === CalendarRecordType.Other;
+  const noteRequired = effectiveType === CalendarRecordType.Other;
   const isValid =
     !!selectedGroupId &&
     !!from &&
     !!to &&
     to >= from &&
-    vacationType !== null &&
+    effectiveType !== null &&
     (!noteRequired || note.trim().length > 0) &&
     !createVacation.isPending;
 
@@ -234,6 +243,12 @@ export function NewRequestDialog({ open, onOpenChange, initialDate }: NewRequest
                 // The picked member belongs to the previous group.
                 setForUserId(SELF);
                 setAutoApprove(true);
+                // So does a Sick day selection — the new group's benefit is
+                // unknown until its badge loads, and the coerced "Vacation"
+                // must not silently revert if the benefit turns out active.
+                if (vacationType === CalendarRecordType.SickDay) {
+                  setVacationType(CalendarRecordType.Vacation);
+                }
               }}
             >
               <SelectTrigger id="group" className="w-full">
@@ -304,10 +319,10 @@ export function NewRequestDialog({ open, onOpenChange, initialDate }: NewRequest
               {t.newRequest.type}
             </Label>
             <CalendarRecordTypePicker
-              value={vacationType}
+              value={effectiveType}
               onChange={setVacationType}
               idPrefix="type"
-              offerSickDay={sickDayBenefitActive(groupDetail.data)}
+              offerSickDay={offerSickDay}
             />
           </div>
 

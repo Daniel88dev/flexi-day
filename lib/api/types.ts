@@ -15,6 +15,17 @@ export enum CalendarRecordType {
   Other = "OTHER",
 }
 
+const CALENDAR_RECORD_TYPE_VALUES = new Set<string>(Object.values(CalendarRecordType));
+
+/**
+ * The repos deploy independently, so a newer backend can serve enum members
+ * this build has never heard of. Surfaces that index meta or labels by type
+ * filter through this instead of crashing on the unknown value.
+ */
+export function isKnownCalendarRecordType(value: string): value is CalendarRecordType {
+  return CALENDAR_RECORD_TYPE_VALUES.has(value);
+}
+
 /** The everyday types, one click away in the request and edit forms. */
 export const PRIMARY_CALENDAR_RECORD_TYPES: readonly CalendarRecordType[] = [
   CalendarRecordType.Vacation,

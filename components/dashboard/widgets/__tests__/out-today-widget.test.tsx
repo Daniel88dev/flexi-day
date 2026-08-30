@@ -56,4 +56,20 @@ describe("OutTodayWidget", () => {
     expect(screen.getByText("Study Leave")).toBeInTheDocument();
     expect(screen.queryByText("Vacation")).not.toBeInTheDocument();
   });
+
+  it("still lists someone whose record type comes from a newer backend", () => {
+    // Presence is the widget's whole job: an unknown type renders with its raw
+    // value rather than hiding the person or crashing.
+    const todayIso = new Date().toISOString().slice(0, 10);
+    const todayDay = Number(todayIso.slice(8, 10));
+    const vacations = [
+      buildVacation({
+        requestedDay: todayIso,
+        vacationType: "SABBATICAL" as CalendarRecordType,
+      }),
+    ];
+    render(<OutTodayWidget vacations={vacations} todayDay={todayDay} />);
+    expect(screen.getByText("Dana Holt")).toBeInTheDocument();
+    expect(screen.getByText("SABBATICAL")).toBeInTheDocument();
+  });
 });

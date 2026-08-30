@@ -31,6 +31,7 @@ import {
 import type { ReportScopeGroup } from "@/lib/api/report-types";
 import type { CalendarRecordType } from "@/lib/api/types";
 import { useTranslation } from "@/lib/i18n/use-translation";
+import { recordTypeLabel } from "@/lib/i18n/record-type-label";
 
 export default function MemberReportPage() {
   const { t } = useTranslation();
@@ -142,7 +143,7 @@ export default function MemberReportPage() {
             <Card key={recordType}>
               <CardHeader className="pb-2">
                 <CardTitle className="flex flex-wrap items-baseline gap-2 text-base">
-                  {t.report.charts.title} · {t.calendarRecordTypes[recordType].label}
+                  {t.report.charts.title} · {recordTypeLabel(t.calendarRecordTypes, recordType)}
                   <span className="text-muted-foreground text-xs font-normal">
                     {windowLabel(slots, t.calendar.monthsShort)}
                   </span>
@@ -233,7 +234,9 @@ export default function MemberReportPage() {
                 <TableBody>
                   {report.bookings.map((booking) => (
                     <TableRow key={`${booking.groupId}-${booking.from}-${booking.vacationType}`}>
-                      <TableCell>{t.calendarRecordTypes[booking.vacationType].label}</TableCell>
+                      <TableCell>
+                        {recordTypeLabel(t.calendarRecordTypes, booking.vacationType)}
+                      </TableCell>
                       <TableCell>{booking.groupName}</TableCell>
                       <TableCell className="whitespace-nowrap">
                         {booking.from === booking.to

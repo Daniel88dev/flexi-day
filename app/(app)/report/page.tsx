@@ -29,6 +29,7 @@ import {
 import { assignMemberColors, CALENDAR_RECORD_TYPE_CHART_COLORS } from "@/lib/report/colors";
 import type { ReportFilters, ReportPeriod, ReportScopeMember } from "@/lib/api/report-types";
 import { useTranslation } from "@/lib/i18n/use-translation";
+import { recordTypeLabel } from "@/lib/i18n/record-type-label";
 
 export default function ReportPage() {
   const { t } = useTranslation();
@@ -102,7 +103,7 @@ export default function ReportPage() {
     const memberIds = chartMembers.map((member) => member.id);
 
     return recordTypes.flatMap((type, index) => {
-      const label = t.calendarRecordTypes[type].label;
+      const label = recordTypeLabel(t.calendarRecordTypes, type);
       const series = buildTeamMonthlySeries(usage, memberIds, type, slots);
       const total = series.reduce(
         (sum, row) => sum + memberIds.reduce((rowSum, id) => rowSum + row[id], 0),

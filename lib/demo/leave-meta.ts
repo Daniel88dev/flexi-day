@@ -33,6 +33,10 @@ export const DEFAULT_LEAVE_TYPES: CalendarRecordType[] = [
   ...OTHER_CALENDAR_RECORD_TYPES,
 ];
 
+// The map stays total for exhaustiveness, but the lookup must survive a value
+// a newer backend ships before this build knows it.
+const UNKNOWN_LEAVE_META: LeaveMeta = { cssVar: "var(--text-muted)" };
+
 export function leaveMetaFor(kind: CalendarRecordType): LeaveMeta {
-  return LEAVE_META[kind];
+  return LEAVE_META[kind] ?? UNKNOWN_LEAVE_META;
 }

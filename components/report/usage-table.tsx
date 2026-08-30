@@ -14,6 +14,7 @@ import { formatDays, type MemberCard } from "@/lib/report/series";
 import type { ReportPeriod } from "@/lib/api/report-types";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/lib/i18n/use-translation";
+import { recordTypeLabel } from "@/lib/i18n/record-type-label";
 
 type Props = {
   cards: MemberCard[];
@@ -66,7 +67,7 @@ export function UsageTable({ cards, year, period }: Props) {
                 </Link>
               </TableCell>
               <TableCell className="text-sm whitespace-nowrap">
-                {t.calendarRecordTypes[card.vacationType].label}
+                {recordTypeLabel(t.calendarRecordTypes, card.vacationType)}
               </TableCell>
               <TableCell className="text-right tabular-nums">
                 {formatDays(card.carriedOver)}

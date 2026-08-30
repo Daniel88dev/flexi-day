@@ -1,24 +1,30 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import { screen, fireEvent, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { QueryClientProvider } from "@tanstack/react-query";
 import { NewRequestDialog } from "../new-request-dialog";
 import { renderWithClient } from "@/lib/test-utils";
 
 const createMutate = vi.fn().mockResolvedValue({});
 let canAdmin = false;
 let sickDayActive = false;
+// Per-group override so a test can present groups with different benefits.
+let sickDayActiveByGroup: Record<string, boolean> = {};
+let groups: { id: string; groupName: string }[] = [{ id: "g-1", groupName: "Platform" }];
 let members: unknown[] = [];
 
 vi.mock("@/lib/api/queries", () => ({
-  useGroups: () => ({ data: [{ id: "g-1", groupName: "Platform" }], isLoading: false }),
+  useGroups: () => ({ data: groups, isLoading: false }),
   useCreateVacation: () => ({ mutateAsync: createMutate, isPending: false }),
-  useGroup: () => ({
-    data: {
-      id: "g-1",
-      groupName: "Platform",
-      organization: { sickDayBenefitActive: sickDayActive },
-      access: { canView: true, canAdmin, viaOrgAdmin: false, isMember: true },
-    },
+  useGroup: (id: string | null) => ({
+    data: id
+      ? {
+          id,
+          groupName: groups.find((g) => g.id === id)?.groupName ?? id,
+          organization: { sickDayBenefitActive: sickDayActiveByGroup[id] ?? sickDayActive },
+          access: { canView: true, canAdmin, viaOrgAdmin: false, isMember: true },
+        }
+      : undefined,
     isLoading: false,
     error: null,
   }),
@@ -41,6 +47,8 @@ describe("NewRequestDialog", () => {
     createMutate.mockClear();
     canAdmin = false;
     sickDayActive = false;
+    sickDayActiveByGroup = {};
+    groups = [{ id: "g-1", groupName: "Platform" }];
     members = [];
   });
 
@@ -114,6 +122,62 @@ describe("NewRequestDialog", () => {
 
     await waitFor(() => expect(createMutate).toHaveBeenCalled());
     expect(createMutate.mock.calls[0][0]).toMatchObject({ vacationType: "STUDY_LEAVE" });
+  });
+
+  it("resets a Sick day selection when the selected group loses the benefit", async () => {
+    sickDayActive = true;
+    const user = userEvent.setup();
+    const { rerender, client } = renderWithClient(
+      <NewRequestDialog open initialDate="2026-07-15" onOpenChange={() => {}} />
+    );
+
+    await user.click(screen.getByRole("tab", { name: "Others" }));
+    await user.click(screen.getByRole("combobox", { name: "Others" }));
+    await user.click(screen.getByRole("option", { name: "Sick day" }));
+
+    // The user switches to a group without the benefit; the mocked useGroup
+    // answers for whichever group is selected, so flipping the flag stands in
+    // for the new group's badge arriving.
+    sickDayActive = false;
+    rerender(
+      <QueryClientProvider client={client}>
+        <NewRequestDialog open initialDate="2026-07-15" onOpenChange={() => {}} />
+      </QueryClientProvider>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByRole("tab", { name: "Vacation" })).toHaveAttribute(
+        "aria-selected",
+        "true"
+      );
+    });
+    expect(screen.getByRole("button", { name: "Submit Request" })).toBeEnabled();
+  });
+
+  it("clears a Sick day pick on group switch and submits the type it shows", async () => {
+    groups = [
+      { id: "g-1", groupName: "Platform" },
+      { id: "g-2", groupName: "Retail" },
+    ];
+    sickDayActiveByGroup = { "g-1": true, "g-2": false };
+    const user = userEvent.setup();
+    renderWithClient(<NewRequestDialog open initialDate="2026-07-15" onOpenChange={() => {}} />);
+
+    await user.click(screen.getByRole("tab", { name: "Others" }));
+    await user.click(screen.getByRole("combobox", { name: "Others" }));
+    await user.click(screen.getByRole("option", { name: "Sick day" }));
+
+    await user.click(screen.getByRole("combobox", { name: "Group" }));
+    await user.click(screen.getByRole("option", { name: "Retail" }));
+
+    expect(screen.getByRole("tab", { name: "Vacation" })).toHaveAttribute("aria-selected", "true");
+
+    await user.click(screen.getByRole("button", { name: "Submit Request" }));
+    await waitFor(() => expect(createMutate).toHaveBeenCalled());
+    expect(createMutate.mock.calls[0][0]).toMatchObject({
+      groupId: "g-2",
+      vacationType: "VACATION",
+    });
   });
 
   it("blocks an Other request until a note is written", async () => {

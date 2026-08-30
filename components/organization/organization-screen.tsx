@@ -316,13 +316,17 @@ function SickDayBenefitCard({
           />
         </div>
         <p className="text-muted-foreground text-xs">{t.organization.sickDayHint}</p>
-        {!paid && enabled ? (
-          <p className="text-destructive text-xs">{t.organization.sickDayDormant}</p>
-        ) : (
-          <p className="text-muted-foreground text-xs font-semibold">
-            {t.organization.sickDayPaidOnly}
-          </p>
-        )}
+        {/* Only unpaid organizations need the plan note: dormancy when the
+            toggle is on, the paid-only requirement when it is off. */}
+        {!paid ? (
+          enabled ? (
+            <p className="text-destructive text-xs">{t.organization.sickDayDormant}</p>
+          ) : (
+            <p className="text-muted-foreground text-xs font-semibold">
+              {t.organization.sickDayPaidOnly}
+            </p>
+          )
+        ) : null}
         {error ? <p className="text-destructive text-sm">{error}</p> : null}
       </CardContent>
     </Card>

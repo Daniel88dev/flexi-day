@@ -4,6 +4,7 @@ import { Check, CheckCircle2 } from "lucide-react";
 import { AvatarBubble } from "@/components/brand/avatar-bubble";
 import { useApproveVacations, useMyApprovals, useRejectVacations } from "@/lib/api/queries";
 import { useTranslation } from "@/lib/i18n/use-translation";
+import { recordTypeLabel } from "@/lib/i18n/record-type-label";
 
 function formatRange(fromIso: string, toIso: string, monthsShort: string[]) {
   const f = new Date(fromIso);
@@ -63,7 +64,7 @@ export function ApprovalsWidget() {
       ) : (
         <div className="flex flex-col gap-3.5">
           {items.map((a) => {
-            const typeLabel = t.calendarRecordTypes[a.vacationType].label;
+            const typeLabel = recordTypeLabel(t.calendarRecordTypes, a.vacationType);
             const rowKey = a.vacationIds[0] ?? `${a.user.id}-${a.from}`;
             return (
               <div key={rowKey} className="flex items-start gap-3">

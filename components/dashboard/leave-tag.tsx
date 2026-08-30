@@ -3,6 +3,7 @@
 import { leaveMetaFor } from "@/lib/demo/leave-meta";
 import type { CalendarRecordType } from "@/lib/api/types";
 import { useTranslation } from "@/lib/i18n/use-translation";
+import { recordTypeLabel } from "@/lib/i18n/record-type-label";
 
 interface LeaveTagProps {
   type: CalendarRecordType;
@@ -12,7 +13,7 @@ interface LeaveTagProps {
 export function LeaveTag({ type, small }: LeaveTagProps) {
   const { t } = useTranslation();
   const meta = leaveMetaFor(type);
-  const label = t.calendarRecordTypes[type].label;
+  const label = recordTypeLabel(t.calendarRecordTypes, type);
   return (
     <span
       className="inline-flex items-center gap-1.5 rounded-full font-semibold"

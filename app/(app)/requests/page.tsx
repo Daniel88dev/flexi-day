@@ -37,6 +37,7 @@ import { useOpenVacationDetail } from "@/lib/vacations/use-vacation-detail";
 import { vacationActionErrorMessage, type VacationAction } from "@/lib/vacations/action-error";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/lib/i18n/use-translation";
+import { recordTypeLabel } from "@/lib/i18n/record-type-label";
 
 type Filter = "all" | VacationStatus | "mine";
 
@@ -317,7 +318,7 @@ export default function RequestsPage() {
                           CALENDAR_RECORD_TYPE_COLORS[r.vacationType]
                         )}
                       >
-                        {t.calendarRecordTypes[r.vacationType].label}
+                        {recordTypeLabel(t.calendarRecordTypes, r.vacationType)}
                       </span>
                     </TableCell>
                     <TableCell className="text-sm whitespace-nowrap">

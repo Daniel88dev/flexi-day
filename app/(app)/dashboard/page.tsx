@@ -22,7 +22,12 @@ import {
 import { bankHolidaysToRanges } from "@/lib/holidays";
 import { useSession } from "@/lib/auth-client";
 import { ApiError } from "@/lib/api/client";
-import { vacationStatus, type CalendarRecordType, type DashboardScope } from "@/lib/api/types";
+import {
+  isKnownCalendarRecordType,
+  vacationStatus,
+  type CalendarRecordType,
+  type DashboardScope,
+} from "@/lib/api/types";
 import {
   Select,
   SelectContent,
@@ -137,6 +142,9 @@ export default function DashboardPage() {
   const ranges: CalendarRange[] = useMemo(() => {
     const live = vacations
       .filter((v) => vacationStatus(v) !== "rejected")
+      // A newer backend can serve types this build doesn't know; hide the bar
+      // rather than crash the calendar on its missing meta.
+      .filter((v) => isKnownCalendarRecordType(v.vacationType))
       .map((v) => ({
         id: v.id,
         userId: v.userId,

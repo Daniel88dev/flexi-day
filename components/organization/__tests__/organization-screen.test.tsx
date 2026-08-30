@@ -208,6 +208,8 @@ describe("OrganizationScreen", () => {
       const toggle = screen.getByRole("switch", { name: "Offer paid sick days" });
       expect(toggle).not.toBeDisabled();
       expect(toggle).not.toBeChecked();
+      // The plan note explains a restriction; a paid organization has none.
+      expect(screen.queryByText("Available on paid plans.")).not.toBeInTheDocument();
 
       await user.click(toggle);
       expect(updateOrganization).toHaveBeenCalledWith({ sickDayBenefitEnabled: true });

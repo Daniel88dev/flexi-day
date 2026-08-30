@@ -6,6 +6,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { leaveMetaFor } from "@/lib/demo/leave-meta";
 import { CalendarRecordType, type UserSummary } from "@/lib/api/types";
 import { useTranslation } from "@/lib/i18n/use-translation";
+import { recordTypeLabel } from "@/lib/i18n/record-type-label";
 
 export interface CalendarRange {
   id: string;
@@ -85,7 +86,7 @@ function CalBar({
   const meta = leaveMetaFor(range.type);
   const u = range.user;
   const everyone = t.calendar.everyone;
-  const typeLabel = t.calendarRecordTypes[range.type].label;
+  const typeLabel = recordTypeLabel(t.calendarRecordTypes, range.type);
   const displayName = u ? firstName(u.name) : everyone;
   const title = `${u ? u.name : everyone} · ${typeLabel}${range.note ? ` · ${range.note}` : ""}${
     range.mirroredFrom ? ` · ${t.calendar.mirroredFrom(range.mirroredFrom)}` : ""
@@ -217,7 +218,7 @@ function MoreChip({
                   className="block truncate text-[11.5px]"
                   style={{ color: "var(--text-muted)" }}
                 >
-                  {t.calendarRecordTypes[range.type].label}
+                  {recordTypeLabel(t.calendarRecordTypes, range.type)}
                   {range.mirroredFrom ? ` · ${t.calendar.mirroredFrom(range.mirroredFrom)}` : ""}
                 </span>
               </span>

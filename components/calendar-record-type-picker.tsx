@@ -15,6 +15,7 @@ import {
 } from "@/lib/api/types";
 import { leaveMetaFor } from "@/lib/demo/leave-meta";
 import { useTranslation } from "@/lib/i18n/use-translation";
+import { recordTypeLabel } from "@/lib/i18n/record-type-label";
 
 /** Radix Tabs/Select values must be strings, so the Others group needs a sentinel. */
 const OTHERS = "__others__";
@@ -106,7 +107,7 @@ export function CalendarRecordTypePicker({
                   className="size-2.5 shrink-0 rounded-full"
                   style={{ background: leaveMetaFor(k).cssVar }}
                 />
-                {t.calendarRecordTypes[k].label}
+                {recordTypeLabel(t.calendarRecordTypes, k)}
               </SelectItem>
             ))}
           </SelectContent>

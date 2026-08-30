@@ -56,6 +56,16 @@ export const TYPE_META: Record<CalendarRecordType, { icon: LucideIcon; def: Swat
   [CalendarRecordType.Other]: { icon: CircleDashed, def: "teal" },
 };
 
+/**
+ * Total accessor: stored configs outlive builds, so a type saved by a newer
+ * build (or added by a newer backend) must render, not crash.
+ */
+const UNKNOWN_TYPE_META = { icon: CircleDashed, def: "slate" as SwatchKey };
+
+export function typeMetaFor(type: CalendarRecordType): { icon: LucideIcon; def: SwatchKey } {
+  return TYPE_META[type] ?? UNKNOWN_TYPE_META;
+}
+
 /** Display order of record types in the builder. */
 export const TYPE_ORDER: CalendarRecordType[] = [
   CalendarRecordType.Vacation,
@@ -146,8 +156,8 @@ export function builderToInput(cfg: BuilderConfig): CalendarSyncInput {
     teamIds: cfg.teamIds,
     types: cfg.types.map((type) => ({
       type,
-      color: cfg.colors[type] ?? TYPE_META[type].def,
-      ...(sendMine ? { mineColor: cfg.colors[mineKey(type)] ?? TYPE_META[type].def } : {}),
+      color: cfg.colors[type] ?? typeMetaFor(type).def,
+      ...(sendMine ? { mineColor: cfg.colors[mineKey(type)] ?? typeMetaFor(type).def } : {}),
     })),
   };
 }
@@ -161,7 +171,7 @@ export function colorFor(
   if (cfg.distinguishMine && cfg.scope === "TEAM" && isMine && cfg.colors[mineKey(type)]) {
     return swatch(cfg.colors[mineKey(type)]);
   }
-  return swatch(cfg.colors[type] ?? TYPE_META[type].def);
+  return swatch(cfg.colors[type] ?? typeMetaFor(type).def);
 }
 
 function isSwatchKey(v: string): v is SwatchKey {
