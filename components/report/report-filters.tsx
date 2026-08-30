@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/select";
 import { MultiSelect, type MultiSelectOption } from "@/components/report/multi-select";
 import type { ReportFilters, ReportPeriod, ReportScope } from "@/lib/api/report-types";
-import { VACATION_KIND_LABELS, VacationKind } from "@/lib/api/types";
+import { CalendarRecordType } from "@/lib/api/types";
 import { useTranslation } from "@/lib/i18n/use-translation";
 
 type Props = {
@@ -25,7 +25,11 @@ type Props = {
   onPeriodChange?: (next: ReportPeriod) => void;
 };
 
-const ALL_KINDS = Object.values(VacationKind);
+// Bank holiday is not offered: a company-wide closure is not leave anyone
+// took, and the backend's export endpoint rejects it as a filter value.
+const FILTERABLE_KINDS = Object.values(CalendarRecordType).filter(
+  (kind) => kind !== CalendarRecordType.BankHoliday
+);
 
 const ROLLING = "rolling";
 
@@ -49,10 +53,11 @@ export function ReportFiltersBar({ scope, filters, onChange, period, onPeriodCha
     return Array.from(byId.values()).sort((a, b) => a.label.localeCompare(b.label));
   }, [scope, filters.groupIds]);
 
-  const typeOptions: MultiSelectOption[] = ALL_KINDS.map((kind) => ({
-    value: kind,
-    label: VACATION_KIND_LABELS[kind],
-  }));
+  const typeOptions: MultiSelectOption[] = useMemo(
+    () =>
+      FILTERABLE_KINDS.map((kind) => ({ value: kind, label: t.calendarRecordTypes[kind].label })),
+    [t]
+  );
 
   const years = scope?.years?.length ? scope.years : [filters.year];
 
@@ -133,7 +138,7 @@ export function ReportFiltersBar({ scope, filters, onChange, period, onPeriodCha
         allLabel={t.report.filters.allTypes}
         options={typeOptions}
         selected={filters.types ?? []}
-        onChange={(types) => onChange({ ...filters, types: types as VacationKind[] })}
+        onChange={(types) => onChange({ ...filters, types: types as CalendarRecordType[] })}
       />
     </div>
   );

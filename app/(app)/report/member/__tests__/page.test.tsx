@@ -1,9 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { screen } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import MemberReportPage from "../page";
 import { renderWithClient } from "@/lib/test-utils";
+import { I18nProvider } from "@/lib/i18n/i18n-provider";
 import type { MemberReport } from "@/lib/api/report-types";
-import { VacationKind } from "@/lib/api/types";
+import { CalendarRecordType } from "@/lib/api/types";
 
 const currentYear = 2026;
 const priorYear = 2025;
@@ -40,7 +41,7 @@ const report: MemberReport = {
     {
       userId: "u1",
       groupId: "g1",
-      vacationType: VacationKind.Vacation,
+      vacationType: CalendarRecordType.Vacation,
       carriedOverDays: 3,
       yearQuota: 20,
       usedToDate: 0,
@@ -56,7 +57,7 @@ const report: MemberReport = {
       userName: "Ada Lovelace",
       groupId: "g1",
       groupName: "Engineering",
-      vacationType: VacationKind.Vacation,
+      vacationType: CalendarRecordType.Vacation,
       from: "2026-03-12",
       to: "2026-03-14",
       days: 3,
@@ -111,7 +112,7 @@ const priorReport: MemberReport = {
       userId: "u1",
       groupId: "g1",
       month: 10,
-      vacationType: VacationKind.Vacation,
+      vacationType: CalendarRecordType.Vacation,
       used: 4,
       pending: 0,
     },
@@ -119,7 +120,7 @@ const priorReport: MemberReport = {
       userId: "u1",
       groupId: "g1",
       month: 3,
-      vacationType: VacationKind.Vacation,
+      vacationType: CalendarRecordType.Vacation,
       used: 5,
       pending: 0,
     },
@@ -142,6 +143,7 @@ describe("MemberReportPage", () => {
 
   afterEach(() => {
     vi.useRealTimers();
+    window.localStorage.clear();
   });
 
   it("renders the member's bookings", () => {
@@ -150,6 +152,19 @@ describe("MemberReportPage", () => {
     expect(screen.getByRole("heading", { name: "Ada Lovelace" })).toBeInTheDocument();
     expect(screen.getByText("2026-03-12 – 2026-03-14")).toBeInTheDocument();
     expect(screen.getByText("Approved")).toBeInTheDocument();
+  });
+
+  it("renders the booking's type from the dictionary when Czech is active", async () => {
+    window.localStorage.setItem("flexiday-locale", "cs");
+
+    renderWithClient(
+      <I18nProvider>
+        <MemberReportPage />
+      </I18nProvider>
+    );
+
+    const row = screen.getByText("2026-03-12 – 2026-03-14").closest("tr");
+    await waitFor(() => expect(row).toHaveTextContent("Dovolená"));
   });
 
   it("merges last year's half of the rolling window into each chart", () => {

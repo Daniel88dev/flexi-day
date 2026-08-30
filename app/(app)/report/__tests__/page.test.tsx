@@ -4,7 +4,7 @@ import userEvent from "@testing-library/user-event";
 import ReportPage from "../page";
 import { renderWithClient } from "@/lib/test-utils";
 import type { ReportOverview, ReportScope } from "@/lib/api/report-types";
-import { VacationKind } from "@/lib/api/types";
+import { CalendarRecordType } from "@/lib/api/types";
 
 vi.mock("next/navigation", () => ({
   usePathname: () => "/report",
@@ -44,7 +44,7 @@ const overview: ReportOverview = {
       userId: "u1",
       groupId: "g1",
       month: 3,
-      vacationType: VacationKind.Vacation,
+      vacationType: CalendarRecordType.Vacation,
       used: 2,
       pending: 0,
     },
@@ -53,7 +53,7 @@ const overview: ReportOverview = {
     {
       userId: "u1",
       groupId: "g1",
-      vacationType: VacationKind.Vacation,
+      vacationType: CalendarRecordType.Vacation,
       carriedOverDays: 3,
       yearQuota: 20,
       usedToDate: 2,
@@ -64,7 +64,7 @@ const overview: ReportOverview = {
     {
       userId: "u1",
       groupId: "g1",
-      vacationType: VacationKind.HomeOffice,
+      vacationType: CalendarRecordType.HomeOffice,
       carriedOverDays: 0,
       yearQuota: 10,
       usedToDate: 0,
@@ -89,7 +89,7 @@ const priorOverview: ReportOverview = {
       userId: "u1",
       groupId: "g1",
       month: 10,
-      vacationType: VacationKind.Vacation,
+      vacationType: CalendarRecordType.Vacation,
       used: 4,
       pending: 0,
     },
@@ -97,7 +97,7 @@ const priorOverview: ReportOverview = {
       userId: "u1",
       groupId: "g1",
       month: 3,
-      vacationType: VacationKind.Vacation,
+      vacationType: CalendarRecordType.Vacation,
       used: 5,
       pending: 0,
     },

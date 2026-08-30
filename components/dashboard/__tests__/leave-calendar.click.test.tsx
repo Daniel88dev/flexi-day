@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { LeaveCalendar, MAX_LANES, type CalendarRange } from "../leave-calendar";
-import { VacationKind } from "@/lib/api/types";
+import { CalendarRecordType } from "@/lib/api/types";
 
 // July 2026 starts on a Wednesday → Monday-indexed offset of 2.
 const baseProps = {
@@ -36,7 +36,7 @@ describe("LeaveCalendar day clicks", () => {
         id: "r0",
         who: "u1",
         user: { id: "u1", name: "Dana Holt", initials: "DH", avatarColor: "hsl(270 60% 60%)" },
-        type: VacationKind.Vacation,
+        type: CalendarRecordType.Vacation,
         from: 10,
         to: 10,
         vacationIds: ["v-10"],
@@ -58,7 +58,7 @@ describe("LeaveCalendar bank holiday lanes", () => {
   const bankDay = (day: number, name: string): CalendarRange => ({
     id: `bh-${day}`,
     who: "all",
-    type: VacationKind.BankHoliday,
+    type: CalendarRecordType.BankHoliday,
     from: day,
     to: day,
     note: name,
@@ -75,7 +75,7 @@ describe("LeaveCalendar bank holiday lanes", () => {
         id: "r0",
         who: "u1",
         user: { id: "u1", name: "Dana Holt", initials: "DH", avatarColor: "hsl(270 60% 60%)" },
-        type: VacationKind.Vacation,
+        type: CalendarRecordType.Vacation,
         from: 8,
         to: 8,
         vacationIds: ["v-8"],
@@ -120,7 +120,7 @@ function sameDayRanges(count: number, day: number): CalendarRange[] {
       initials: `P${i}`,
       avatarColor: "hsl(270 60% 60%)",
     },
-    type: VacationKind.Vacation,
+    type: CalendarRecordType.Vacation,
     from: day,
     to: day,
     vacationIds: [`v-${i}`],

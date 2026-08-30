@@ -22,7 +22,12 @@ import {
 import { bankHolidaysToRanges } from "@/lib/holidays";
 import { useSession } from "@/lib/auth-client";
 import { ApiError } from "@/lib/api/client";
-import type { DashboardScope } from "@/lib/api/types";
+import {
+  isKnownCalendarRecordType,
+  vacationStatus,
+  type CalendarRecordType,
+  type DashboardScope,
+} from "@/lib/api/types";
 import {
   Select,
   SelectContent,
@@ -41,13 +46,13 @@ import {
 import { ApprovalsWidget } from "@/components/dashboard/widgets/approvals-widget";
 import { OutTodayWidget } from "@/components/dashboard/widgets/out-today-widget";
 import { BalanceWidget } from "@/components/dashboard/widgets/balance-widget";
-import { DEFAULT_LEAVE_TYPES, type LeaveTypeKey } from "@/lib/demo/leave-meta";
+import { DEFAULT_LEAVE_TYPES } from "@/lib/demo/leave-meta";
 import { LeaveTypeFilter } from "@/components/dashboard/leave-type-filter";
+import { CalendarLegend } from "@/components/dashboard/calendar-legend";
 import { NewRequestDialog } from "@/components/new-request-dialog";
 import { useOpenVacationDetail } from "@/lib/vacations/use-vacation-detail";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { vacationStatus } from "@/lib/api/types";
 import { useTranslation } from "@/lib/i18n/use-translation";
 
 function todayParts() {
@@ -70,7 +75,7 @@ export default function DashboardPage() {
   const initial = todayParts();
   const [year, setYear] = useState(initial.year);
   const [month, setMonth] = useState(initial.month);
-  const [filter, setFilter] = useState<Set<LeaveTypeKey>>(new Set(DEFAULT_LEAVE_TYPES));
+  const [filter, setFilter] = useState<Set<CalendarRecordType>>(new Set(DEFAULT_LEAVE_TYPES));
   const [presetDate, setPresetDate] = useState<string | null>(null);
   const [newRequestOpen, setNewRequestOpen] = useState(false);
   // Session-only overrides of the stored preference — a look at the team
@@ -137,11 +142,13 @@ export default function DashboardPage() {
   const ranges: CalendarRange[] = useMemo(() => {
     const live = vacations
       .filter((v) => vacationStatus(v) !== "rejected")
-      .filter((v) => DEFAULT_LEAVE_TYPES.includes(v.vacationType as LeaveTypeKey))
+      // A newer backend can serve types this build doesn't know; hide the bar
+      // rather than crash the calendar on its missing meta.
+      .filter((v) => isKnownCalendarRecordType(v.vacationType))
       .map((v) => ({
         id: v.id,
         userId: v.userId,
-        vacationType: v.vacationType as LeaveTypeKey,
+        vacationType: v.vacationType,
         requestedDay: v.requestedDay,
         user: v.user,
         note: v.note,
@@ -377,6 +384,7 @@ export default function DashboardPage() {
             onSelect={openVacation}
             onDayClick={openNewRequestForDay}
           />
+          <CalendarLegend ranges={ranges} filter={filter} />
           {vacationsQuery.error ? (
             <p className="mt-3 text-sm" style={{ color: "var(--destructive)" }}>
               {vacationsQuery.error instanceof ApiError && vacationsQuery.error.status === 403

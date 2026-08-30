@@ -1,7 +1,8 @@
 "use client";
 
 import { Filter, Info } from "lucide-react";
-import { TYPE_META } from "@/lib/calendar-sync/meta";
+import { typeMetaFor } from "@/lib/calendar-sync/meta";
+import { recordTypeLabel } from "@/lib/i18n/record-type-label";
 import type { PreviewEntry } from "@/lib/calendar-sync/preview";
 import { useTranslation } from "@/lib/i18n/use-translation";
 
@@ -220,11 +221,11 @@ function MonthPreview({ entries, geometry }: { entries: PreviewEntry[]; geometry
                 }}
               >
                 {shown.map((b, i) => {
-                  const Icon = TYPE_META[b.type].icon;
+                  const Icon = typeMetaFor(b.type).icon;
                   return (
                     <div key={i} style={{ gridColumn: `${b.sc} / ${b.ec}`, gridRow: b.lane + 1 }}>
                       <div
-                        title={`${b.name} · ${t.leaveTypes[b.type].label}`}
+                        title={`${b.name} · ${recordTypeLabel(t.calendarRecordTypes, b.type)}`}
                         className="flex items-center gap-[3px] overflow-hidden text-[9px] font-bold whitespace-nowrap"
                         style={{
                           height: 15,
@@ -275,7 +276,7 @@ function AgendaPreview({ entries, monthLabel }: { entries: PreviewEntry[]; month
       style={{ border: "1px solid var(--border)", background: "var(--surface)" }}
     >
       {sorted.map((e, i) => {
-        const Icon = TYPE_META[e.type].icon;
+        const Icon = typeMetaFor(e.type).icon;
         return (
           <div
             key={e.id}
@@ -311,7 +312,7 @@ function AgendaPreview({ entries, monthLabel }: { entries: PreviewEntry[]; month
             </span>
             <div className="min-w-0 flex-1">
               <div className="truncate text-[13.5px] font-semibold">
-                {e.name} — {t.leaveTypes[e.type].label}
+                {e.name} — {recordTypeLabel(t.calendarRecordTypes, e.type)}
               </div>
               {e.note ? (
                 <div className="truncate text-xs" style={{ color: "var(--text-faint)" }}>

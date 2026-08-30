@@ -635,13 +635,16 @@ export function useOrganizationCandidates(organizationId: string | null, enabled
 export function useUpdateOrganization(organizationId?: string | null) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (input: { name?: string; billingEmail?: string }) =>
-      updateOrganization({ ...input, organizationId }),
+    mutationFn: (input: {
+      name?: string;
+      billingEmail?: string;
+      sickDayBenefitEnabled?: boolean;
+    }) => updateOrganization({ ...input, organizationId }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: qk.organization(organizationId) });
       qc.invalidateQueries({ queryKey: qk.organizations() });
-      // The organization name rides along with every group, so the badges and
-      // the billing screen are both stale after a rename.
+      // The organization name and benefit flag ride along with every group,
+      // so the badges and the billing screen are both stale after a change.
       qc.invalidateQueries({ queryKey: qk.groups() });
       qc.invalidateQueries({ queryKey: ["group"] });
       qc.invalidateQueries({ queryKey: qk.subscription() });

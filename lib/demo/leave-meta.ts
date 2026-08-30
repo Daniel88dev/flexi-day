@@ -1,67 +1,42 @@
-import { VacationKind } from "@/lib/api/types";
-
-export type LeaveTypeKey =
-  | VacationKind.Vacation
-  | VacationKind.HomeOffice
-  | VacationKind.Sick
-  | VacationKind.BankHoliday
-  | VacationKind.PaidTimeOff;
+import {
+  CalendarRecordType,
+  OTHER_CALENDAR_RECORD_TYPES,
+  PRIMARY_CALENDAR_RECORD_TYPES,
+} from "@/lib/api/types";
 
 export interface LeaveMeta {
-  id: LeaveTypeKey;
-  label: string;
-  short: string;
   cssVar: string;
 }
 
-export const LEAVE_META: Record<LeaveTypeKey, LeaveMeta> = {
-  [VacationKind.Vacation]: {
-    id: VacationKind.Vacation,
-    label: "Vacation",
-    short: "Vac",
-    cssVar: "var(--c-vacation)",
-  },
-  [VacationKind.HomeOffice]: {
-    id: VacationKind.HomeOffice,
-    label: "Home Office",
-    short: "WFH",
-    cssVar: "var(--c-home)",
-  },
-  [VacationKind.Sick]: {
-    id: VacationKind.Sick,
-    label: "Sick",
-    short: "Sick",
-    cssVar: "var(--c-sick)",
-  },
-  [VacationKind.BankHoliday]: {
-    id: VacationKind.BankHoliday,
-    label: "Bank Holiday",
-    short: "Bank",
-    cssVar: "var(--c-bank)",
-  },
-  [VacationKind.PaidTimeOff]: {
-    id: VacationKind.PaidTimeOff,
-    label: "Paid Time Off",
-    short: "PTO",
-    cssVar: "var(--c-pto)",
-  },
+// Total on purpose: adding a CalendarRecordType without a color fails
+// typecheck here instead of silently rendering grey.
+export const LEAVE_META: Record<CalendarRecordType, LeaveMeta> = {
+  [CalendarRecordType.Vacation]: { cssVar: "var(--c-vacation)" },
+  [CalendarRecordType.HomeOffice]: { cssVar: "var(--c-home)" },
+  [CalendarRecordType.Sick]: { cssVar: "var(--c-sick)" },
+  [CalendarRecordType.SickDay]: { cssVar: "var(--c-sickday)" },
+  [CalendarRecordType.BankHoliday]: { cssVar: "var(--c-bank)" },
+  [CalendarRecordType.PaidTimeOff]: { cssVar: "var(--c-pto)" },
+  [CalendarRecordType.NonPaidLeave]: { cssVar: "var(--c-nonpaid)" },
+  [CalendarRecordType.StudyLeave]: { cssVar: "var(--c-study)" },
+  [CalendarRecordType.Other]: { cssVar: "var(--c-other)" },
 };
 
-export const DEFAULT_LEAVE_TYPES: LeaveTypeKey[] = [
-  VacationKind.Vacation,
-  VacationKind.HomeOffice,
-  VacationKind.Sick,
-  VacationKind.BankHoliday,
-  VacationKind.PaidTimeOff,
+/**
+ * Chip order on the dashboard filter and legend: the everyday types, sick day
+ * and bank holiday, then the rarer requestable ones.
+ */
+export const DEFAULT_LEAVE_TYPES: CalendarRecordType[] = [
+  ...PRIMARY_CALENDAR_RECORD_TYPES,
+  CalendarRecordType.SickDay,
+  CalendarRecordType.BankHoliday,
+  ...OTHER_CALENDAR_RECORD_TYPES,
 ];
 
-export function leaveMetaFor(kind: VacationKind): LeaveMeta {
-  return (
-    LEAVE_META[kind as LeaveTypeKey] ?? {
-      id: kind as LeaveTypeKey,
-      label: kind,
-      short: kind.slice(0, 3),
-      cssVar: "var(--text-muted)",
-    }
-  );
+// The map stays total for exhaustiveness, but the lookup must survive a value
+// a newer backend ships before this build knows it.
+const UNKNOWN_LEAVE_META: LeaveMeta = { cssVar: "var(--text-muted)" };
+
+export function leaveMetaFor(kind: CalendarRecordType): LeaveMeta {
+  return LEAVE_META[kind] ?? UNKNOWN_LEAVE_META;
 }

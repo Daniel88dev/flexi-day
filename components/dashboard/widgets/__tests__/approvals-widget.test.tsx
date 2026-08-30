@@ -3,7 +3,7 @@ import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { ApprovalsWidget } from "../approvals-widget";
 import { renderWithClient } from "@/lib/test-utils";
-import { VacationKind, type PendingApproval } from "@/lib/api/types";
+import { CalendarRecordType, type PendingApproval } from "@/lib/api/types";
 
 const sample: PendingApproval[] = [
   {
@@ -11,7 +11,7 @@ const sample: PendingApproval[] = [
     user: { id: "u-1", name: "Dana Holt", initials: "DH", avatarColor: "hsl(270 60% 60%)" },
     groupId: "g-1",
     groupName: "Product",
-    vacationType: VacationKind.Vacation,
+    vacationType: CalendarRecordType.Vacation,
     from: "2026-06-22",
     to: "2026-06-23",
     businessDays: 2,

@@ -2,10 +2,10 @@ import { describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { LeaveTypeFilter } from "../leave-type-filter";
-import { DEFAULT_LEAVE_TYPES, type LeaveTypeKey } from "@/lib/demo/leave-meta";
-import { VacationKind } from "@/lib/api/types";
+import { DEFAULT_LEAVE_TYPES } from "@/lib/demo/leave-meta";
+import { CalendarRecordType } from "@/lib/api/types";
 
-function setup(selected: LeaveTypeKey[]) {
+function setup(selected: CalendarRecordType[]) {
   const onChange = vi.fn();
   render(<LeaveTypeFilter value={new Set(selected)} onChange={onChange} />);
   return { onChange };
@@ -13,7 +13,7 @@ function setup(selected: LeaveTypeKey[]) {
 
 describe("LeaveTypeFilter", () => {
   it("renders a chip per leave type, pressed when selected", () => {
-    setup([VacationKind.Vacation]);
+    setup([CalendarRecordType.Vacation]);
     for (const label of ["Vacation", "Home Office", "Sick", "Bank Holiday", "Paid Time Off"]) {
       expect(screen.getByRole("button", { name: label })).toBeInTheDocument();
     }
@@ -30,19 +30,21 @@ describe("LeaveTypeFilter", () => {
 
     await user.click(screen.getByRole("button", { name: "Sick" }));
 
-    const next = onChange.mock.calls[0][0] as Set<LeaveTypeKey>;
-    expect(next.has(VacationKind.Sick)).toBe(false);
+    const next = onChange.mock.calls[0][0] as Set<CalendarRecordType>;
+    expect(next.has(CalendarRecordType.Sick)).toBe(false);
     expect(next.size).toBe(DEFAULT_LEAVE_TYPES.length - 1);
   });
 
   it("adds a type back when an unselected chip is clicked", async () => {
     const user = userEvent.setup();
-    const { onChange } = setup([VacationKind.Vacation]);
+    const { onChange } = setup([CalendarRecordType.Vacation]);
 
     await user.click(screen.getByRole("button", { name: "Home Office" }));
 
-    const next = onChange.mock.calls[0][0] as Set<LeaveTypeKey>;
-    expect([...next].sort()).toEqual([VacationKind.HomeOffice, VacationKind.Vacation].sort());
+    const next = onChange.mock.calls[0][0] as Set<CalendarRecordType>;
+    expect([...next].sort()).toEqual(
+      [CalendarRecordType.HomeOffice, CalendarRecordType.Vacation].sort()
+    );
   });
 
   it("summarises a full selection on the compact trigger", () => {
@@ -51,7 +53,7 @@ describe("LeaveTypeFilter", () => {
   });
 
   it("shows a count when only some types are selected", () => {
-    setup([VacationKind.Vacation, VacationKind.Sick]);
+    setup([CalendarRecordType.Vacation, CalendarRecordType.Sick]);
     expect(screen.getByText("2 types")).toBeInTheDocument();
   });
 
@@ -70,8 +72,8 @@ describe("LeaveTypeFilter", () => {
 
     await user.click(screen.getByRole("menuitemcheckbox", { name: "Sick" }));
 
-    const next = onChange.mock.calls[0][0] as Set<LeaveTypeKey>;
-    expect(next.has(VacationKind.Sick)).toBe(false);
+    const next = onChange.mock.calls[0][0] as Set<CalendarRecordType>;
+    expect(next.has(CalendarRecordType.Sick)).toBe(false);
     expect(screen.getByRole("menu")).toBeInTheDocument();
   });
 
@@ -82,16 +84,18 @@ describe("LeaveTypeFilter", () => {
     await user.click(screen.getByRole("button", { name: "Filter leave types" }));
     await user.click(await screen.findByRole("menuitem", { name: "Clear all" }));
 
-    expect((onChange.mock.calls[0][0] as Set<LeaveTypeKey>).size).toBe(0);
+    expect((onChange.mock.calls[0][0] as Set<CalendarRecordType>).size).toBe(0);
   });
 
   it("selects everything from the menu when some types are off", async () => {
     const user = userEvent.setup();
-    const { onChange } = setup([VacationKind.Vacation]);
+    const { onChange } = setup([CalendarRecordType.Vacation]);
 
     await user.click(screen.getByRole("button", { name: "Filter leave types" }));
     await user.click(await screen.findByRole("menuitem", { name: "Select all" }));
 
-    expect((onChange.mock.calls[0][0] as Set<LeaveTypeKey>).size).toBe(DEFAULT_LEAVE_TYPES.length);
+    expect((onChange.mock.calls[0][0] as Set<CalendarRecordType>).size).toBe(
+      DEFAULT_LEAVE_TYPES.length
+    );
   });
 });

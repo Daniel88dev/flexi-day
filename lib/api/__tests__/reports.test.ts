@@ -15,7 +15,7 @@ import {
   reportFiltersToQuery,
 } from "../reports";
 import { ApiError } from "../client";
-import { VacationKind } from "../types";
+import { CalendarRecordType } from "../types";
 
 describe("reportFiltersToQuery", () => {
   it("always sends the year", () => {
@@ -27,7 +27,7 @@ describe("reportFiltersToQuery", () => {
       year: 2026,
       groupIds: ["g1", "g2"],
       userIds: ["u1"],
-      types: [VacationKind.Vacation, VacationKind.Sick],
+      types: [CalendarRecordType.Vacation, CalendarRecordType.Sick],
     });
 
     expect(decodeURIComponent(query)).toBe(

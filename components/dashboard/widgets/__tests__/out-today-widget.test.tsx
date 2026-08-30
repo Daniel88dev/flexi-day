@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { OutTodayWidget } from "../out-today-widget";
-import { VacationKind, type VacationListItem } from "@/lib/api/types";
+import { CalendarRecordType, type VacationListItem } from "@/lib/api/types";
 
 function buildVacation(overrides: Partial<VacationListItem>): VacationListItem {
   return {
@@ -11,7 +11,7 @@ function buildVacation(overrides: Partial<VacationListItem>): VacationListItem {
     requestedDay: "2026-06-13",
     startTime: null,
     endTime: null,
-    vacationType: VacationKind.Vacation,
+    vacationType: CalendarRecordType.Vacation,
     halfDay: false,
     note: null,
     rejectionReason: null,
@@ -44,5 +44,32 @@ describe("OutTodayWidget", () => {
     render(<OutTodayWidget vacations={vacations} todayDay={todayDay} />);
     expect(screen.getByText("Dana Holt")).toBeInTheDocument();
     expect(screen.getByText(/1 away/i)).toBeInTheDocument();
+  });
+
+  it("reports the record's actual type instead of coercing it to Vacation", () => {
+    const todayIso = new Date().toISOString().slice(0, 10);
+    const todayDay = Number(todayIso.slice(8, 10));
+    const vacations = [
+      buildVacation({ requestedDay: todayIso, vacationType: CalendarRecordType.StudyLeave }),
+    ];
+    render(<OutTodayWidget vacations={vacations} todayDay={todayDay} />);
+    expect(screen.getByText("Study Leave")).toBeInTheDocument();
+    expect(screen.queryByText("Vacation")).not.toBeInTheDocument();
+  });
+
+  it("still lists someone whose record type comes from a newer backend", () => {
+    // Presence is the widget's whole job: an unknown type renders with its raw
+    // value rather than hiding the person or crashing.
+    const todayIso = new Date().toISOString().slice(0, 10);
+    const todayDay = Number(todayIso.slice(8, 10));
+    const vacations = [
+      buildVacation({
+        requestedDay: todayIso,
+        vacationType: "SABBATICAL" as CalendarRecordType,
+      }),
+    ];
+    render(<OutTodayWidget vacations={vacations} todayDay={todayDay} />);
+    expect(screen.getByText("Dana Holt")).toBeInTheDocument();
+    expect(screen.getByText("SABBATICAL")).toBeInTheDocument();
   });
 });

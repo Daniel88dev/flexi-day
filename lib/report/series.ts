@@ -1,5 +1,5 @@
 import type { MonthlyUsage, ReportScopeMember, ReportSummaryRow } from "@/lib/api/report-types";
-import { VacationKind } from "@/lib/api/types";
+import { CalendarRecordType } from "@/lib/api/types";
 
 export const MONTHS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] as const;
 
@@ -89,7 +89,7 @@ export function monthlySeriesFor(
   rows: DatedUsage[],
   userId: string,
   slots: MonthSlot[],
-  types?: VacationKind[]
+  types?: CalendarRecordType[]
 ): MonthPoint[] {
   const wanted = types && types.length > 0 ? new Set(types) : null;
   const byKey = new Map<string, MonthPoint>(
@@ -110,16 +110,16 @@ export function monthlySeriesFor(
 
 /**
  * Granted allowance plus carry-over for ONE leave type, across every group the
- * member appears in. `leaveType` is required on purpose: the allowances are
+ * member appears in. `recordType` is required on purpose: the allowances are
  * independent, and summing them lets one cover an overdraft in another.
  */
 export function totalQuotaFor(
   summary: ReportSummaryRow[],
   userId: string,
-  leaveType: VacationKind
+  recordType: CalendarRecordType
 ): number {
   return summary
-    .filter((row) => row.userId === userId && row.vacationType === leaveType)
+    .filter((row) => row.userId === userId && row.vacationType === recordType)
     .reduce((total, row) => total + row.yearQuota + row.carriedOverDays, 0);
 }
 
@@ -128,20 +128,20 @@ export function totalQuotaFor(
  * order, with a fallback so an empty summary still yields one chart/card per
  * member instead of nothing.
  */
-export function activeLeaveTypes(
+export function activeRecordTypes(
   summary: ReportSummaryRow[],
-  types?: VacationKind[]
-): VacationKind[] {
+  types?: CalendarRecordType[]
+): CalendarRecordType[] {
   const wanted = types && types.length > 0 ? new Set(types) : null;
-  const leaveTypes: VacationKind[] = [];
+  const recordTypes: CalendarRecordType[] = [];
   for (const row of summary) {
     if (wanted && !wanted.has(row.vacationType)) continue;
-    if (!leaveTypes.includes(row.vacationType)) leaveTypes.push(row.vacationType);
+    if (!recordTypes.includes(row.vacationType)) recordTypes.push(row.vacationType);
   }
-  if (leaveTypes.length === 0) {
-    leaveTypes.push(...(types && types.length > 0 ? types : [VacationKind.Vacation]));
+  if (recordTypes.length === 0) {
+    recordTypes.push(...(types && types.length > 0 ? types : [CalendarRecordType.Vacation]));
   }
-  return leaveTypes;
+  return recordTypes;
 }
 
 /** One row per slot; every member id present as a key, zero-filled. */
@@ -166,7 +166,7 @@ export type TeamMonthRow = MonthSlot & Record<string, number>;
 export function buildTeamMonthlySeries(
   usage: DatedUsage[],
   memberIds: string[],
-  leaveType: VacationKind,
+  recordType: CalendarRecordType,
   slots: MonthSlot[]
 ): TeamMonthRow[] {
   const ids = new Set(memberIds);
@@ -178,7 +178,7 @@ export function buildTeamMonthlySeries(
   }
 
   for (const entry of usage) {
-    if (entry.vacationType !== leaveType || !ids.has(entry.userId)) continue;
+    if (entry.vacationType !== recordType || !ids.has(entry.userId)) continue;
     const row = byKey.get(slotKey(entry.year, entry.month));
     if (!row) continue;
     row[entry.userId] = Number((row[entry.userId] + entry.used + entry.pending).toFixed(2));
@@ -225,7 +225,7 @@ const round = (value: number) => Number(value.toFixed(2));
 export function buildMemberRemaining(
   members: ReportScopeMember[],
   summary: ReportSummaryRow[],
-  leaveType: VacationKind
+  recordType: CalendarRecordType
 ): MemberRemaining[] {
   const unique = new Map<string, ReportScopeMember>();
   for (const member of members) {
@@ -235,7 +235,7 @@ export function buildMemberRemaining(
   return Array.from(unique.values())
     .map((member) => {
       const rows = summary.filter(
-        (row) => row.userId === member.id && row.vacationType === leaveType
+        (row) => row.userId === member.id && row.vacationType === recordType
       );
       const sum = (pick: (row: ReportSummaryRow) => number) =>
         round(rows.reduce((total, row) => total + pick(row), 0));
@@ -270,7 +270,7 @@ export function buildMemberRemaining(
 
 export type MemberCard = {
   member: ReportScopeMember;
-  vacationType: VacationKind;
+  vacationType: CalendarRecordType;
   /** Granted allowance plus carry-over. */
   quota: number;
   carriedOver: number;
@@ -288,7 +288,7 @@ export type MemberCard = {
 export function buildMemberCards(
   members: ReportScopeMember[],
   summary: ReportSummaryRow[],
-  types?: VacationKind[]
+  types?: CalendarRecordType[]
 ): MemberCard[] {
   const wanted = types && types.length > 0 ? new Set(types) : null;
   const seen = new Map<string, ReportScopeMember>();
@@ -296,7 +296,7 @@ export function buildMemberCards(
     if (!seen.has(member.id)) seen.set(member.id, member);
   }
 
-  const leaveTypes = activeLeaveTypes(summary, types);
+  const recordTypes = activeRecordTypes(summary, types);
 
   const cards: MemberCard[] = [];
 
@@ -305,15 +305,15 @@ export function buildMemberCards(
       (row) => row.userId === member.id && (!wanted || wanted.has(row.vacationType))
     );
 
-    for (const leaveType of leaveTypes) {
-      const typeRows = rows.filter((row) => row.vacationType === leaveType);
+    for (const recordType of recordTypes) {
+      const typeRows = rows.filter((row) => row.vacationType === recordType);
       const sum = (pick: (row: ReportSummaryRow) => number) =>
         Number(typeRows.reduce((total, row) => total + pick(row), 0).toFixed(2));
 
       cards.push({
         member,
-        vacationType: leaveType,
-        quota: totalQuotaFor(summary, member.id, leaveType),
+        vacationType: recordType,
+        quota: totalQuotaFor(summary, member.id, recordType),
         carriedOver: sum((row) => row.carriedOverDays),
         yearQuota: sum((row) => row.yearQuota),
         usedToDate: sum((row) => row.usedToDate),

@@ -13,25 +13,16 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { useUpdateVacation } from "@/lib/api/queries";
-import { VacationKind, type UpdateVacationInput, type VacationDetail } from "@/lib/api/types";
+import { CalendarRecordTypePicker } from "@/components/calendar-record-type-picker";
+import { useGroup, useUpdateVacation } from "@/lib/api/queries";
+import {
+  CalendarRecordType,
+  sickDayBenefitActive,
+  type UpdateVacationInput,
+  type VacationDetail,
+} from "@/lib/api/types";
 import { useTranslation } from "@/lib/i18n/use-translation";
-
-const REQUESTABLE_KINDS: VacationKind[] = [
-  VacationKind.Vacation,
-  VacationKind.HomeOffice,
-  VacationKind.Sick,
-  VacationKind.PaidTimeOff,
-];
 
 /** Backend times are HH:MM:SS; `<input type="time">` wants HH:MM. */
 function toInputTime(value: string | null): string {
@@ -63,8 +54,12 @@ export function EditRequestDialog({
 }) {
   const { t } = useTranslation();
   const updateVacation = useUpdateVacation();
+  // Only for the benefit gate on the type picker; undefined while loading
+  // means SickDay is not offered rather than flashing in.
+  const groupDetail = useGroup(open ? detail.groupId : null);
 
-  const [vacationType, setVacationType] = useState<VacationKind>(detail.vacationType);
+  // Null while the Others group is open with no type picked yet.
+  const [vacationType, setVacationType] = useState<CalendarRecordType | null>(detail.vacationType);
   const [startTime, setStartTime] = useState(toInputTime(detail.startTime));
   const [endTime, setEndTime] = useState(toInputTime(detail.endTime));
   const [halfDay, setHalfDay] = useState(detail.halfDay);
@@ -73,12 +68,9 @@ export function EditRequestDialog({
 
   const isSingleDay = detail.rangeStart === detail.rangeEnd;
 
-  // The API can create kinds this picker does not offer (e.g. StudyLeave). The
-  // record's own kind must always be a tab: with no active tab, Radix's roving
-  // focus would land on the first trigger and silently rewrite the type.
-  const kinds = REQUESTABLE_KINDS.includes(detail.vacationType)
-    ? REQUESTABLE_KINDS
-    : [...REQUESTABLE_KINDS, detail.vacationType];
+  const noteRequired = vacationType === CalendarRecordType.Other;
+  const canSave =
+    vacationType !== null && (!noteRequired || note.trim().length > 0) && !updateVacation.isPending;
 
   function close(nextOpen: boolean) {
     if (!nextOpen) {
@@ -95,6 +87,8 @@ export function EditRequestDialog({
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+
+    if (vacationType === null) return;
 
     const patch: Omit<UpdateVacationInput, "ids"> = {};
     if (vacationType !== detail.vacationType) patch.vacationType = vacationType;
@@ -144,44 +138,16 @@ export function EditRequestDialog({
           ) : null}
 
           <div className="space-y-1.5">
-            <Label id="edit-type-label" htmlFor="edit-type">
+            <Label id="edit-type-label" htmlFor="edit-type-top">
               {t.newRequest.type}
             </Label>
-            {/* Four kind labels don't fit one row on phones — a select reads
-                better there than a wrapped tab grid. */}
-            <div className="sm:hidden">
-              <Select
-                value={vacationType}
-                onValueChange={(v) => setVacationType(v as VacationKind)}
-              >
-                <SelectTrigger id="edit-type" className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {kinds.map((k) => (
-                    <SelectItem key={k} value={k}>
-                      {t.leaveTypes[k].label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <Tabs
+            <CalendarRecordTypePicker
               value={vacationType}
-              onValueChange={(v) => setVacationType(v as VacationKind)}
-              className="max-sm:hidden"
-            >
-              <TabsList
-                aria-labelledby="edit-type-label"
-                className="h-auto min-h-9 w-full flex-wrap"
-              >
-                {kinds.map((k) => (
-                  <TabsTrigger key={k} value={k}>
-                    {t.leaveTypes[k].label}
-                  </TabsTrigger>
-                ))}
-              </TabsList>
-            </Tabs>
+              onChange={setVacationType}
+              idPrefix="edit-type"
+              extraKind={detail.vacationType}
+              offerSickDay={sickDayBenefitActive(groupDetail.data)}
+            />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
@@ -221,10 +187,13 @@ export function EditRequestDialog({
           ) : null}
 
           <div className="space-y-1.5">
-            <Label htmlFor="edit-note">{t.newRequest.note}</Label>
+            <Label htmlFor="edit-note">
+              {noteRequired ? t.newRequest.noteRequiredForOther : t.newRequest.note}
+            </Label>
             <Textarea
               id="edit-note"
               rows={2}
+              required={noteRequired}
               value={note}
               onChange={(e) => setNote(e.target.value)}
               placeholder={t.newRequest.notePlaceholder}
@@ -235,7 +204,7 @@ export function EditRequestDialog({
             <Button type="button" variant="ghost" onClick={() => close(false)}>
               {t.common.cancel}
             </Button>
-            <Button type="submit" disabled={updateVacation.isPending}>
+            <Button type="submit" disabled={!canSave}>
               {updateVacation.isPending ? t.editRequest.saving : t.editRequest.save}
             </Button>
           </DialogFooter>

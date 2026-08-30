@@ -1,4 +1,4 @@
-import { VacationKind } from "@/lib/api/types";
+import { CalendarRecordType } from "@/lib/api/types";
 import type { Dictionary } from "./en";
 
 /**
@@ -50,17 +50,17 @@ export const cs: Dictionary = {
     cancelled: "Zrušeno",
   },
 
-  leaveTypes: {
-    [VacationKind.Vacation]: { label: "Dovolená", short: "Dov" },
-    [VacationKind.HomeOffice]: { label: "Home Office", short: "HO" },
-    [VacationKind.Sick]: { label: "Nemoc", short: "Nem" },
-    [VacationKind.BankHoliday]: { label: "Státní svátek", short: "Svátek" },
-    [VacationKind.NonPaidLeave]: { label: "Neplacené volno", short: "Neplac." },
-    [VacationKind.PaidTimeOff]: { label: "Placené volno", short: "PV" },
-    [VacationKind.SickLeave]: { label: "Nemocenská", short: "Nem" },
-    [VacationKind.StudyLeave]: { label: "Studijní volno", short: "Studium" },
-    [VacationKind.Other]: { label: "Ostatní", short: "Ostatní" },
-  } as Record<VacationKind, { label: string; short: string }>,
+  calendarRecordTypes: {
+    [CalendarRecordType.Vacation]: { label: "Dovolená", short: "Dov" },
+    [CalendarRecordType.HomeOffice]: { label: "Home Office", short: "HO" },
+    [CalendarRecordType.Sick]: { label: "Nemoc", short: "Nem" },
+    [CalendarRecordType.BankHoliday]: { label: "Státní svátek", short: "Svátek" },
+    [CalendarRecordType.NonPaidLeave]: { label: "Neplacené volno", short: "Neplac." },
+    [CalendarRecordType.PaidTimeOff]: { label: "Placené volno", short: "PV" },
+    [CalendarRecordType.SickDay]: { label: "Zdravotní volno", short: "Zdrav." },
+    [CalendarRecordType.StudyLeave]: { label: "Studijní volno", short: "Studium" },
+    [CalendarRecordType.Other]: { label: "Ostatní", short: "Ostatní" },
+  } satisfies Record<CalendarRecordType, { label: string; short: string }>,
 
   calendar: {
     months: [
@@ -201,6 +201,7 @@ export const cs: Dictionary = {
       group: "Skupina",
       vacationDays: "Dny dovolené",
       homeOfficeDays: "Dny home office",
+      sickDays: "Dny zdravotního volna",
       carriedOver: "Převedeno z předchozího roku",
       suggestion: (n: number, year: number) => `${n} nevyčerpáno v roce ${year}`,
       useSuggestion: "Použít návrh",
@@ -246,6 +247,10 @@ export const cs: Dictionary = {
     selectGroup: "Vyberte skupinu…",
     noGroups: "Žádné skupiny",
     type: "Typ",
+    // Not "Ostatní": that is already the Other *type's* label, and it sits
+    // inside this group.
+    others: "Jiné",
+    selectOtherType: "Vyberte typ…",
     from: "Od",
     to: "Do",
     startTime: "Čas začátku (nepovinné)",
@@ -253,6 +258,7 @@ export const cs: Dictionary = {
     halfDay: "Půlden",
     halfDayHint: "Počítá se jako 0,5 dne z vašeho nároku.",
     note: "Poznámka (nepovinné)",
+    noteRequiredForOther: "Poznámka (u typu Ostatní povinná)",
     notePlaceholder: "Rodinný výlet, konference, …",
     submit: "Odeslat žádost",
     submitting: "Odesílání…",
@@ -399,6 +405,7 @@ export const cs: Dictionary = {
       joined: "Připojen",
       vacationDays: "Dny dovolené",
       homeOfficeDays: "Dny home office",
+      sickDays: "Dny zdravotního volna",
       actions: "Akce",
     },
     yes: "Ano",
@@ -406,10 +413,12 @@ export const cs: Dictionary = {
     default: "(výchozí)",
     vacationDaysFor: (name: string) => `Dny dovolené pro ${name}`,
     homeOfficeDaysFor: (name: string) => `Dny home office pro ${name}`,
+    sickDaysFor: (name: string) => `Dny zdravotního volna pro ${name}`,
     saveQuotaFailed: "Nepodařilo se uložit kvótu",
     groupDefaults: "Výchozí hodnoty skupiny",
     vacationDays: "Dny dovolené",
     homeOfficeDays: "Dny home office",
+    sickDays: "Dny zdravotního volna",
     saveDefaults: "Uložit výchozí hodnoty",
     defaultsUpdated: "Výchozí hodnoty aktualizovány.",
     saveDefaultsFailed: "Nepodařilo se uložit výchozí hodnoty",
@@ -600,6 +609,7 @@ export const cs: Dictionary = {
     },
     prevMonth: "Předchozí měsíc",
     nextMonth: "Další měsíc",
+    legend: "Legenda kalendáře",
     filter: {
       label: "Filtrovat typy volna",
       allTypes: "Všechny typy",
@@ -801,6 +811,13 @@ export const cs: Dictionary = {
     planLimits: (groups: number, members: number) =>
       `${groups} ${plural(groups, "skupina", "skupiny", "skupin")} · ${members} ${plural(members, "člověk", "lidé", "lidí")} ve skupině`,
     manageBilling: "Spravovat fakturaci",
+    sickDayTitle: "Benefit zdravotního volna",
+    sickDayLabel: "Nabízet placené zdravotní volno",
+    sickDayHint:
+      "Členové mohou žádat o zdravotní volno v rámci ročního přídělu, který správci skupin nastavují na kartě Kvóty.",
+    sickDayPaidOnly: "Dostupné na placených plánech.",
+    sickDayDormant:
+      "Předplatné vypršelo, benefit je pozastavený — nic se nemaže a obnovení předplatného ho vrátí.",
     groupsTitle: "Skupiny",
     groupsNone: "Tato organizace zatím nemá žádné skupiny.",
     groupMembers: (n: number) => `${n} ${plural(n, "člen", "členové", "členů")}`,

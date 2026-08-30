@@ -1,11 +1,11 @@
 import { api } from "./client";
-import type { Iso, UUID, VacationKind } from "./types";
+import type { Iso, UUID, CalendarRecordType } from "./types";
 
 export type CalendarSyncScope = "ME" | "TEAM";
 
 /** One included leave type with its display color(s), as returned by the API. */
 export type CalendarSyncTypeEntry = {
-  type: VacationKind;
+  type: CalendarRecordType;
   label: string;
   color: string; // swatch palette key (e.g. "violet")
   mineColor: string | null;
@@ -27,7 +27,7 @@ export type CalendarSyncConfig = {
 };
 
 export type CalendarSyncTypeInput = {
-  type: VacationKind;
+  type: CalendarRecordType;
   color: string;
   mineColor?: string;
 };
