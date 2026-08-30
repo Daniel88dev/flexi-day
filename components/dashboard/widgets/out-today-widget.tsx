@@ -2,7 +2,6 @@
 
 import { AvatarBubble } from "@/components/brand/avatar-bubble";
 import { LeaveTag } from "@/components/dashboard/leave-tag";
-import { DEFAULT_LEAVE_TYPES } from "@/lib/demo/leave-meta";
 import { vacationStatus, CalendarRecordType, type VacationListItem } from "@/lib/api/types";
 import { useTranslation } from "@/lib/i18n/use-translation";
 
@@ -28,14 +27,7 @@ export function OutTodayWidget({ vacations, todayDay }: OutTodayWidgetProps) {
       if (v.vacationType === CalendarRecordType.BankHoliday) continue;
       if (seen.has(v.userId)) continue;
       seen.add(v.userId);
-      out.push({
-        user: v.user,
-        // Types the dashboard doesn't render first-class still coerce to
-        // Vacation here, as they did before the rename.
-        type: DEFAULT_LEAVE_TYPES.includes(v.vacationType)
-          ? v.vacationType
-          : CalendarRecordType.Vacation,
-      });
+      out.push({ user: v.user, type: v.vacationType });
     }
   }
 

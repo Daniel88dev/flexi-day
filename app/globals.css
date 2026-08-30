@@ -62,6 +62,10 @@
   --c-sick: oklch(0.62 0.16 18);
   --c-bank: oklch(0.7 0.13 70);
   --c-pto: oklch(0.6 0.11 232);
+  --c-nonpaid: oklch(0.6 0.1 200);
+  --c-study: oklch(0.66 0.14 110);
+  --c-other: oklch(0.55 0.03 270);
+  --c-sickday: oklch(0.62 0.14 350);
 
   /* Surfaces & text (light = warm paper) */
   --bg: oklch(0.985 0.008 78);
@@ -161,6 +165,10 @@
   --c-sick: oklch(0.7 0.15 20);
   --c-bank: oklch(0.78 0.13 72);
   --c-pto: oklch(0.7 0.11 232);
+  --c-nonpaid: oklch(0.72 0.1 200);
+  --c-study: oklch(0.75 0.14 110);
+  --c-other: oklch(0.72 0.04 270);
+  --c-sickday: oklch(0.72 0.14 350);
 
   --background: var(--bg);
   --foreground: var(--text);

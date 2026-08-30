@@ -605,6 +605,7 @@ export const cs: Dictionary = {
     },
     prevMonth: "Předchozí měsíc",
     nextMonth: "Další měsíc",
+    legend: "Legenda kalendáře",
     filter: {
       label: "Filtrovat typy volna",
       allTypes: "Všechny typy",

@@ -19,8 +19,8 @@ interface LeaveTypeFilterProps {
 }
 
 /**
- * Leave-type filter. Chips on desktop; on phones the same five chips wrap to
- * two rows and push the calendar off screen, so they collapse into a
+ * Leave-type filter. Chips on desktop; on phones that many chips wrap to
+ * several rows and push the calendar off screen, so they collapse into a
  * multi-select menu.
  */
 export function LeaveTypeFilter({ value, onChange }: LeaveTypeFilterProps) {

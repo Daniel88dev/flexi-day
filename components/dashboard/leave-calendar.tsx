@@ -37,6 +37,14 @@ interface LeaveCalendarProps {
 /** Bars a week shows before the rest collapse behind the "+N more" toggle. */
 export const MAX_LANES = 2;
 
+/** The one visibility rule; the legend shares it so it never diverges from the calendar. */
+export function visibleRanges(
+  ranges: CalendarRange[],
+  filter?: Set<CalendarRecordType>
+): CalendarRange[] {
+  return filter ? ranges.filter((r) => filter.has(r.type)) : ranges;
+}
+
 function buildWeeks(monthDays: number, firstIdxMon: number) {
   const cells: Array<number | null> = [];
   for (let i = 0; i < firstIdxMon; i++) cells.push(null);
@@ -289,7 +297,7 @@ export function LeaveCalendar({
   const { t } = useTranslation();
   const WEEKDAYS = t.calendar.weekdaysShort;
   const weeks = buildWeeks(monthDays, firstWeekdayMondayIdx);
-  const active = filter ? ranges.filter((r) => filter.has(r.type)) : ranges;
+  const active = visibleRanges(ranges, filter);
   const barsTop = mini ? 22 : 38;
   // Every week is the same height, whatever the headcount — the overflow opens
   // in a popover rather than pushing the grid around.

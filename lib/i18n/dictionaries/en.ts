@@ -599,6 +599,7 @@ export const en = {
     },
     prevMonth: "Previous month",
     nextMonth: "Next month",
+    legend: "Calendar legend",
     filter: {
       label: "Filter leave types",
       allTypes: "All types",

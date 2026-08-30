@@ -43,6 +43,7 @@ import { OutTodayWidget } from "@/components/dashboard/widgets/out-today-widget"
 import { BalanceWidget } from "@/components/dashboard/widgets/balance-widget";
 import { DEFAULT_LEAVE_TYPES } from "@/lib/demo/leave-meta";
 import { LeaveTypeFilter } from "@/components/dashboard/leave-type-filter";
+import { CalendarLegend } from "@/components/dashboard/calendar-legend";
 import { NewRequestDialog } from "@/components/new-request-dialog";
 import { useOpenVacationDetail } from "@/lib/vacations/use-vacation-detail";
 import { Card, CardContent } from "@/components/ui/card";
@@ -136,7 +137,6 @@ export default function DashboardPage() {
   const ranges: CalendarRange[] = useMemo(() => {
     const live = vacations
       .filter((v) => vacationStatus(v) !== "rejected")
-      .filter((v) => DEFAULT_LEAVE_TYPES.includes(v.vacationType))
       .map((v) => ({
         id: v.id,
         userId: v.userId,
@@ -376,6 +376,7 @@ export default function DashboardPage() {
             onSelect={openVacation}
             onDayClick={openNewRequestForDay}
           />
+          <CalendarLegend ranges={ranges} filter={filter} />
           {vacationsQuery.error ? (
             <p className="mt-3 text-sm" style={{ color: "var(--destructive)" }}>
               {vacationsQuery.error instanceof ApiError && vacationsQuery.error.status === 403

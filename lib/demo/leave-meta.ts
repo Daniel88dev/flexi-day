@@ -1,61 +1,38 @@
-import { CalendarRecordType } from "@/lib/api/types";
+import {
+  CalendarRecordType,
+  OTHER_CALENDAR_RECORD_TYPES,
+  PRIMARY_CALENDAR_RECORD_TYPES,
+} from "@/lib/api/types";
 
 export interface LeaveMeta {
-  id: CalendarRecordType;
-  label: string;
-  short: string;
   cssVar: string;
 }
 
-// Deliberately partial: only the types the dashboard renders first-class today.
-export const LEAVE_META: Partial<Record<CalendarRecordType, LeaveMeta>> = {
-  [CalendarRecordType.Vacation]: {
-    id: CalendarRecordType.Vacation,
-    label: "Vacation",
-    short: "Vac",
-    cssVar: "var(--c-vacation)",
-  },
-  [CalendarRecordType.HomeOffice]: {
-    id: CalendarRecordType.HomeOffice,
-    label: "Home Office",
-    short: "WFH",
-    cssVar: "var(--c-home)",
-  },
-  [CalendarRecordType.Sick]: {
-    id: CalendarRecordType.Sick,
-    label: "Sick",
-    short: "Sick",
-    cssVar: "var(--c-sick)",
-  },
-  [CalendarRecordType.BankHoliday]: {
-    id: CalendarRecordType.BankHoliday,
-    label: "Bank Holiday",
-    short: "Bank",
-    cssVar: "var(--c-bank)",
-  },
-  [CalendarRecordType.PaidTimeOff]: {
-    id: CalendarRecordType.PaidTimeOff,
-    label: "Paid Time Off",
-    short: "PTO",
-    cssVar: "var(--c-pto)",
-  },
+// Total on purpose: adding a CalendarRecordType without a color fails
+// typecheck here instead of silently rendering grey.
+export const LEAVE_META: Record<CalendarRecordType, LeaveMeta> = {
+  [CalendarRecordType.Vacation]: { cssVar: "var(--c-vacation)" },
+  [CalendarRecordType.HomeOffice]: { cssVar: "var(--c-home)" },
+  [CalendarRecordType.Sick]: { cssVar: "var(--c-sick)" },
+  [CalendarRecordType.SickDay]: { cssVar: "var(--c-sickday)" },
+  [CalendarRecordType.BankHoliday]: { cssVar: "var(--c-bank)" },
+  [CalendarRecordType.PaidTimeOff]: { cssVar: "var(--c-pto)" },
+  [CalendarRecordType.NonPaidLeave]: { cssVar: "var(--c-nonpaid)" },
+  [CalendarRecordType.StudyLeave]: { cssVar: "var(--c-study)" },
+  [CalendarRecordType.Other]: { cssVar: "var(--c-other)" },
 };
 
+/**
+ * Chip order on the dashboard filter and legend: the everyday types, bank
+ * holiday, then the rarer requestable ones. SickDay joins when the sick-day
+ * benefit ships (issue #88).
+ */
 export const DEFAULT_LEAVE_TYPES: CalendarRecordType[] = [
-  CalendarRecordType.Vacation,
-  CalendarRecordType.HomeOffice,
-  CalendarRecordType.Sick,
+  ...PRIMARY_CALENDAR_RECORD_TYPES,
   CalendarRecordType.BankHoliday,
-  CalendarRecordType.PaidTimeOff,
+  ...OTHER_CALENDAR_RECORD_TYPES,
 ];
 
 export function leaveMetaFor(kind: CalendarRecordType): LeaveMeta {
-  return (
-    LEAVE_META[kind] ?? {
-      id: kind,
-      label: kind,
-      short: kind.slice(0, 3),
-      cssVar: "var(--text-muted)",
-    }
-  );
+  return LEAVE_META[kind];
 }
