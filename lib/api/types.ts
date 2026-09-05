@@ -97,6 +97,8 @@ export type Vacation = {
   deletedByUserId: UUID | null;
   /** Differs from `userId` when an admin booked on the member's behalf. */
   createdByUserId: UUID | null;
+  /** Shared by every day row created in the same submission. */
+  requestId: UUID;
   createdAt: Iso;
   updatedAt: Iso;
 };

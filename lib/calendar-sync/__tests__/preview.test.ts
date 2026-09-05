@@ -11,6 +11,7 @@ function vac(over: Partial<VacationListItem> & { requestedDay: string }): Vacati
     id: over.id ?? `v-${over.requestedDay}-${over.userId ?? ME}`,
     userId: over.userId ?? ME,
     groupId: over.groupId ?? "team-a",
+    requestId: "r-1",
     requestedDay: over.requestedDay,
     startTime: null,
     endTime: null,

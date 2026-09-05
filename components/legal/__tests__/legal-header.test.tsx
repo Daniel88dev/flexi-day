@@ -29,6 +29,8 @@ vi.mock("@/lib/api/queries", () => ({
   useCreateVacation: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useGroup: () => ({ data: undefined, isLoading: false, error: null }),
   useGroupUsers: () => ({ data: [], isLoading: false, error: null }),
+  useVacation: () => ({ data: undefined, isLoading: false, error: null }),
+  useUploadAttachment: () => ({ mutateAsync: vi.fn(), isPending: false }),
 }));
 
 describe("LegalHeader", () => {

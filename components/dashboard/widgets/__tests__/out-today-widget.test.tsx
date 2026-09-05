@@ -8,6 +8,7 @@ function buildVacation(overrides: Partial<VacationListItem>): VacationListItem {
     id: "v",
     userId: "u-1",
     groupId: "g-1",
+    requestId: "r-1",
     requestedDay: "2026-06-13",
     startTime: null,
     endTime: null,

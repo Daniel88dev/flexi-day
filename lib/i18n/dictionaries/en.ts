@@ -268,6 +268,10 @@ export const en = {
     myself: "Myself",
     approveImmediately: "Approve immediately",
     approveImmediatelyHint: "The request is created already approved, attributed to you.",
+    submitted: "Request submitted.",
+    uploadingFiles: "Your files are on their way. This closes once they have been checked.",
+    uploadProblems:
+      "Not every file made it. The request stands; you can add files from its details.",
   },
 
   attachments: {
@@ -297,6 +301,7 @@ export const en = {
     unsupportedType: "Only PNG, JPEG, WebP, HEIC and PDF files can be attached.",
     uploadFailed: "Upload failed. Try again.",
     dismiss: "Dismiss",
+    remove: (name: string) => `Remove ${name}`,
   },
   vacationDetail: {
     title: "Request details",

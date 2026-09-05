@@ -28,6 +28,7 @@ function day(
     id,
     userId: user.id,
     groupId: "g-1",
+    requestId: "r-1",
     requestedDay,
     startTime: null,
     endTime: null,
@@ -83,6 +84,7 @@ vi.mock("@/lib/api/queries", () => ({
     error: null,
   }),
   useGroup: () => ({ data: undefined, isLoading: false, error: null }),
+  useUploadAttachment: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useBankHolidaysMulti: (year: number, countries: string[]) => {
     useBankHolidaysMultiSpy(year, countries);
     return bankHolidayRows;

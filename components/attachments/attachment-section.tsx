@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
 import { useGroup } from "@/lib/api/queries";
 import type { UserSummary, VacationDetail } from "@/lib/api/types";
 import { MAX_ATTACHMENTS_PER_REQUEST, attachmentSlotsUsed } from "@/lib/attachments/rules";
+import { useAttachmentUploads } from "@/lib/attachments/use-attachment-uploads";
 import { useSession } from "@/lib/auth-client";
 import { useTranslation } from "@/lib/i18n/use-translation";
 import { AttachmentList } from "./attachment-list";
@@ -21,11 +21,11 @@ export function AttachmentSection({ detail }: { detail: VacationDetail }) {
   const { data: session } = useSession();
   const attachments = detail.attachments;
   const group = useGroup(attachments ? detail.groupId : null);
-  const [failedIds, setFailedIds] = useState<string[]>([]);
+  const live = (attachments ?? []).filter((a) => a.deletedAt === null);
+  const uploads = useAttachmentUploads({ requestId: detail.requestId, attachments: live });
 
   if (!attachments) return null;
 
-  const live = attachments.filter((a) => a.deletedAt === null);
   // Mirrors the backend's standing rule, before plan and cap: the owner while
   // the request is live and undecided against, or an editing admin.
   const isOwner = session?.user?.id === detail.userId;
@@ -55,15 +55,10 @@ export function AttachmentSection({ detail }: { detail: VacationDetail }) {
         {t.attachments.title}
       </h3>
       {live.length > 0 ? (
-        <AttachmentList attachments={live} people={people} failedIds={failedIds} />
+        <AttachmentList attachments={live} people={people} failedIds={uploads.failedIds} />
       ) : null}
       {showPicker ? (
-        <AttachmentUploader
-          requestId={detail.requestId}
-          attachments={live}
-          disabled={detail.canAttach !== true}
-          onTransportFailure={(id) => setFailedIds((current) => [...current, id])}
-        />
+        <AttachmentUploader uploads={uploads} disabled={detail.canAttach !== true} />
       ) : null}
       {showLapsed ? (
         <p className="text-muted-foreground text-xs">{t.attachments.paidPlanOnly}</p>

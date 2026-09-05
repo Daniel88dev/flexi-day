@@ -10,6 +10,7 @@ function vac(
   return {
     userId: "u-1",
     groupId: "g-1",
+    requestId: "r-1",
     startTime: null,
     endTime: null,
     vacationType: CalendarRecordType.Vacation,

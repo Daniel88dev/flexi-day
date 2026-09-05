@@ -272,6 +272,10 @@ export const cs: Dictionary = {
     approveImmediately: "Rovnou schválit",
     approveImmediatelyHint:
       "Žádost se vytvoří jako schválená a bude uvedeno, že jste ji schválili vy.",
+    submitted: "Žádost odeslána.",
+    uploadingFiles: "Soubory se nahrávají. Okno se zavře, jakmile budou zkontrolovány.",
+    uploadProblems:
+      "Ne všechny soubory se podařilo přiložit. Žádost platí; soubory můžete přidat v jejím detailu.",
   },
 
   attachments: {
@@ -301,6 +305,7 @@ export const cs: Dictionary = {
     unsupportedType: "Přiložit lze jen soubory PNG, JPEG, WebP, HEIC a PDF.",
     uploadFailed: "Nahrání selhalo. Zkuste to znovu.",
     dismiss: "Zavřít",
+    remove: (name: string) => `Odebrat ${name}`,
   },
   vacationDetail: {
     title: "Detail žádosti",
