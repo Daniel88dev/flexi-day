@@ -11,7 +11,7 @@ export const LEGAL = {
   /** Merchant of Record for paid plans — the seller of record on invoices. */
   merchantOfRecord: "Paddle.com Market Ltd",
   /** Human-readable last-updated date shown on every legal page. */
-  updated: "11 August 2026",
+  updated: "5 September 2026",
   /** Where the product is hosted (AWS region). */
   hosting: "Amazon Web Services (AWS), eu-central-1 region (Frankfurt, Germany)",
   /** Data-protection supervisory authority for the controller. */
