@@ -54,6 +54,16 @@ export default function PrivacyPage() {
         <li>
           <strong>Support communications</strong> — the content of emails you send us.
         </li>
+        <li>
+          <strong>Request attachments</strong> — files (images or PDFs) you or an admin attach to a
+          leave request, such as a doctor&rsquo;s note. Because a file may contain health data, we
+          treat it as a special category of personal data under Article 9 GDPR. We store it so that
+          the people who decide your request have the evidence for it. Attachments are stored
+          encrypted at rest on AWS in Frankfurt, Germany, and only you, the group&rsquo;s approvers
+          and its admins can open or download them; other members of your team cannot see that an
+          attachment exists. We delete an attachment twelve months after the absence it belongs to,
+          or sooner if the request is cancelled.
+        </li>
       </ul>
       <h3>Data we collect automatically</h3>
       <ul>
@@ -155,8 +165,9 @@ export default function PrivacyPage() {
       <p>
         We keep your personal data for as long as your account is active. If you delete your account
         or ask us to erase your data, we remove it from our live systems and delete it from backups
-        within a reasonable period, unless we are legally required to keep it longer. Server logs
-        are retained for a limited period for security purposes.
+        within a reasonable period, unless we are legally required to keep it longer. Request
+        attachments are deleted automatically twelve months after the absence, or as soon as the
+        request is cancelled. Server logs are retained for a limited period for security purposes.
       </p>
 
       <h2>8. Your rights</h2>

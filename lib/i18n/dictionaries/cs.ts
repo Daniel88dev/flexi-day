@@ -892,6 +892,7 @@ export const cs: Dictionary = {
     featureGroups: (n: number) => `${n} ${n === 1 ? "skupina" : n < 5 ? "skupiny" : "skupin"}`,
     featureMembers: (n: number) => `${n} lidí na skupinu`,
     featureSlots: (n: number) => `Až ${n} extra slotů pro skupiny`,
+    featureAttachments: "Přílohy k žádostem (obrázky a PDF)",
     subscribe: "Předplatit",
     switchPlan: "Přejít na tento tarif",
     current: "Aktuální tarif",
@@ -1057,6 +1058,7 @@ export const cs: Dictionary = {
         features: [
           "5 skupin po 25 lidech",
           "Vše z tarifu Free",
+          "Přílohy k žádostem (obrázky a PDF)",
           "Extra sloty pro skupiny (1,50 € / měs.)",
           "Prioritní e-mailová podpora",
         ],

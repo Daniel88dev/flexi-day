@@ -884,6 +884,7 @@ export const en = {
     featureGroups: (n: number) => `${n} group${n === 1 ? "" : "s"}`,
     featureMembers: (n: number) => `${n} people per group`,
     featureSlots: (n: number) => `Up to ${n} extra group slots`,
+    featureAttachments: "Attachments on requests (images & PDF)",
     subscribe: "Subscribe",
     switchPlan: "Switch to this plan",
     current: "Current plan",
@@ -1047,6 +1048,7 @@ export const en = {
         features: [
           "5 groups, 25 people each",
           "Everything in Free",
+          "Attachments on requests (images & PDF)",
           "Extra group slots (€1.50 / mo each)",
           "Priority email support",
         ],

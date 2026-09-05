@@ -51,6 +51,14 @@ export default function SecurityPage() {
         </li>
       </ul>
 
+      <h2>Attachments</h2>
+      <p>
+        Files attached to a leave request are stored in a private bucket on {LEGAL.hosting},
+        encrypted at rest, and are never reachable by a public link. A file is served only to the
+        record owner, the group&rsquo;s approvers and its admins, through a short-lived URL issued
+        on request, and is deleted automatically twelve months after the absence.
+      </p>
+
       <h2>Backups and reliability</h2>
       <p>
         We maintain regular backups so data can be restored in the event of an incident. Server
