@@ -15,6 +15,7 @@ const detail: VacationDetail = {
   rangeStart: "2026-08-12",
   rangeEnd: "2026-08-12",
   vacationIds: ["v-1"],
+  requestId: "r-1",
   startTime: null,
   endTime: null,
   vacationType: CalendarRecordType.Vacation,
@@ -77,6 +78,11 @@ vi.mock("@/lib/api/queries", () => ({
   useCommentVacation: () => ({ mutateAsync: commentMutate, isPending: false }),
   useUpdateVacation: () => ({ mutateAsync: vi.fn().mockResolvedValue([]), isPending: false }),
   useGroup: () => ({ data: undefined, isLoading: false, error: null }),
+  useUploadAttachment: () => ({ mutateAsync: vi.fn(), isPending: false }),
+}));
+
+vi.mock("@/lib/auth-client", () => ({
+  useSession: () => ({ data: { user: { id: "u-1" } } }),
 }));
 
 describe("VacationDetailDialog", () => {
@@ -232,6 +238,40 @@ describe("VacationDetailDialog", () => {
     renderWithClient(<VacationDetailDialog vacationId="v-1" open onOpenChange={() => {}} />);
 
     expect(screen.getByRole("button", { name: /^Edit$/i })).toBeInTheDocument();
+  });
+
+  it("shows the attachments the backend included", () => {
+    currentDetail = {
+      ...detail,
+      attachments: [
+        {
+          id: "a-1",
+          requestId: "r-1",
+          fileName: "doctors-note.jpg",
+          contentType: "image/jpeg",
+          size: 2048,
+          status: "READY",
+          rejectionReason: null,
+          uploadedByUserId: "u-1",
+          createdAt: "2026-08-01T09:00:00.000Z",
+          deletedAt: null,
+          deletedByUserId: null,
+        },
+      ],
+      canAttach: true,
+    };
+    renderWithClient(<VacationDetailDialog vacationId="v-1" open onOpenChange={() => {}} />);
+
+    expect(screen.getByRole("heading", { name: "Attachments" })).toBeInTheDocument();
+    expect(screen.getByText("doctors-note.jpg")).toBeInTheDocument();
+    expect(screen.getByLabelText("Add files")).toBeInTheDocument();
+  });
+
+  it("shows no attachment section when the payload carries none", () => {
+    renderWithClient(<VacationDetailDialog vacationId="v-1" open onOpenChange={() => {}} />);
+
+    expect(screen.queryByRole("heading", { name: "Attachments" })).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Add files")).not.toBeInTheDocument();
   });
 
   it("renders UPDATED history events with their change summary", () => {

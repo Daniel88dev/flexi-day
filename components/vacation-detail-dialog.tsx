@@ -32,6 +32,7 @@ import { cn } from "@/lib/utils";
 import { useTranslation } from "@/lib/i18n/use-translation";
 import type { Dictionary } from "@/lib/i18n";
 import { EditRequestDialog } from "@/components/edit-request-dialog";
+import { AttachmentSection } from "@/components/attachments/attachment-section";
 import { recordTypeLabel } from "@/lib/i18n/record-type-label";
 
 const STATUS_BADGE: Record<VacationStatus, string> = {
@@ -195,6 +196,8 @@ export function VacationDetailDialog({
             {detail.note ? (
               <div className="bg-muted/50 rounded-2xl px-3 py-2 text-sm">{detail.note}</div>
             ) : null}
+
+            <AttachmentSection detail={detail} />
 
             <Timeline history={detail.history} t={t} />
 

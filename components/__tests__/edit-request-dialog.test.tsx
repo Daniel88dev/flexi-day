@@ -26,6 +26,7 @@ const detail: VacationDetail = {
   rangeStart: "2026-08-12",
   rangeEnd: "2026-08-12",
   vacationIds: ["v-1"],
+  requestId: "r-1",
   startTime: "09:00:00",
   endTime: "17:00:00",
   vacationType: CalendarRecordType.Vacation,
