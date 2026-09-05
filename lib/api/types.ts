@@ -160,6 +160,8 @@ export type VacationDetail = VacationListItem & {
    */
   attachments?: Attachment[];
   canAttach?: boolean;
+  /** May delete attachments other than their own: group and organization admins. */
+  canDeleteAnyAttachment?: boolean;
 };
 
 export type AttachmentStatus = "UPLOADING" | "READY" | "REJECTED";

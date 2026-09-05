@@ -9,6 +9,7 @@ import type { Attachment, AttachmentDisposition, UserSummary } from "@/lib/api/t
 import {
   attachmentDisplayStatus,
   formatFileSize,
+  isFailedUpload,
   isImage,
   type AttachmentDisplayStatus,
 } from "@/lib/attachments/rules";
@@ -88,7 +89,8 @@ export function AttachmentList({
   function withUrl(
     attachment: Attachment,
     disposition: AttachmentDisposition,
-    consume: (url: string) => void
+    consume: (url: string) => void,
+    onFailure?: () => void
   ) {
     return runRowJob(
       { id: attachment.id, action: "url" },
@@ -96,7 +98,10 @@ export function AttachmentList({
         const { url } = await getAttachmentDownloadUrl(attachment.id, disposition);
         consume(url);
       },
-      () => t.attachments.openFailed
+      () => {
+        onFailure?.();
+        return t.attachments.openFailed;
+      }
     );
   }
 
@@ -122,10 +127,15 @@ export function AttachmentList({
     // treat it as user-initiated; it gets its address once the URL is here.
     const tab = window.open("", "_blank");
     if (tab) tab.opener = null;
-    void withUrl(attachment, "inline", (url) => {
-      if (tab) tab.location.href = url;
-      else setError(t.attachments.openFailed);
-    });
+    void withUrl(
+      attachment,
+      "inline",
+      (url) => {
+        if (tab) tab.location.href = url;
+        else setError(t.attachments.openFailed);
+      },
+      () => tab?.close()
+    );
   }
 
   function download(attachment: Attachment) {
@@ -139,8 +149,9 @@ export function AttachmentList({
 
   function uploaderLabel(attachment: Attachment) {
     const actor = resolveActor(people, attachment.uploadedByUserId);
-    return actor.kind === "named"
-      ? t.attachments.uploadedBy(actor.user.name)
+    if (actor.kind === "named") return t.attachments.uploadedBy(actor.user.name);
+    return actor.kind === "gone"
+      ? t.attachments.uploadedByRemovedAccount
       : t.attachments.uploadedByAdmin;
   }
 
@@ -157,7 +168,7 @@ export function AttachmentList({
     <div className="space-y-2">
       <ul className="space-y-2">
         {attachments.map((attachment) => {
-          const status = failedIds.includes(attachment.id)
+          const status = isFailedUpload(attachment, failedIds)
             ? "failed"
             : attachmentDisplayStatus(attachment);
           const ready = status === "ready";
@@ -191,7 +202,11 @@ export function AttachmentList({
                   {uploaderLabel(attachment)} ·{" "}
                   {formatMoment(attachment.createdAt, t.common.dateLocale)}
                 </div>
-                {note ? <div className={cn("text-xs", STATUS_TONE[status])}>{note}</div> : null}
+                {note ? (
+                  <div role="status" className={cn("text-xs", STATUS_TONE[status])}>
+                    {note}
+                  </div>
+                ) : null}
               </div>
               {ready ? (
                 <Button

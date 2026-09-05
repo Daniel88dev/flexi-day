@@ -3,6 +3,7 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { ApiError } from "@/lib/api/client";
 import type { Attachment } from "@/lib/api/types";
+import { getAttachmentDownloadUrl } from "@/lib/api/attachments";
 import { AttachmentList } from "../attachment-list";
 
 vi.mock("@/lib/api/attachments", () => ({ getAttachmentDownloadUrl: vi.fn() }));
@@ -33,6 +34,44 @@ describe("AttachmentList", () => {
     expect(screen.getByRole("button", { name: "Preview note.jpg" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Download note.jpg" })).toBeInTheDocument();
     expect(screen.getByText(/^3 kB · Uploaded by Dana Holt · .*2026/)).toBeInTheDocument();
+  });
+
+  it("tells a removed account from an admin the detail cannot name", () => {
+    render(
+      <AttachmentList
+        attachments={[ready, { ...ready, id: "a-2", fileName: "b.jpg", uploadedByUserId: null }]}
+        people={[]}
+      />
+    );
+
+    expect(screen.getByText(/Uploaded by an admin/)).toBeInTheDocument();
+    expect(screen.getByText(/Uploaded by a removed account/)).toBeInTheDocument();
+  });
+
+  it("closes the tab it opened for a PDF when no URL comes back", async () => {
+    const tab = { opener: {}, location: { href: "" }, close: vi.fn() };
+    vi.spyOn(window, "open").mockReturnValue(tab as unknown as Window);
+    vi.mocked(getAttachmentDownloadUrl).mockRejectedValue(new ApiError(500, "boom"));
+    const user = userEvent.setup();
+    render(
+      <AttachmentList
+        attachments={[{ ...ready, fileName: "note.pdf", contentType: "application/pdf" }]}
+        people={[]}
+      />
+    );
+
+    await user.click(screen.getByRole("button", { name: "Open note.pdf" }));
+
+    await waitFor(() => expect(screen.getByRole("alert")).toHaveTextContent("Couldn't open"));
+    expect(tab.close).toHaveBeenCalledTimes(1);
+    vi.restoreAllMocks();
+  });
+
+  it("lets the server's READY win over a transfer the browser thought lost", () => {
+    render(<AttachmentList attachments={[ready]} people={[]} failedIds={["a-1"]} />);
+
+    expect(screen.getByRole("button", { name: "Preview note.jpg" })).toBeInTheDocument();
+    expect(screen.queryByText(/Upload failed/)).not.toBeInTheDocument();
   });
 
   it("shows a row the caller marked as failed without any action", () => {

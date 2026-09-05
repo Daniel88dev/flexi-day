@@ -194,7 +194,7 @@ export function VacationDetailDialog({
               <div className="bg-muted/50 rounded-2xl px-3 py-2 text-sm">{detail.note}</div>
             ) : null}
 
-            <AttachmentSection detail={detail} />
+            <AttachmentSection key={detail.requestId} detail={detail} />
 
             <Timeline entries={mergeTimeline(detail)} t={t} />
 

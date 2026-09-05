@@ -23,7 +23,10 @@ export function AttachmentSection({ detail }: { detail: VacationDetail }) {
   const attachments = detail.attachments;
   const group = useGroup(attachments ? detail.groupId : null);
   const live = (attachments ?? []).filter((a) => a.deletedAt === null);
-  const uploads = useAttachmentUploads({ requestId: detail.requestId, attachments: live });
+  const uploads = useAttachmentUploads({
+    requestId: detail.requestId,
+    attachments: attachments ?? [],
+  });
   const remove = useDeleteAttachment();
 
   if (!attachments) return null;
@@ -44,19 +47,20 @@ export function AttachmentSection({ detail }: { detail: VacationDetail }) {
 
   if (live.length === 0 && !showPicker && !showLapsed) return null;
 
-  // The backend lets the uploader and any admin delete; the payload carries no
-  // flag for it, so `canEdit` stands in for the admin half.
+  // The uploader may always delete their own file; the flag covers everyone
+  // else's, and falls back to `canEdit` against a backend that predates it.
+  const adminDeletes = detail.canDeleteAnyAttachment ?? detail.canEdit;
   const canDelete = (attachment: Attachment) =>
-    (userId !== undefined && attachment.uploadedByUserId === userId) || detail.canEdit;
+    (userId !== undefined && attachment.uploadedByUserId === userId) || adminDeletes;
 
   return (
     <section aria-labelledby="attachments-heading" className="space-y-3">
       <h3 id="attachments-heading" className="text-sm font-medium">
         {t.attachments.title}
       </h3>
-      {live.length > 0 ? (
+      {uploads.settled.length > 0 ? (
         <AttachmentList
-          attachments={live}
+          attachments={uploads.settled}
           people={namedPeople(detail)}
           failedIds={uploads.failedIds}
           canDelete={canDelete}

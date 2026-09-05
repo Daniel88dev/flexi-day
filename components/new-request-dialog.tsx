@@ -34,7 +34,11 @@ import {
 import { ApiError } from "@/lib/api/client";
 import { planLimitFromError } from "@/lib/billing/plan-limit-error";
 import { CalendarRecordType, sickDayBenefitActive, type UserSummary } from "@/lib/api/types";
-import { attachmentDisplayStatus, hasProcessingAttachment } from "@/lib/attachments/rules";
+import {
+  attachmentDisplayStatus,
+  hasProcessingAttachment,
+  isFailedUpload,
+} from "@/lib/attachments/rules";
 import { useAttachmentUploads } from "@/lib/attachments/use-attachment-uploads";
 import { useTranslation } from "@/lib/i18n/use-translation";
 import { useSession } from "@/lib/auth-client";
@@ -143,10 +147,10 @@ export function NewRequestDialog({ open, onOpenChange, initialDate }: NewRequest
   const uploaded = (createdQuery.data?.attachments ?? []).filter((a) => a.deletedAt === null);
   const uploads = useAttachmentUploads({
     requestId: created?.requestId ?? null,
-    attachments: uploaded,
+    attachments: createdQuery.data?.attachments ?? [],
   });
   const offerAttachments = groupDetail.data?.uploadsAvailable === true;
-  const stillChecking = uploaded.filter((a) => !uploads.failedIds.includes(a.id));
+  const stillChecking = uploaded.filter((a) => !isFailedUpload(a, uploads.failedIds));
   const uploadsSettling =
     uploads.queued > 0 || uploads.inFlight > 0 || hasProcessingAttachment(stillChecking);
   const uploadsClean =
@@ -280,16 +284,18 @@ export function NewRequestDialog({ open, onOpenChange, initialDate }: NewRequest
         {created ? (
           <div className="space-y-4 py-2">
             <p className="text-sm">{t.newRequest.submitted}</p>
-            {uploaded.length > 0 ? (
+            {uploads.settled.length > 0 ? (
               <AttachmentList
-                attachments={uploaded}
+                attachments={uploads.settled}
                 people={people}
                 failedIds={uploads.failedIds}
               />
             ) : null}
             <AttachmentUploader uploads={uploads} />
-            <p className="text-muted-foreground text-sm">
-              {uploadsDone ? t.newRequest.uploadProblems : t.newRequest.uploadingFiles}
+            <p role="status" className="text-muted-foreground text-sm">
+              {uploadsDone && !uploadsClean
+                ? t.newRequest.uploadProblems
+                : t.newRequest.uploadingFiles}
             </p>
             <DialogFooter>
               <Button type="button" onClick={closeAndReset}>

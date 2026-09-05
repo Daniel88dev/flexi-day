@@ -57,11 +57,16 @@ describe("useUploadAttachment", () => {
     uploadToTargetMock.mockResolvedValue(undefined);
     const file = new File(["x"], "IMG_1.HEIC", { type: "" });
     const onProgress = vi.fn();
+    const onRegistered = vi.fn();
     const { invalidate, result } = setup();
 
-    result.current.mutate({ requestId: "r-1", file, onProgress });
+    result.current.mutate({ requestId: "r-1", file, onRegistered, onProgress });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(onRegistered).toHaveBeenCalledWith("a-1");
+    expect(onRegistered.mock.invocationCallOrder[0]).toBeLessThan(
+      uploadToTargetMock.mock.invocationCallOrder[0]
+    );
     expect(createAttachmentMock).toHaveBeenCalledWith({
       requestId: "r-1",
       fileName: "IMG_1.HEIC",

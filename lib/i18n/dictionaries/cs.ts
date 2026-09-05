@@ -282,6 +282,7 @@ export const cs: Dictionary = {
     title: "Přílohy",
     uploadedBy: (name: string) => `Nahrál(a) ${name}`,
     uploadedByAdmin: "Nahrál správce",
+    uploadedByRemovedAccount: "Nahrál smazaný účet",
     processing: "Kontrolujeme soubor…",
     failed: "Nahrání selhalo — soubor nedorazil.",
     rejected: {
@@ -304,6 +305,7 @@ export const cs: Dictionary = {
     tooLarge: "Soubor je větší než 10 MB.",
     unsupportedType: "Přiložit lze jen soubory PNG, JPEG, WebP, HEIC a PDF.",
     uploadFailed: "Nahrání selhalo. Zkuste to znovu.",
+    attachForbidden: "K této žádosti už nelze přikládat soubory.",
     dismiss: "Zavřít",
     remove: (name: string) => `Odebrat ${name}`,
     delete: (name: string) => `Smazat ${name}`,

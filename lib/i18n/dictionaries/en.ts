@@ -278,6 +278,7 @@ export const en = {
     title: "Attachments",
     uploadedBy: (name: string) => `Uploaded by ${name}`,
     uploadedByAdmin: "Uploaded by an admin",
+    uploadedByRemovedAccount: "Uploaded by a removed account",
     processing: "Checking the file…",
     failed: "Upload failed — the file never arrived.",
     rejected: {
@@ -300,6 +301,7 @@ export const en = {
     tooLarge: "This file is over 10 MB.",
     unsupportedType: "Only PNG, JPEG, WebP, HEIC and PDF files can be attached.",
     uploadFailed: "Upload failed. Try again.",
+    attachForbidden: "Files can no longer be attached to this request.",
     dismiss: "Dismiss",
     remove: (name: string) => `Remove ${name}`,
     delete: (name: string) => `Delete ${name}`,

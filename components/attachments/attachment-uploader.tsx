@@ -40,7 +40,9 @@ export function AttachmentUploader({
                     {formatFileSize(job.size, t.common.dateLocale)}
                   </div>
                   {job.error ? (
-                    <div className="text-destructive text-xs">{job.error}</div>
+                    <div role="alert" className="text-destructive text-xs">
+                      {job.error}
+                    </div>
                   ) : job.queued ? null : (
                     <div className="mt-1 space-y-1">
                       <div

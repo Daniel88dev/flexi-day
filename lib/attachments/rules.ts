@@ -56,6 +56,30 @@ export function attachmentSlotsUsed(attachments: readonly Attachment[]): number 
   ).length;
 }
 
+// Rows this session registered whose bytes never arrived. The server keeps
+// them UPLOADING until its sweep, so the detail must not keep polling for
+// them, and a reopened dialog must still show them as failed.
+const failedUploads = new Set<string>();
+
+export function rememberFailedUpload(attachmentId: string): void {
+  failedUploads.add(attachmentId);
+}
+
+/**
+ * Whether this session saw the row's bytes fail to arrive. Only a row still
+ * `UPLOADING` can be read that way: a transfer the browser reported lost may
+ * still have reached the store, and the server's verdict then wins.
+ */
+export function isFailedUpload(
+  attachment: Pick<Attachment, "id" | "status">,
+  failedIds: readonly string[] = []
+): boolean {
+  return (
+    attachment.status === "UPLOADING" &&
+    (failedIds.includes(attachment.id) || failedUploads.has(attachment.id))
+  );
+}
+
 export type AttachmentDisplayStatus = "processing" | "ready" | "rejected" | "failed";
 
 /** The state to show: an `UPLOADING` row older than ten minutes is a failure, not a wait. */
@@ -75,7 +99,8 @@ export function hasProcessingAttachment(
   now: number = Date.now()
 ): boolean {
   return (attachments ?? []).some(
-    (a) => a.deletedAt === null && attachmentDisplayStatus(a, now) === "processing"
+    (a) =>
+      a.deletedAt === null && !isFailedUpload(a) && attachmentDisplayStatus(a, now) === "processing"
   );
 }
 

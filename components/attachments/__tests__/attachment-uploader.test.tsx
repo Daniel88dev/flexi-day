@@ -7,6 +7,7 @@ import { AttachmentUploader } from "../attachment-uploader";
 function uploads(overrides: Partial<AttachmentUploads> = {}): AttachmentUploads {
   return {
     jobs: [],
+    settled: [],
     failedIds: [],
     queued: 0,
     inFlight: 0,
@@ -21,7 +22,14 @@ function uploads(overrides: Partial<AttachmentUploads> = {}): AttachmentUploads 
   };
 }
 
-const job = { key: 1, fileName: "note.png", contentType: "image/png", size: 4, progress: 0.4 };
+const job = {
+  key: 1,
+  fileName: "note.png",
+  contentType: "image/png",
+  size: 4,
+  progress: 0.4,
+  done: false,
+};
 
 describe("AttachmentUploader", () => {
   it("renders the picker, the format hint and the visibility notice", () => {

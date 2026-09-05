@@ -298,6 +298,8 @@ export function useCreateVacation() {
 export type UploadAttachmentInput = {
   requestId: string;
   file: File;
+  /** Called with the row's id as soon as the backend has it, before the bytes go. */
+  onRegistered?: (attachmentId: string) => void;
   onProgress?: (fraction: number) => void;
 };
 
@@ -309,13 +311,14 @@ export type UploadAttachmentInput = {
 export function useUploadAttachment() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ requestId, file, onProgress }: UploadAttachmentInput) => {
+    mutationFn: async ({ requestId, file, onRegistered, onProgress }: UploadAttachmentInput) => {
       const { attachment, upload } = await createAttachment({
         requestId,
         fileName: file.name,
         contentType: declaredContentType(file),
         size: file.size,
       });
+      onRegistered?.(attachment.id);
       try {
         await uploadToTarget(upload, file, onProgress);
       } catch (error) {

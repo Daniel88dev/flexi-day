@@ -136,6 +136,56 @@ describe("useAttachmentUploads", () => {
     expect(result.current.full).toBe(true);
   });
 
+  it("owns the row of a transfer still in flight, so a refetch neither lists nor counts it twice", async () => {
+    let finish: (value: Attachment) => void = () => {};
+    uploadMutate.mockImplementation((input: { onRegistered?: (id: string) => void }) => {
+      input.onRegistered?.("a-new");
+      return new Promise<Attachment>((resolve) => {
+        finish = resolve;
+      });
+    });
+    const { result, rerender } = setup("r-1", [ready]);
+
+    act(() => result.current.pick([png()]));
+    await waitFor(() => expect(result.current.jobs[0].attachmentId).toBe("a-new"));
+
+    // The poll brings the registered row back while the bytes are still going.
+    const row = { ...ready, id: "a-new", status: "UPLOADING" as const };
+    rerender({ requestId: "r-1", attachments: [ready, row] });
+
+    expect(result.current.jobs).toHaveLength(1);
+    expect(result.current.inFlight).toBe(1);
+    expect(result.current.settled).toEqual([ready]);
+    expect(result.current.remaining).toBe(3);
+
+    await act(async () => {
+      finish(row);
+      await Promise.resolve();
+    });
+
+    expect(result.current.jobs).toHaveLength(0);
+    expect(result.current.settled).toEqual([ready, row]);
+    expect(result.current.remaining).toBe(3);
+  });
+
+  it("keeps a landed job hidden after its row is deleted", async () => {
+    const { result, rerender } = setup("r-1");
+
+    act(() => result.current.pick([png()]));
+    await waitFor(() => expect(result.current.jobs[0].attachmentId).toBe("a-new"));
+    rerender({ requestId: "r-1", attachments: [{ ...ready, id: "a-new" }] });
+    expect(result.current.jobs).toHaveLength(0);
+
+    rerender({
+      requestId: "r-1",
+      attachments: [{ ...ready, id: "a-new", deletedAt: "2026-09-05T10:00:00.000Z" }],
+    });
+
+    expect(result.current.jobs).toHaveLength(0);
+    expect(result.current.settled).toEqual([]);
+    expect(result.current.remaining).toBe(5);
+  });
+
   it("hides a job once its row is in the attachments", async () => {
     const { result, rerender } = setup("r-1");
 
@@ -174,7 +224,22 @@ describe("useAttachmentUploads", () => {
 
     await waitFor(() => expect(result.current.failedIds).toEqual(["a-lost"]));
     expect(result.current.jobs[0].attachmentId).toBe("a-lost");
-    expect(result.current.jobs[0].error).toBeUndefined();
+    // Shown as failed here until the row arrives; never as still uploading.
+    expect(result.current.jobs[0].error).toBe("Upload failed — the file never arrived.");
+    expect(result.current.inFlight).toBe(0);
+  });
+
+  it("steps aside for the server's verdict once the lost row lands", async () => {
+    uploadMutate.mockRejectedValue(new UploadError(0, "Upload failed", "a-lost"));
+    const { result, rerender } = setup("r-1");
+
+    act(() => result.current.pick([png()]));
+    await waitFor(() => expect(result.current.failedIds).toEqual(["a-lost"]));
+
+    rerender({ requestId: "r-1", attachments: [{ ...ready, id: "a-lost", status: "UPLOADING" }] });
+
+    expect(result.current.jobs).toHaveLength(0);
+    expect(result.current.failedIds).toEqual(["a-lost"]);
   });
 
   it("forgets everything on reset", () => {

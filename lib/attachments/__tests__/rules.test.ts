@@ -7,7 +7,9 @@ import {
   formatFileSize,
   hasProcessingAttachment,
   isAcceptedContentType,
+  isFailedUpload,
   isImage,
+  rememberFailedUpload,
 } from "../rules";
 
 const base: Attachment = {
@@ -101,6 +103,31 @@ describe("hasProcessingAttachment", () => {
       hasProcessingAttachment([{ ...base, status: "UPLOADING" }], at("2026-09-05T10:11:00.000Z"))
     ).toBe(false);
     expect(hasProcessingAttachment(undefined, now)).toBe(false);
+  });
+
+  it("ignores an upload this session already knows has failed", () => {
+    const now = at("2026-09-05T10:05:00.000Z");
+    const stuck = { ...base, id: "a-lost", status: "UPLOADING" as const };
+    expect(hasProcessingAttachment([stuck], now)).toBe(true);
+
+    rememberFailedUpload("a-lost");
+
+    expect(hasProcessingAttachment([stuck], now)).toBe(false);
+    expect(hasProcessingAttachment([{ ...stuck, id: "a-other" }], now)).toBe(true);
+  });
+});
+
+describe("isFailedUpload", () => {
+  it("reads the session's verdict only while the server still says UPLOADING", () => {
+    expect(isFailedUpload({ id: "a-1", status: "UPLOADING" }, ["a-1"])).toBe(true);
+    expect(isFailedUpload({ id: "a-1", status: "READY" }, ["a-1"])).toBe(false);
+    expect(isFailedUpload({ id: "a-1", status: "UPLOADING" }, ["a-2"])).toBe(false);
+  });
+
+  it("remembers a failure across remounts, where the session's list starts empty", () => {
+    rememberFailedUpload("a-remembered");
+    expect(isFailedUpload({ id: "a-remembered", status: "UPLOADING" })).toBe(true);
+    expect(isFailedUpload({ id: "a-remembered", status: "READY" })).toBe(false);
   });
 });
 

@@ -13,6 +13,7 @@ import {
   attachmentSlotsUsed,
   declaredContentType,
   isAcceptedContentType,
+  rememberFailedUpload,
 } from "./rules";
 
 export type UploadJob = {
@@ -24,8 +25,10 @@ export type UploadJob = {
   progress: number;
   /** Picked before the Request existed; `start` sends it. */
   queued: boolean;
-  /** Set once the backend has the row; the caller's list takes over from there. */
+  /** Set as soon as the backend has the row, while the bytes are still going. */
   attachmentId?: string;
+  /** The bytes landed, or failed for good; the caller's list owns the row from here. */
+  done: boolean;
   error?: string;
 };
 
@@ -34,6 +37,7 @@ type CreateFailure = { reason?: "UNSUPPORTED_TYPE" | "FILE_TOO_LARGE" | "ATTACHM
 function uploadErrorMessage(error: unknown, t: Dictionary): string {
   if (error instanceof ApiError) {
     if (error.status === 402) return t.attachments.paidPlanOnly;
+    if (error.status === 403) return t.attachments.attachForbidden;
     const reason = error.context<CreateFailure>()?.reason;
     if (reason === "UNSUPPORTED_TYPE") return t.attachments.unsupportedType;
     if (reason === "FILE_TOO_LARGE") return t.attachments.tooLarge;
@@ -59,7 +63,7 @@ export function useAttachmentUploads({
   attachments,
 }: {
   requestId: string | null;
-  /** The Request's live rows, as the detail last reported them. */
+  /** Every row of the Request as the detail last reported it, deleted ones included. */
   attachments: readonly Attachment[];
 }) {
   const { t } = useTranslation();
@@ -71,14 +75,25 @@ export function useAttachmentUploads({
   // them UPLOADING until its sweep; the list shows them as failed at once.
   const [failedIds, setFailedIds] = useState<string[]>([]);
 
+  // A row exists from registration on, so a refetch mid-transfer would show
+  // the same file twice and count its slot twice. The job owns it until the
+  // bytes land; the caller lists `settled` instead of its own rows.
+  const inFlightIds = jobs.flatMap((job) =>
+    job.attachmentId !== undefined && !job.done && !job.error ? [job.attachmentId] : []
+  );
+  const settled = attachments.filter((a) => a.deletedAt === null && !inFlightIds.includes(a.id));
+  // Against every row, not the live ones: a job whose row was deleted since
+  // has still landed, and must not come back as a ghost.
   const landed = (job: UploadJob) =>
-    job.attachmentId !== undefined && attachments.some((a) => a.id === job.attachmentId);
+    job.done &&
+    job.attachmentId !== undefined &&
+    attachments.some((a) => a.id === job.attachmentId);
   const visible = jobs.filter((job) => !landed(job));
   const pending = visible.filter((job) => !job.error);
   const queued = pending.filter((job) => job.queued).length;
   const inFlight = pending.length - queued;
   const failed = visible.length - pending.length;
-  const remaining = MAX_ATTACHMENTS_PER_REQUEST - attachmentSlotsUsed(attachments) - pending.length;
+  const remaining = MAX_ATTACHMENTS_PER_REQUEST - attachmentSlotsUsed(settled) - pending.length;
 
   function patch(key: number, change: Partial<UploadJob>) {
     setJobs((current) => current.map((job) => (job.key === key ? { ...job, ...change } : job)));
@@ -89,25 +104,30 @@ export function useAttachmentUploads({
       .mutateAsync({
         requestId: id,
         file,
+        onRegistered: (attachmentId) => patch(key, { attachmentId }),
         onProgress: (fraction) => patch(key, { progress: fraction }),
       })
-      .then((attachment) => patch(key, { attachmentId: attachment.id, progress: 1 }))
+      .then((attachment) => patch(key, { attachmentId: attachment.id, done: true, progress: 1 }))
       .catch((error: unknown) => {
-        // The row exists but its bytes never arrived: let the list own it as
-        // failed rather than showing "checking" beside a local error.
+        // The row exists but its bytes never arrived. The job shows the
+        // failure until the refetched row arrives to take over as failed.
         if (error instanceof UploadError && error.attachmentId) {
           const lost = error.attachmentId;
+          rememberFailedUpload(lost);
           setFailedIds((current) => [...current, lost]);
-          patch(key, { attachmentId: lost });
+          patch(key, { attachmentId: lost, done: true, error: t.attachments.failed });
           return;
         }
         patch(key, { error: uploadErrorMessage(error, t) });
       });
   }
 
+  // The jobs enter the state before any transfer starts, so a registration
+  // that answers at once still finds its job to stamp the id on.
   function pick(files: ArrayLike<File> | null) {
     if (!files || files.length === 0) return;
     const added: UploadJob[] = [];
+    const sending: [File, number][] = [];
     let open = remaining;
     for (const file of Array.from(files)) {
       const contentType = declaredContentType(file);
@@ -118,6 +138,7 @@ export function useAttachmentUploads({
         size: file.size,
         progress: 0,
         queued: false,
+        done: false,
       };
       if (open <= 0) job.error = t.attachments.limitReached;
       else if (!isAcceptedContentType(contentType)) job.error = t.attachments.unsupportedType;
@@ -129,10 +150,11 @@ export function useAttachmentUploads({
         job.queued = true;
         waiting.current.set(job.key, file);
       } else {
-        send(file, job.key, requestId);
+        sending.push([file, job.key]);
       }
     }
     setJobs((current) => [...current, ...added]);
+    for (const [file, key] of sending) send(file, key, requestId!);
   }
 
   /** Sends every waiting file to the Request that now exists; returns how many. */
@@ -158,6 +180,8 @@ export function useAttachmentUploads({
 
   return {
     jobs: visible,
+    /** The Request's live rows minus those whose bytes this session is still sending. */
+    settled,
     failedIds,
     queued,
     inFlight,

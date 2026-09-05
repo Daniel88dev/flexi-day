@@ -227,7 +227,7 @@ describe("AttachmentSection", () => {
       attachments: [{ ...pdf, status: "REJECTED", rejectionReason: "PDF_JAVASCRIPT" }],
     });
 
-    expect(screen.getByText("Rejected: the PDF contains scripts.")).toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent("Rejected: the PDF contains scripts.");
     expect(screen.queryByRole("button", { name: /receipt/ })).not.toBeInTheDocument();
   });
 
@@ -420,6 +420,26 @@ describe("AttachmentSection", () => {
 
     expect(screen.getByRole("button", { name: "Delete doctors-note.jpg" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Delete receipt.pdf" })).toBeInTheDocument();
+  });
+
+  it("lets an admin delete a member's file on a cancelled request, where nothing is editable", () => {
+    sessionUserId = "u-2";
+    render({
+      canEdit: false,
+      canAttach: false,
+      canDeleteAnyAttachment: true,
+      deletedAt: "2026-08-13T09:00:00.000Z",
+    });
+
+    expect(screen.getByRole("button", { name: "Delete doctors-note.jpg" })).toBeInTheDocument();
+    expect(screen.queryByLabelText("Add files")).not.toBeInTheDocument();
+  });
+
+  it("falls back to canEdit for the admin half against a payload without the flag", () => {
+    sessionUserId = "u-2";
+    render({ canEdit: true, canDeleteAnyAttachment: undefined });
+
+    expect(screen.getByRole("button", { name: "Delete doctors-note.jpg" })).toBeInTheDocument();
   });
 
   it("offers an approver no Delete at all", () => {
