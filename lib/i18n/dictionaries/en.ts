@@ -302,6 +302,11 @@ export const en = {
     uploadFailed: "Upload failed. Try again.",
     dismiss: "Dismiss",
     remove: (name: string) => `Remove ${name}`,
+    delete: (name: string) => `Delete ${name}`,
+    deleteConfirm: (name: string) =>
+      `Delete ${name}? The file is removed for everyone; the request keeps a note that it was here.`,
+    deleteFailed: "Couldn't delete the file. Try again.",
+    deleteForbidden: "Only the person who uploaded this file or a group admin can delete it.",
   },
   vacationDetail: {
     title: "Request details",
@@ -320,6 +325,7 @@ export const en = {
     alreadyCancelled: "This request was already cancelled, so nothing changed.",
     noHistory: "No history recorded for this request — it predates request history.",
     byActor: (name: string) => ` by ${name}`,
+    byAdmin: " by an admin",
     createdBy: (name: string) => `Created by ${name} on the member's behalf`,
     cancelledBy: (name: string) => `Cancelled by ${name}`,
     edit: "Edit",
@@ -330,6 +336,8 @@ export const en = {
       CANCELLED: "Cancelled",
       COMMENT: "Commented",
       UPDATED: "Updated",
+      ATTACHMENT_ADDED: "Attached a file",
+      ATTACHMENT_REMOVED: "Removed a file",
     },
   },
 

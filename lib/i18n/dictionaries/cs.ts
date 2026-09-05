@@ -306,6 +306,11 @@ export const cs: Dictionary = {
     uploadFailed: "Nahrání selhalo. Zkuste to znovu.",
     dismiss: "Zavřít",
     remove: (name: string) => `Odebrat ${name}`,
+    delete: (name: string) => `Smazat ${name}`,
+    deleteConfirm: (name: string) =>
+      `Smazat ${name}? Soubor zmizí všem; v žádosti zůstane poznámka, že tu byl.`,
+    deleteFailed: "Soubor se nepodařilo smazat. Zkuste to znovu.",
+    deleteForbidden: "Soubor může smazat jen ten, kdo ho nahrál, nebo správce skupiny.",
   },
   vacationDetail: {
     title: "Detail žádosti",
@@ -325,6 +330,7 @@ export const cs: Dictionary = {
     noHistory:
       "Pro tuto žádost není zaznamenána žádná historie — pochází z doby před historií žádostí.",
     byActor: (name: string) => ` – ${name}`,
+    byAdmin: " – správce",
     createdBy: (name: string) => `Vytvořil(a) ${name} v zastoupení člena`,
     cancelledBy: (name: string) => `Zrušil(a) ${name}`,
     edit: "Upravit",
@@ -335,6 +341,8 @@ export const cs: Dictionary = {
       CANCELLED: "Zrušeno",
       COMMENT: "Okomentováno",
       UPDATED: "Upraveno",
+      ATTACHMENT_ADDED: "Přiložen soubor",
+      ATTACHMENT_REMOVED: "Odebrán soubor",
     },
   },
 

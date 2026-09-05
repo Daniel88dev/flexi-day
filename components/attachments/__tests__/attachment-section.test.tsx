@@ -74,6 +74,7 @@ const detail: VacationDetail = {
 let sessionUserId = "u-1";
 let uploadsAvailable: boolean | undefined = true;
 const uploadMutate = vi.fn();
+const deleteMutate = vi.fn();
 const downloadUrlMock = vi.fn();
 
 vi.mock("@/lib/api/queries", () => ({
@@ -83,6 +84,7 @@ vi.mock("@/lib/api/queries", () => ({
     error: null,
   }),
   useUploadAttachment: () => ({ mutateAsync: uploadMutate, isPending: false }),
+  useDeleteAttachment: () => ({ mutateAsync: deleteMutate, isPending: false }),
 }));
 
 vi.mock("@/lib/auth-client", () => ({
@@ -105,8 +107,10 @@ describe("AttachmentSection", () => {
     sessionUserId = "u-1";
     uploadsAvailable = true;
     uploadMutate.mockReset();
+    deleteMutate.mockReset();
     downloadUrlMock.mockReset();
     vi.useRealTimers();
+    vi.restoreAllMocks();
   });
 
   it("renders nothing at all for a member who only has view access", () => {
@@ -207,7 +211,8 @@ describe("AttachmentSection", () => {
     render({ attachments: [{ ...image, status: "UPLOADING" }] });
 
     expect(screen.getByText("Checking the file…")).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /doctors-note/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /^Preview / })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /^Download / })).not.toBeInTheDocument();
   });
 
   it("shows an upload stuck for ten minutes as failed", () => {
@@ -399,5 +404,67 @@ describe("AttachmentSection", () => {
     render({ canEdit: true });
 
     expect(screen.getByLabelText("Add files")).toBeEnabled();
+  });
+
+  it("offers Delete on the uploader's own file only", () => {
+    render();
+
+    expect(screen.getByRole("button", { name: "Delete doctors-note.jpg" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Delete receipt.pdf" })).not.toBeInTheDocument();
+  });
+
+  it("lets an admin delete any file, including one still being checked", () => {
+    sessionUserId = "u-2";
+    vi.useFakeTimers({ now: new Date("2026-09-05T09:05:00.000Z") });
+    render({ canEdit: true, attachments: [{ ...image, status: "UPLOADING" }, pdf] });
+
+    expect(screen.getByRole("button", { name: "Delete doctors-note.jpg" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Delete receipt.pdf" })).toBeInTheDocument();
+  });
+
+  it("offers an approver no Delete at all", () => {
+    sessionUserId = "u-approver";
+    render({ canAttach: false });
+
+    expect(screen.queryByRole("button", { name: /^Delete / })).not.toBeInTheDocument();
+  });
+
+  it("deletes after confirmation", async () => {
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+    deleteMutate.mockResolvedValue({ attachment: { ...image, deletedAt: "x" } });
+    const user = userEvent.setup();
+    render();
+
+    await user.click(screen.getByRole("button", { name: "Delete doctors-note.jpg" }));
+
+    expect(window.confirm).toHaveBeenCalledWith(
+      "Delete doctors-note.jpg? The file is removed for everyone; the request keeps a note that it was here."
+    );
+    expect(deleteMutate).toHaveBeenCalledWith("a-img");
+  });
+
+  it("leaves the file alone when the confirmation is declined", async () => {
+    vi.spyOn(window, "confirm").mockReturnValue(false);
+    const user = userEvent.setup();
+    render();
+
+    await user.click(screen.getByRole("button", { name: "Delete doctors-note.jpg" }));
+
+    expect(deleteMutate).not.toHaveBeenCalled();
+  });
+
+  it("explains a delete the backend refused", async () => {
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+    deleteMutate.mockRejectedValue(
+      new ApiError(403, "You are not allowed to delete this attachment")
+    );
+    const user = userEvent.setup();
+    render();
+
+    await user.click(screen.getByRole("button", { name: "Delete doctors-note.jpg" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Only the person who uploaded this file or a group admin can delete it."
+    );
   });
 });

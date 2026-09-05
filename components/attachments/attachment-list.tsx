@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { Download, FileText, Image as ImageIcon, Loader2 } from "lucide-react";
+import { Download, FileText, Image as ImageIcon, Loader2, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getAttachmentDownloadUrl } from "@/lib/api/attachments";
+import { ApiError } from "@/lib/api/client";
 import type { Attachment, AttachmentDisposition, UserSummary } from "@/lib/api/types";
 import {
   attachmentDisplayStatus,
@@ -12,6 +13,8 @@ import {
   type AttachmentDisplayStatus,
 } from "@/lib/attachments/rules";
 import { useTranslation } from "@/lib/i18n/use-translation";
+import type { Dictionary } from "@/lib/i18n";
+import { resolveActor } from "@/lib/vacations/timeline";
 import { cn } from "@/lib/utils";
 import { AttachmentPreviewDialog } from "./attachment-preview-dialog";
 
@@ -32,6 +35,15 @@ const STATUS_TONE: Record<AttachmentDisplayStatus, string> = {
   failed: "text-destructive",
 };
 
+type RowJob = { id: string; action: "url" | "delete" };
+
+/** A row already gone is not an error: the refetch takes it off the list. */
+function deleteErrorMessage(error: unknown, t: Dictionary): string | null {
+  if (error instanceof ApiError && error.status === 403) return t.attachments.deleteForbidden;
+  if (error instanceof ApiError && (error.status === 404 || error.status === 409)) return null;
+  return t.attachments.deleteFailed;
+}
+
 /**
  * The files on a Request. Every open, preview or download asks the backend for
  * a fresh short-lived URL at that moment; nothing in the DOM links to a file.
@@ -40,33 +52,63 @@ export function AttachmentList({
   attachments,
   people,
   failedIds = [],
+  canDelete,
+  onDelete,
 }: {
   attachments: Attachment[];
   /** Whoever the detail already names; an uploader not among them is an admin. */
   people: UserSummary[];
   /** Rows this session registered whose bytes never arrived; shown as failed at once. */
   failedIds?: string[];
+  canDelete?: (attachment: Attachment) => boolean;
+  /** Runs after the user confirms; the row leaves once the detail is refetched. */
+  onDelete?: (attachment: Attachment) => Promise<unknown>;
 }) {
   const { t } = useTranslation();
   const [preview, setPreview] = useState<{ fileName: string; url: string } | null>(null);
-  const [busyId, setBusyId] = useState<string | null>(null);
+  const [busy, setBusy] = useState<RowJob | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  async function withUrl(
+  async function runRowJob(
+    job: RowJob,
+    work: () => Promise<void>,
+    failure: (error: unknown) => string | null
+  ) {
+    setError(null);
+    setBusy(job);
+    try {
+      await work();
+    } catch (error) {
+      setError(failure(error));
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  function withUrl(
     attachment: Attachment,
     disposition: AttachmentDisposition,
     consume: (url: string) => void
   ) {
-    setError(null);
-    setBusyId(attachment.id);
-    try {
-      const { url } = await getAttachmentDownloadUrl(attachment.id, disposition);
-      consume(url);
-    } catch {
-      setError(t.attachments.openFailed);
-    } finally {
-      setBusyId(null);
-    }
+    return runRowJob(
+      { id: attachment.id, action: "url" },
+      async () => {
+        const { url } = await getAttachmentDownloadUrl(attachment.id, disposition);
+        consume(url);
+      },
+      () => t.attachments.openFailed
+    );
+  }
+
+  function remove(attachment: Attachment) {
+    if (!onDelete || !window.confirm(t.attachments.deleteConfirm(attachment.fileName))) return;
+    void runRowJob(
+      { id: attachment.id, action: "delete" },
+      async () => {
+        await onDelete(attachment);
+      },
+      (error) => deleteErrorMessage(error, t)
+    );
   }
 
   function open(attachment: Attachment) {
@@ -96,8 +138,10 @@ export function AttachmentList({
   }
 
   function uploaderLabel(attachment: Attachment) {
-    const person = people.find((p) => p.id === attachment.uploadedByUserId);
-    return person ? t.attachments.uploadedBy(person.name) : t.attachments.uploadedByAdmin;
+    const actor = resolveActor(people, attachment.uploadedByUserId);
+    return actor.kind === "named"
+      ? t.attachments.uploadedBy(actor.user.name)
+      : t.attachments.uploadedByAdmin;
   }
 
   function statusLabel(attachment: Attachment, status: AttachmentDisplayStatus) {
@@ -117,7 +161,8 @@ export function AttachmentList({
             ? "failed"
             : attachmentDisplayStatus(attachment);
           const ready = status === "ready";
-          const busy = busyId === attachment.id;
+          const rowBusy = busy?.id === attachment.id;
+          const spinning = (action: RowJob["action"]) => rowBusy && busy.action === action;
           const Icon = isImage(attachment.contentType) ? ImageIcon : FileText;
           const note = statusLabel(attachment, status);
           return (
@@ -133,7 +178,7 @@ export function AttachmentList({
                         ? t.attachments.preview(attachment.fileName)
                         : t.attachments.open(attachment.fileName)
                     }
-                    disabled={busy}
+                    disabled={rowBusy}
                     onClick={() => open(attachment)}
                   >
                     {attachment.fileName}
@@ -155,13 +200,30 @@ export function AttachmentList({
                   variant="ghost"
                   className="h-8 w-8 shrink-0"
                   aria-label={t.attachments.download(attachment.fileName)}
-                  disabled={busy}
+                  disabled={rowBusy}
                   onClick={() => download(attachment)}
                 >
-                  {busy ? (
+                  {spinning("url") ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
                     <Download className="h-4 w-4" />
+                  )}
+                </Button>
+              ) : null}
+              {canDelete?.(attachment) ? (
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="ghost"
+                  className="h-8 w-8 shrink-0"
+                  aria-label={t.attachments.delete(attachment.fileName)}
+                  disabled={rowBusy}
+                  onClick={() => remove(attachment)}
+                >
+                  {spinning("delete") ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Trash2 className="h-4 w-4" />
                   )}
                 </Button>
               ) : null}

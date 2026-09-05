@@ -51,7 +51,7 @@ import {
   type PaidPlan,
 } from "./billing";
 import { getGroupMirrors, setGroupMirrors } from "./group-mirrors";
-import { createAttachment } from "./attachments";
+import { createAttachment, deleteAttachment } from "./attachments";
 import { UploadError, uploadToTarget } from "./attachment-upload";
 import {
   PROCESSING_POLL_MS,
@@ -326,6 +326,20 @@ export function useUploadAttachment() {
       }
       return attachment;
     },
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: ["vacation"] });
+    },
+  });
+}
+
+/**
+ * The detail is refetched whatever the outcome: a 404 or 409 means someone
+ * else removed the row first, and the list should show that too.
+ */
+export function useDeleteAttachment() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => deleteAttachment(id),
     onSettled: () => {
       qc.invalidateQueries({ queryKey: ["vacation"] });
     },

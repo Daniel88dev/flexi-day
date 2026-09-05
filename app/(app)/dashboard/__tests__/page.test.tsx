@@ -85,6 +85,7 @@ vi.mock("@/lib/api/queries", () => ({
   }),
   useGroup: () => ({ data: undefined, isLoading: false, error: null }),
   useUploadAttachment: () => ({ mutateAsync: vi.fn(), isPending: false }),
+  useDeleteAttachment: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useBankHolidaysMulti: (year: number, countries: string[]) => {
     useBankHolidaysMultiSpy(year, countries);
     return bankHolidayRows;

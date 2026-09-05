@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const apiMock = vi.fn();
 vi.mock("../client", () => ({ api: (...args: unknown[]) => apiMock(...args) }));
 
-import { createAttachment, getAttachmentDownloadUrl } from "../attachments";
+import { createAttachment, deleteAttachment, getAttachmentDownloadUrl } from "../attachments";
 
 describe("attachments api", () => {
   beforeEach(() => {
@@ -27,5 +27,10 @@ describe("attachments api", () => {
     expect(apiMock).toHaveBeenCalledWith(
       "/api/attachments/a-1/download-url?disposition=attachment"
     );
+  });
+
+  it("deleteAttachment sends DELETE for the row", async () => {
+    await deleteAttachment("a-1");
+    expect(apiMock).toHaveBeenCalledWith("/api/attachments/a-1", { method: "DELETE" });
   });
 });

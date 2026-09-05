@@ -25,6 +25,7 @@ vi.mock("@/lib/api/queries", () => ({
   useCommentVacation: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useGroup: () => ({ data: undefined, isLoading: false, error: null }),
   useUploadAttachment: () => ({ mutateAsync: vi.fn(), isPending: false }),
+  useDeleteAttachment: () => ({ mutateAsync: vi.fn(), isPending: false }),
 }));
 
 vi.mock("@/lib/auth-client", () => ({

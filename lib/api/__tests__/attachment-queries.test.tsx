@@ -4,9 +4,11 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 
 const createAttachmentMock = vi.fn();
+const deleteAttachmentMock = vi.fn();
 const uploadToTargetMock = vi.fn();
 vi.mock("../attachments", () => ({
   createAttachment: (...args: unknown[]) => createAttachmentMock(...args),
+  deleteAttachment: (...args: unknown[]) => deleteAttachmentMock(...args),
 }));
 vi.mock("../attachment-upload", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../attachment-upload")>()),
@@ -23,14 +25,14 @@ vi.mock("@/lib/attachments/rules", async (importOriginal) => ({
   PROCESSING_POLL_MS: 20,
 }));
 
-import { useUploadAttachment, useVacation } from "../queries";
+import { useDeleteAttachment, useUploadAttachment, useVacation } from "../queries";
 import { ApiError } from "../client";
 import { UploadError } from "../attachment-upload";
 
 const target = { url: "u", method: "PUT" as const, headers: {}, expiresAt: "x" };
 const attachment = { id: "a-1", status: "UPLOADING" };
 
-function setup() {
+function setupMutation<T>(hook: () => T) {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   });
@@ -38,9 +40,11 @@ function setup() {
   const wrapper = ({ children }: { children: ReactNode }) => (
     <QueryClientProvider client={client}>{children}</QueryClientProvider>
   );
-  const { result } = renderHook(() => useUploadAttachment(), { wrapper });
+  const { result } = renderHook(hook, { wrapper });
   return { invalidate, result };
 }
+
+const setup = () => setupMutation(() => useUploadAttachment());
 
 describe("useUploadAttachment", () => {
   beforeEach(() => {
@@ -95,6 +99,33 @@ describe("useUploadAttachment", () => {
 
     await waitFor(() => expect(result.current.isError).toBe(true));
     expect(uploadToTargetMock).not.toHaveBeenCalled();
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: ["vacation"] });
+  });
+});
+
+describe("useDeleteAttachment", () => {
+  beforeEach(() => {
+    deleteAttachmentMock.mockReset();
+  });
+
+  it("deletes the row and refetches the detail", async () => {
+    deleteAttachmentMock.mockResolvedValue({ attachment: { id: "a-1", deletedAt: "x" } });
+    const { invalidate, result } = setupMutation(() => useDeleteAttachment());
+
+    result.current.mutate("a-1");
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(deleteAttachmentMock).toHaveBeenCalledWith("a-1");
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: ["vacation"] });
+  });
+
+  it("refetches even when someone else removed the row first", async () => {
+    deleteAttachmentMock.mockRejectedValue(new ApiError(409, "Attachment was already deleted"));
+    const { invalidate, result } = setupMutation(() => useDeleteAttachment());
+
+    result.current.mutate("a-1");
+
+    await waitFor(() => expect(result.current.isError).toBe(true));
     expect(invalidate).toHaveBeenCalledWith({ queryKey: ["vacation"] });
   });
 });

@@ -1,5 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { ApiError } from "@/lib/api/client";
 import type { Attachment } from "@/lib/api/types";
 import { AttachmentList } from "../attachment-list";
 
@@ -44,5 +46,110 @@ describe("AttachmentList", () => {
 
     expect(screen.getByText("Upload failed — the file never arrived.")).toBeInTheDocument();
     expect(screen.queryByRole("button")).not.toBeInTheDocument();
+  });
+
+  it("shows Delete only where the caller allows it, and asks before calling back", async () => {
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+    const onDelete = vi.fn().mockResolvedValue(undefined);
+    const user = userEvent.setup();
+    render(
+      <AttachmentList
+        attachments={[ready, { ...ready, id: "a-2", fileName: "other.jpg" }]}
+        people={[]}
+        canDelete={(attachment) => attachment.id === "a-1"}
+        onDelete={onDelete}
+      />
+    );
+
+    expect(screen.queryByRole("button", { name: "Delete other.jpg" })).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Delete note.jpg" }));
+
+    expect(window.confirm).toHaveBeenCalledTimes(1);
+    expect(onDelete).toHaveBeenCalledWith(ready);
+    vi.restoreAllMocks();
+  });
+
+  it("does not call back when the confirmation is declined", async () => {
+    vi.spyOn(window, "confirm").mockReturnValue(false);
+    const onDelete = vi.fn();
+    const user = userEvent.setup();
+    render(
+      <AttachmentList
+        attachments={[ready]}
+        people={[]}
+        canDelete={() => true}
+        onDelete={onDelete}
+      />
+    );
+
+    await user.click(screen.getByRole("button", { name: "Delete note.jpg" }));
+
+    expect(onDelete).not.toHaveBeenCalled();
+    vi.restoreAllMocks();
+  });
+
+  it("reports a delete that failed", async () => {
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+    const onDelete = vi.fn().mockRejectedValue(new Error("boom"));
+    const user = userEvent.setup();
+    render(
+      <AttachmentList
+        attachments={[ready]}
+        people={[]}
+        canDelete={() => true}
+        onDelete={onDelete}
+      />
+    );
+
+    await user.click(screen.getByRole("button", { name: "Delete note.jpg" }));
+
+    await waitFor(() =>
+      expect(screen.getByRole("alert")).toHaveTextContent("Couldn't delete the file. Try again.")
+    );
+    expect(screen.getByRole("button", { name: "Delete note.jpg" })).toBeEnabled();
+    vi.restoreAllMocks();
+  });
+
+  it("says who may delete when the backend refuses", async () => {
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+    const onDelete = vi.fn().mockRejectedValue(new ApiError(403, "Not allowed"));
+    const user = userEvent.setup();
+    render(
+      <AttachmentList
+        attachments={[ready]}
+        people={[]}
+        canDelete={() => true}
+        onDelete={onDelete}
+      />
+    );
+
+    await user.click(screen.getByRole("button", { name: "Delete note.jpg" }));
+
+    await waitFor(() =>
+      expect(screen.getByRole("alert")).toHaveTextContent(
+        "Only the person who uploaded this file or a group admin can delete it."
+      )
+    );
+    vi.restoreAllMocks();
+  });
+
+  it("stays quiet when someone else removed the row first", async () => {
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+    const onDelete = vi.fn().mockRejectedValue(new ApiError(409, "Attachment was already deleted"));
+    const user = userEvent.setup();
+    render(
+      <AttachmentList
+        attachments={[ready]}
+        people={[]}
+        canDelete={() => true}
+        onDelete={onDelete}
+      />
+    );
+
+    await user.click(screen.getByRole("button", { name: "Delete note.jpg" }));
+
+    await waitFor(() => expect(onDelete).toHaveBeenCalled());
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    vi.restoreAllMocks();
   });
 });

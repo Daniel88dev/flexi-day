@@ -41,6 +41,7 @@ vi.mock("@/lib/api/queries", () => ({
     error: null,
   }),
   useUploadAttachment: () => ({ mutateAsync: uploadMutate, isPending: false }),
+  useDeleteAttachment: () => ({ mutateAsync: vi.fn(), isPending: false }),
 }));
 
 vi.mock("@/lib/auth-client", () => ({

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
-import { screen } from "@testing-library/react";
+import { screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { VacationDetailDialog } from "../vacation-detail-dialog";
 import { renderWithClient } from "@/lib/test-utils";
@@ -79,6 +79,7 @@ vi.mock("@/lib/api/queries", () => ({
   useUpdateVacation: () => ({ mutateAsync: vi.fn().mockResolvedValue([]), isPending: false }),
   useGroup: () => ({ data: undefined, isLoading: false, error: null }),
   useUploadAttachment: () => ({ mutateAsync: vi.fn(), isPending: false }),
+  useDeleteAttachment: () => ({ mutateAsync: vi.fn(), isPending: false }),
 }));
 
 vi.mock("@/lib/auth-client", () => ({
@@ -263,7 +264,7 @@ describe("VacationDetailDialog", () => {
     renderWithClient(<VacationDetailDialog vacationId="v-1" open onOpenChange={() => {}} />);
 
     expect(screen.getByRole("heading", { name: "Attachments" })).toBeInTheDocument();
-    expect(screen.getByText("doctors-note.jpg")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Preview doctors-note.jpg" })).toBeInTheDocument();
     expect(screen.getByLabelText("Add files")).toBeInTheDocument();
   });
 
@@ -293,5 +294,54 @@ describe("VacationDetailDialog", () => {
 
     expect(screen.getByText("Updated")).toBeInTheDocument();
     expect(screen.getByText(/Type: Vacation → Sick/)).toBeInTheDocument();
+  });
+
+  it("folds each attachment's arrival and removal into the timeline", () => {
+    currentDetail = {
+      ...detail,
+      attachments: [
+        {
+          id: "a-1",
+          requestId: "r-1",
+          fileName: "doctors-note.jpg",
+          contentType: "image/jpeg",
+          size: 2048,
+          status: "READY",
+          rejectionReason: null,
+          uploadedByUserId: "u-1",
+          createdAt: "2026-07-21T09:00:00.000Z",
+          deletedAt: "2026-08-02T09:00:00.000Z",
+          deletedByUserId: "u-2",
+        },
+        {
+          id: "a-2",
+          requestId: "r-1",
+          fileName: "receipt.pdf",
+          contentType: "application/pdf",
+          size: 512,
+          status: "READY",
+          rejectionReason: null,
+          uploadedByUserId: "u-admin",
+          createdAt: "2026-08-03T09:00:00.000Z",
+          deletedAt: null,
+          deletedByUserId: null,
+        },
+      ],
+      canAttach: true,
+    };
+    renderWithClient(<VacationDetailDialog vacationId="v-1" open onOpenChange={() => {}} />);
+
+    const timeline = screen.getAllByRole("list").find((list) => list.tagName === "OL");
+    const items = within(timeline as HTMLElement).getAllByRole("listitem");
+    expect(items.map((item) => item.textContent)).toEqual([
+      expect.stringMatching(/^Requested by Dana Holt/),
+      expect.stringMatching(/^Attached a file by Dana Holt.*doctors-note\.jpg$/),
+      expect.stringMatching(/^Approved by Ada Lovelace/),
+      expect.stringMatching(/^Removed a file by Ada Lovelace.*doctors-note\.jpg$/),
+      expect.stringMatching(/^Attached a file by an admin.*receipt\.pdf$/),
+    ]);
+    // The removed file is history only: the attachment list no longer offers it.
+    expect(screen.queryByRole("button", { name: /doctors-note/ })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Open receipt.pdf" })).toBeInTheDocument();
   });
 });

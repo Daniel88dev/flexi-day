@@ -1,11 +1,12 @@
 "use client";
 
-import { useGroup } from "@/lib/api/queries";
-import type { UserSummary, VacationDetail } from "@/lib/api/types";
+import { useDeleteAttachment, useGroup } from "@/lib/api/queries";
+import type { Attachment, VacationDetail } from "@/lib/api/types";
 import { MAX_ATTACHMENTS_PER_REQUEST, attachmentSlotsUsed } from "@/lib/attachments/rules";
 import { useAttachmentUploads } from "@/lib/attachments/use-attachment-uploads";
 import { useSession } from "@/lib/auth-client";
 import { useTranslation } from "@/lib/i18n/use-translation";
+import { namedPeople } from "@/lib/vacations/timeline";
 import { AttachmentList } from "./attachment-list";
 import { AttachmentUploader } from "./attachment-uploader";
 
@@ -23,12 +24,14 @@ export function AttachmentSection({ detail }: { detail: VacationDetail }) {
   const group = useGroup(attachments ? detail.groupId : null);
   const live = (attachments ?? []).filter((a) => a.deletedAt === null);
   const uploads = useAttachmentUploads({ requestId: detail.requestId, attachments: live });
+  const remove = useDeleteAttachment();
 
   if (!attachments) return null;
 
   // Mirrors the backend's standing rule, before plan and cap: the owner while
   // the request is live and undecided against, or an editing admin.
-  const isOwner = session?.user?.id === detail.userId;
+  const userId = session?.user?.id;
+  const isOwner = userId === detail.userId;
   const requestLive = detail.deletedAt === null && detail.rejectedAt === null;
   const mayUpload = (isOwner && requestLive) || detail.canEdit;
   const slotsUsed = attachmentSlotsUsed(live);
@@ -41,13 +44,10 @@ export function AttachmentSection({ detail }: { detail: VacationDetail }) {
 
   if (live.length === 0 && !showPicker && !showLapsed) return null;
 
-  const people = [
-    detail.user,
-    detail.createdByUser,
-    detail.approvedByUser,
-    detail.rejectedByUser,
-    detail.deletedByUser,
-  ].filter((p): p is UserSummary => p !== null);
+  // The backend lets the uploader and any admin delete; the payload carries no
+  // flag for it, so `canEdit` stands in for the admin half.
+  const canDelete = (attachment: Attachment) =>
+    (userId !== undefined && attachment.uploadedByUserId === userId) || detail.canEdit;
 
   return (
     <section aria-labelledby="attachments-heading" className="space-y-3">
@@ -55,7 +55,13 @@ export function AttachmentSection({ detail }: { detail: VacationDetail }) {
         {t.attachments.title}
       </h3>
       {live.length > 0 ? (
-        <AttachmentList attachments={live} people={people} failedIds={uploads.failedIds} />
+        <AttachmentList
+          attachments={live}
+          people={namedPeople(detail)}
+          failedIds={uploads.failedIds}
+          canDelete={canDelete}
+          onDelete={(attachment) => remove.mutateAsync(attachment.id)}
+        />
       ) : null}
       {showPicker ? (
         <AttachmentUploader uploads={uploads} disabled={detail.canAttach !== true} />

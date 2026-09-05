@@ -1,5 +1,6 @@
 import { api } from "./client";
 import type {
+  Attachment,
   AttachmentDisposition,
   AttachmentDownload,
   CreateAttachmentInput,
@@ -19,4 +20,9 @@ export function getAttachmentDownloadUrl(
   disposition: AttachmentDisposition
 ): Promise<AttachmentDownload> {
   return api<AttachmentDownload>(`/api/attachments/${id}/download-url?disposition=${disposition}`);
+}
+
+/** Removes the file at once; the row stays, stamped with who removed it and when. */
+export function deleteAttachment(id: string): Promise<{ attachment: Attachment }> {
+  return api<{ attachment: Attachment }>(`/api/attachments/${id}`, { method: "DELETE" });
 }
