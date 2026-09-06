@@ -229,6 +229,13 @@
        overflows the viewport. `clip` (not `hidden`) keeps the sticky nav working. */
     overflow-x: clip;
   }
+  /* iOS Safari keeps date and time inputs at their intrinsic width and centres
+     the value until the native look is off; this lets `w-full` apply. Preflight
+     already sizes and aligns `::-webkit-date-and-time-value` once it is. */
+  input[type="date"],
+  input[type="time"] {
+    appearance: none;
+  }
   h1,
   h2,
   h3,
