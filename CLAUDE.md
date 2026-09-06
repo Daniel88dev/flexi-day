@@ -60,3 +60,30 @@ The five canonical triage roles, each label string equal to its name. See
 
 Single-context: `CONTEXT.md` and `docs/adr/` at the repo root. See
 [`docs/agents/domain.md`](docs/agents/domain.md).
+
+## Next.js 16 and its bundled docs
+
+This is Next.js 16 App Router, far enough from older releases that training-data habits misfire.
+Before writing framework code, read the version-matched guide bundled under
+`node_modules/next/dist/docs/` — it tracks the installed version with no network lookup. Remember
+this is a static export (see above), so the server-only parts of those docs do not apply here.
+
+`next dev` writes its PID, port and URL to `.next/dev/lock`, so a second `next dev` reports the
+running server instead of starting a duplicate — reconnect to that one rather than spawning
+another. It also forwards browser console errors and warnings to its terminal, so the dev log
+carries the client-side failures too.
+
+The block below is generated and re-inserted by `next dev` on every run; it is committed on
+purpose so it stops showing as an uncommitted change. Leave it in place and add project guidance
+above these markers, never inside them — `next dev` overwrites everything between them. To turn
+the generation off entirely, set `agentRules: false` in `next.config.ts`.
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+# This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->
