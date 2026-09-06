@@ -97,6 +97,8 @@ export type Vacation = {
   deletedByUserId: UUID | null;
   /** Differs from `userId` when an admin booked on the member's behalf. */
   createdByUserId: UUID | null;
+  /** Shared by every day row created in the same submission. */
+  requestId: UUID;
   createdAt: Iso;
   updatedAt: Iso;
 };
@@ -147,7 +149,69 @@ export type VacationDetail = VacationListItem & {
   rangeStart: IsoDate;
   rangeEnd: IsoDate;
   vacationIds: UUID[];
+  /** The Request this day belongs to: every row from the same submission shares it. */
+  requestId: UUID;
   history: VacationEvent[];
+  /**
+   * Both present only for the owner, the group's approvers and its admins. A
+   * view-only member gets neither, not even an empty list, so the UI shows no
+   * trace of an attachment section. `canAttach` already folds in the plan and
+   * the five-file cap.
+   */
+  attachments?: Attachment[];
+  canAttach?: boolean;
+  /** May delete attachments other than their own: group and organization admins. */
+  canDeleteAnyAttachment?: boolean;
+};
+
+export type AttachmentStatus = "UPLOADING" | "READY" | "REJECTED";
+
+export type AttachmentRejectionReason =
+  "TYPE_MISMATCH" | "IMAGE_UNREADABLE" | "PDF_JAVASCRIPT" | "PDF_LAUNCH_ACTION" | "PDF_ENCRYPTED";
+
+export type Attachment = {
+  id: UUID;
+  requestId: UUID;
+  /** The original name as uploaded; downloads use it. */
+  fileName: string;
+  /** The stored type: images become `image/jpeg` once processed. */
+  contentType: string;
+  size: number;
+  status: AttachmentStatus;
+  rejectionReason: AttachmentRejectionReason | null;
+  /** Differs from the record owner when an admin attached the file. */
+  uploadedByUserId: UUID | null;
+  createdAt: Iso;
+  deletedAt: Iso | null;
+  deletedByUserId: UUID | null;
+};
+
+export type CreateAttachmentInput = {
+  requestId: UUID;
+  fileName: string;
+  contentType: string;
+  size: number;
+};
+
+/**
+ * Where the bytes go, with no session. Against S3 a presigned POST: a
+ * multipart form with every field first and the file last. Locally the API's
+ * own route takes a plain PUT of the bytes.
+ */
+export type UploadTarget =
+  | { url: string; method: "POST"; fields: Record<string, string>; expiresAt: Iso }
+  | { url: string; method: "PUT"; headers: Record<string, string>; expiresAt: Iso };
+
+export type CreateAttachmentResult = { attachment: Attachment; upload: UploadTarget };
+
+export type AttachmentDisposition = "inline" | "attachment";
+
+export type AttachmentDownload = {
+  url: string;
+  expiresAt: Iso;
+  disposition: AttachmentDisposition;
+  fileName: string;
+  contentType: string;
 };
 
 export type VacationStatus = "pending" | "approved" | "rejected" | "cancelled";
@@ -230,7 +294,14 @@ export type GroupAccess = {
   isMember: boolean;
 };
 
-export type GroupDetail = Group & { access: GroupAccess };
+export type GroupDetail = Group & {
+  access: GroupAccess;
+  /**
+   * Whether the organization may attach files right now: a paid plan, grace
+   * included. Optional because the repos deploy independently.
+   */
+  uploadsAvailable?: boolean;
+};
 
 export type GroupUser = {
   id: UUID;

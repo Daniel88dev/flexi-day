@@ -17,6 +17,7 @@ function day(id: string, requestedDay: string, canApprove = true): VacationListI
     id,
     userId: "u-emp",
     groupId: "g-1",
+    requestId: "r-1",
     requestedDay,
     startTime: null,
     endTime: null,

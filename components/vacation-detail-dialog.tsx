@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Check, Clock, MessageSquare, Pencil, Plus, X } from "lucide-react";
+import { Check, Clock, MessageSquare, Paperclip, Pencil, Plus, Trash2, X } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -19,19 +19,15 @@ import {
   useRejectVacations,
   useVacation,
 } from "@/lib/api/queries";
-import {
-  CALENDAR_RECORD_TYPE_COLORS,
-  vacationStatus,
-  type VacationEvent,
-  type VacationEventKind,
-  type VacationStatus,
-} from "@/lib/api/types";
+import { CALENDAR_RECORD_TYPE_COLORS, vacationStatus, type VacationStatus } from "@/lib/api/types";
 import { dayLengthLabel } from "@/lib/vacations/day-length";
+import { mergeTimeline, type TimelineEntry, type TimelineKind } from "@/lib/vacations/timeline";
 import { vacationActionErrorMessage, type VacationAction } from "@/lib/vacations/action-error";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/lib/i18n/use-translation";
 import type { Dictionary } from "@/lib/i18n";
 import { EditRequestDialog } from "@/components/edit-request-dialog";
+import { AttachmentSection } from "@/components/attachments/attachment-section";
 import { recordTypeLabel } from "@/lib/i18n/record-type-label";
 
 const STATUS_BADGE: Record<VacationStatus, string> = {
@@ -41,13 +37,15 @@ const STATUS_BADGE: Record<VacationStatus, string> = {
   cancelled: "bg-muted text-muted-foreground",
 };
 
-const EVENT_META: Record<VacationEventKind, { icon: typeof Check; tint: string }> = {
+const EVENT_META: Record<TimelineKind, { icon: typeof Check; tint: string }> = {
   CREATED: { icon: Plus, tint: "var(--text-muted)" },
   APPROVED: { icon: Check, tint: "var(--c-home)" },
   REJECTED: { icon: X, tint: "var(--destructive)" },
   CANCELLED: { icon: Clock, tint: "var(--warm)" },
   COMMENT: { icon: MessageSquare, tint: "var(--text-muted)" },
   UPDATED: { icon: Pencil, tint: "var(--text-muted)" },
+  ATTACHMENT_ADDED: { icon: Paperclip, tint: "var(--text-muted)" },
+  ATTACHMENT_REMOVED: { icon: Trash2, tint: "var(--warm)" },
 };
 
 function formatDay(iso: string, locale: string) {
@@ -196,7 +194,9 @@ export function VacationDetailDialog({
               <div className="bg-muted/50 rounded-2xl px-3 py-2 text-sm">{detail.note}</div>
             ) : null}
 
-            <Timeline history={detail.history} t={t} />
+            <AttachmentSection key={detail.requestId} detail={detail} />
+
+            <Timeline entries={mergeTimeline(detail)} t={t} />
 
             {actionError ? (
               <p role="alert" className="text-destructive text-sm">
@@ -304,18 +304,24 @@ export function VacationDetailDialog({
   );
 }
 
-function Timeline({ history, t }: { history: VacationEvent[]; t: Dictionary }) {
-  if (history.length === 0) {
+function Timeline({ entries, t }: { entries: TimelineEntry[]; t: Dictionary }) {
+  if (entries.length === 0) {
     return <p className="text-muted-foreground text-sm">{t.vacationDetail.noHistory}</p>;
   }
 
   return (
     <ol className="space-y-3">
-      {history.map((event) => {
-        const meta = EVENT_META[event.eventType];
+      {entries.map((entry) => {
+        const meta = EVENT_META[entry.kind];
         const Icon = meta.icon;
+        const by =
+          entry.actor.kind === "named"
+            ? t.vacationDetail.byActor(entry.actor.user.name)
+            : entry.actor.kind === "unnamed"
+              ? t.vacationDetail.byAdmin
+              : null;
         return (
-          <li key={event.id} className="flex gap-3">
+          <li key={entry.id} className="flex gap-3">
             <span
               className="mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-full"
               style={{
@@ -327,17 +333,16 @@ function Timeline({ history, t }: { history: VacationEvent[]; t: Dictionary }) {
             </span>
             <div className="min-w-0 text-sm">
               <div>
-                <span className="font-medium">{t.vacationDetail.events[event.eventType]}</span>
-                {event.actor ? (
-                  <span className="text-muted-foreground">
-                    {t.vacationDetail.byActor(event.actor.name)}
-                  </span>
-                ) : null}
+                <span className="font-medium">{t.vacationDetail.events[entry.kind]}</span>
+                {by ? <span className="text-muted-foreground">{by}</span> : null}
               </div>
               <div className="text-muted-foreground text-xs">
-                {formatMoment(event.createdAt, t.common.dateLocale)}
+                {formatMoment(entry.createdAt, t.common.dateLocale)}
               </div>
-              {event.reason ? <div className="mt-1 text-xs">“{event.reason}”</div> : null}
+              {entry.fileName ? (
+                <div className="mt-1 truncate text-xs">{entry.fileName}</div>
+              ) : null}
+              {entry.reason ? <div className="mt-1 text-xs">“{entry.reason}”</div> : null}
             </div>
           </li>
         );

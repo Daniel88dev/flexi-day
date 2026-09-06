@@ -1,0 +1,143 @@
+import { describe, expect, it, vi } from "vitest";
+import { fireEvent, render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import type { AttachmentUploads } from "@/lib/attachments/use-attachment-uploads";
+import { AttachmentUploader } from "../attachment-uploader";
+
+function uploads(overrides: Partial<AttachmentUploads> = {}): AttachmentUploads {
+  return {
+    jobs: [],
+    settled: [],
+    failedIds: [],
+    queued: 0,
+    inFlight: 0,
+    failed: 0,
+    remaining: 5,
+    full: false,
+    pick: vi.fn(),
+    start: vi.fn(),
+    remove: vi.fn(),
+    reset: vi.fn(),
+    ...overrides,
+  };
+}
+
+const job = {
+  key: 1,
+  fileName: "note.png",
+  contentType: "image/png",
+  size: 4,
+  progress: 0.4,
+  done: false,
+};
+
+describe("AttachmentUploader", () => {
+  it("renders the picker, the format hint and the visibility notice", () => {
+    render(<AttachmentUploader uploads={uploads()} />);
+
+    expect(screen.getByLabelText("Add files")).toBeEnabled();
+    expect(screen.getByLabelText("Add files")).toHaveAttribute(
+      "accept",
+      expect.stringContaining("application/pdf")
+    );
+    expect(
+      screen.getByText("Click or drop them here. Images or PDF, up to 10 MB each.")
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("Approvers and managers of the group can see attached files.")
+    ).toBeInTheDocument();
+  });
+
+  it("is inert when disabled or full", () => {
+    const { rerender } = render(<AttachmentUploader uploads={uploads()} disabled />);
+    expect(screen.getByLabelText("Add files")).toBeDisabled();
+
+    rerender(<AttachmentUploader uploads={uploads({ remaining: 0, full: true })} />);
+    expect(screen.getByLabelText("Add files")).toBeDisabled();
+    expect(screen.getByText("This request has all five of its files.")).toBeInTheDocument();
+  });
+
+  it("hands picked files to the uploads", async () => {
+    const state = uploads();
+    const user = userEvent.setup();
+    render(<AttachmentUploader uploads={state} />);
+
+    await user.upload(
+      screen.getByLabelText("Add files"),
+      new File(["x"], "note.png", { type: "image/png" })
+    );
+
+    expect(state.pick).toHaveBeenCalledTimes(1);
+  });
+
+  it("shows a waiting file with a remove button and no progress", async () => {
+    const state = uploads({ jobs: [{ ...job, progress: 0, queued: true }], queued: 1 });
+    const user = userEvent.setup();
+    render(<AttachmentUploader uploads={state} />);
+
+    expect(screen.getByText("note.png")).toBeInTheDocument();
+    expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Remove note.png" }));
+    expect(state.remove).toHaveBeenCalledWith(1);
+  });
+
+  it("shows progress for a file in flight and the check once its bytes are in", () => {
+    const { rerender } = render(
+      <AttachmentUploader uploads={uploads({ jobs: [{ ...job, queued: false }], inFlight: 1 })} />
+    );
+
+    expect(screen.getByRole("progressbar", { name: "note.png" })).toHaveAttribute(
+      "aria-valuenow",
+      "40"
+    );
+    expect(screen.getByText("Uploading… 40%")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /note.png/ })).not.toBeInTheDocument();
+
+    rerender(
+      <AttachmentUploader
+        uploads={uploads({ jobs: [{ ...job, queued: false, progress: 1 }], inFlight: 1 })}
+      />
+    );
+    expect(screen.getByText("Checking the file…")).toBeInTheDocument();
+  });
+
+  it("shows a failed file with its reason and a dismiss button", async () => {
+    const state = uploads({
+      jobs: [{ ...job, queued: false, error: "This file is over 10 MB." }],
+      failed: 1,
+    });
+    const user = userEvent.setup();
+    render(<AttachmentUploader uploads={state} />);
+
+    expect(screen.getByText("This file is over 10 MB.")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Dismiss" }));
+    expect(state.remove).toHaveBeenCalledWith(1);
+  });
+
+  it("highlights the field while a file is dragged over it", () => {
+    render(<AttachmentUploader uploads={uploads()} />);
+    // The native file input, laid over the zone, takes the drop itself and
+    // fires change (covered by the pick test above); the wrapper only tracks
+    // the drag highlight.
+    const field = screen.getByLabelText("Add files").parentElement!;
+
+    fireEvent.dragEnter(field);
+    expect(field).toHaveAttribute("data-dragging", "true");
+    fireEvent.drop(field);
+    expect(field).not.toHaveAttribute("data-dragging");
+  });
+
+  it("does not highlight while full", () => {
+    render(<AttachmentUploader uploads={uploads({ remaining: 0, full: true })} />);
+    const field = screen.getByLabelText("Add files").parentElement!;
+    fireEvent.dragEnter(field);
+    expect(field).not.toHaveAttribute("data-dragging");
+  });
+
+  it("can leave out the visibility notice", () => {
+    render(<AttachmentUploader uploads={uploads()} notice={false} />);
+    expect(
+      screen.queryByText("Approvers and managers of the group can see attached files.")
+    ).toBeNull();
+  });
+});

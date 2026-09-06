@@ -4,6 +4,8 @@ import userEvent from "@testing-library/user-event";
 import BillingPage from "../page";
 import { renderWithClient } from "@/lib/test-utils";
 import type { BillingOverview } from "@/lib/api/billing";
+import { I18nContext } from "@/lib/i18n/i18n-provider";
+import { dictionaries } from "@/lib/i18n";
 
 const checkoutMutate = vi.fn();
 const changePlanMutate = vi.fn();
@@ -84,6 +86,24 @@ describe("BillingPage", () => {
     expect(screen.getByText("Platform")).toBeInTheDocument();
     // Appears as the card title and as the Free tier's disabled button.
     expect(screen.getAllByText("Current plan").length).toBeGreaterThan(0);
+  });
+
+  it("lists attachments on the paid plan cards only", () => {
+    renderWithClient(<BillingPage />);
+
+    expect(screen.getAllByText("Attachments on requests (images & PDF)")).toHaveLength(2);
+  });
+
+  it("lists attachments on the paid plan cards in Czech", () => {
+    renderWithClient(
+      <I18nContext.Provider
+        value={{ locale: "cs", setLocale: () => {}, t: dictionaries.cs, localeReady: true }}
+      >
+        <BillingPage />
+      </I18nContext.Provider>
+    );
+
+    expect(screen.getAllByText("Přílohy k žádostem (obrázky a PDF)")).toHaveLength(2);
   });
 
   it("defaults the cycle toggle to yearly and shows ex-VAT yearly prices", () => {

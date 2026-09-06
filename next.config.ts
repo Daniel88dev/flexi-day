@@ -9,6 +9,8 @@ const devTools = process.env.NODE_ENV !== "production" && process.env.NEXT_PUBLI
 const nextConfig: NextConfig = {
   output: "export",
   trailingSlash: true,
+  // Don't let `next dev` write its agent-rules block into CLAUDE.md/AGENTS.md.
+  agentRules: false,
   pageExtensions: devTools ? ["dev.tsx", "tsx", "ts", "jsx", "js"] : ["tsx", "ts", "jsx", "js"],
   // Pin the workspace root: stray lockfiles higher up (e.g. ~/pnpm-lock.yaml)
   // make Next infer the wrong root, which mis-anchors the Turbopack cache.

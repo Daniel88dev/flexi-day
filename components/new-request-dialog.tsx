@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useEffectEvent, useState } from "react";
+import { AlertCircle, Check, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -22,12 +23,29 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { CalendarRecordTypePicker } from "@/components/calendar-record-type-picker";
-import { useCreateVacation, useGroup, useGroups, useGroupUsers } from "@/lib/api/queries";
+import { AttachmentList } from "@/components/attachments/attachment-list";
+import { AttachmentUploader } from "@/components/attachments/attachment-uploader";
+import { AttachmentsHeading } from "@/components/attachments/attachments-heading";
+import {
+  useCreateVacation,
+  useGroup,
+  useGroups,
+  useGroupUsers,
+  useVacation,
+} from "@/lib/api/queries";
 import { ApiError } from "@/lib/api/client";
 import { planLimitFromError } from "@/lib/billing/plan-limit-error";
-import { CalendarRecordType, sickDayBenefitActive } from "@/lib/api/types";
+import { CalendarRecordType, sickDayBenefitActive, type UserSummary } from "@/lib/api/types";
+import {
+  MAX_ATTACHMENTS_PER_REQUEST,
+  attachmentDisplayStatus,
+  hasProcessingAttachment,
+  isFailedUpload,
+} from "@/lib/attachments/rules";
+import { useAttachmentUploads } from "@/lib/attachments/use-attachment-uploads";
 import { useTranslation } from "@/lib/i18n/use-translation";
 import { useSession } from "@/lib/auth-client";
+import { cn } from "@/lib/utils";
 
 function todayIso() {
   return new Date().toISOString().slice(0, 10);
@@ -91,6 +109,9 @@ export function NewRequestDialog({ open, onOpenChange, initialDate }: NewRequest
   const [forUserId, setForUserId] = useState(SELF);
   const [autoApprove, setAutoApprove] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  // Set once the backend has the request; from then on the dialog only
+  // follows the files chosen for it.
+  const [created, setCreated] = useState<{ requestId: string; vacationId: string } | null>(null);
 
   const groups = groupsQuery.data ?? [];
   const hasGroups = groups.length > 0;
@@ -126,6 +147,25 @@ export function NewRequestDialog({ open, onOpenChange, initialDate }: NewRequest
 
   const isSingleDay = from === to;
 
+  const createdQuery = useVacation(created?.vacationId ?? null);
+  const uploaded = (createdQuery.data?.attachments ?? []).filter((a) => a.deletedAt === null);
+  const uploads = useAttachmentUploads({
+    requestId: created?.requestId ?? null,
+    attachments: createdQuery.data?.attachments ?? [],
+  });
+  const offerAttachments = groupDetail.data?.uploadsAvailable === true;
+  const stillChecking = uploaded.filter((a) => !isFailedUpload(a, uploads.failedIds));
+  const uploadsSettling =
+    uploads.queued > 0 || uploads.inFlight > 0 || hasProcessingAttachment(stillChecking);
+  const uploadsClean =
+    uploads.failed === 0 &&
+    stillChecking.length === uploaded.length &&
+    uploaded.every((a) => attachmentDisplayStatus(a) === "ready");
+  const uploadsDone = created !== null && !uploadsSettling;
+  const people = [createdQuery.data?.user, createdQuery.data?.createdByUser].filter(
+    (p): p is UserSummary => p !== null && p !== undefined
+  );
+
   function resetForm() {
     setGroupId("");
     setFrom(baseDate);
@@ -138,7 +178,23 @@ export function NewRequestDialog({ open, onOpenChange, initialDate }: NewRequest
     setForUserId(SELF);
     setAutoApprove(true);
     setError(null);
+    setCreated(null);
+    uploads.reset();
   }
+
+  function closeAndReset() {
+    setDialogOpen(false);
+    resetForm();
+  }
+
+  const finish = useEffectEvent(closeAndReset);
+  // Every file accepted: the dialog's work is over. A rejection keeps it open
+  // so the reason is read first. The verdict comes from the polled detail, so
+  // reacting here is the subscription the lint asks for.
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (uploadsDone && uploadsClean) finish();
+  }, [uploadsDone, uploadsClean]);
 
   const bookable = bookableWindow();
 
@@ -152,7 +208,7 @@ export function NewRequestDialog({ open, onOpenChange, initialDate }: NewRequest
     }
 
     try {
-      await createVacation.mutateAsync({
+      const rows = await createVacation.mutateAsync({
         groupId: selectedGroupId,
         ...(onBehalf ? { userId: forUserId, autoApprove } : {}),
         from,
@@ -165,8 +221,13 @@ export function NewRequestDialog({ open, onOpenChange, initialDate }: NewRequest
         halfDay: isSingleDay && halfDay,
         note: note.trim() ? note.trim() : null,
       });
-      setDialogOpen(false);
-      resetForm();
+      const first = rows[0];
+      const sent = first ? uploads.start(first.requestId) : 0;
+      if (!first || sent === 0) {
+        closeAndReset();
+        return;
+      }
+      setCreated({ requestId: first.requestId, vacationId: first.id });
     } catch (err) {
       if (err instanceof ApiError && err.status === 409) {
         const days = extractConflictingDays(err);
@@ -224,197 +285,263 @@ export function NewRequestDialog({ open, onOpenChange, initialDate }: NewRequest
         <DialogHeader>
           <DialogTitle>{t.newRequest.title}</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4 py-2">
-          {error ? (
-            <div
-              role="alert"
-              className="bg-destructive/10 text-destructive border-destructive/30 rounded-2xl border px-3 py-2 text-sm"
-            >
-              {error}
+        {created ? (
+          <div className="space-y-4 py-2">
+            <div className="flex items-start gap-3">
+              <span
+                className={cn(
+                  "mt-0.5 grid size-8 shrink-0 place-items-center rounded-full",
+                  uploadsDone && !uploadsClean
+                    ? "bg-destructive/10 text-destructive"
+                    : "bg-primary/10 text-primary"
+                )}
+              >
+                {uploadsDone ? (
+                  uploadsClean ? (
+                    <Check className="size-4" />
+                  ) : (
+                    <AlertCircle className="size-4" />
+                  )
+                ) : (
+                  <Loader2 className="size-4 animate-spin" />
+                )}
+              </span>
+              <div className="space-y-0.5">
+                <p className="text-sm font-medium">{t.newRequest.submitted}</p>
+                <p role="status" className="text-muted-foreground text-sm">
+                  {uploadsDone
+                    ? uploadsClean
+                      ? t.newRequest.uploadsAccepted
+                      : t.newRequest.uploadProblems
+                    : t.newRequest.uploadingFiles}
+                </p>
+              </div>
             </div>
-          ) : null}
-
-          <div className="space-y-1.5">
-            <Label htmlFor="group">{t.newRequest.group}</Label>
-            <Select
-              value={selectedGroupId}
-              onValueChange={(v) => {
-                setGroupId(v);
-                // The picked member belongs to the previous group.
-                setForUserId(SELF);
-                setAutoApprove(true);
-                // So does a Sick day selection — the new group's benefit is
-                // unknown until its badge loads, and the coerced "Vacation"
-                // must not silently revert if the benefit turns out active.
-                if (vacationType === CalendarRecordType.SickDay) {
-                  setVacationType(CalendarRecordType.Vacation);
-                }
-              }}
-            >
-              <SelectTrigger id="group" className="w-full">
-                <SelectValue
-                  placeholder={
-                    groupsQuery.isLoading
-                      ? t.newRequest.loadingGroups
-                      : hasGroups
-                        ? t.newRequest.selectGroup
-                        : t.newRequest.noGroups
-                  }
+            <div className="space-y-3">
+              <AttachmentsHeading
+                used={MAX_ATTACHMENTS_PER_REQUEST - uploads.remaining}
+                max={MAX_ATTACHMENTS_PER_REQUEST}
+              />
+              {uploads.settled.length > 0 ? (
+                <AttachmentList
+                  attachments={uploads.settled}
+                  people={people}
+                  failedIds={uploads.failedIds}
                 />
-              </SelectTrigger>
-              <SelectContent>
-                {groups.map((g) => (
-                  <SelectItem key={g.id} value={g.id}>
-                    {g.groupName}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              ) : null}
+              <AttachmentUploader uploads={uploads} notice={false} />
+            </div>
+            <DialogFooter>
+              <Button type="button" onClick={closeAndReset}>
+                {t.common.done}
+              </Button>
+            </DialogFooter>
           </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-4 py-2">
+            {error ? (
+              <div
+                role="alert"
+                className="bg-destructive/10 text-destructive border-destructive/30 rounded-2xl border px-3 py-2 text-sm"
+              >
+                {error}
+              </div>
+            ) : null}
 
-          {canAdmin ? (
             <div className="space-y-1.5">
-              <Label htmlFor="forMember">{t.newRequest.forMember}</Label>
+              <Label htmlFor="group">{t.newRequest.group}</Label>
               <Select
-                value={forUserId}
+                value={selectedGroupId}
                 onValueChange={(v) => {
-                  setForUserId(v);
-                  if (v === SELF) setAutoApprove(true);
+                  setGroupId(v);
+                  // The picked member belongs to the previous group.
+                  setForUserId(SELF);
+                  setAutoApprove(true);
+                  // So do the picked files: the new group may not take uploads.
+                  uploads.reset();
+                  // So does a Sick day selection — the new group's benefit is
+                  // unknown until its badge loads, and the coerced "Vacation"
+                  // must not silently revert if the benefit turns out active.
+                  if (vacationType === CalendarRecordType.SickDay) {
+                    setVacationType(CalendarRecordType.Vacation);
+                  }
                 }}
               >
-                <SelectTrigger id="forMember" className="w-full">
-                  <SelectValue />
+                <SelectTrigger id="group" className="w-full">
+                  <SelectValue
+                    placeholder={
+                      groupsQuery.isLoading
+                        ? t.newRequest.loadingGroups
+                        : hasGroups
+                          ? t.newRequest.selectGroup
+                          : t.newRequest.noGroups
+                    }
+                  />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={SELF}>{t.newRequest.myself}</SelectItem>
-                  {members.map((m) => (
-                    <SelectItem key={m.userId} value={m.userId}>
-                      {m.user.name}
+                  {groups.map((g) => (
+                    <SelectItem key={g.id} value={g.id}>
+                      {g.groupName}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
-          ) : null}
 
-          {onBehalf ? (
-            <div className="flex items-start gap-3">
-              <Checkbox
-                id="autoApprove"
-                className="mt-0.5"
-                checked={autoApprove}
-                onCheckedChange={(v) => setAutoApprove(v === true)}
+            {canAdmin ? (
+              <div className="space-y-1.5">
+                <Label htmlFor="forMember">{t.newRequest.forMember}</Label>
+                <Select
+                  value={forUserId}
+                  onValueChange={(v) => {
+                    setForUserId(v);
+                    if (v === SELF) setAutoApprove(true);
+                  }}
+                >
+                  <SelectTrigger id="forMember" className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={SELF}>{t.newRequest.myself}</SelectItem>
+                    {members.map((m) => (
+                      <SelectItem key={m.userId} value={m.userId}>
+                        {m.user.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            ) : null}
+
+            {onBehalf ? (
+              <div className="flex items-start gap-3">
+                <Checkbox
+                  id="autoApprove"
+                  className="mt-0.5"
+                  checked={autoApprove}
+                  onCheckedChange={(v) => setAutoApprove(v === true)}
+                />
+                <div className="space-y-1">
+                  <Label htmlFor="autoApprove">{t.newRequest.approveImmediately}</Label>
+                  <p className="text-muted-foreground text-sm">
+                    {t.newRequest.approveImmediatelyHint}
+                  </p>
+                </div>
+              </div>
+            ) : null}
+
+            <div className="space-y-1.5">
+              <Label id="type-label" htmlFor="type-top">
+                {t.newRequest.type}
+              </Label>
+              <CalendarRecordTypePicker
+                value={effectiveType}
+                onChange={setVacationType}
+                idPrefix="type"
+                offerSickDay={offerSickDay}
               />
-              <div className="space-y-1">
-                <Label htmlFor="autoApprove">{t.newRequest.approveImmediately}</Label>
-                <p className="text-muted-foreground text-sm">
-                  {t.newRequest.approveImmediatelyHint}
-                </p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="from">{t.newRequest.from}</Label>
+                <Input
+                  id="from"
+                  type="date"
+                  required
+                  min={bookable.min}
+                  max={bookable.max}
+                  value={from}
+                  onChange={(e) => {
+                    setFrom(e.target.value);
+                    if (to < e.target.value) setTo(e.target.value);
+                  }}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="to">{t.newRequest.to}</Label>
+                <Input
+                  id="to"
+                  type="date"
+                  required
+                  min={from || bookable.min}
+                  max={bookable.max}
+                  value={to}
+                  onChange={(e) => setTo(e.target.value)}
+                />
               </div>
             </div>
-          ) : null}
 
-          <div className="space-y-1.5">
-            <Label id="type-label" htmlFor="type-top">
-              {t.newRequest.type}
-            </Label>
-            <CalendarRecordTypePicker
-              value={effectiveType}
-              onChange={setVacationType}
-              idPrefix="type"
-              offerSickDay={offerSickDay}
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label htmlFor="from">{t.newRequest.from}</Label>
-              <Input
-                id="from"
-                type="date"
-                required
-                min={bookable.min}
-                max={bookable.max}
-                value={from}
-                onChange={(e) => {
-                  setFrom(e.target.value);
-                  if (to < e.target.value) setTo(e.target.value);
-                }}
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="to">{t.newRequest.to}</Label>
-              <Input
-                id="to"
-                type="date"
-                required
-                min={from || bookable.min}
-                max={bookable.max}
-                value={to}
-                onChange={(e) => setTo(e.target.value)}
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label htmlFor="start">{t.newRequest.startTime}</Label>
-              <Input
-                id="start"
-                type="time"
-                value={startTime}
-                onChange={(e) => setStartTime(e.target.value)}
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="end">{t.newRequest.endTime}</Label>
-              <Input
-                id="end"
-                type="time"
-                value={endTime}
-                onChange={(e) => setEndTime(e.target.value)}
-              />
-            </div>
-          </div>
-
-          {isSingleDay ? (
-            <div className="flex items-start gap-3">
-              <Checkbox
-                id="halfDay"
-                className="mt-0.5"
-                checked={halfDay}
-                onCheckedChange={(v) => setHalfDay(v === true)}
-              />
-              <div className="space-y-1">
-                <Label htmlFor="halfDay">{t.newRequest.halfDay}</Label>
-                <p className="text-muted-foreground text-sm">{t.newRequest.halfDayHint}</p>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="start">{t.newRequest.startTime}</Label>
+                <Input
+                  id="start"
+                  type="time"
+                  value={startTime}
+                  onChange={(e) => setStartTime(e.target.value)}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="end">{t.newRequest.endTime}</Label>
+                <Input
+                  id="end"
+                  type="time"
+                  value={endTime}
+                  onChange={(e) => setEndTime(e.target.value)}
+                />
               </div>
             </div>
-          ) : null}
 
-          <div className="space-y-1.5">
-            <Label htmlFor="note">
-              {noteRequired ? t.newRequest.noteRequiredForOther : t.newRequest.note}
-            </Label>
-            <Textarea
-              id="note"
-              rows={2}
-              required={noteRequired}
-              value={note}
-              onChange={(e) => setNote(e.target.value)}
-              placeholder={t.newRequest.notePlaceholder}
-            />
-          </div>
+            {isSingleDay ? (
+              <div className="flex items-start gap-3">
+                <Checkbox
+                  id="halfDay"
+                  className="mt-0.5"
+                  checked={halfDay}
+                  onCheckedChange={(v) => setHalfDay(v === true)}
+                />
+                <div className="space-y-1">
+                  <Label htmlFor="halfDay">{t.newRequest.halfDay}</Label>
+                  <p className="text-muted-foreground text-sm">{t.newRequest.halfDayHint}</p>
+                </div>
+              </div>
+            ) : null}
 
-          <DialogFooter>
-            <Button type="button" variant="ghost" onClick={() => setDialogOpen(false)}>
-              {t.common.cancel}
-            </Button>
-            <Button type="submit" disabled={!isValid}>
-              {createVacation.isPending ? t.newRequest.submitting : t.newRequest.submit}
-            </Button>
-          </DialogFooter>
-        </form>
+            <div className="space-y-1.5">
+              <Label htmlFor="note">
+                {noteRequired ? t.newRequest.noteRequiredForOther : t.newRequest.note}
+              </Label>
+              <Textarea
+                id="note"
+                rows={2}
+                required={noteRequired}
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                placeholder={t.newRequest.notePlaceholder}
+              />
+            </div>
+
+            {offerAttachments ? (
+              <div className="space-y-1.5">
+                <AttachmentsHeading
+                  used={MAX_ATTACHMENTS_PER_REQUEST - uploads.remaining}
+                  max={MAX_ATTACHMENTS_PER_REQUEST}
+                />
+                <AttachmentUploader uploads={uploads} />
+              </div>
+            ) : null}
+
+            <DialogFooter>
+              <Button type="button" variant="ghost" onClick={closeAndReset}>
+                {t.common.cancel}
+              </Button>
+              <Button type="submit" disabled={!isValid}>
+                {createVacation.isPending ? t.newRequest.submitting : t.newRequest.submit}
+              </Button>
+            </DialogFooter>
+          </form>
+        )}
       </DialogContent>
     </Dialog>
   );

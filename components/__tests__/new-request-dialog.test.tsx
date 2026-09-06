@@ -4,8 +4,13 @@ import userEvent from "@testing-library/user-event";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { NewRequestDialog } from "../new-request-dialog";
 import { renderWithClient } from "@/lib/test-utils";
+import { UploadError } from "@/lib/api/attachment-upload";
+import { CalendarRecordType, type Attachment, type VacationDetail } from "@/lib/api/types";
 
-const createMutate = vi.fn().mockResolvedValue({});
+const createMutate = vi.fn();
+const uploadMutate = vi.fn();
+let uploadsAvailable: boolean | undefined;
+let vacationDetail: VacationDetail | undefined;
 let canAdmin = false;
 let sickDayActive = false;
 // Per-group override so a test can present groups with different benefits.
@@ -22,6 +27,7 @@ vi.mock("@/lib/api/queries", () => ({
           id,
           groupName: groups.find((g) => g.id === id)?.groupName ?? id,
           organization: { sickDayBenefitActive: sickDayActiveByGroup[id] ?? sickDayActive },
+          uploadsAvailable,
           access: { canView: true, canAdmin, viaOrgAdmin: false, isMember: true },
         }
       : undefined,
@@ -29,6 +35,13 @@ vi.mock("@/lib/api/queries", () => ({
     error: null,
   }),
   useGroupUsers: () => ({ data: members, isLoading: false, error: null }),
+  useVacation: (id: string | null) => ({
+    data: id ? vacationDetail : undefined,
+    isLoading: false,
+    error: null,
+  }),
+  useUploadAttachment: () => ({ mutateAsync: uploadMutate, isPending: false }),
+  useDeleteAttachment: () => ({ mutateAsync: vi.fn(), isPending: false }),
 }));
 
 vi.mock("@/lib/auth-client", () => ({
@@ -42,9 +55,70 @@ const member = {
   user: { id: "u-member", name: "Dana Holt", initials: "DH", avatarColor: "hsl(270 60% 60%)" },
 };
 
+const self = { id: "u-self", name: "Sam Reed", initials: "SR", avatarColor: "hsl(0 0% 50%)" };
+
+const created: VacationDetail = {
+  id: "v-1",
+  userId: "u-self",
+  groupId: "g-1",
+  groupName: "Platform",
+  requestedDay: "2026-07-15",
+  rangeStart: "2026-07-15",
+  rangeEnd: "2026-07-15",
+  vacationIds: ["v-1"],
+  requestId: "r-1",
+  startTime: null,
+  endTime: null,
+  vacationType: CalendarRecordType.Sick,
+  halfDay: false,
+  note: null,
+  rejectionReason: null,
+  approvedAt: null,
+  approvedBy: null,
+  rejectedAt: null,
+  rejectedBy: null,
+  deletedAt: null,
+  deletedByUserId: null,
+  createdByUserId: null,
+  createdAt: "2026-07-14T09:00:00.000Z",
+  updatedAt: "2026-07-14T09:00:00.000Z",
+  user: self,
+  approvedByUser: null,
+  rejectedByUser: null,
+  createdByUser: null,
+  deletedByUser: null,
+  canApprove: false,
+  canCancel: true,
+  canEdit: false,
+  history: [],
+  attachments: [],
+  canAttach: true,
+};
+
+const uploadedRow: Attachment = {
+  id: "a-1",
+  requestId: "r-1",
+  fileName: "note.png",
+  contentType: "image/png",
+  size: 4,
+  status: "READY",
+  rejectionReason: null,
+  uploadedByUserId: "u-self",
+  // Fresh, or the ten-minute rule would read the row as a failed upload.
+  createdAt: new Date().toISOString(),
+  deletedAt: null,
+  deletedByUserId: null,
+};
+
+const png = () => new File(["x".repeat(4)], "note.png", { type: "image/png" });
+
 describe("NewRequestDialog", () => {
   beforeEach(() => {
-    createMutate.mockClear();
+    createMutate.mockReset();
+    createMutate.mockResolvedValue([{ id: "v-1", requestId: "r-1" }]);
+    uploadMutate.mockReset();
+    uploadsAvailable = undefined;
+    vacationDetail = undefined;
     canAdmin = false;
     sickDayActive = false;
     sickDayActiveByGroup = {};
@@ -295,5 +369,167 @@ describe("NewRequestDialog", () => {
       userId: "u-member",
       autoApprove: false,
     });
+  });
+
+  it("offers the picker with its notice only when the group can take uploads", () => {
+    uploadsAvailable = false;
+    const view = renderWithClient(
+      <NewRequestDialog open initialDate="2026-07-15" onOpenChange={() => {}} />
+    );
+    expect(screen.queryByLabelText("Add files")).toBeNull();
+
+    uploadsAvailable = true;
+    view.rerender(
+      <QueryClientProvider client={view.client}>
+        <NewRequestDialog open initialDate="2026-07-15" onOpenChange={() => {}} />
+      </QueryClientProvider>
+    );
+    expect(screen.getByLabelText("Add files")).toBeEnabled();
+    expect(
+      screen.getByText("Approvers and managers of the group can see attached files.")
+    ).toBeInTheDocument();
+  });
+
+  it("closes at once when no file was picked", async () => {
+    uploadsAvailable = true;
+    const onOpenChange = vi.fn();
+    renderWithClient(
+      <NewRequestDialog open initialDate="2026-07-15" onOpenChange={onOpenChange} />
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Submit Request" }));
+
+    await waitFor(() => expect(onOpenChange).toHaveBeenCalledWith(false));
+    expect(uploadMutate).not.toHaveBeenCalled();
+  });
+
+  it("creates the request, then uploads the picked file and closes once it is accepted", async () => {
+    uploadsAvailable = true;
+    const onOpenChange = vi.fn();
+    let progress: ((fraction: number) => void) | undefined;
+    let finish: (value: Attachment) => void = () => {};
+    uploadMutate.mockImplementation((input: { onProgress?: (f: number) => void }) => {
+      progress = input.onProgress;
+      return new Promise<Attachment>((resolve) => {
+        finish = resolve;
+      });
+    });
+    const user = userEvent.setup();
+    const view = renderWithClient(
+      <NewRequestDialog open initialDate="2026-07-15" onOpenChange={onOpenChange} />
+    );
+
+    await user.upload(screen.getByLabelText("Add files"), png());
+    expect(screen.getByText("note.png")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Remove note.png" })).toBeInTheDocument();
+    expect(uploadMutate).not.toHaveBeenCalled();
+
+    await user.click(screen.getByRole("button", { name: "Submit Request" }));
+
+    await waitFor(() => expect(uploadMutate).toHaveBeenCalledTimes(1));
+    expect(createMutate).toHaveBeenCalledTimes(1);
+    expect(createMutate.mock.invocationCallOrder[0]).toBeLessThan(
+      uploadMutate.mock.invocationCallOrder[0]
+    );
+    expect(uploadMutate.mock.calls[0][0]).toMatchObject({ requestId: "r-1" });
+    expect(screen.getByText("Request sent")).toBeInTheDocument();
+    expect(screen.queryByLabelText("From")).toBeNull();
+    expect(onOpenChange).not.toHaveBeenCalled();
+
+    progress?.(0.5);
+    expect(await screen.findByText("Uploading… 50%")).toBeInTheDocument();
+
+    vacationDetail = { ...created, attachments: [{ ...uploadedRow, status: "UPLOADING" }] };
+    finish({ ...uploadedRow, status: "UPLOADING" });
+    expect(await screen.findByText("Checking the file…")).toBeInTheDocument();
+    expect(onOpenChange).not.toHaveBeenCalled();
+
+    // The next poll reports the file accepted.
+    vacationDetail = { ...created, attachments: [uploadedRow] };
+    view.rerender(
+      <QueryClientProvider client={view.client}>
+        <NewRequestDialog open initialDate="2026-07-15" onOpenChange={onOpenChange} />
+      </QueryClientProvider>
+    );
+    await waitFor(() => expect(onOpenChange).toHaveBeenCalledWith(false));
+  });
+
+  it("stays open with the reason when a file is rejected, until dismissed", async () => {
+    uploadsAvailable = true;
+    const onOpenChange = vi.fn();
+    uploadMutate.mockImplementation(async () => {
+      vacationDetail = {
+        ...created,
+        attachments: [{ ...uploadedRow, status: "REJECTED", rejectionReason: "IMAGE_UNREADABLE" }],
+      };
+      return { ...uploadedRow, status: "UPLOADING" };
+    });
+    const user = userEvent.setup();
+    renderWithClient(
+      <NewRequestDialog open initialDate="2026-07-15" onOpenChange={onOpenChange} />
+    );
+
+    await user.upload(screen.getByLabelText("Add files"), png());
+    await user.click(screen.getByRole("button", { name: "Submit Request" }));
+
+    expect(await screen.findByText("Rejected: the image couldn't be read.")).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Some files were not accepted. Replace them here, or later from the request's details."
+      )
+    ).toBeInTheDocument();
+    expect(onOpenChange).not.toHaveBeenCalled();
+
+    await user.click(screen.getByRole("button", { name: "Done" }));
+    expect(onOpenChange).toHaveBeenCalledWith(false);
+  });
+
+  it("settles as failed, not still checking, when a registered file's bytes never arrive", async () => {
+    uploadsAvailable = true;
+    const onOpenChange = vi.fn();
+    uploadMutate.mockImplementation(async () => {
+      vacationDetail = { ...created, attachments: [{ ...uploadedRow, status: "UPLOADING" }] };
+      throw new UploadError(0, "Upload failed", "a-1");
+    });
+    const user = userEvent.setup();
+    renderWithClient(
+      <NewRequestDialog open initialDate="2026-07-15" onOpenChange={onOpenChange} />
+    );
+
+    await user.upload(screen.getByLabelText("Add files"), png());
+    await user.click(screen.getByRole("button", { name: "Submit Request" }));
+
+    expect(await screen.findByText("Upload failed. The file did not arrive.")).toBeInTheDocument();
+    expect(screen.queryByText("Checking the file…")).toBeNull();
+    expect(
+      screen.getByText(
+        "Some files were not accepted. Replace them here, or later from the request's details."
+      )
+    ).toBeInTheDocument();
+    expect(onOpenChange).not.toHaveBeenCalled();
+  });
+
+  it("drops the picked files when the group changes", async () => {
+    uploadsAvailable = true;
+    groups = [
+      { id: "g-1", groupName: "Platform" },
+      { id: "g-2", groupName: "Ops" },
+    ];
+    const onOpenChange = vi.fn();
+    const user = userEvent.setup();
+    renderWithClient(
+      <NewRequestDialog open initialDate="2026-07-15" onOpenChange={onOpenChange} />
+    );
+
+    await user.upload(screen.getByLabelText("Add files"), png());
+    expect(screen.getByText("note.png")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByLabelText("Group"));
+    fireEvent.click(await screen.findByRole("option", { name: "Ops" }));
+    expect(screen.queryByText("note.png")).toBeNull();
+
+    fireEvent.click(screen.getByRole("button", { name: "Submit Request" }));
+    await waitFor(() => expect(onOpenChange).toHaveBeenCalledWith(false));
+    expect(uploadMutate).not.toHaveBeenCalled();
   });
 });

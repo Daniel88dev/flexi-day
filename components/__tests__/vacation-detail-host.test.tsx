@@ -23,6 +23,13 @@ vi.mock("@/lib/api/queries", () => ({
   useRejectVacations: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useCancelVacations: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useCommentVacation: () => ({ mutateAsync: vi.fn(), isPending: false }),
+  useGroup: () => ({ data: undefined, isLoading: false, error: null }),
+  useUploadAttachment: () => ({ mutateAsync: vi.fn(), isPending: false }),
+  useDeleteAttachment: () => ({ mutateAsync: vi.fn(), isPending: false }),
+}));
+
+vi.mock("@/lib/auth-client", () => ({
+  useSession: () => ({ data: { user: { id: "u-1" } } }),
 }));
 
 const detail = {

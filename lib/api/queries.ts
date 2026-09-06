@@ -51,6 +51,13 @@ import {
   type PaidPlan,
 } from "./billing";
 import { getGroupMirrors, setGroupMirrors } from "./group-mirrors";
+import { createAttachment, deleteAttachment } from "./attachments";
+import { UploadError, uploadToTarget } from "./attachment-upload";
+import {
+  PROCESSING_POLL_MS,
+  declaredContentType,
+  hasProcessingAttachment,
+} from "@/lib/attachments/rules";
 import { getCarryOverSuggestion, listQuotas, setUserQuota, type ListQuotasParams } from "./quotas";
 import {
   getMemberReport,
@@ -173,6 +180,11 @@ export function useVacation(id: string | null | undefined) {
     queryKey: qk.vacation(id ?? ""),
     queryFn: () => getVacation(id!),
     enabled: !!id,
+    // A fresh upload settles server-side after the bytes land; keep asking
+    // until every row is READY or REJECTED, or has been stuck long enough to
+    // count as failed.
+    refetchInterval: (query) =>
+      hasProcessingAttachment(query.state.data?.attachments) ? PROCESSING_POLL_MS : false,
   });
 }
 
@@ -280,6 +292,60 @@ export function useCreateVacation() {
   return useMutation({
     mutationFn: (input: CreateVacationInput) => createVacation(input),
     onSuccess: () => invalidateVacationDependants(qc),
+  });
+}
+
+export type UploadAttachmentInput = {
+  requestId: string;
+  file: File;
+  /** Called with the row's id as soon as the backend has it, before the bytes go. */
+  onRegistered?: (attachmentId: string) => void;
+  onProgress?: (fraction: number) => void;
+};
+
+/**
+ * Registers the file, then sends its bytes to the target the backend named.
+ * Either step can fail; the detail is refetched in both cases, because a row
+ * registered but never uploaded still occupies a slot until the sweep clears it.
+ */
+export function useUploadAttachment() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ requestId, file, onRegistered, onProgress }: UploadAttachmentInput) => {
+      const { attachment, upload } = await createAttachment({
+        requestId,
+        fileName: file.name,
+        contentType: declaredContentType(file),
+        size: file.size,
+      });
+      onRegistered?.(attachment.id);
+      try {
+        await uploadToTarget(upload, file, onProgress);
+      } catch (error) {
+        if (error instanceof UploadError) {
+          throw new UploadError(error.status, error.message, attachment.id);
+        }
+        throw error;
+      }
+      return attachment;
+    },
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: ["vacation"] });
+    },
+  });
+}
+
+/**
+ * The detail is refetched whatever the outcome: a 404 or 409 means someone
+ * else removed the row first, and the list should show that too.
+ */
+export function useDeleteAttachment() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => deleteAttachment(id),
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: ["vacation"] });
+    },
   });
 }
 
