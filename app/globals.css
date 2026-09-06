@@ -479,3 +479,10 @@
   border: 1px solid var(--border);
   border-radius: var(--radius);
 }
+
+@utility scrollbar-hidden {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
