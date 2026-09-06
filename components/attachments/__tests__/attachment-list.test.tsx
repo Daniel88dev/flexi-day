@@ -83,7 +83,7 @@ describe("AttachmentList", () => {
       />
     );
 
-    expect(screen.getByText("Upload failed — the file never arrived.")).toBeInTheDocument();
+    expect(screen.getByText("Upload failed. The file did not arrive.")).toBeInTheDocument();
     expect(screen.queryByRole("button")).not.toBeInTheDocument();
   });
 

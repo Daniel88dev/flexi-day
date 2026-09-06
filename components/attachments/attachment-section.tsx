@@ -9,6 +9,7 @@ import { useTranslation } from "@/lib/i18n/use-translation";
 import { namedPeople } from "@/lib/vacations/timeline";
 import { AttachmentList } from "./attachment-list";
 import { AttachmentUploader } from "./attachment-uploader";
+import { AttachmentsHeading } from "./attachments-heading";
 
 /**
  * The attachments block of a record detail. It exists only when the payload
@@ -55,9 +56,12 @@ export function AttachmentSection({ detail }: { detail: VacationDetail }) {
 
   return (
     <section aria-labelledby="attachments-heading" className="space-y-3">
-      <h3 id="attachments-heading" className="text-sm font-medium">
-        {t.attachments.title}
-      </h3>
+      <AttachmentsHeading
+        as="h3"
+        id="attachments-heading"
+        used={MAX_ATTACHMENTS_PER_REQUEST - uploads.remaining}
+        max={MAX_ATTACHMENTS_PER_REQUEST}
+      />
       {uploads.settled.length > 0 ? (
         <AttachmentList
           attachments={uploads.settled}

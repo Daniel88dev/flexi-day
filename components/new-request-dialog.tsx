@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useEffectEvent, useState } from "react";
+import { AlertCircle, Check, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -24,6 +25,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { CalendarRecordTypePicker } from "@/components/calendar-record-type-picker";
 import { AttachmentList } from "@/components/attachments/attachment-list";
 import { AttachmentUploader } from "@/components/attachments/attachment-uploader";
+import { AttachmentsHeading } from "@/components/attachments/attachments-heading";
 import {
   useCreateVacation,
   useGroup,
@@ -35,6 +37,7 @@ import { ApiError } from "@/lib/api/client";
 import { planLimitFromError } from "@/lib/billing/plan-limit-error";
 import { CalendarRecordType, sickDayBenefitActive, type UserSummary } from "@/lib/api/types";
 import {
+  MAX_ATTACHMENTS_PER_REQUEST,
   attachmentDisplayStatus,
   hasProcessingAttachment,
   isFailedUpload,
@@ -42,6 +45,7 @@ import {
 import { useAttachmentUploads } from "@/lib/attachments/use-attachment-uploads";
 import { useTranslation } from "@/lib/i18n/use-translation";
 import { useSession } from "@/lib/auth-client";
+import { cn } from "@/lib/utils";
 
 function todayIso() {
   return new Date().toISOString().slice(0, 10);
@@ -283,20 +287,50 @@ export function NewRequestDialog({ open, onOpenChange, initialDate }: NewRequest
         </DialogHeader>
         {created ? (
           <div className="space-y-4 py-2">
-            <p className="text-sm">{t.newRequest.submitted}</p>
-            {uploads.settled.length > 0 ? (
-              <AttachmentList
-                attachments={uploads.settled}
-                people={people}
-                failedIds={uploads.failedIds}
+            <div className="flex items-start gap-3">
+              <span
+                className={cn(
+                  "mt-0.5 grid size-8 shrink-0 place-items-center rounded-full",
+                  uploadsDone && !uploadsClean
+                    ? "bg-destructive/10 text-destructive"
+                    : "bg-primary/10 text-primary"
+                )}
+              >
+                {uploadsDone ? (
+                  uploadsClean ? (
+                    <Check className="size-4" />
+                  ) : (
+                    <AlertCircle className="size-4" />
+                  )
+                ) : (
+                  <Loader2 className="size-4 animate-spin" />
+                )}
+              </span>
+              <div className="space-y-0.5">
+                <p className="text-sm font-medium">{t.newRequest.submitted}</p>
+                <p role="status" className="text-muted-foreground text-sm">
+                  {uploadsDone
+                    ? uploadsClean
+                      ? t.newRequest.uploadsAccepted
+                      : t.newRequest.uploadProblems
+                    : t.newRequest.uploadingFiles}
+                </p>
+              </div>
+            </div>
+            <div className="space-y-3">
+              <AttachmentsHeading
+                used={MAX_ATTACHMENTS_PER_REQUEST - uploads.remaining}
+                max={MAX_ATTACHMENTS_PER_REQUEST}
               />
-            ) : null}
-            <AttachmentUploader uploads={uploads} />
-            <p role="status" className="text-muted-foreground text-sm">
-              {uploadsDone && !uploadsClean
-                ? t.newRequest.uploadProblems
-                : t.newRequest.uploadingFiles}
-            </p>
+              {uploads.settled.length > 0 ? (
+                <AttachmentList
+                  attachments={uploads.settled}
+                  people={people}
+                  failedIds={uploads.failedIds}
+                />
+              ) : null}
+              <AttachmentUploader uploads={uploads} notice={false} />
+            </div>
             <DialogFooter>
               <Button type="button" onClick={closeAndReset}>
                 {t.common.done}
@@ -490,7 +524,10 @@ export function NewRequestDialog({ open, onOpenChange, initialDate }: NewRequest
 
             {offerAttachments ? (
               <div className="space-y-1.5">
-                <p className="text-sm font-medium">{t.attachments.title}</p>
+                <AttachmentsHeading
+                  used={MAX_ATTACHMENTS_PER_REQUEST - uploads.remaining}
+                  max={MAX_ATTACHMENTS_PER_REQUEST}
+                />
                 <AttachmentUploader uploads={uploads} />
               </div>
             ) : null}

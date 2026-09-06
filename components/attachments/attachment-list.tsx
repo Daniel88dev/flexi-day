@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Download, FileText, Image as ImageIcon, Loader2, Trash2 } from "lucide-react";
+import { Download, Loader2, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getAttachmentDownloadUrl } from "@/lib/api/attachments";
 import { ApiError } from "@/lib/api/client";
@@ -13,10 +13,10 @@ import {
   isImage,
   type AttachmentDisplayStatus,
 } from "@/lib/attachments/rules";
+import { AttachmentRow } from "./attachment-row";
 import { useTranslation } from "@/lib/i18n/use-translation";
 import type { Dictionary } from "@/lib/i18n";
 import { resolveActor } from "@/lib/vacations/timeline";
-import { cn } from "@/lib/utils";
 import { AttachmentPreviewDialog } from "./attachment-preview-dialog";
 
 function formatMoment(iso: string, locale: string) {
@@ -28,13 +28,6 @@ function formatMoment(iso: string, locale: string) {
     minute: "2-digit",
   });
 }
-
-const STATUS_TONE: Record<AttachmentDisplayStatus, string> = {
-  processing: "text-muted-foreground",
-  ready: "text-muted-foreground",
-  rejected: "text-destructive",
-  failed: "text-destructive",
-};
 
 type RowJob = { id: string; action: "url" | "delete" };
 
@@ -174,16 +167,16 @@ export function AttachmentList({
           const ready = status === "ready";
           const rowBusy = busy?.id === attachment.id;
           const spinning = (action: RowJob["action"]) => rowBusy && busy.action === action;
-          const Icon = isImage(attachment.contentType) ? ImageIcon : FileText;
           const note = statusLabel(attachment, status);
           return (
-            <li key={attachment.id} className="flex items-start gap-2 text-sm">
-              <Icon className="text-muted-foreground mt-0.5 h-4 w-4 shrink-0" />
-              <div className="min-w-0 flex-1">
-                {ready ? (
+            <AttachmentRow
+              key={attachment.id}
+              contentType={attachment.contentType}
+              name={
+                ready ? (
                   <button
                     type="button"
-                    className="max-w-full truncate text-left font-medium underline-offset-2 hover:underline"
+                    className="max-w-full truncate text-left underline-offset-2 hover:underline"
                     aria-label={
                       isImage(attachment.contentType)
                         ? t.attachments.preview(attachment.fileName)
@@ -195,54 +188,47 @@ export function AttachmentList({
                     {attachment.fileName}
                   </button>
                 ) : (
-                  <span className="block truncate font-medium">{attachment.fileName}</span>
-                )}
-                <div className="text-muted-foreground text-xs">
+                  attachment.fileName
+                )
+              }
+              meta={
+                <>
                   {formatFileSize(attachment.size, t.common.dateLocale)} ·{" "}
                   {uploaderLabel(attachment)} ·{" "}
                   {formatMoment(attachment.createdAt, t.common.dateLocale)}
-                </div>
-                {note ? (
-                  <div role="status" className={cn("text-xs", STATUS_TONE[status])}>
-                    {note}
-                  </div>
-                ) : null}
-              </div>
-              {ready ? (
-                <Button
-                  type="button"
-                  size="icon"
-                  variant="ghost"
-                  className="h-8 w-8 shrink-0"
-                  aria-label={t.attachments.download(attachment.fileName)}
-                  disabled={rowBusy}
-                  onClick={() => download(attachment)}
-                >
-                  {spinning("url") ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Download className="h-4 w-4" />
-                  )}
-                </Button>
-              ) : null}
-              {canDelete?.(attachment) ? (
-                <Button
-                  type="button"
-                  size="icon"
-                  variant="ghost"
-                  className="h-8 w-8 shrink-0"
-                  aria-label={t.attachments.delete(attachment.fileName)}
-                  disabled={rowBusy}
-                  onClick={() => remove(attachment)}
-                >
-                  {spinning("delete") ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Trash2 className="h-4 w-4" />
-                  )}
-                </Button>
-              ) : null}
-            </li>
+                </>
+              }
+              note={note ? <span role="status">{note}</span> : undefined}
+              noteTone={status === "rejected" || status === "failed" ? "destructive" : "muted"}
+              actions={
+                <>
+                  {ready ? (
+                    <Button
+                      type="button"
+                      size="icon-sm"
+                      variant="ghost"
+                      aria-label={t.attachments.download(attachment.fileName)}
+                      disabled={rowBusy}
+                      onClick={() => download(attachment)}
+                    >
+                      {spinning("url") ? <Loader2 className="animate-spin" /> : <Download />}
+                    </Button>
+                  ) : null}
+                  {canDelete?.(attachment) ? (
+                    <Button
+                      type="button"
+                      size="icon-sm"
+                      variant="ghost"
+                      aria-label={t.attachments.delete(attachment.fileName)}
+                      disabled={rowBusy}
+                      onClick={() => remove(attachment)}
+                    >
+                      {spinning("delete") ? <Loader2 className="animate-spin" /> : <Trash2 />}
+                    </Button>
+                  ) : null}
+                </>
+              }
+            />
           );
         })}
       </ul>

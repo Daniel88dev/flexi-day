@@ -121,7 +121,7 @@ describe("useAttachmentUploads", () => {
       "This file is over 10 MB.",
       undefined,
       undefined,
-      "This request has the maximum of five attachments.",
+      "This request has all five of its files.",
     ]);
     expect(result.current.failed).toBe(3);
     expect(result.current.full).toBe(true);
@@ -225,7 +225,7 @@ describe("useAttachmentUploads", () => {
     await waitFor(() => expect(result.current.failedIds).toEqual(["a-lost"]));
     expect(result.current.jobs[0].attachmentId).toBe("a-lost");
     // Shown as failed here until the row arrives; never as still uploading.
-    expect(result.current.jobs[0].error).toBe("Upload failed — the file never arrived.");
+    expect(result.current.jobs[0].error).toBe("Upload failed. The file did not arrive.");
     expect(result.current.inFlight).toBe(0);
   });
 

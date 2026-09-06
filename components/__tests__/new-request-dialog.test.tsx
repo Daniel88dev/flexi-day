@@ -386,7 +386,7 @@ describe("NewRequestDialog", () => {
     );
     expect(screen.getByLabelText("Add files")).toBeEnabled();
     expect(
-      screen.getByText("The group's approvers and managers will see this file.")
+      screen.getByText("Approvers and managers of the group can see attached files.")
     ).toBeInTheDocument();
   });
 
@@ -432,7 +432,7 @@ describe("NewRequestDialog", () => {
       uploadMutate.mock.invocationCallOrder[0]
     );
     expect(uploadMutate.mock.calls[0][0]).toMatchObject({ requestId: "r-1" });
-    expect(screen.getByText("Request submitted.")).toBeInTheDocument();
+    expect(screen.getByText("Request sent")).toBeInTheDocument();
     expect(screen.queryByLabelText("From")).toBeNull();
     expect(onOpenChange).not.toHaveBeenCalled();
 
@@ -475,7 +475,7 @@ describe("NewRequestDialog", () => {
     expect(await screen.findByText("Rejected: the image couldn't be read.")).toBeInTheDocument();
     expect(
       screen.getByText(
-        "Not every file made it. The request stands; you can add files from its details."
+        "Some files were not accepted. Replace them here, or later from the request's details."
       )
     ).toBeInTheDocument();
     expect(onOpenChange).not.toHaveBeenCalled();
@@ -499,11 +499,11 @@ describe("NewRequestDialog", () => {
     await user.upload(screen.getByLabelText("Add files"), png());
     await user.click(screen.getByRole("button", { name: "Submit Request" }));
 
-    expect(await screen.findByText("Upload failed — the file never arrived.")).toBeInTheDocument();
+    expect(await screen.findByText("Upload failed. The file did not arrive.")).toBeInTheDocument();
     expect(screen.queryByText("Checking the file…")).toBeNull();
     expect(
       screen.getByText(
-        "Not every file made it. The request stands; you can add files from its details."
+        "Some files were not accepted. Replace them here, or later from the request's details."
       )
     ).toBeInTheDocument();
     expect(onOpenChange).not.toHaveBeenCalled();

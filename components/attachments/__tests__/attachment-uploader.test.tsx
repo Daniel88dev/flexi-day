@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { AttachmentUploads } from "@/lib/attachments/use-attachment-uploads";
 import { AttachmentUploader } from "../attachment-uploader";
@@ -35,29 +35,26 @@ describe("AttachmentUploader", () => {
   it("renders the picker, the format hint and the visibility notice", () => {
     render(<AttachmentUploader uploads={uploads()} />);
 
-    expect(screen.getByRole("button", { name: "Add files" })).toBeEnabled();
+    expect(screen.getByLabelText("Add files")).toBeEnabled();
     expect(screen.getByLabelText("Add files")).toHaveAttribute(
       "accept",
       expect.stringContaining("application/pdf")
     );
     expect(
-      screen.getByText("PNG, JPEG, WebP, HEIC or PDF, up to 10 MB each, five per request.")
+      screen.getByText("Click or drop them here. Images or PDF, up to 10 MB each.")
     ).toBeInTheDocument();
     expect(
-      screen.getByText("The group's approvers and managers will see this file.")
+      screen.getByText("Approvers and managers of the group can see attached files.")
     ).toBeInTheDocument();
   });
 
   it("is inert when disabled or full", () => {
     const { rerender } = render(<AttachmentUploader uploads={uploads()} disabled />);
-    expect(screen.getByRole("button", { name: "Add files" })).toBeDisabled();
     expect(screen.getByLabelText("Add files")).toBeDisabled();
 
     rerender(<AttachmentUploader uploads={uploads({ remaining: 0, full: true })} />);
-    expect(screen.getByRole("button", { name: "Add files" })).toBeDisabled();
-    expect(
-      screen.getByText("This request has the maximum of five attachments.")
-    ).toBeInTheDocument();
+    expect(screen.getByLabelText("Add files")).toBeDisabled();
+    expect(screen.getByText("This request has all five of its files.")).toBeInTheDocument();
   });
 
   it("hands picked files to the uploads", async () => {
@@ -115,5 +112,32 @@ describe("AttachmentUploader", () => {
     expect(screen.getByText("This file is over 10 MB.")).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Dismiss" }));
     expect(state.remove).toHaveBeenCalledWith(1);
+  });
+
+  it("highlights the field while a file is dragged over it", () => {
+    render(<AttachmentUploader uploads={uploads()} />);
+    // The native file input, laid over the zone, takes the drop itself and
+    // fires change (covered by the pick test above); the wrapper only tracks
+    // the drag highlight.
+    const field = screen.getByLabelText("Add files").parentElement!;
+
+    fireEvent.dragEnter(field);
+    expect(field).toHaveAttribute("data-dragging", "true");
+    fireEvent.drop(field);
+    expect(field).not.toHaveAttribute("data-dragging");
+  });
+
+  it("does not highlight while full", () => {
+    render(<AttachmentUploader uploads={uploads({ remaining: 0, full: true })} />);
+    const field = screen.getByLabelText("Add files").parentElement!;
+    fireEvent.dragEnter(field);
+    expect(field).not.toHaveAttribute("data-dragging");
+  });
+
+  it("can leave out the visibility notice", () => {
+    render(<AttachmentUploader uploads={uploads()} notice={false} />);
+    expect(
+      screen.queryByText("Approvers and managers of the group can see attached files.")
+    ).toBeNull();
   });
 });

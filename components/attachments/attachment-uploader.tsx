@@ -1,117 +1,132 @@
 "use client";
 
-import { useRef } from "react";
-import { FileText, Image as ImageIcon, Paperclip, X } from "lucide-react";
+import { useId, useState } from "react";
+import { Paperclip, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { PICKER_ACCEPT, formatFileSize, isImage } from "@/lib/attachments/rules";
+import { PICKER_ACCEPT, formatFileSize } from "@/lib/attachments/rules";
 import type { AttachmentUploads } from "@/lib/attachments/use-attachment-uploads";
 import { useTranslation } from "@/lib/i18n/use-translation";
+import { cn } from "@/lib/utils";
+import { AttachmentRow } from "./attachment-row";
 
 /**
- * The picker and the files it is still sending, or holding until the Request
- * exists. The state lives in `useAttachmentUploads` so a dialog can keep it
- * across its own steps; this only draws it.
+ * The files being picked or sent, and the field that takes more. The state
+ * lives in `useAttachmentUploads` so a dialog can keep it across its own
+ * steps; this only draws it.
  */
 export function AttachmentUploader({
   uploads,
   disabled = false,
+  notice = true,
 }: {
   uploads: AttachmentUploads;
   disabled?: boolean;
+  /** Whether to say who gets to see the files; off where the reader already knows. */
+  notice?: boolean;
 }) {
   const { t } = useTranslation();
-  const inputRef = useRef<HTMLInputElement>(null);
+  const [dragging, setDragging] = useState(false);
+  const hintId = useId();
   const inactive = disabled || uploads.full;
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-3">
       {uploads.jobs.length > 0 ? (
         <ul className="space-y-2">
           {uploads.jobs.map((job) => {
-            const Icon = isImage(job.contentType) ? ImageIcon : FileText;
-            const percent = Math.round(job.progress * 100);
             const removable = job.queued || job.error !== undefined;
+            const sending = !job.queued && job.error === undefined;
+            const percent = Math.round(job.progress * 100);
             return (
-              <li key={job.key} className="flex items-start gap-2 text-sm">
-                <Icon className="text-muted-foreground mt-0.5 h-4 w-4 shrink-0" />
-                <div className="min-w-0 flex-1">
-                  <span className="block truncate font-medium">{job.fileName}</span>
-                  <div className="text-muted-foreground text-xs">
-                    {formatFileSize(job.size, t.common.dateLocale)}
-                  </div>
-                  {job.error ? (
-                    <div role="alert" className="text-destructive text-xs">
-                      {job.error}
-                    </div>
-                  ) : job.queued ? null : (
-                    <div className="mt-1 space-y-1">
-                      <div
-                        role="progressbar"
-                        aria-label={job.fileName}
-                        aria-valuemin={0}
-                        aria-valuemax={100}
-                        aria-valuenow={percent}
-                        className="bg-muted h-1.5 w-full overflow-hidden rounded-full"
-                      >
-                        <div className="bg-primary h-full" style={{ width: `${percent}%` }} />
-                      </div>
-                      <div className="text-muted-foreground text-xs">
-                        {percent < 100
-                          ? t.attachments.uploading(percent)
-                          : t.attachments.processing}
-                      </div>
-                    </div>
-                  )}
-                </div>
-                {removable ? (
-                  <Button
-                    type="button"
-                    size="icon"
-                    variant="ghost"
-                    className="h-8 w-8 shrink-0"
-                    aria-label={
-                      job.error ? t.attachments.dismiss : t.attachments.remove(job.fileName)
-                    }
-                    onClick={() => uploads.remove(job.key)}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                ) : null}
-              </li>
+              <AttachmentRow
+                key={job.key}
+                contentType={job.contentType}
+                name={job.fileName}
+                meta={
+                  sending
+                    ? percent < 100
+                      ? t.attachments.uploading(percent)
+                      : t.attachments.processing
+                    : formatFileSize(job.size, t.common.dateLocale)
+                }
+                note={job.error ? <span role="alert">{job.error}</span> : undefined}
+                noteTone={job.error ? "destructive" : "muted"}
+                progress={sending ? job.progress : undefined}
+                progressLabel={job.fileName}
+                actions={
+                  removable ? (
+                    <Button
+                      type="button"
+                      size="icon-sm"
+                      variant="ghost"
+                      aria-label={
+                        job.error ? t.attachments.dismiss : t.attachments.remove(job.fileName)
+                      }
+                      onClick={() => uploads.remove(job.key)}
+                    >
+                      <X />
+                    </Button>
+                  ) : null
+                }
+              />
             );
           })}
         </ul>
       ) : null}
 
-      <div className="space-y-1">
-        <input
-          ref={inputRef}
-          type="file"
-          multiple
-          accept={PICKER_ACCEPT}
-          className="sr-only"
-          tabIndex={-1}
-          disabled={inactive}
-          aria-label={t.attachments.addFiles}
-          onChange={(event) => {
-            uploads.pick(event.target.files);
-            event.target.value = "";
+      <div className="space-y-1.5">
+        {/* The real file input is laid over the whole zone at opacity 0, so a
+            click lands on the input itself. No scripted .click() and no label
+            proxy, which is what some browsers refuse inside a modal. Native
+            drop on the input fires change too, the same path as a pick. */}
+        <div
+          data-dragging={dragging || undefined}
+          data-inactive={inactive || undefined}
+          className={cn(
+            "border-input bg-input/30 text-muted-foreground relative flex w-full items-center gap-3 rounded-xl border border-dashed px-3 py-2.5 text-left transition-colors",
+            "hover:bg-input/50 hover:text-foreground has-[input:focus-visible]:border-ring has-[input:focus-visible]:ring-ring/50 has-[input:focus-visible]:ring-[3px]",
+            "data-dragging:border-ring data-dragging:bg-accent data-dragging:text-foreground",
+            "data-inactive:hover:bg-input/30 data-inactive:opacity-60"
+          )}
+          onDragEnter={() => {
+            if (!inactive) setDragging(true);
           }}
-        />
-        <Button
-          type="button"
-          size="sm"
-          variant="outline"
-          disabled={inactive}
-          onClick={() => inputRef.current?.click()}
+          onDragLeave={(event) => {
+            if (!event.currentTarget.contains(event.relatedTarget as Node)) setDragging(false);
+          }}
+          onDrop={() => setDragging(false)}
         >
-          <Paperclip className="h-4 w-4" />
-          {t.attachments.addFiles}
-        </Button>
-        <p className="text-muted-foreground text-xs">
-          {uploads.full ? t.attachments.limitReached : t.attachments.addFilesHint}
-        </p>
-        <p className="text-muted-foreground text-xs">{t.attachments.visibilityNotice}</p>
+          <input
+            type="file"
+            multiple
+            accept={PICKER_ACCEPT}
+            disabled={inactive}
+            aria-label={t.attachments.addFiles}
+            aria-describedby={hintId}
+            className={cn(
+              "absolute inset-0 z-10 size-full cursor-pointer opacity-0",
+              "disabled:cursor-not-allowed"
+            )}
+            onChange={(event) => {
+              uploads.pick(event.target.files);
+              event.target.value = "";
+            }}
+          />
+          <span className="bg-muted grid size-9 shrink-0 place-items-center rounded-xl">
+            <Paperclip className="size-4" />
+          </span>
+          <span className="min-w-0">
+            <span className="text-foreground block text-sm font-medium">
+              {uploads.full ? t.attachments.limitReached : t.attachments.addFiles}
+            </span>
+            <span id={hintId} aria-hidden className="block text-xs">
+              {uploads.full ? t.attachments.limitReachedHint : t.attachments.addFilesHint}
+            </span>
+          </span>
+        </div>
+        {notice ? (
+          <p className="text-muted-foreground text-xs">{t.attachments.visibilityNotice}</p>
+        ) : null}
       </div>
     </div>
   );

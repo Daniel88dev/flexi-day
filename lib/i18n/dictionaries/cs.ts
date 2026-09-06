@@ -272,10 +272,11 @@ export const cs: Dictionary = {
     approveImmediately: "Rovnou schválit",
     approveImmediatelyHint:
       "Žádost se vytvoří jako schválená a bude uvedeno, že jste ji schválili vy.",
-    submitted: "Žádost odeslána.",
+    submitted: "Žádost odeslána",
     uploadingFiles: "Soubory se nahrávají. Okno se zavře, jakmile budou zkontrolovány.",
     uploadProblems:
-      "Ne všechny soubory se podařilo přiložit. Žádost platí; soubory můžete přidat v jejím detailu.",
+      "Některé soubory nebyly přijaty. Nahraďte je tady, nebo později v detailu žádosti.",
+    uploadsAccepted: "Všechny soubory byly přijaty.",
   },
 
   attachments: {
@@ -284,7 +285,7 @@ export const cs: Dictionary = {
     uploadedByAdmin: "Nahrál správce",
     uploadedByRemovedAccount: "Nahrál smazaný účet",
     processing: "Kontrolujeme soubor…",
-    failed: "Nahrání selhalo — soubor nedorazil.",
+    failed: "Nahrání selhalo. Soubor nedorazil.",
     rejected: {
       TYPE_MISMATCH: "Odmítnuto: obsah souboru neodpovídá jeho typu.",
       IMAGE_UNREADABLE: "Odmítnuto: obrázek nelze přečíst.",
@@ -297,10 +298,12 @@ export const cs: Dictionary = {
     download: (name: string) => `Stáhnout ${name}`,
     openFailed: "Soubor se nepodařilo otevřít. Zkuste to znovu.",
     addFiles: "Přidat soubory",
-    addFilesHint: "PNG, JPEG, WebP, HEIC nebo PDF, každý do 10 MB, nejvýše pět na žádost.",
-    visibilityNotice: "Soubor uvidí schvalovatelé a manažeři skupiny.",
+    addFilesHint: "Klikněte nebo je sem přetáhněte. Obrázky nebo PDF, každý do 10 MB.",
+    slotsUsed: (used: number, max: number) => `Přiloženo ${used} z ${max} souborů`,
+    visibilityNotice: "Přiložené soubory vidí schvalovatelé a manažeři skupiny.",
     paidPlanOnly: "Přílohy vyžadují placený tarif. Už nahrané soubory zůstávají dostupné.",
-    limitReached: "Žádost už má nejvyšší počet pěti příloh.",
+    limitReached: "Žádost už má všech pět souborů.",
+    limitReachedHint: "Odeberte některý, abyste mohli přiložit další.",
     uploading: (percent: number) => `Nahrávání… ${percent} %`,
     tooLarge: "Soubor je větší než 10 MB.",
     unsupportedType: "Přiložit lze jen soubory PNG, JPEG, WebP, HEIC a PDF.",

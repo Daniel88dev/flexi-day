@@ -219,7 +219,7 @@ describe("AttachmentSection", () => {
     vi.useFakeTimers({ now: new Date("2026-09-05T09:10:01.000Z") });
     render({ attachments: [{ ...image, status: "UPLOADING" }] });
 
-    expect(screen.getByText("Upload failed — the file never arrived.")).toBeInTheDocument();
+    expect(screen.getByText("Upload failed. The file did not arrive.")).toBeInTheDocument();
   });
 
   it("spells out why a file was rejected", () => {
@@ -236,7 +236,7 @@ describe("AttachmentSection", () => {
 
     expect(screen.getByLabelText("Add files")).toBeEnabled();
     expect(
-      screen.getByText("The group's approvers and managers will see this file.")
+      screen.getByText("Approvers and managers of the group can see attached files.")
     ).toBeInTheDocument();
   });
 
@@ -345,20 +345,19 @@ describe("AttachmentSection", () => {
       />
     );
     expect(screen.getAllByText("note.png")).toHaveLength(1);
-    expect(screen.getByText("Upload failed — the file never arrived.")).toBeInTheDocument();
+    expect(screen.getByText("Upload failed. The file did not arrive.")).toBeInTheDocument();
     expect(screen.queryByText("Checking the file…")).not.toBeInTheDocument();
     expect(screen.queryByText("Upload failed. Try again.")).not.toBeInTheDocument();
   });
 
-  it("opens the picker from the visible button", async () => {
-    const user = userEvent.setup();
+  it("lays the real file input over the whole drop zone so a click opens the native picker", () => {
     render({ attachments: [] });
-    const click = vi.spyOn(HTMLInputElement.prototype, "click").mockImplementation(() => {});
-
-    await user.click(screen.getByRole("button", { name: "Add files" }));
-
-    expect(click).toHaveBeenCalled();
-    click.mockRestore();
+    const input = screen.getByLabelText("Add files");
+    // The user clicks the input itself (opacity 0, covering the zone), not a
+    // proxy element, so no scripted input.click() is involved.
+    expect(input).toBeEnabled();
+    expect(input.className).toContain("absolute");
+    expect(input.className).toContain("inset-0");
   });
 
   it("disables the picker once five files hold a slot", () => {
@@ -366,9 +365,7 @@ describe("AttachmentSection", () => {
     render({ attachments: five, canAttach: false });
 
     expect(screen.getByLabelText("Add files")).toBeDisabled();
-    expect(
-      screen.getByText("This request has the maximum of five attachments.")
-    ).toBeInTheDocument();
+    expect(screen.getByText("This request has all five of its files.")).toBeInTheDocument();
   });
 
   it("replaces the picker with the paid-plan line when the group says uploads are off", () => {

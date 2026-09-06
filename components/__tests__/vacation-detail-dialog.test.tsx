@@ -335,10 +335,10 @@ describe("VacationDetailDialog", () => {
     const items = within(timeline as HTMLElement).getAllByRole("listitem");
     expect(items.map((item) => item.textContent)).toEqual([
       expect.stringMatching(/^Requested by Dana Holt/),
-      expect.stringMatching(/^Attached a file by Dana Holt.*doctors-note\.jpg$/),
+      expect.stringMatching(/^File attached by Dana Holt.*doctors-note\.jpg$/),
       expect.stringMatching(/^Approved by Ada Lovelace/),
-      expect.stringMatching(/^Removed a file by Ada Lovelace.*doctors-note\.jpg$/),
-      expect.stringMatching(/^Attached a file by an admin.*receipt\.pdf$/),
+      expect.stringMatching(/^File removed by Ada Lovelace.*doctors-note\.jpg$/),
+      expect.stringMatching(/^File attached by an admin.*receipt\.pdf$/),
     ]);
     // The removed file is history only: the attachment list no longer offers it.
     expect(screen.queryByRole("button", { name: /doctors-note/ })).not.toBeInTheDocument();
