@@ -3,7 +3,7 @@
 // https://docs.sentry.io/platforms/javascript/guides/nextjs/
 
 import * as Sentry from "@sentry/nextjs";
-import { getDeviceId, getSessionId } from "@/lib/observability/session";
+import { getSessionId } from "@/lib/observability/session";
 import { scrubSupportQuery, scrubSupportUrlsInEvent } from "@/lib/observability/scrub-support-url";
 
 // On in production only; opt in elsewhere with NEXT_PUBLIC_SENTRY_ENABLE=true.
@@ -14,10 +14,11 @@ Sentry.init({
   enabled,
   dsn: "https://74640af9c7fc240bda9756dda54946ec@o4507832619237376.ingest.de.sentry.io/4511795855753296",
 
-  // Add optional integrations for additional features
+  // No Session Replay. It records the DOM and user interaction of sessions that
+  // never errored, which needs consent under ePrivacy Art. 5(3), and the whole
+  // point of the rest of this file is to stay consent-free (no cookie banner).
   integrations: [
     Sentry.browserTracingIntegration(),
-    Sentry.replayIntegration(),
     // No `levels` filter: every console level is forwarded.
     Sentry.consoleLoggingIntegration(),
   ],
@@ -34,14 +35,6 @@ Sentry.init({
   ],
   // Enable logs to be sent to Sentry
   enableLogs: true,
-
-  // Define how likely Replay events are sampled.
-  // This sets the sample rate to be 10%. You may want this to be 100% while
-  // in development and sample at a lower rate in production
-  replaysSessionSampleRate: 0.1,
-
-  // Define how likely Replay events are sampled when an error occurs.
-  replaysOnErrorSampleRate: 1.0,
 
   dataCollection: {
     // To disable sending user data and HTTP bodies, uncomment the lines below. For more info visit:
@@ -85,7 +78,6 @@ const browserContext = () => {
 
 if (enabled) {
   const sessionId = getSessionId();
-  const deviceId = getDeviceId();
 
   // Global scope attributes are merged into every log and error the SDK emits,
   // which is what makes them dependable columns in the Sentry Logs table.
@@ -94,14 +86,12 @@ if (enabled) {
     "service.version": process.env.NEXT_PUBLIC_APP_VERSION ?? "unknown",
     "service.type": "frontend",
     "client.session_id": sessionId,
-    "client.device_id": deviceId,
     "url.path": typeof window === "undefined" ? "" : normalizePath(window.location.pathname),
     ...browserContext(),
   });
 
   // Attributes are the log columns; tags are what make error events searchable.
   Sentry.setTag("client_session_id", sessionId);
-  Sentry.setTag("client_device_id", deviceId);
 }
 
 // The SPA navigates without reloading, so `url.path` has to be refreshed here or

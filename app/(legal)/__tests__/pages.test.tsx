@@ -24,7 +24,7 @@ describe("Legal pages", () => {
 
   it("Legal pages carry the attachments update date", () => {
     render(<PrivacyPage />);
-    expect(screen.getByText("Last updated: 5 September 2026")).toBeInTheDocument();
+    expect(screen.getByText("Last updated: 10 September 2026")).toBeInTheDocument();
   });
 
   it("Terms page renders its heading", () => {
