@@ -1,6 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import {
-  getDeviceId,
   getSessionId,
   correlationHeaders,
   __resetIdCacheForTests,
@@ -17,52 +16,45 @@ describe("session correlation ids", () => {
     vi.restoreAllMocks();
   });
 
-  it("returns the same device id on repeated calls", () => {
-    const first = getDeviceId();
-    expect(first).toBeTruthy();
-    expect(getDeviceId()).toBe(first);
-  });
-
   it("returns the same session id on repeated calls", () => {
     const first = getSessionId();
     expect(first).toBeTruthy();
     expect(getSessionId()).toBe(first);
   });
 
-  it("keeps the device id across sessions but mints a new session id", () => {
-    const device = getDeviceId();
+  it("mints a new session id in a new tab", () => {
     const session = getSessionId();
 
-    // A new tab: sessionStorage is empty, localStorage is not.
+    // A new tab: sessionStorage is empty.
     window.sessionStorage.clear();
     __resetIdCacheForTests();
 
-    expect(getDeviceId()).toBe(device);
     expect(getSessionId()).not.toBe(session);
   });
 
-  it("persists the ids under their storage keys", () => {
-    const device = getDeviceId();
+  it("persists the session id under its storage key", () => {
     const session = getSessionId();
 
-    expect(window.localStorage.getItem("fd.did")).toBe(device);
     expect(window.sessionStorage.getItem("fd.sid")).toBe(session);
   });
 
-  it("gives the device and session distinct ids", () => {
-    expect(getDeviceId()).not.toBe(getSessionId());
+  it("writes nothing to localStorage", () => {
+    getSessionId();
+    correlationHeaders();
+
+    expect(window.localStorage.length).toBe(0);
   });
 
   it("falls back to an in-memory id when storage throws (Safari private mode)", () => {
-    vi.spyOn(window.localStorage, "getItem").mockImplementation(() => {
+    vi.spyOn(window.sessionStorage, "getItem").mockImplementation(() => {
       throw new Error("SecurityError");
     });
 
-    const id = getDeviceId();
+    const id = getSessionId();
 
     expect(id).toBeTruthy();
     // Still stable for the life of the page even though nothing was persisted.
-    expect(getDeviceId()).toBe(id);
+    expect(getSessionId()).toBe(id);
   });
 
   it("builds the outbound correlation headers", () => {
@@ -70,7 +62,6 @@ describe("session correlation ids", () => {
 
     expect(headers).toEqual({
       "x-client-session-id": getSessionId(),
-      "x-client-device-id": getDeviceId(),
     });
   });
 });

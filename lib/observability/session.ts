@@ -1,7 +1,8 @@
-// Device id survives visits; session id is per tab. Deliberately storage and not
-// a cookie: neither travels automatically.
+// Per-tab session id, sessionStorage and not a cookie: it does not travel
+// automatically. Nothing here outlives the tab. A persistent cross-visit
+// identifier would need consent under ePrivacy Art. 5(3), which is why there
+// is no device id.
 
-const DEVICE_KEY = "fd.did";
 const SESSION_KEY = "fd.sid";
 
 const newId = (): string => {
@@ -35,25 +36,18 @@ const readOrCreate = (storage: () => Storage, key: string, cache: { value?: stri
   }
 };
 
-const deviceCache: { value?: string } = {};
 const sessionCache: { value?: string } = {};
-
-export const getDeviceId = (): string =>
-  readOrCreate(() => window.localStorage, DEVICE_KEY, deviceCache);
 
 export const getSessionId = (): string =>
   readOrCreate(() => window.sessionStorage, SESSION_KEY, sessionCache);
 
 export const correlationHeaders = (): Record<string, string> => {
   const sessionId = getSessionId();
-  const deviceId = getDeviceId();
   return {
     ...(sessionId ? { "x-client-session-id": sessionId } : {}),
-    ...(deviceId ? { "x-client-device-id": deviceId } : {}),
   };
 };
 
 export const __resetIdCacheForTests = (): void => {
-  delete deviceCache.value;
   delete sessionCache.value;
 };

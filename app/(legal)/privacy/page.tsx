@@ -75,6 +75,13 @@ export default function PrivacyPage() {
           <strong>Session data</strong> — an authentication cookie / local-storage token that keeps
           you signed in (see section 9).
         </li>
+        <li>
+          <strong>Error and performance data</strong> — when something goes wrong in your browser or
+          on our servers, we record the error, the page or API route it happened on, your browser
+          and operating system version, and timing measurements, so we can fix it. This is tagged
+          with a random id that lives only for the current browser tab. We do not record your screen
+          or your session, and we do not use this data to build a profile of you.
+        </li>
       </ul>
 
       <h2>4. Why we use your data and our legal bases</h2>
@@ -100,6 +107,10 @@ export default function PrivacyPage() {
           </tr>
           <tr>
             <td>Keep the Service secure and prevent abuse</td>
+            <td>Legitimate interests (f)</td>
+          </tr>
+          <tr>
+            <td>Diagnose errors and monitor performance so the Service keeps working</td>
             <td>Legitimate interests (f)</td>
           </tr>
           <tr>
@@ -133,6 +144,11 @@ export default function PrivacyPage() {
             <td>Amazon SES (AWS)</td>
             <td>Sending transactional emails</td>
             <td>EU (Frankfurt, Germany)</td>
+          </tr>
+          <tr>
+            <td>Functional Software, Inc. (Sentry)</td>
+            <td>Error monitoring and performance diagnostics</td>
+            <td>EU region (Frankfurt, Germany); the company is based in the United States</td>
           </tr>
           <tr>
             <td>Paddle.com Market Ltd</td>
@@ -188,10 +204,29 @@ export default function PrivacyPage() {
 
       <h2>9. Cookies and local storage</h2>
       <p>
-        We use only strictly necessary cookies and browser local storage to keep you signed in and
-        to operate the Service. We do not use third-party advertising or cross-site tracking
-        cookies.
+        We store only what the Service needs to work, which is why you see no cookie banner. Nothing
+        we store identifies you across visits, and there is no analytics, advertising or cross-site
+        tracking of any kind.
       </p>
+      <ul>
+        <li>
+          <strong>Authentication.</strong> A session cookie and a matching local-storage token that
+          keep you signed in. Clearing them signs you out.
+        </li>
+        <li>
+          <strong>Diagnostics.</strong> A random id (<code>fd.sid</code>) held in your
+          browser&rsquo;s session storage, which groups the error and performance records described
+          in section 3. It is discarded when you close the tab and never links two visits together.
+        </li>
+        <li>
+          <strong>Preferences.</strong> Your light/dark theme choice, stored in your browser.
+        </li>
+        <li>
+          <strong>Payment.</strong> On a paid plan, opening the checkout loads Paddle, which sets
+          its own cookies to process the payment and prevent fraud. This happens only when you click
+          to subscribe or manage your payment method, never on an ordinary page view.
+        </li>
+      </ul>
 
       <h2>10. Children</h2>
       <p>
