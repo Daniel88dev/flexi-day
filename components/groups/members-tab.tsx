@@ -32,7 +32,7 @@ export function MembersTab({ groupId, isAdmin }: { groupId: string; isAdmin: boo
   const groupQuery = useGroup(groupId);
   const group = groupQuery.data;
   const managerUserId = group?.managerUserId;
-  const ownsThisGroup =
+  const billedHere =
     billingQuery.data?.organization != null &&
     group?.organizationId === billingQuery.data.organization.id;
 
@@ -43,7 +43,7 @@ export function MembersTab({ groupId, isAdmin }: { groupId: string; isAdmin: boo
 
   const members = membersQuery.data ?? [];
   const editing = draft !== null;
-  const maxMembers = ownsThisGroup ? billingQuery.data?.entitlements.maxMembersPerGroup : undefined;
+  const maxMembers = billedHere ? billingQuery.data?.entitlements.maxMembersPerGroup : undefined;
 
   async function handleRemove(member: GroupUserListItem) {
     if (!window.confirm(t.groupDetail.removeConfirm(member.user.name))) return;

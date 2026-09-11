@@ -24,11 +24,12 @@ export default function GroupsPage() {
   const joinGroup = useJoinGroup();
   const billingQuery = useSubscription();
 
-  // `useSubscription` describes the viewer's OWN organization. Someone who
-  // only administers a group inside another owner's org gets Free entitlements
-  // and zero usage from it, so the cap UI would be flatly wrong for them — only
-  // show it when the viewer actually owns an organization.
-  const billing = billingQuery.data?.organization ? billingQuery.data : undefined;
+  // A new group always lands in the creator's OWN organization
+  // (`ensureOrganizationForUser` in `POST /api/group`), so the create form's
+  // cap is theirs. A delegate administering someone else's Pro org would
+  // otherwise be shown its roomy limits beside a button that creates a group
+  // in a Free org of their own.
+  const billing = billingQuery.data?.organization?.isOwner ? billingQuery.data : undefined;
   const atGroupCap = billing ? billing.usage.groupsUsed >= billing.entitlements.maxGroups : false;
 
   const [groupName, setGroupName] = useState("");

@@ -921,6 +921,8 @@ export const cs: Dictionary = {
     managePayment: "Spravovat platební metodu",
     confirmingPayment: "Potvrzujeme platbu… obvykle to trvá několik sekund.",
     portalHint: "Změňte kartu, stáhněte faktury nebo zrušte předplatné.",
+    ownerOnlyNotice:
+      "Tuto organizaci spravujete, ale nevlastníte ji. Tarif a využití níže jsou aktuální; předplatné může měnit jen vlastník.",
     slotsDecrease: "Odebrat jeden slot skupiny",
     slotsIncrease: "Přidat jeden slot skupiny",
     openingPortal: "Otevírám…",

@@ -1,7 +1,8 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { screen } from "@testing-library/react";
 import GroupsPage from "../page";
 import { renderWithClient } from "@/lib/test-utils";
+import type { BillingOverview } from "@/lib/api/billing";
 
 const groups = [
   {
@@ -28,14 +29,44 @@ vi.mock("@/lib/auth-client", () => ({
   useSession: () => ({ data: { user: { id: "u-1" } } }),
 }));
 
+let billing: BillingOverview | undefined;
+
+const overviewAs = (isOwner: boolean, groupsUsed = 1): BillingOverview => ({
+  organization: {
+    id: "org-1",
+    name: "Acme",
+    isOwner,
+    billingEmail: isOwner ? "a@b.co" : null,
+    hasPaddleCustomer: false,
+  },
+  subscription: null,
+  entitlements: {
+    plan: "PRO",
+    maxGroups: 5,
+    maxMembersPerGroup: 25,
+    writable: true,
+    graceEndsAt: null,
+  },
+  usage: { groupsUsed, groups: [] },
+  planLimits: {
+    FREE: { groups: 3, membersPerGroup: 10, maxExtraSlots: 0 },
+    PRO: { groups: 5, membersPerGroup: 25, maxExtraSlots: 4 },
+    ENTERPRISE: { groups: 20, membersPerGroup: 100, maxExtraSlots: 20 },
+  },
+});
+
 vi.mock("@/lib/api/queries", () => ({
   useGroups: () => ({ data: groups, isLoading: false, error: null }),
   useCreateGroup: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useJoinGroup: () => ({ mutateAsync: vi.fn(), isPending: false }),
-  useSubscription: () => ({ data: undefined, isLoading: false, error: null }),
+  useSubscription: () => ({ data: billing, isLoading: false, error: null }),
 }));
 
 describe("GroupsPage", () => {
+  beforeEach(() => {
+    billing = undefined;
+  });
+
   it("renders the create and join cards and the group list", () => {
     renderWithClient(<GroupsPage />);
 
@@ -44,5 +75,30 @@ describe("GroupsPage", () => {
     expect(screen.getByRole("link", { name: "Platform" })).toBeInTheDocument();
     expect(screen.getByText("3 members")).toBeInTheDocument();
     expect(screen.getByText("Manager")).toBeInTheDocument();
+  });
+
+  it("shows the owner their own group allowance", () => {
+    billing = overviewAs(true);
+    renderWithClient(<GroupsPage />);
+
+    expect(screen.getByText("1 of 5 groups used")).toBeInTheDocument();
+  });
+
+  it("blocks the owner at their group cap", () => {
+    billing = overviewAs(true, 5);
+    renderWithClient(<GroupsPage />);
+
+    expect(screen.getByRole("link", { name: /Upgrade/ })).toBeInTheDocument();
+  });
+
+  it("applies neither the allowance nor the cap to a delegated admin", () => {
+    // A new group lands in the creator's own organization, so the administered
+    // org's usage says nothing about what they may create here — least of all
+    // that they are out of room.
+    billing = overviewAs(false, 5);
+    renderWithClient(<GroupsPage />);
+
+    expect(screen.queryByText(/groups used/)).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /Upgrade/ })).not.toBeInTheDocument();
   });
 });

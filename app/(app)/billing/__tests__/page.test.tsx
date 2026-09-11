@@ -153,6 +153,7 @@ describe("BillingPage", () => {
     overview.organization = {
       id: "org-1",
       name: "Acme",
+      isOwner: true,
       billingEmail: "a@b.co",
       hasPaddleCustomer: true,
     };
@@ -188,6 +189,63 @@ describe("BillingPage", () => {
     renderWithClient(<BillingPage />);
 
     expect(screen.getByRole("button", { name: "Switch to this plan" })).toBeInTheDocument();
+  });
+
+  describe("a delegated admin", () => {
+    const asDelegateOfPro = () => {
+      overview.organization = {
+        id: "org-1",
+        name: "Acme",
+        isOwner: false,
+        billingEmail: null,
+        hasPaddleCustomer: false,
+      };
+      overview.subscription = {
+        plan: "PRO",
+        status: "active",
+        billingCycle: "YEARLY",
+        extraGroupSlots: 2,
+        currentPeriodEnd: null,
+        graceEndsAt: null,
+        cancelAt: null,
+      };
+      overview.entitlements = {
+        plan: "PRO",
+        maxGroups: 7,
+        maxMembersPerGroup: 25,
+        writable: true,
+        graceEndsAt: null,
+      };
+    };
+
+    it("renders the administered organization's plan and usage", () => {
+      asDelegateOfPro();
+      renderWithClient(<BillingPage />);
+
+      expect(screen.getByText("1 of 7 groups used")).toBeInTheDocument();
+      expect(screen.getAllByText("Pro").length).toBeGreaterThan(0);
+      expect(screen.getByText("Active")).toBeInTheDocument();
+    });
+
+    it("offers no way to buy, switch or resize the plan", () => {
+      asDelegateOfPro();
+      renderWithClient(<BillingPage />);
+
+      expect(screen.getByText(/only the owner can change the subscription/i)).toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: "Subscribe" })).not.toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: "Switch to this plan" })).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole("button", { name: /Manage payment method/ })
+      ).not.toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: "Add one group slot" })).not.toBeInTheDocument();
+    });
+
+    it("still marks which plan the organization is on", () => {
+      asDelegateOfPro();
+      renderWithClient(<BillingPage />);
+
+      expect(screen.getByRole("button", { name: "Current plan" })).toBeDisabled();
+    });
   });
 
   it("shows the grace warning while grace is running", () => {
@@ -284,6 +342,7 @@ describe("BillingPage", () => {
       overview.organization = {
         id: "org-1",
         name: "Acme",
+        isOwner: true,
         billingEmail: "a@b.co",
         hasPaddleCustomer: true,
       };

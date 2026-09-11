@@ -256,8 +256,7 @@ function PlanCard({ detail }: { detail: OrganizationDetail }) {
           </div>
         </div>
 
-        {/* Subscription management stays on the billing screen, which resolves
-            the organization by ownership — so only the owner is sent there. */}
+        {/* The plan is already on this card; the billing screen adds the writes. */}
         {detail.organization.isOwner ? (
           <Button asChild size="sm" variant="outline">
             <Link href="/billing">{t.organization.manageBilling}</Link>
