@@ -57,7 +57,7 @@ const overviewFor = (orgId: string | null, maxMembers: number): BillingOverview 
     writable: true,
     graceEndsAt: null,
   },
-  usage: { groupsUsed: 1, groups: [] },
+  usage: { groupsUsed: 1, activeEmployments: 1, groups: [] },
   planLimits: {
     FREE: { groups: 3, membersPerGroup: maxMembers, maxExtraSlots: 0 },
     PRO: { groups: 5, membersPerGroup: 25, maxExtraSlots: 4 },

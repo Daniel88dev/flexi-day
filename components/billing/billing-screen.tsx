@@ -391,6 +391,15 @@ export function BillingScreen() {
               used={usage.groupsUsed}
               max={entitlements.maxGroups}
             />
+            {/* A count, not a meter: no plan caps headcount, and it is larger
+                than the group meters add up to whenever someone administers
+                the organization without belonging to a group. */}
+            <div className="flex items-baseline justify-between gap-3">
+              <span className="truncate text-sm">{t.billing.people}</span>
+              <span className="text-muted-foreground text-xs tabular-nums">
+                {usage.activeEmployments}
+              </span>
+            </div>
             {usage.groups.map((group) => (
               <UsageMeter
                 key={group.id}

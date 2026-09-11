@@ -921,6 +921,7 @@ export const en = {
     portalFailed: "Could not open the billing portal",
     usageTitle: "Usage",
     groupsUsed: (used: number, max: number) => `${used} of ${max} groups used`,
+    people: "People",
     membersCount: (n: number, max: number) => `${n} / ${max} members`,
     plansTitle: "Plans",
     monthly: "Monthly",
