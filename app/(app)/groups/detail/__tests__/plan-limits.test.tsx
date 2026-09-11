@@ -47,7 +47,7 @@ const makeMember = (userId: string, name: string) => ({
 
 const overviewFor = (orgId: string | null, maxMembers: number): BillingOverview => ({
   organization: orgId
-    ? { id: orgId, name: "Acme", billingEmail: "a@b.co", hasPaddleCustomer: false }
+    ? { id: orgId, name: "Acme", isOwner: true, billingEmail: "a@b.co", hasPaddleCustomer: false }
     : null,
   subscription: null,
   entitlements: {
@@ -118,10 +118,11 @@ describe("GroupDetailPage plan limits", () => {
     expect(screen.queryByText(/member limit/i)).not.toBeInTheDocument();
   });
 
-  it("applies no cap when the group belongs to another owner's organization", () => {
-    // The viewer administers this group but does not own its billing org, so
-    // their own Free entitlements say nothing about it. 2 members against a
-    // cap of 1 would otherwise trip the gate.
+  it("applies no cap when the overview describes a different organization", () => {
+    // The overview carries the one organization the viewer administers. Someone
+    // who administers several sees this group's caps from the backend, not from
+    // another org's entitlements — 2 members against a cap of 1 would otherwise
+    // trip the gate.
     billing = overviewFor("org-OTHER", 1);
 
     renderWithClient(<GroupDetailPage />);
@@ -129,7 +130,19 @@ describe("GroupDetailPage plan limits", () => {
     expect(screen.queryByText(/member limit/i)).not.toBeInTheDocument();
   });
 
-  it("applies no cap when the viewer owns no organization at all", () => {
+  it("applies the cap to a delegated admin of the group's organization", () => {
+    // A delegate's overview resolves to the organization they administer, so
+    // its caps are this group's caps.
+    billing = overviewFor("org-1", 2);
+    billing.organization = { ...billing.organization!, isOwner: false, billingEmail: null };
+
+    renderWithClient(<GroupDetailPage />);
+
+    expect(screen.getByRole("button", { name: "Send invite" })).toBeDisabled();
+    expect(screen.getByText(/at its 2-member limit/i)).toBeInTheDocument();
+  });
+
+  it("applies no cap when the viewer administers no organization at all", () => {
     billing = overviewFor(null, 1);
 
     renderWithClient(<GroupDetailPage />);

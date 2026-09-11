@@ -913,6 +913,8 @@ export const en = {
     managePayment: "Manage payment method",
     confirmingPayment: "Confirming your payment… this usually takes a few seconds.",
     portalHint: "Update your card, download invoices or cancel your plan.",
+    ownerOnlyNotice:
+      "You administer this organization but don't own it. The plan and usage below are live; only the owner can change the subscription.",
     slotsDecrease: "Remove one group slot",
     slotsIncrease: "Add one group slot",
     openingPortal: "Opening…",

@@ -39,16 +39,15 @@ export function InvitesTab({ groupId, isAdmin }: { groupId: string; isAdmin: boo
   const groupQuery = useGroup(groupId);
   const billingQuery = useSubscription();
 
-  // Entitlements come from the viewer's own organization, so they only describe
-  // this group when the viewer owns it. For a group in someone else's org the
-  // caps are theirs, not ours — show nothing and let the backend decide.
+  // Entitlements describe the one organization the viewer administers, so a
+  // group outside it gets no client-side cap — the backend decides.
   const group = groupQuery.data;
-  const ownsThisGroup =
+  const billedHere =
     billingQuery.data?.organization != null &&
     group?.organizationId === billingQuery.data.organization.id;
 
   // Mirrors the backend gate: pending invites reserve their seat.
-  const maxMembers = ownsThisGroup ? billingQuery.data?.entitlements.maxMembersPerGroup : undefined;
+  const maxMembers = billedHere ? billingQuery.data?.entitlements.maxMembersPerGroup : undefined;
   const seatsTaken = (membersQuery.data?.length ?? 0) + (invitesQuery.data?.length ?? 0);
   const atMemberCap = maxMembers !== undefined && seatsTaken >= maxMembers;
 

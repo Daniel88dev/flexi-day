@@ -11,7 +11,13 @@ vi.mock("@/lib/api/queries", () => ({
 }));
 
 const baseOverview = (): BillingOverview => ({
-  organization: { id: "org-1", name: "Acme", billingEmail: "a@b.co", hasPaddleCustomer: true },
+  organization: {
+    id: "org-1",
+    name: "Acme",
+    isOwner: true,
+    billingEmail: "a@b.co",
+    hasPaddleCustomer: true,
+  },
   subscription: null,
   entitlements: {
     plan: "FREE",
@@ -61,5 +67,16 @@ describe("GraceBanner", () => {
     renderWithClient(<GraceBanner />);
 
     expect(screen.getByText(/read-only until you upgrade/i)).toBeInTheDocument();
+  });
+
+  it("warns a delegated admin about the organization they administer", () => {
+    // The banner reads the payload straight through, so widening the overview
+    // to delegates is all it takes — it must not quietly stay owner-only.
+    overview!.organization = { ...overview!.organization!, isOwner: false, billingEmail: null };
+    overview!.entitlements.graceEndsAt = "2026-08-25T12:00:00.000Z";
+
+    renderWithClient(<GraceBanner />);
+
+    expect(screen.getByText(/problem with your subscription/i)).toBeInTheDocument();
   });
 });

@@ -37,10 +37,17 @@ export type PlanLimits = Record<
 >;
 
 export type BillingOverview = {
+  /**
+   * The organization the viewer administers — their own, else the one they
+   * hold a delegate row in. Null when they administer none.
+   */
   organization: {
     id: UUID;
     name: string;
-    billingEmail: string;
+    /** Billing writes are owner-only; a delegate gets the plan, read-only. */
+    isOwner: boolean;
+    /** Null for a delegated admin — the billing address is owner-only. */
+    billingEmail: string | null;
     hasPaddleCustomer: boolean;
   } | null;
   subscription: SubscriptionSummary | null;

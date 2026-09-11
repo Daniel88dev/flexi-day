@@ -51,12 +51,14 @@ function PlanCard({
   overview,
   plan,
   cycle,
+  isOwner,
   onSubscribed,
   onManageBilling,
 }: {
   overview: BillingOverview;
   plan: "FREE" | PaidPlan;
   cycle: BillingCycle;
+  isOwner: boolean;
   onSubscribed: () => void;
   onManageBilling: () => void;
 }) {
@@ -112,6 +114,15 @@ function PlanCard({
     plan !== "FREE" && !hasSubscription ? TRIAL[cycle === "YEARLY" ? "yearly" : "monthly"] : null;
 
   const action = (() => {
+    // A delegated admin reads the plan and buys nothing: checkout would create
+    // an organization of their own and subscribe that one instead.
+    if (!isOwner) {
+      return isCurrent ? (
+        <Button className="w-full" variant="outline" disabled>
+          {t.billing.current}
+        </Button>
+      ) : null;
+    }
     if (isCurrent) {
       return (
         <Button className="w-full" variant="outline" disabled>
@@ -273,6 +284,10 @@ export function BillingScreen() {
   }
 
   const { entitlements, subscription, usage } = overview;
+  // A delegated admin sees the plan they administer but owns none of the
+  // writes — the backend refuses checkout, slots and the portal for them.
+  // True with no organization at all: checkout creates one for the buyer.
+  const isOwner = overview.organization?.isOwner ?? true;
   const dateLocale = t.common.dateLocale;
   const formatDate = (iso: string) =>
     new Date(iso).toLocaleDateString(dateLocale, {
@@ -294,6 +309,10 @@ export function BillingScreen() {
         <h1 className="font-heading text-2xl font-bold">{t.billing.title}</h1>
         <p className="text-muted-foreground mt-1 text-sm">{t.billing.subtitle}</p>
       </div>
+
+      {!isOwner ? (
+        <div className="bg-muted/60 rounded-xl border p-4 text-sm">{t.billing.ownerOnlyNotice}</div>
+      ) : null}
 
       {entitlements.graceEndsAt ? (
         <div
@@ -344,7 +363,7 @@ export function BillingScreen() {
                   : t.billing.renewsOn(formatDate(subscription.currentPeriodEnd))}
               </p>
             ) : null}
-            {overview.organization?.hasPaddleCustomer ? (
+            {isOwner && overview.organization?.hasPaddleCustomer ? (
               <>
                 <Button
                   variant="outline"
@@ -411,6 +430,7 @@ export function BillingScreen() {
               overview={overview}
               plan={plan}
               cycle={cycle}
+              isOwner={isOwner}
               onSubscribed={refetchSubscription}
               onManageBilling={handlePortal}
             />
@@ -431,7 +451,7 @@ export function BillingScreen() {
           {subscription?.status === "trialing" ? (
             <p className="text-muted-foreground text-sm">{t.billing.slotsTrialNote}</p>
           ) : null}
-          {canModify && subscription?.plan ? (
+          {isOwner && canModify && subscription?.plan ? (
             <div className="flex flex-wrap items-center gap-3">
               <div className="flex items-center gap-2">
                 <Button
