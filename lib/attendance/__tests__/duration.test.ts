@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatMinutes, parseMinutes } from "../duration";
+import { formatMinutes, formatSignedMinutes, parseMinutes } from "../duration";
 
 describe("formatMinutes", () => {
   it("renders minutes as h:mm with a padded minute", () => {
@@ -47,5 +47,18 @@ describe("parseMinutes", () => {
     expect(parseMinutes("24:00")).toBe(1440);
     expect(parseMinutes("24:01")).toBeNull();
     expect(parseMinutes("25:00")).toBeNull();
+  });
+});
+
+describe("formatSignedMinutes", () => {
+  it("signs a balance in both directions", () => {
+    expect(formatSignedMinutes(11)).toBe("+0:11");
+    expect(formatSignedMinutes(-25)).toBe("-0:25");
+    expect(formatSignedMinutes(-505)).toBe("-8:25");
+  });
+
+  it("leaves a balance of nothing unsigned", () => {
+    expect(formatSignedMinutes(0)).toBe("0:00");
+    expect(formatSignedMinutes(Number.NaN)).toBe("0:00");
   });
 });

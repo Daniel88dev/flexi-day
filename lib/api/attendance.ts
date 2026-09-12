@@ -134,3 +134,67 @@ export const updateSessionLocation = (sessionId: string, fix: AttendanceLocation
       body: fix,
     }
   );
+
+/** One business date of a month: the figures, and the sessions behind them. */
+export type AttendanceDay = {
+  businessDate: string;
+  presenceMinutes: number;
+  breaksMinutes: number;
+  deductedMinutes: number;
+  workedMinutes: number;
+  requiredMinutes: number;
+  /** Null on a date still to come, and throughout `MONTHLY` mode. */
+  balanceMinutes: number | null;
+  upcoming: boolean;
+  open: boolean;
+  autoClosed: boolean;
+  /** Auto-closed, or still open on a day that has passed — the day to look at. */
+  flagged: boolean;
+  sessions: AttendanceSession[];
+};
+
+export type AttendanceTotals = {
+  presenceMinutes: number;
+  workedMinutes: number;
+  /** Over the dates already begun, which is what the balance is measured against. */
+  requiredMinutes: number;
+  /** Over the whole month, upcoming dates included. */
+  requiredRangeMinutes: number;
+  balanceMinutes: number;
+  flaggedDays: number;
+};
+
+export type AttendanceBalanceMode = "DAILY" | "MONTHLY";
+
+/**
+ * A month of the caller's own attendance. The rules travel with it — the screen
+ * prints "of 8:00" and colours against the balance mode, and an employee can
+ * read neither anywhere else.
+ */
+export type AttendanceMonth = {
+  organizationId: UUID;
+  employmentId: UUID;
+  timezone: string | null;
+  /** Today in that zone, so the screen knows which day is live. */
+  businessDate: string | null;
+  year: number;
+  month: number;
+  balanceMode: AttendanceBalanceMode;
+  /** What the days were measured against: the override where there is one. */
+  requiredMinutesPerDay: number;
+  requiredMinutesOverride: number | null;
+  breakMinutes: number;
+  breakThresholdMinutes: number;
+  days: AttendanceDay[];
+  totals: AttendanceTotals;
+};
+
+export function getAttendanceMonth(
+  year: number,
+  month: number,
+  organizationId?: string | null
+): Promise<AttendanceMonth> {
+  const params = new URLSearchParams({ year: String(year), month: String(month) });
+  if (organizationId) params.set("organizationId", organizationId);
+  return api<AttendanceMonth>(`/api/attendance/month?${params.toString()}`);
+}

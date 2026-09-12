@@ -32,11 +32,13 @@ import {
   clockIn,
   clockOut,
   endBreak,
+  getAttendanceMonth,
   getAttendanceState,
   startBreak,
   type AttendanceSession,
   type AttendanceSessionEnd,
 } from "./attendance";
+import { listEmployments, updateEmploymentRequiredMinutes } from "./employment";
 import { captureSessionLocation } from "@/lib/attendance/geolocation";
 import {
   addOrganizationAdmin,
@@ -164,6 +166,10 @@ export const qk = {
     ["attendance-settings", organizationId ?? "own"] as const,
   attendanceState: (organizationId?: string | null) =>
     ["attendance-state", organizationId ?? "own"] as const,
+  attendanceMonth: (year: number, month: number, organizationId?: string | null) =>
+    ["attendance-month", year, month, organizationId ?? "own"] as const,
+  employments: (organizationId?: string | null) =>
+    ["employments", organizationId ?? "own"] as const,
   // Hashed: query keys reach Sentry on failures and this one is free text.
   supportOrganizations: (query: string) =>
     ["support-organizations", opaqueSearchKey(query)] as const,
@@ -820,6 +826,59 @@ export const useClockIn = (organizationId?: string | null, locationEnabled = fal
 
 export const useClockOut = (organizationId?: string | null, locationEnabled = false) =>
   useAttendanceWrite(() => clockOut(organizationId), locationAfter("OUT", locationEnabled));
+
+/**
+ * One month of the caller's own attendance. The week view asks for the month or
+ * two its days fall in rather than a range of its own, so a week that straddles
+ * a month boundary is two cached entries and neither is refetched when the
+ * other moves.
+ *
+ * A running session ages, so this is refetched on focus like the clock's read —
+ * the current month's last day is the one on the screen most of the time.
+ */
+export function useAttendanceMonth(
+  year: number,
+  month: number,
+  organizationId?: string | null,
+  enabled = true
+) {
+  return useQuery({
+    queryKey: qk.attendanceMonth(year, month, organizationId),
+    queryFn: () => getAttendanceMonth(year, month, organizationId),
+    refetchOnWindowFocus: true,
+    enabled,
+  });
+}
+
+/** Org-admin only, like the roster it lists; skipped for anyone else. */
+export function useEmployments(organizationId: string | null, enabled = true) {
+  return useQuery({
+    queryKey: qk.employments(organizationId),
+    queryFn: () => listEmployments(organizationId!),
+    enabled: !!organizationId && enabled,
+  });
+}
+
+/**
+ * The per-person required-time override. Every month already cached was
+ * measured against the old figure, so they all go rather than the roster alone.
+ */
+export function useUpdateEmploymentRequiredMinutes(organizationId?: string | null) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      employmentId,
+      requiredMinutesPerDay,
+    }: {
+      employmentId: string;
+      requiredMinutesPerDay: number | null;
+    }) => updateEmploymentRequiredMinutes(employmentId, requiredMinutesPerDay),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: qk.employments(organizationId) });
+      qc.invalidateQueries({ queryKey: ["attendance-month"] });
+    },
+  });
+}
 
 export const useStartBreak = (organizationId?: string | null) =>
   useAttendanceWrite(() => startBreak(organizationId));

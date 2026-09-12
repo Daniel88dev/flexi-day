@@ -1,14 +1,25 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { screen } from "@testing-library/react";
 import { NO_SESSION_LOCATION, renderWithClient } from "@/lib/test-utils";
-import type { AttendanceState } from "@/lib/api/attendance";
+import userEvent from "@testing-library/user-event";
+import type { AttendanceMonth, AttendanceState } from "@/lib/api/attendance";
 import { MyAttendanceScreen } from "../my-attendance-screen";
 
 const query = { data: undefined as AttendanceState | undefined, isPending: false };
 const idle = { mutate: vi.fn(), isPending: false, error: null };
 
+/** Every month asked for, keyed the way the screen asks for it. */
+const months = new Map<string, AttendanceMonth>();
+const monthRequests: string[] = [];
+
 vi.mock("@/lib/api/queries", () => ({
   useAttendanceState: () => query,
+  useAttendanceMonth: (year: number, month: number, _organizationId: string, enabled = true) => {
+    const key = `${year}-${month}`;
+    if (enabled) monthRequests.push(key);
+    const data = enabled ? months.get(key) : undefined;
+    return { data, isPending: enabled && !data };
+  },
   useClockIn: () => idle,
   useClockOut: () => idle,
   useStartBreak: () => idle,
@@ -38,6 +49,8 @@ describe("MyAttendanceScreen", () => {
   beforeEach(() => {
     query.data = state();
     query.isPending = false;
+    months.clear();
+    monthRequests.length = 0;
   });
 
   it("carries the clock beside today, and says when nothing is recorded", () => {
@@ -215,6 +228,103 @@ describe("MyAttendanceScreen", () => {
       const flag = screen.getByText("Auto-closed");
       expect(flag.closest("li")).toHaveTextContent("12:00 – 14:00");
       expect(screen.queryByText("Break")).toBeInTheDocument();
+    });
+  });
+
+  describe("the week and the month", () => {
+    const month = (year: number, index: number): AttendanceMonth => ({
+      organizationId: "org-1",
+      employmentId: "emp-1",
+      timezone: ZONE,
+      businessDate: "2026-09-11",
+      year,
+      month: index,
+      balanceMode: "DAILY",
+      requiredMinutesPerDay: 480,
+      requiredMinutesOverride: null,
+      breakMinutes: 30,
+      breakThresholdMinutes: 360,
+      days: [
+        {
+          businessDate: "2026-09-07",
+          presenceMinutes: 510,
+          breaksMinutes: 20,
+          deductedMinutes: 30,
+          workedMinutes: 480,
+          requiredMinutes: 480,
+          balanceMinutes: 0,
+          upcoming: false,
+          open: false,
+          autoClosed: false,
+          flagged: false,
+          sessions: [],
+        },
+      ],
+      totals: {
+        presenceMinutes: 510,
+        workedMinutes: 480,
+        requiredMinutes: 480,
+        requiredRangeMinutes: 14400,
+        balanceMinutes: 0,
+        flaggedDays: 0,
+      },
+    });
+
+    it("switches to the week the organization's today falls in", async () => {
+      months.set("2026-9", month(2026, 9));
+      renderWithClient(<MyAttendanceScreen />);
+
+      await userEvent.click(screen.getByRole("tab", { name: "Week" }));
+
+      expect(screen.getByText("September 7 – 13")).toBeInTheDocument();
+      expect(screen.getByTestId("week-day-2026-09-07")).toBeInTheDocument();
+      expect(monthRequests).toContain("2026-9");
+    });
+
+    it("asks for both months of a week that straddles them", async () => {
+      months.set("2026-9", month(2026, 9));
+      renderWithClient(<MyAttendanceScreen />);
+
+      await userEvent.click(screen.getByRole("tab", { name: "Week" }));
+      await userEvent.click(screen.getByRole("button", { name: "Previous" }));
+      await userEvent.click(screen.getByRole("button", { name: "Previous" }));
+
+      // 24 – 30 August 2026 is the week before last, and the one before that
+      // opens on 31 August and ends on 6 September.
+      expect(screen.getByText("August 24 – 30")).toBeInTheDocument();
+      expect(monthRequests).toContain("2026-8");
+    });
+
+    it("refuses to render half a week that straddles two months", async () => {
+      // Only September answers; the week of 31 August needs August too.
+      months.set("2026-9", month(2026, 9));
+      renderWithClient(<MyAttendanceScreen />);
+
+      await userEvent.click(screen.getByRole("tab", { name: "Week" }));
+      await userEvent.click(screen.getByRole("button", { name: "Previous" }));
+
+      expect(screen.getByText("August 31 – September 6")).toBeInTheDocument();
+      expect(screen.queryByTestId("week-day-2026-09-01")).toBeNull();
+    });
+
+    it("switches to the month and steps back through it", async () => {
+      months.set("2026-9", month(2026, 9));
+      months.set("2026-8", month(2026, 8));
+      renderWithClient(<MyAttendanceScreen />);
+
+      await userEvent.click(screen.getByRole("tab", { name: "Month" }));
+      expect(screen.getByText("September 2026")).toBeInTheDocument();
+      expect(screen.getByText("Required so far")).toBeInTheDocument();
+
+      await userEvent.click(screen.getByRole("button", { name: "Previous" }));
+      expect(screen.getByText("August 2026")).toBeInTheDocument();
+      expect(monthRequests).toContain("2026-8");
+    });
+
+    it("keeps the range stepper off the day the clock is on", () => {
+      renderWithClient(<MyAttendanceScreen />);
+
+      expect(screen.queryByRole("button", { name: "Previous" })).toBeNull();
     });
   });
 });
