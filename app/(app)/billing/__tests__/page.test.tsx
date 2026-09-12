@@ -26,7 +26,11 @@ const baseOverview = (): BillingOverview => ({
     writable: true,
     graceEndsAt: null,
   },
-  usage: { groupsUsed: 1, groups: [{ id: "g-1", groupName: "Platform", members: 4 }] },
+  usage: {
+    groupsUsed: 1,
+    activeEmployments: 5,
+    groups: [{ id: "g-1", groupName: "Platform", members: 4 }],
+  },
   planLimits: {
     FREE: { groups: 3, membersPerGroup: 10, maxExtraSlots: 0 },
     PRO: { groups: 5, membersPerGroup: 25, maxExtraSlots: 4 },
@@ -86,6 +90,16 @@ describe("BillingPage", () => {
     expect(screen.getByText("Platform")).toBeInTheDocument();
     // Appears as the card title and as the Free tier's disabled button.
     expect(screen.getAllByText("Current plan").length).toBeGreaterThan(0);
+  });
+
+  it("shows the headcount beside the group meters", () => {
+    // Five people against four members of the one group: the difference is the
+    // people who administer the organization without belonging to a group, and
+    // it is why this is a bare count rather than a meter.
+    renderWithClient(<BillingPage />);
+
+    const people = screen.getByText("People");
+    expect(people.parentElement).toHaveTextContent("5");
   });
 
   it("lists attachments on the paid plan cards only", () => {

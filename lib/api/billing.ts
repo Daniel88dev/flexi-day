@@ -52,7 +52,15 @@ export type BillingOverview = {
   } | null;
   subscription: SubscriptionSummary | null;
   entitlements: Entitlements;
-  usage: { groupsUsed: number; groups: GroupUsage[] };
+  usage: {
+    groupsUsed: number;
+    /**
+     * Headcount, not seats: everyone currently employed by the organization,
+     * including the people who belong to no group. No plan caps it.
+     */
+    activeEmployments: number;
+    groups: GroupUsage[];
+  };
   planLimits: PlanLimits;
 };
 

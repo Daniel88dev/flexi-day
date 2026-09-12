@@ -47,7 +47,7 @@ const overviewAs = (isOwner: boolean, groupsUsed = 1): BillingOverview => ({
     writable: true,
     graceEndsAt: null,
   },
-  usage: { groupsUsed, groups: [] },
+  usage: { groupsUsed, activeEmployments: 1, groups: [] },
   planLimits: {
     FREE: { groups: 3, membersPerGroup: 10, maxExtraSlots: 0 },
     PRO: { groups: 5, membersPerGroup: 25, maxExtraSlots: 4 },

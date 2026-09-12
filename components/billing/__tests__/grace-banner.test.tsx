@@ -26,7 +26,7 @@ const baseOverview = (): BillingOverview => ({
     writable: true,
     graceEndsAt: null,
   },
-  usage: { groupsUsed: 0, groups: [] },
+  usage: { groupsUsed: 0, activeEmployments: 0, groups: [] },
   planLimits: {
     FREE: { groups: 3, membersPerGroup: 10, maxExtraSlots: 0 },
     PRO: { groups: 5, membersPerGroup: 25, maxExtraSlots: 4 },

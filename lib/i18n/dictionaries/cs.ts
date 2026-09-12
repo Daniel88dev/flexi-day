@@ -940,6 +940,7 @@ export const cs: Dictionary = {
     portalFailed: "Fakturační portál se nepodařilo otevřít",
     usageTitle: "Využití",
     groupsUsed: (used: number, max: number) => `Využito ${used} z ${max} skupin`,
+    people: "Lidé",
     membersCount: (n: number, max: number) => `${n} / ${max} členů`,
     plansTitle: "Tarify",
     monthly: "Měsíčně",
