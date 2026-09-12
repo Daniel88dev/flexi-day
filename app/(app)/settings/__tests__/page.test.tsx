@@ -14,6 +14,7 @@ const DEFAULT_SETTINGS: UserSettings = {
   emailNotifications: true,
   dashboardScope: "MINE",
   dashboardGroupId: null,
+  attendanceLocationNoticeDismissed: false,
 };
 
 let settings: UserSettings | undefined = DEFAULT_SETTINGS;

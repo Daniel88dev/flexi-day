@@ -483,6 +483,8 @@ export type UserSettings = {
   emailNotifications: boolean;
   dashboardScope: DashboardScope;
   dashboardGroupId: UUID | null;
+  /** The clock's one-time location notice. Dismissed once and never shown again. */
+  attendanceLocationNoticeDismissed: boolean;
 };
 
 /** The settings screen saves one card at a time; the API merges the patch. */

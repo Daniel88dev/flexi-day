@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, screen } from "@testing-library/react";
-import { renderWithClient } from "@/lib/test-utils";
+import { NO_SESSION_LOCATION, renderWithClient } from "@/lib/test-utils";
 import { ApiError } from "@/lib/api/client";
 import type { AttendanceBreak, AttendanceSession, AttendanceState } from "@/lib/api/attendance";
 import { ClockWidget } from "../clock-widget";
@@ -12,12 +12,28 @@ const endBreak = { mutate: vi.fn(), isPending: false, error: null as unknown };
 
 const query = { data: undefined as AttendanceState | undefined, isPending: false };
 
+const mySettings = {
+  data: undefined as { attendanceLocationNoticeDismissed: boolean } | undefined,
+};
+const updateSettings = { mutate: vi.fn(), isPending: false };
+
+const clockInArgs = vi.fn();
+const clockOutArgs = vi.fn();
+
 vi.mock("@/lib/api/queries", () => ({
   useAttendanceState: () => query,
-  useClockIn: () => clockIn,
-  useClockOut: () => clockOut,
+  useClockIn: (...args: unknown[]) => {
+    clockInArgs(...args);
+    return clockIn;
+  },
+  useClockOut: (...args: unknown[]) => {
+    clockOutArgs(...args);
+    return clockOut;
+  },
   useStartBreak: () => startBreak,
   useEndBreak: () => endBreak,
+  useMySettings: () => mySettings,
+  useUpdateMySettings: () => updateSettings,
 }));
 
 const ZONE = "Europe/Prague";
@@ -30,6 +46,7 @@ const openSession = (startedAt = "2026-09-11T06:42:00Z", breaks: AttendanceBreak
     endedAt: null,
     timezone: ZONE,
     closedBy: null,
+    ...NO_SESSION_LOCATION,
     open: true,
     breaks,
   }) satisfies AttendanceSession;
@@ -67,6 +84,8 @@ describe("ClockWidget", () => {
     }
     query.data = state();
     query.isPending = false;
+    mySettings.data = { attendanceLocationNoticeDismissed: false };
+    updateSettings.isPending = false;
   });
 
   it("offers only Clock in while the person is out", () => {
@@ -185,6 +204,7 @@ describe("ClockWidget", () => {
           endedAt: "2026-09-11T10:00:00Z",
           open: false,
           closedBy: "USER",
+          ...NO_SESSION_LOCATION,
           breaks: [
             {
               id: "break-1",
@@ -224,5 +244,79 @@ describe("ClockWidget", () => {
     renderWithClient(<ClockWidget showAttendanceLink={false} />);
 
     expect(screen.queryByRole("link", { name: "View my attendance" })).toBeNull();
+  });
+  describe("the location notice", () => {
+    const NOTICE = "This organization records where you clock";
+
+    it("stays away while the organization does not record location", () => {
+      renderWithClient(<ClockWidget />);
+
+      expect(screen.queryByText(NOTICE)).toBeNull();
+    });
+
+    it("shows once where the organization does", () => {
+      query.data = state({ locationEnabled: true });
+      renderWithClient(<ClockWidget />);
+
+      expect(screen.getByText(NOTICE)).toBeInTheDocument();
+      expect(screen.getByRole("link", { name: "Read the privacy policy" })).toHaveAttribute(
+        "href",
+        "/privacy"
+      );
+    });
+
+    it("stays away once it has been dismissed", () => {
+      query.data = state({ locationEnabled: true });
+      mySettings.data = { attendanceLocationNoticeDismissed: true };
+      renderWithClient(<ClockWidget />);
+
+      expect(screen.queryByText(NOTICE)).toBeNull();
+    });
+
+    it("waits for the settings read rather than flashing up", () => {
+      query.data = state({ locationEnabled: true });
+      mySettings.data = undefined;
+      renderWithClient(<ClockWidget />);
+
+      expect(screen.queryByText(NOTICE)).toBeNull();
+    });
+
+    it("saves the dismissal so it never comes back", () => {
+      query.data = state({ locationEnabled: true });
+      renderWithClient(<ClockWidget />);
+
+      fireEvent.click(screen.getByRole("button", { name: "Got it" }));
+
+      expect(updateSettings.mutate).toHaveBeenCalledWith({
+        attendanceLocationNoticeDismissed: true,
+      });
+    });
+
+    it("hands the organization's switch to the clock writes, which own the browser prompt", () => {
+      query.data = state({ locationEnabled: true });
+      renderWithClient(<ClockWidget />);
+
+      expect(clockInArgs).toHaveBeenCalledWith("org-1", true);
+      expect(clockOutArgs).toHaveBeenCalledWith("org-1", true);
+    });
+
+    it("hands them false where location is off, so the browser is never asked", () => {
+      renderWithClient(<ClockWidget />);
+
+      expect(clockInArgs).toHaveBeenCalledWith("org-1", false);
+      expect(clockOutArgs).toHaveBeenCalledWith("org-1", false);
+    });
+
+    it("says nothing when the person declines the browser's prompt", () => {
+      // A refusal never reaches the mutation: the capture swallows it, so the
+      // widget stays on a plain successful clock-in. With the one-time notice
+      // already dismissed, no notice is left standing at all.
+      query.data = state({ locationEnabled: true, openSession: openSession() });
+      mySettings.data = { attendanceLocationNoticeDismissed: true };
+      renderWithClient(<ClockWidget />);
+
+      expect(screen.getByText("Clocked in")).toBeInTheDocument();
+      expect(screen.queryAllByRole("status")).toHaveLength(0);
+    });
   });
 });

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Clock, Coffee, Lock, LogIn, LogOut, Play, Timer } from "lucide-react";
+import { Clock, Coffee, Lock, LogIn, LogOut, MapPin, Play, Timer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ApiError } from "@/lib/api/client";
 import type { AttendanceConflictContext } from "@/lib/api/attendance";
@@ -10,7 +10,9 @@ import {
   useClockIn,
   useClockOut,
   useEndBreak,
+  useMySettings,
   useStartBreak,
+  useUpdateMySettings,
 } from "@/lib/api/queries";
 import { formatMinutes } from "@/lib/attendance/duration";
 import {
@@ -76,6 +78,41 @@ function Notice({
 }
 
 /**
+ * Told once, then never again. The employer's decision to record location is
+ * not something an employee can act on here, so the notice carries no choice
+ * beyond acknowledging it — the browser's own prompt is where consent lives.
+ *
+ * It waits for the settings read rather than assuming undismissed, so it does
+ * not flash up for somebody who put it away months ago.
+ */
+function LocationNotice() {
+  const { t } = useTranslation();
+  const settings = useMySettings();
+  const dismiss = useUpdateMySettings();
+
+  if (!settings.data || settings.data.attendanceLocationNoticeDismissed) return null;
+
+  return (
+    <Notice icon={<MapPin />} title={t.clock.locationNoticeTitle}>
+      <p style={{ color: "var(--text-muted)" }}>
+        {t.clock.locationNoticeBody}{" "}
+        <Link href="/privacy" className="underline">
+          {t.clock.locationNoticePrivacy}
+        </Link>
+      </p>
+      <Button
+        size="sm"
+        variant="outline"
+        disabled={dismiss.isPending}
+        onClick={() => dismiss.mutate({ attendanceLocationNoticeDismissed: true })}
+      >
+        {t.clock.locationNoticeDismiss}
+      </Button>
+    </Notice>
+  );
+}
+
+/**
  * The one clock, in both its homes: the bottom sheet the phone's centre action
  * opens, and the card at the top of My attendance. The big button is always the
  * one thing to do next, and notices stack above it without replacing it —
@@ -93,12 +130,14 @@ export function ClockWidget({
   const query = useAttendanceState();
   const organizationId = query.data?.organizationId ?? null;
 
-  const clockIn = useClockIn(organizationId);
-  const clockOut = useClockOut(organizationId);
+  const state = query.data;
+  const locationEnabled = state?.locationEnabled ?? false;
+
+  const clockIn = useClockIn(organizationId, locationEnabled);
+  const clockOut = useClockOut(organizationId, locationEnabled);
   const startBreak = useStartBreak(organizationId);
   const endBreak = useEndBreak(organizationId);
 
-  const state = query.data;
   const status = state ? clockStateOf(state) : null;
   const now = useNow(status === "in" || status === "break");
 
@@ -174,6 +213,8 @@ export function ClockWidget({
 
   return (
     <div className="flex flex-col gap-4" data-clock-state={status}>
+      {locationEnabled ? <LocationNotice /> : null}
+
       {openStartedAt ? (
         <Notice
           tone="warn"

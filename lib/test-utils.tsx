@@ -18,3 +18,16 @@ export function withClient(children: ReactNode) {
   });
   return <QueryClientProvider client={client}>{children}</QueryClientProvider>;
 }
+
+/**
+ * The six location columns, all empty — what a session looks like in an
+ * organization that does not record location, which is most of them.
+ */
+export const NO_SESSION_LOCATION = {
+  startLatitude: null,
+  startLongitude: null,
+  startAccuracy: null,
+  endLatitude: null,
+  endLongitude: null,
+  endAccuracy: null,
+} as const;

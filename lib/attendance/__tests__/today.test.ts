@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { AttendanceBreak, AttendanceSession } from "@/lib/api/attendance";
+import { NO_SESSION_LOCATION } from "@/lib/test-utils";
 import {
   breaksMinutes,
   buildTimeline,
@@ -33,6 +34,7 @@ const aSession = (
   endedAt,
   timezone: ZONE,
   closedBy: endedAt ? "USER" : null,
+  ...NO_SESSION_LOCATION,
   open: endedAt === null,
   breaks,
 });

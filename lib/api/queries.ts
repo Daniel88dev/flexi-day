@@ -28,7 +28,16 @@ import {
   updateAttendanceSettings,
   type UpdateAttendanceSettingsInput,
 } from "./attendance-settings";
-import { clockIn, clockOut, endBreak, getAttendanceState, startBreak } from "./attendance";
+import {
+  clockIn,
+  clockOut,
+  endBreak,
+  getAttendanceState,
+  startBreak,
+  type AttendanceSession,
+  type AttendanceSessionEnd,
+} from "./attendance";
+import { captureSessionLocation } from "@/lib/attendance/geolocation";
 import {
   addOrganizationAdmin,
   getOrganization,
@@ -769,26 +778,48 @@ export function useAttendanceState(organizationId?: string | null) {
  * the cache and risking a widget that disagrees with the server about whether
  * a break is running.
  */
-function useAttendanceWrite<T>(mutationFn: () => Promise<T>) {
+function useAttendanceWrite<T>(
+  mutationFn: () => Promise<T>,
+  afterSuccess?: (result: T, refresh: () => void) => void
+) {
   const qc = useQueryClient();
   // The whole prefix, not one key: the widget reads its state unscoped and
   // writes with the organization that read named, so an exact key would
   // invalidate an entry nothing is subscribed to and leave the clock stale.
-  const refresh = () => qc.invalidateQueries({ queryKey: ["attendance-state"] });
+  const refresh = () => void qc.invalidateQueries({ queryKey: ["attendance-state"] });
   return useMutation({
     mutationFn,
-    onSuccess: refresh,
+    onSuccess: (result) => {
+      afterSuccess?.(result, refresh);
+      refresh();
+    },
     // A 409 means the widget was acting on a stale answer; the refetch is what
     // puts the right button back in front of the person.
     onError: refresh,
   });
 }
 
-export const useClockIn = (organizationId?: string | null) =>
-  useAttendanceWrite(() => clockIn(organizationId));
+/**
+ * The clock-in and clock-out hooks take `locationEnabled` from the state read
+ * rather than deciding for themselves, because a browser that is never asked is
+ * the whole point of the organization's switch.
+ *
+ * The capture is fired and forgotten — it settles tens of seconds after the
+ * mutation has, and nothing it can do is the person's problem — but the day
+ * view is refetched once it is over, or the coordinates would sit in the
+ * database until the next thing happened to invalidate the read.
+ */
+const locationAfter = (end: AttendanceSessionEnd, locationEnabled: boolean) =>
+  locationEnabled
+    ? (session: AttendanceSession, refresh: () => void) =>
+        void captureSessionLocation(session.id, end).then(refresh)
+    : undefined;
 
-export const useClockOut = (organizationId?: string | null) =>
-  useAttendanceWrite(() => clockOut(organizationId));
+export const useClockIn = (organizationId?: string | null, locationEnabled = false) =>
+  useAttendanceWrite(() => clockIn(organizationId), locationAfter("IN", locationEnabled));
+
+export const useClockOut = (organizationId?: string | null, locationEnabled = false) =>
+  useAttendanceWrite(() => clockOut(organizationId), locationAfter("OUT", locationEnabled));
 
 export const useStartBreak = (organizationId?: string | null) =>
   useAttendanceWrite(() => startBreak(organizationId));

@@ -22,7 +22,34 @@ export type AttendanceSession = {
   timezone: string;
   closedBy: AttendanceClosedBy | null;
   open: boolean;
+  /** Null covers declined, never asked and erased alike; the UI must not tell them apart. */
+  startLatitude: number | null;
+  startLongitude: number | null;
+  startAccuracy: number | null;
+  endLatitude: number | null;
+  endLongitude: number | null;
+  endAccuracy: number | null;
   breaks: AttendanceBreak[];
+};
+
+/** Which clock a fix belongs to. */
+export type AttendanceSessionEnd = "IN" | "OUT";
+
+export type AttendanceLocationFix = {
+  end: AttendanceSessionEnd;
+  latitude: number;
+  longitude: number;
+  /** The browser's radius in metres; smaller is better, and only better wins. */
+  accuracy: number;
+};
+
+export type AttendanceLocationResult = {
+  /** False whenever the fix was late, no sharper, or simply not wanted. Never an error. */
+  applied: boolean;
+  end: AttendanceSessionEnd;
+  latitude: number | null;
+  longitude: number | null;
+  accuracy: number | null;
 };
 
 export type AttendanceState = {
@@ -84,3 +111,17 @@ export const startBreak = (organizationId?: string | null) =>
 
 export const endBreak = (organizationId?: string | null) =>
   write<AttendanceBreak>("break/end", organizationId);
+
+/**
+ * Attaches one fix to one end of a session. The backend drops anything late or
+ * no sharper than what it holds, answering 200 with `applied: false`, so the
+ * caller has nothing to decide.
+ */
+export const updateSessionLocation = (sessionId: string, fix: AttendanceLocationFix) =>
+  api<AttendanceLocationResult>(
+    `/api/attendance/sessions/${encodeURIComponent(sessionId)}/location`,
+    {
+      method: "POST",
+      body: fix,
+    }
+  );
