@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { cn } from "@/lib/utils";
+import { cn, initials } from "@/lib/utils";
 
 describe("cn", () => {
   it("returns a single class unchanged", () => {
@@ -26,5 +26,22 @@ describe("cn", () => {
 
   it("returns an empty string when given no truthy arguments", () => {
     expect(cn(false, undefined)).toBe("");
+  });
+});
+
+describe("initials", () => {
+  it("takes the first letter of the first two words, upper-cased", () => {
+    expect(initials("dana holt")).toBe("DH");
+    expect(initials("Dana Holt Jr")).toBe("DH");
+  });
+
+  it("handles a single name and stray spaces", () => {
+    expect(initials("Dana")).toBe("D");
+    expect(initials("  Dana  Holt")).toBe("DH");
+  });
+
+  it("returns a placeholder without a name", () => {
+    expect(initials(null)).toBe("?");
+    expect(initials("")).toBe("?");
   });
 });

@@ -108,6 +108,17 @@ export const en = {
     groups: "Groups",
     calendarSync: "Calendar sync",
     support: "Support",
+    organization: "Organization",
+    billing: "Billing",
+    settings: "Settings",
+    more: "More",
+    collapse: "Collapse sidebar",
+    expand: "Expand sidebar",
+    sections: {
+      timeOff: "Time off",
+      attendance: "Attendance",
+      organization: "Organization",
+    },
   },
 
   report: {

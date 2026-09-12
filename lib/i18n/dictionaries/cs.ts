@@ -110,6 +110,17 @@ export const cs: Dictionary = {
     groups: "Skupiny",
     calendarSync: "Synchronizace kalendáře",
     support: "Podpora",
+    organization: "Organizace",
+    billing: "Fakturace",
+    settings: "Nastavení",
+    more: "Více",
+    collapse: "Sbalit postranní panel",
+    expand: "Rozbalit postranní panel",
+    sections: {
+      timeOff: "Volno",
+      attendance: "Docházka",
+      organization: "Organizace",
+    },
   },
 
   report: {
