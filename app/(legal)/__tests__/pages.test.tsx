@@ -53,6 +53,14 @@ describe("Legal pages", () => {
     ).toBeInTheDocument();
   });
 
+  it("Terms page leaves the controller role with us, as the Privacy Policy claims it", () => {
+    const { container } = render(<TermsPage />);
+    // The Privacy Policy names flexiday the controller for everything it covers,
+    // attendance location included. A clause here calling the customer one would
+    // put the two published pages in direct conflict.
+    expect(container.textContent).not.toMatch(/data controller/i);
+  });
+
   it("Terms page renders its heading", () => {
     render(<TermsPage />);
     expect(screen.getByRole("heading", { level: 1, name: "Terms of Service" })).toBeInTheDocument();

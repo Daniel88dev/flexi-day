@@ -73,15 +73,13 @@ export default function TermsPage() {
 
       <h2>7. Attendance and employee location</h2>
       <p>
-        Where you switch on attendance, and in particular where you switch on location recording,
-        you act as the data controller for your employees&rsquo; attendance records. It is your
+        Attendance, and in particular location recording, is switched on by you. It is your
         responsibility to inform the people in your organisation that their location is recorded at
         clock-in and clock-out, to obtain whatever agreement or consultation your local employment
         and data-protection law requires before you switch it on, and to keep that agreement in
         place for as long as the setting stays on. {LEGAL.product} records nothing about that
         agreement and cannot verify it. We provide the setting, the notice your employees see in the
-        app, and the retention described in our <a href="/privacy">Privacy Policy</a>; the lawful
-        basis for recording your employees&rsquo; location is yours.
+        app, and the retention described in our <a href="/privacy">Privacy Policy</a>.
       </p>
 
       <h2>8. Availability</h2>
