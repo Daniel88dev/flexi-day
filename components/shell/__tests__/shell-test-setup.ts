@@ -8,6 +8,7 @@ const member: ViewerRoles = {
   isGroupAdmin: false,
   administeredGroups: [],
   plan: null,
+  attendanceActive: false,
 };
 
 export const roles = {

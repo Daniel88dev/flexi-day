@@ -55,6 +55,16 @@ export default function PrivacyPage() {
           <strong>Support communications</strong> — the content of emails you send us.
         </li>
         <li>
+          <strong>Attendance location</strong> — where your employer has switched attendance
+          location on, we store the latitude, longitude and accuracy your browser reports at the
+          moment you clock in and at the moment you clock out. Nothing is recorded between those two
+          instants and nothing is collected in the background: your browser asks your permission
+          each time, and declining is neither recorded nor flagged. The coordinates are visible to
+          you and to the administrators of your organisation or group; nobody else can see them. We
+          erase them twelve months after the business date they belong to — the attendance record
+          itself stays, without the location.
+        </li>
+        <li>
           <strong>Request attachments</strong> — files (images or PDFs) you or an admin attach to a
           leave request, such as a doctor&rsquo;s note. Because a file may contain health data, we
           treat it as a special category of personal data under Article 9 GDPR. We store it so that
@@ -183,7 +193,9 @@ export default function PrivacyPage() {
         or ask us to erase your data, we remove it from our live systems and delete it from backups
         within a reasonable period, unless we are legally required to keep it longer. Request
         attachments are deleted automatically twelve months after the absence, or as soon as the
-        request is cancelled. Server logs are retained for a limited period for security purposes.
+        request is cancelled. Attendance location coordinates are erased twelve months after the
+        business date they belong to, leaving the attendance record itself in place. Server logs are
+        retained for a limited period for security purposes.
       </p>
 
       <h2>8. Your rights</h2>

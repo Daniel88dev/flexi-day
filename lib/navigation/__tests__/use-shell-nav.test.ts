@@ -10,6 +10,7 @@ const member: ViewerRoles = {
   isGroupAdmin: false,
   administeredGroups: [],
   plan: null,
+  attendanceActive: false,
 };
 const state = { pathname: "/dashboard/", supportAdmin: false, roles: member };
 

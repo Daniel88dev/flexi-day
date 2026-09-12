@@ -22,9 +22,35 @@ describe("Legal pages", () => {
     expect(screen.getByText(/twelve months after the absence it belongs to/)).toBeInTheDocument();
   });
 
-  it("Legal pages carry the attachments update date", () => {
+  it("Legal pages carry the current update date", () => {
     render(<PrivacyPage />);
-    expect(screen.getByText("Last updated: 10 September 2026")).toBeInTheDocument();
+    expect(screen.getByText("Last updated: 12 September 2026")).toBeInTheDocument();
+  });
+
+  it("Privacy page describes attendance location, its audience and its retention", () => {
+    render(<PrivacyPage />);
+    expect(screen.getByText("Attendance location")).toBeInTheDocument();
+    expect(
+      screen.getByText(/latitude, longitude and accuracy your browser reports/)
+    ).toBeInTheDocument();
+    expect(screen.getByText(/declining is neither recorded nor flagged/)).toBeInTheDocument();
+    expect(
+      screen.getByText(/visible to you and to the administrators of your organisation/)
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/erase them twelve months after the business date/)
+    ).toBeInTheDocument();
+  });
+
+  it("Terms page puts the location agreement on the employer", () => {
+    render(<TermsPage />);
+    expect(
+      screen.getByRole("heading", { name: "7. Attendance and employee location" })
+    ).toBeInTheDocument();
+    expect(screen.getByText(/It is your responsibility to inform the people/)).toBeInTheDocument();
+    expect(
+      screen.getByText(/records nothing about that agreement and cannot verify it/)
+    ).toBeInTheDocument();
   });
 
   it("Terms page renders its heading", () => {

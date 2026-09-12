@@ -1,6 +1,12 @@
 "use client";
 
-import { useGroups, useOrganization, useOrganizations, useSubscription } from "@/lib/api/queries";
+import {
+  useAttendanceSettings,
+  useGroups,
+  useOrganization,
+  useOrganizations,
+  useSubscription,
+} from "@/lib/api/queries";
 import { useSession } from "@/lib/auth-client";
 import type { PlanName } from "@/lib/api/billing";
 import type { OrganizationSummary } from "@/lib/api/organization";
@@ -32,6 +38,12 @@ export type ViewerRoles = {
   administeredGroups: AdministeredGroup[];
   /** `active` is what the backend's group badge calls active: paid and still writable. Null while loading. */
   plan: { name: PlanName; active: boolean } | null;
+  /**
+   * Attendance is switched on *and* the plan still allows it — the settings
+   * payload's own answer, not a flag re-derived here. False for a viewer who
+   * administers no organization, since the settings are an org-admin read.
+   */
+  attendanceActive: boolean;
 };
 
 const LOADING: ViewerRoles = {
@@ -42,6 +54,7 @@ const LOADING: ViewerRoles = {
   isGroupAdmin: false,
   administeredGroups: [],
   plan: null,
+  attendanceActive: false,
 };
 
 /**
@@ -59,6 +72,7 @@ export function useViewerRoles(): ViewerRoles {
   // Owned organizations sort first, so this is the viewer's own when they have one.
   const administered = organizationsQuery.data?.[0] ?? null;
   const organizationQuery = useOrganization(administered?.id ?? null);
+  const attendanceQuery = useAttendanceSettings(administered?.id ?? null);
 
   // `isPending` rather than `isLoading`: a paused query still has no answer,
   // and the shell must not treat that as "plain member".
@@ -67,7 +81,7 @@ export function useViewerRoles(): ViewerRoles {
     organizationsQuery.isPending ||
     groupsQuery.isPending ||
     subscriptionQuery.isPending ||
-    (administered !== null && organizationQuery.isPending)
+    (administered !== null && (organizationQuery.isPending || attendanceQuery.isPending))
   ) {
     return LOADING;
   }
@@ -98,5 +112,6 @@ export function useViewerRoles(): ViewerRoles {
     plan: entitlements
       ? { name: entitlements.plan, active: entitlements.plan !== "FREE" && entitlements.writable }
       : null,
+    attendanceActive: attendanceQuery.data?.active ?? false,
   };
 }

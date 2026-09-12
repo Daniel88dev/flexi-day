@@ -71,14 +71,27 @@ export default function TermsPage() {
         (such as teammates) with the Service.
       </p>
 
-      <h2>7. Availability</h2>
+      <h2>7. Attendance and employee location</h2>
+      <p>
+        Where you switch on attendance, and in particular where you switch on location recording,
+        you act as the data controller for your employees&rsquo; attendance records. It is your
+        responsibility to inform the people in your organisation that their location is recorded at
+        clock-in and clock-out, to obtain whatever agreement or consultation your local employment
+        and data-protection law requires before you switch it on, and to keep that agreement in
+        place for as long as the setting stays on. {LEGAL.product} records nothing about that
+        agreement and cannot verify it. We provide the setting, the notice your employees see in the
+        app, and the retention described in our <a href="/privacy">Privacy Policy</a>; the lawful
+        basis for recording your employees&rsquo; location is yours.
+      </p>
+
+      <h2>8. Availability</h2>
       <p>
         The Service is provided on an ongoing, best-effort basis. We do not guarantee that the
         Service will be uninterrupted or error-free, and we may perform maintenance or suspend
         features when needed.
       </p>
 
-      <h2>8. Plans, fees and billing</h2>
+      <h2>9. Plans, fees and billing</h2>
       <p>
         The Service offers a free plan and paid subscription plans (currently Pro and Enterprise,
         plus optional extra group slots). Each plan&rsquo;s limits and prices are shown on our
@@ -121,14 +134,14 @@ export default function TermsPage() {
         </li>
       </ul>
 
-      <h2>9. Intellectual property</h2>
+      <h2>10. Intellectual property</h2>
       <p>
         The Service, including its software, design and trademarks, is owned by {LEGAL.entity} and
         protected by law. These Terms do not grant you any rights in the Service other than the
         right to use it in accordance with these Terms.
       </p>
 
-      <h2>10. Termination</h2>
+      <h2>11. Termination</h2>
       <p>
         You may stop using the Service and delete your Account at any time. We may suspend or
         terminate your access if you breach these Terms or if we discontinue the Service. On
@@ -137,14 +150,14 @@ export default function TermsPage() {
         in effect.
       </p>
 
-      <h2>11. Disclaimers</h2>
+      <h2>12. Disclaimers</h2>
       <p>
         To the extent permitted by law, the Service is provided &ldquo;as is&rdquo; and &ldquo;as
         available&rdquo; without warranties of any kind, whether express or implied. We do not
         warrant that the Service will meet your requirements or be free of errors.
       </p>
 
-      <h2>12. Limitation of liability</h2>
+      <h2>13. Limitation of liability</h2>
       <p>
         To the extent permitted by law, we will not be liable for any indirect, incidental or
         consequential damages, or for loss of data, profits or business, arising from your use of
@@ -152,21 +165,21 @@ export default function TermsPage() {
         law, including your statutory rights as a consumer.
       </p>
 
-      <h2>13. Changes to these Terms</h2>
+      <h2>14. Changes to these Terms</h2>
       <p>
         We may update these Terms from time to time. We will update the &ldquo;last updated&rdquo;
         date above and, for material changes, provide additional notice. Continued use of the
         Service after changes take effect means you accept the updated Terms.
       </p>
 
-      <h2>14. Governing law</h2>
+      <h2>15. Governing law</h2>
       <p>
         These Terms are governed by the laws of the {LEGAL.country}. The courts of the{" "}
         {LEGAL.country} will have jurisdiction over any dispute, without prejudice to any mandatory
         consumer-protection rights you have in your country of residence.
       </p>
 
-      <h2>15. Contact</h2>
+      <h2>16. Contact</h2>
       <p>
         {LEGAL.entity}
         <br />
