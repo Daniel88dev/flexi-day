@@ -23,6 +23,8 @@ const day = (businessDate: string, overrides: Partial<AttendanceDay> = {}): Atte
   upcoming: false,
   open: false,
   autoClosed: false,
+  exclusion: null,
+  excludedClockIn: false,
   flagged: false,
   sessions: [],
   ...overrides,

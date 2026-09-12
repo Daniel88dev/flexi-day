@@ -15,6 +15,8 @@ const day = (businessDate: string, overrides: Partial<AttendanceDay> = {}): Atte
   upcoming: false,
   open: false,
   autoClosed: false,
+  exclusion: null,
+  excludedClockIn: false,
   flagged: false,
   sessions: [],
   ...overrides,
@@ -56,6 +58,7 @@ const month = (overrides: Partial<AttendanceMonth> = {}): AttendanceMonth => ({
     requiredRangeMinutes: 14400,
     balanceMinutes: -310,
     flaggedDays: 1,
+    excludedDays: 0,
   },
   ...overrides,
 });
@@ -129,5 +132,97 @@ describe("MonthView", () => {
     );
 
     expect(screen.getByText("Nothing recorded this month.")).toBeInTheDocument();
+  });
+});
+
+describe("MonthView, excluded days", () => {
+  const withDaysOff = () =>
+    month({
+      days: [
+        day("2026-09-01"),
+        day("2026-09-02", {
+          requiredMinutes: 0,
+          workedMinutes: 0,
+          presenceMinutes: 0,
+          balanceMinutes: null,
+          exclusion: { cause: "ABSENCE", extent: "FULL", label: "SICK_DAY" },
+        }),
+        day("2026-09-03", {
+          requiredMinutes: 240,
+          workedMinutes: 250,
+          presenceMinutes: 250,
+          balanceMinutes: 10,
+          exclusion: { cause: "ABSENCE", extent: "HALF", label: "VACATION" },
+        }),
+        day("2026-09-04", {
+          requiredMinutes: 0,
+          workedMinutes: 0,
+          presenceMinutes: 0,
+          balanceMinutes: null,
+          upcoming: true,
+          exclusion: { cause: "NON_WORKING_DAY", extent: "FULL", label: null },
+        }),
+      ],
+      totals: {
+        presenceMinutes: 760,
+        workedMinutes: 730,
+        requiredMinutes: 720,
+        requiredRangeMinutes: 720,
+        balanceMinutes: 10,
+        flaggedDays: 0,
+        excludedDays: 2,
+      },
+    });
+
+  it("counts the days off among the month's figures", () => {
+    renderWithClient(<MonthView month={withDaysOff()} locale="en" />);
+
+    expect(screen.getByText("Excluded days").nextSibling).toHaveTextContent("2");
+    expect(screen.getByText("of 4")).toBeInTheDocument();
+  });
+
+  it("names each day off in its cell, half days included", () => {
+    renderWithClient(<MonthView month={withDaysOff()} locale="en" />);
+
+    expect(
+      within(screen.getByTestId("month-day-2026-09-02")).getByText("Sick day")
+    ).toBeInTheDocument();
+    expect(
+      within(screen.getByTestId("month-day-2026-09-03")).getByText("of 4:00, half day")
+    ).toBeInTheDocument();
+  });
+
+  it("counts the days off against the days that were this person's to work", () => {
+    const month163 = withDaysOff();
+    renderWithClient(
+      <MonthView
+        month={{
+          ...month163,
+          days: [
+            {
+              ...month163.days[0],
+              exclusion: { cause: "NOT_EMPLOYED", extent: "FULL", label: null },
+              requiredMinutes: 0,
+              workedMinutes: 0,
+              presenceMinutes: 0,
+              balanceMinutes: null,
+            },
+            ...month163.days.slice(1),
+          ],
+        }}
+        locale="en"
+      />
+    );
+
+    // Three days off in a month, one of which nobody was employed for.
+    expect(screen.getByText("of 3")).toBeInTheDocument();
+  });
+
+  it("draws a day off still to come rather than leaving its cell blank", () => {
+    renderWithClient(<MonthView month={withDaysOff()} locale="en" />);
+
+    expect(
+      within(screen.getByTestId("month-day-2026-09-04")).getByText("Non-working day")
+    ).toBeInTheDocument();
   });
 });

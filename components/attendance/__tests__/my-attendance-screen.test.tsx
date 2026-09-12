@@ -256,6 +256,8 @@ describe("MyAttendanceScreen", () => {
           upcoming: false,
           open: false,
           autoClosed: false,
+          exclusion: null,
+          excludedClockIn: false,
           flagged: false,
           sessions: [],
         },
@@ -267,6 +269,7 @@ describe("MyAttendanceScreen", () => {
         requiredRangeMinutes: 14400,
         balanceMinutes: 0,
         flaggedDays: 0,
+        excludedDays: 0,
       },
     });
 

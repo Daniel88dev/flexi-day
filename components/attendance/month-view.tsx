@@ -4,7 +4,7 @@ import type { AttendanceBalanceMode, AttendanceDay, AttendanceMonth } from "@/li
 import { formatMinutes, formatSignedMinutes } from "@/lib/attendance/duration";
 import { leadingBlanks } from "@/lib/attendance/month";
 import { useTranslation } from "@/lib/i18n/use-translation";
-import { DayFigures, Stat, StatRow } from "./attendance-figures";
+import { DayFigures, Stat, StatRow, excludedSurface, isExcluded } from "./attendance-figures";
 
 /** Monday-first weekday initials, from the reader's own locale. */
 function weekdayHeadings(locale: string): string[] {
@@ -26,17 +26,20 @@ function MonthCell({
   mode: AttendanceBalanceMode;
   today: string | null;
 }) {
+  const excluded = isExcluded(day);
+
   return (
     <div
       data-testid={`month-day-${day.businessDate}`}
       className="flex min-h-24 flex-col gap-0.5 rounded-xl border p-2"
       style={{
         borderColor: day.businessDate === today ? "var(--primary)" : "var(--border)",
-        borderStyle: day.upcoming ? "dashed" : "solid",
+        borderStyle: day.upcoming && !excluded ? "dashed" : "solid",
+        ...(excluded ? excludedSurface : {}),
       }}
     >
       <span className="text-sm font-semibold tabular-nums">{dayNumber(day.businessDate)}</span>
-      {day.upcoming ? null : <DayFigures day={day} mode={mode} today={today} />}
+      {day.upcoming && !excluded ? null : <DayFigures day={day} mode={mode} today={today} />}
     </div>
   );
 }
@@ -52,10 +55,13 @@ export function MonthView({ month, locale }: { month: AttendanceMonth; locale: s
   const today = month.businessDate;
   const totals = month.totals;
   const worked = month.days.some((day) => day.presenceMinutes > 0);
+  // Days that were this Employment's to work: somebody who joined on the 15th
+  // reads "2 of 16", not "2 of 30".
+  const employedDays = month.days.filter((day) => day.exclusion?.cause !== "NOT_EMPLOYED").length;
 
   return (
     <div className="flex flex-col gap-4">
-      <StatRow>
+      <StatRow columns={5}>
         <Stat label={t.clock.worked} value={formatMinutes(totals.workedMinutes)} />
         <Stat label={t.clock.requiredSoFar} value={formatMinutes(totals.requiredMinutes)} />
         <Stat
@@ -72,6 +78,11 @@ export function MonthView({ month, locale }: { month: AttendanceMonth; locale: s
             sub={t.clock.daysToCheck}
           />
         )}
+        <Stat
+          label={t.clock.excludedDays}
+          value={String(totals.excludedDays)}
+          sub={t.clock.ofDays(employedDays)}
+        />
       </StatRow>
 
       {worked ? null : (
@@ -100,6 +111,10 @@ export function MonthView({ month, locale }: { month: AttendanceMonth; locale: s
         ))}
       </div>
 
+      <p className="text-xs" style={{ color: "var(--text-faint)" }}>
+        {t.clock.hatchedLegend}
+      </p>
+
       <ul className="flex flex-col gap-2 sm:hidden">
         {month.days
           // A phone shows the days that happened: scrolling past an empty
@@ -112,6 +127,7 @@ export function MonthView({ month, locale }: { month: AttendanceMonth; locale: s
               className="flex items-start gap-3 rounded-xl border p-3"
               style={{
                 borderColor: day.businessDate === today ? "var(--primary)" : "var(--border)",
+                ...(isExcluded(day) ? excludedSurface : {}),
               }}
             >
               <span className="w-8 shrink-0 text-sm font-semibold tabular-nums">

@@ -4,7 +4,7 @@ import type { AttendanceBalanceMode, AttendanceDay } from "@/lib/api/attendance"
 import { formatMinutes, formatSignedMinutes } from "@/lib/attendance/duration";
 import { weekTotals } from "@/lib/attendance/month";
 import { useTranslation } from "@/lib/i18n/use-translation";
-import { DayFigures, Stat, StatRow } from "./attendance-figures";
+import { DayFigures, Stat, StatRow, excludedSurface, isExcluded } from "./attendance-figures";
 
 /** The weekday and day-of-month of a business date, in the reader's language. */
 function DayLabel({ businessDate, locale }: { businessDate: string; locale: string }) {
@@ -40,6 +40,7 @@ function WeekDay({
   locale: string;
 }) {
   const { t } = useTranslation();
+  const excluded = isExcluded(day);
 
   return (
     <li
@@ -47,12 +48,15 @@ function WeekDay({
       className="flex flex-col gap-0.5 rounded-2xl border p-3"
       style={{
         borderColor: day.businessDate === today ? "var(--primary)" : "var(--border)",
-        borderStyle: day.upcoming ? "dashed" : "solid",
+        borderStyle: day.upcoming && !excluded ? "dashed" : "solid",
+        ...(excluded ? excludedSurface : {}),
       }}
     >
       <DayLabel businessDate={day.businessDate} locale={locale} />
 
-      {day.upcoming ? (
+      {/* A day off says so whether or not it has arrived: nothing about next
+          Saturday is still to be decided. */}
+      {day.upcoming && !excluded ? (
         <span className="text-sm" style={{ color: "var(--text-faint)" }}>
           {t.clock.upcoming}
         </span>
@@ -100,11 +104,16 @@ export function WeekView({
           {t.clock.emptyWeek}
         </p>
       ) : (
-        <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-7">
-          {days.map((day) => (
-            <WeekDay key={day.businessDate} day={day} mode={mode} today={today} locale={locale} />
-          ))}
-        </ul>
+        <>
+          <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-7">
+            {days.map((day) => (
+              <WeekDay key={day.businessDate} day={day} mode={mode} today={today} locale={locale} />
+            ))}
+          </ul>
+          <p className="text-xs" style={{ color: "var(--text-faint)" }}>
+            {t.clock.hatchedLegend}
+          </p>
+        </>
       )}
     </div>
   );

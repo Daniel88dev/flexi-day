@@ -14,6 +14,8 @@ const day = (overrides: Partial<AttendanceDay> = {}): AttendanceDay => ({
   upcoming: false,
   open: false,
   autoClosed: false,
+  exclusion: null,
+  excludedClockIn: false,
   flagged: false,
   sessions: [],
   ...overrides,

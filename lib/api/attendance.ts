@@ -135,6 +135,17 @@ export const updateSessionLocation = (sessionId: string, fix: AttendanceLocation
     }
   );
 
+/** Why nothing, or only half, is owed on a business date. */
+export type AttendanceExclusionCause = "NOT_EMPLOYED" | "NON_WORKING_DAY" | "HOLIDAY" | "ABSENCE";
+
+export type AttendanceExclusion = {
+  cause: AttendanceExclusionCause;
+  /** `HALF` halves the required time rather than taking the day. */
+  extent: "FULL" | "HALF";
+  /** The holiday's own name, or the absence's record type. Null where the cause says it all. */
+  label: string | null;
+};
+
 /** One business date of a month: the figures, and the sessions behind them. */
 export type AttendanceDay = {
   businessDate: string;
@@ -143,12 +154,19 @@ export type AttendanceDay = {
   deductedMinutes: number;
   workedMinutes: number;
   requiredMinutes: number;
-  /** Null on a date still to come, and throughout `MONTHLY` mode. */
+  /**
+   * Null on a date still to come, throughout `MONTHLY` mode, and on a day off
+   * nobody worked.
+   */
   balanceMinutes: number | null;
   upcoming: boolean;
   open: boolean;
   autoClosed: boolean;
-  /** Auto-closed, or still open on a day that has passed — the day to look at. */
+  /** Null on an ordinary working day. */
+  exclusion: AttendanceExclusion | null;
+  /** Somebody at work on a day nobody owed: allowed, counted, and worth a look. */
+  excludedClockIn: boolean;
+  /** Auto-closed, clocked into a day off, or still open on a day that has passed. */
   flagged: boolean;
   sessions: AttendanceSession[];
 };
@@ -162,6 +180,8 @@ export type AttendanceTotals = {
   requiredRangeMinutes: number;
   balanceMinutes: number;
   flaggedDays: number;
+  /** Whole days off in the month, upcoming ones included. A half day is not one. */
+  excludedDays: number;
 };
 
 export type AttendanceBalanceMode = "DAILY" | "MONTHLY";
