@@ -12,13 +12,21 @@ const member: ViewerRoles = {
   plan: null,
   attendanceActive: false,
 };
-const state = { pathname: "/dashboard/", supportAdmin: false, roles: member };
+const state = {
+  pathname: "/dashboard/",
+  supportAdmin: false,
+  roles: member,
+  attendanceActive: false,
+};
 
 vi.mock("next/navigation", () => ({ usePathname: () => state.pathname }));
 vi.mock("@/lib/support/use-support-admin", () => ({
   useSupportAdmin: () => ({ supportAdmin: state.supportAdmin, isPending: false }),
 }));
 vi.mock("@/lib/viewer/use-viewer-roles", () => ({ useViewerRoles: () => state.roles }));
+vi.mock("@/lib/api/queries", () => ({
+  useAttendanceState: () => ({ data: { active: state.attendanceActive } }),
+}));
 
 import { useShellNav } from "../use-shell-nav";
 
@@ -29,6 +37,7 @@ describe("useShellNav", () => {
     state.pathname = "/dashboard/";
     state.supportAdmin = false;
     state.roles = member;
+    state.attendanceActive = false;
   });
 
   it("gives a member Time off, Settings and the dashboard as the active page", () => {
@@ -64,5 +73,14 @@ describe("useShellNav", () => {
     const { result } = renderHook(() => useShellNav());
 
     expect(result.current.sections.map((section) => section.id)).toEqual(["timeOff"]);
+  });
+
+  it("adds the Attendance section once the viewer's own clock is live", () => {
+    state.attendanceActive = true;
+
+    const { result } = renderHook(() => useShellNav());
+
+    const attendance = result.current.sections.find((section) => section.id === "attendance");
+    expect(labels(attendance?.links ?? [])).toEqual(["My attendance"]);
   });
 });

@@ -28,6 +28,7 @@ import {
   updateAttendanceSettings,
   type UpdateAttendanceSettingsInput,
 } from "./attendance-settings";
+import { clockIn, clockOut, endBreak, getAttendanceState, startBreak } from "./attendance";
 import {
   addOrganizationAdmin,
   getOrganization,
@@ -152,6 +153,8 @@ export const qk = {
     ["organization-candidates", organizationId ?? "own"] as const,
   attendanceSettings: (organizationId?: string | null) =>
     ["attendance-settings", organizationId ?? "own"] as const,
+  attendanceState: (organizationId?: string | null) =>
+    ["attendance-state", organizationId ?? "own"] as const,
   // Hashed: query keys reach Sentry on failures and this one is free text.
   supportOrganizations: (query: string) =>
     ["support-organizations", opaqueSearchKey(query)] as const,
@@ -745,6 +748,53 @@ export function useUpdateAttendanceSettings(organizationId?: string | null) {
     },
   });
 }
+
+/**
+ * The clock's one read, for anyone with an Employment — not an admin surface,
+ * unlike {@link useAttendanceSettings}. A running session ages in seconds, so
+ * it is refetched when the tab comes back rather than trusting the shared
+ * 30-second staleTime.
+ */
+export function useAttendanceState(organizationId?: string | null) {
+  return useQuery({
+    queryKey: qk.attendanceState(organizationId),
+    queryFn: () => getAttendanceState(organizationId),
+    refetchOnWindowFocus: true,
+  });
+}
+
+/**
+ * The four clock writes, which all answer with a fragment of the state rather
+ * than the whole of it — so each one invalidates the read instead of patching
+ * the cache and risking a widget that disagrees with the server about whether
+ * a break is running.
+ */
+function useAttendanceWrite<T>(mutationFn: () => Promise<T>) {
+  const qc = useQueryClient();
+  // The whole prefix, not one key: the widget reads its state unscoped and
+  // writes with the organization that read named, so an exact key would
+  // invalidate an entry nothing is subscribed to and leave the clock stale.
+  const refresh = () => qc.invalidateQueries({ queryKey: ["attendance-state"] });
+  return useMutation({
+    mutationFn,
+    onSuccess: refresh,
+    // A 409 means the widget was acting on a stale answer; the refetch is what
+    // puts the right button back in front of the person.
+    onError: refresh,
+  });
+}
+
+export const useClockIn = (organizationId?: string | null) =>
+  useAttendanceWrite(() => clockIn(organizationId));
+
+export const useClockOut = (organizationId?: string | null) =>
+  useAttendanceWrite(() => clockOut(organizationId));
+
+export const useStartBreak = (organizationId?: string | null) =>
+  useAttendanceWrite(() => startBreak(organizationId));
+
+export const useEndBreak = (organizationId?: string | null) =>
+  useAttendanceWrite(() => endBreak(organizationId));
 
 export function useAddOrganizationAdmin(organizationId?: string | null) {
   const qc = useQueryClient();

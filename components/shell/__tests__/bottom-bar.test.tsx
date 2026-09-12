@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, screen, within } from "@testing-library/react";
 import { renderWithClient } from "@/lib/test-utils";
 import { BottomBar } from "../bottom-bar";
-import { resetShellState, roles, shellState } from "./shell-test-setup";
+import { clockState, resetShellState, roles, shellState } from "./shell-test-setup";
 
 vi.mock("next/navigation", async () => {
   const { shellState } = await import("./shell-test-setup");
@@ -63,6 +63,28 @@ describe("BottomBar", () => {
       "More",
     ]);
     expect(slots[2]).toHaveAttribute("data-slot", "bottom-bar-clock-slot");
+  });
+
+  it("puts the clock on the centre slot and Attendance beside it once the clock is live", () => {
+    shellState.clock = { ...clockState, active: true };
+    renderWithClient(<BottomBar />);
+
+    const slots = Array.from(bar().children);
+    expect(slots.map((slot) => slot.textContent)).toEqual([
+      "Dashboard",
+      "Requests",
+      "Clock",
+      "My attendance",
+      "More",
+    ]);
+    expect(within(slots[2] as HTMLElement).getByRole("button", { name: "Clock" })).toBeVisible();
+  });
+
+  it("leaves the centre slot empty for a viewer with no Employment", () => {
+    renderWithClient(<BottomBar />);
+
+    const slots = Array.from(bar().children);
+    expect(within(slots[2] as HTMLElement).queryByRole("button")).toBeNull();
   });
 
   it("marks the current tab", () => {
