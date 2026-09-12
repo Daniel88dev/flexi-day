@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Menu } from "lucide-react";
+import { ClockSlot } from "@/components/attendance/clock-slot";
 import { NewRequestDialog } from "@/components/new-request-dialog";
 import { LocaleToggle } from "@/components/ui/LocaleToggle";
 import { ModeToggle } from "@/components/ui/ModeToggle";
@@ -109,7 +110,7 @@ export function BottomBar() {
           link ? (
             <Tab key={link.href} link={link} isActive={isActive(link.href)} />
           ) : (
-            <div key={`slot-${index}`} data-slot="bottom-bar-clock-slot" aria-hidden />
+            <ClockSlot key={`slot-${index}`} />
           )
         )}
         <button

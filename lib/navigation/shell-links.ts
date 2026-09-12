@@ -8,6 +8,7 @@ import {
   LifeBuoy,
   RefreshCw,
   Settings,
+  Timer,
   Users,
 } from "lucide-react";
 import type { Dictionary } from "@/lib/i18n";
@@ -24,6 +25,12 @@ export type ShellAccess = {
   /** Org admin (owner or delegate) or group admin. */
   administersSomething: boolean;
   supportAdmin: boolean;
+  /**
+   * The viewer's own clock is usable: attendance switched on and the plan still
+   * paying for it. Read from the employee's own state endpoint, not from the
+   * org-admin settings — most people who need the link administer nothing.
+   */
+  attendanceActive: boolean;
 };
 
 export const BOTTOM_BAR_CLOCK_INDEX = 2;
@@ -59,9 +66,13 @@ export function buildSections(t: Dictionary, access: ShellAccess): NavSection[] 
         { href: "/calendar-sync", label: t.nav.calendarSync, icon: RefreshCw },
       ],
     },
-    // The attendance screens land in later tickets; until then the section has
-    // no links and therefore does not render.
-    { id: "attendance", label: t.nav.sections.attendance, links: [] },
+    {
+      id: "attendance",
+      label: t.nav.sections.attendance,
+      links: access.attendanceActive
+        ? [{ href: "/my-attendance", label: t.nav.myAttendance, icon: Timer }]
+        : [],
+    },
     {
       id: "organization",
       label: t.nav.sections.organization,

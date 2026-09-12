@@ -14,13 +14,11 @@ const member: ShellAccess = {
   rolesLoading: false,
   administersSomething: false,
   supportAdmin: false,
+  attendanceActive: false,
 };
-const admin: ShellAccess = { rolesLoading: false, administersSomething: true, supportAdmin: false };
-const loading: ShellAccess = {
-  rolesLoading: true,
-  administersSomething: true,
-  supportAdmin: false,
-};
+const admin: ShellAccess = { ...member, administersSomething: true };
+const loading: ShellAccess = { ...admin, rolesLoading: true };
+const clocking: ShellAccess = { ...member, attendanceActive: true };
 
 const labels = (links: { label: string }[]) => links.map((link) => link.label);
 
@@ -69,8 +67,28 @@ describe("buildSections", () => {
     expect(buildSections(en, loading).map((section) => section.id)).toEqual(["timeOff"]);
   });
 
+  it("adds Attendance, between Time off and Organization, once the viewer's clock is live", () => {
+    const sections = buildSections(en, { ...admin, attendanceActive: true });
+
+    expect(sections.map((section) => section.id)).toEqual([
+      "timeOff",
+      "attendance",
+      "organization",
+    ]);
+    expect(sections[1]!.links).toEqual([
+      expect.objectContaining({ href: "/my-attendance", label: "My attendance" }),
+    ]);
+  });
+
+  it("leaves Attendance out for a viewer whose organization has it switched off", () => {
+    expect(buildSections(en, admin).map((section) => section.id)).toEqual([
+      "timeOff",
+      "organization",
+    ]);
+  });
+
   it("never returns a section without links", () => {
-    for (const access of [member, admin, loading]) {
+    for (const access of [member, admin, loading, clocking]) {
       for (const section of buildSections(en, access)) {
         expect(section.links.length).toBeGreaterThan(0);
       }
@@ -107,13 +125,7 @@ describe("splitForBottomBar", () => {
   });
 
   it("prefers the first Attendance link over the third Time off link", () => {
-    const sections = buildSections(en, member);
-    const attendance = {
-      id: "attendance" as const,
-      label: "Attendance",
-      links: [{ href: "/attendance", label: "My attendance", icon: sections[0]!.links[0]!.icon }],
-    };
-    const { bar, sheet } = splitForBottomBar([sections[0]!, attendance]);
+    const { bar, sheet } = splitForBottomBar(buildSections(en, clocking));
 
     expect(labels(bar)).toEqual(["Dashboard", "Requests", "My attendance"]);
     expect(sheet.map((section) => section.id)).toEqual(["timeOff"]);

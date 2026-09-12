@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, screen, within } from "@testing-library/react";
 import { renderWithClient } from "@/lib/test-utils";
 import { AppShell } from "../app-shell";
-import { resetShellState, roles, shellState } from "./shell-test-setup";
+import { clockState, resetShellState, roles, shellState } from "./shell-test-setup";
 
 vi.mock("next/navigation", async () => {
   const { shellState } = await import("./shell-test-setup");
@@ -105,11 +105,23 @@ describe("AppShell", () => {
       ]);
     });
 
-    it("has no Attendance section while it has no links", () => {
+    it("has no Attendance section while the clock is not active", () => {
       shellState.roles = roles.orgAdmin;
+      shellState.clock = { ...clockState, active: false };
       renderWithClient(<AppShell>x</AppShell>);
 
       expect(sectionLabels()).not.toContain("Attendance");
+    });
+
+    it("shows the Attendance section with My attendance once the clock is active", () => {
+      shellState.clock = { ...clockState, active: true };
+      renderWithClient(<AppShell>x</AppShell>);
+
+      expect(sectionLabels()).toContain("Attendance");
+      expect(sidebar().getByRole("link", { name: "My attendance" })).toHaveAttribute(
+        "href",
+        "/my-attendance"
+      );
     });
 
     it("holds the admin section back while roles are loading", () => {
