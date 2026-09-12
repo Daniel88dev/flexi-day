@@ -1,0 +1,664 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Attendance design: my attendance</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;500;600;700;800&family=Hanken+Grotesk:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="assets/tokens.css" />
+    <link rel="stylesheet" href="assets/mock.css" />
+    <script src="assets/mock.js"></script>
+    <script src="assets/icons.js"></script>
+    <script src="assets/shell.js"></script>
+    <style>
+      .mgrid {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 8px;
+      }
+      .mgrid .h {
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--text-faint);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        padding: 0 4px 2px;
+      }
+      .mday {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        padding: 10px 12px 10px;
+        min-height: 118px;
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+      }
+      .mday .d {
+        font-weight: 600;
+        font-size: 13px;
+        color: var(--text-muted);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .mday .d .icon {
+        width: 15px;
+        height: 15px;
+        color: var(--warm);
+      }
+      .mday .w {
+        font-family: var(--font-display);
+        font-size: 22px;
+        font-weight: 700;
+        letter-spacing: -0.03em;
+        font-variant-numeric: tabular-nums;
+        line-height: 1;
+        margin-top: 4px;
+      }
+      .mday .r {
+        font-size: 12px;
+        color: var(--text-faint);
+      }
+      .mday .b {
+        margin-top: auto;
+        display: flex;
+        gap: 4px;
+        flex-wrap: wrap;
+      }
+      .mday.ex {
+        background: repeating-linear-gradient(
+          -45deg,
+          var(--surface) 0 6px,
+          color-mix(in oklch, var(--text) 4%, var(--surface)) 6px 7px
+        );
+      }
+      .mday.ex .w,
+      .mday.ex .d {
+        color: var(--text-faint);
+      }
+      .mday.up {
+        background: transparent;
+        border-style: dashed;
+      }
+      .mday.today {
+        border-color: color-mix(in oklch, var(--primary) 45%, transparent);
+        background: color-mix(in oklch, var(--primary) 5%, var(--surface));
+      }
+      .mday.gone {
+        visibility: hidden;
+      }
+      .mlist .r {
+        display: grid;
+        grid-template-columns: 64px 1fr auto;
+        align-items: center;
+        gap: 10px;
+        padding: 9px 0;
+        border-bottom: 1px solid var(--border);
+      }
+      .mlist .r .d {
+        font-weight: 600;
+        color: var(--text-muted);
+        font-size: 13px;
+        line-height: 1.2;
+      }
+      .mlist .r .d small {
+        display: block;
+        color: var(--text-faint);
+        font-weight: 600;
+      }
+      .mlist .r.ex .d,
+      .mlist .r.ex .cellv b {
+        color: var(--text-faint);
+        font-weight: 500;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="sheet">
+      <header class="sheet-head">
+        <div>
+          <h1>My attendance</h1>
+          <p>
+            Three views on one page: Today (sessions and breaks as they happen), Week (seven cards),
+            Month (a grid with the totals on top, because the month number is the one that matters).
+            Excluded days are hatched and say why. Flags sit in the day's corner. Both balance modes
+            are shown: each day colours its own balance, over the month only the top number is
+            coloured.
+          </p>
+          <nav class="sheet-nav">
+            <a href="01-shell.html">Shell</a>
+            <a href="02-clock-widget.html">Clock widget</a>
+            <a class="current" href="03-my-attendance.html">My attendance</a>
+            <a href="04-team-attendance.html">Team attendance</a>
+            <a href="05-organization-settings.html">Organization settings</a>
+          </nav>
+        </div>
+        <div class="theme-toggle" role="group" aria-label="Theme">
+          <button type="button" data-theme-pick="light">Light</button>
+          <button type="button" data-theme-pick="dark">Dark</button>
+          <button type="button" data-theme-pick="system">System</button>
+        </div>
+      </header>
+
+      <section class="board">
+        <h2>Today</h2>
+        <p>
+          The widget on the left is the same component as the bottom sheet. Today's session can be
+          edited by its owner; older days point to the admin.
+        </p>
+        <div class="frames">
+          <div class="frame">
+            <span class="frame-label">1280 x 800, on break at 12:19</span>
+            <div class="laptop" data-view="today"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="board">
+        <h2>Week</h2>
+        <p>
+          Monday 7 to Sunday 13 September. Tuesday is a half day of vacation, Wednesday was
+          auto-closed, Friday is in progress, the weekend is excluded.
+        </p>
+        <div class="frames">
+          <div class="frame">
+            <span class="frame-label">1280 x 800</span>
+            <div class="laptop" data-view="week"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="board">
+        <h2>Month, balance each day</h2>
+        <p>
+          September 2026 so far. Saturday 5 was a clock-in on an excluded day: it counts toward the
+          month and is flagged. The 16th, 21st, 22nd and 28th are excluded ahead of time by an
+          approved sick day, a vacation and a public holiday.
+        </p>
+        <div class="frames">
+          <div class="frame">
+            <span class="frame-label">1280 x 960, DAILY mode</span>
+            <div class="laptop tall" data-view="month-daily"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="board">
+        <h2>Month, balance over the month</h2>
+        <p>
+          Same data in MONTHLY mode. Days show worked and required only; the single balance on top
+          is measured against the month's required time to date, and the full-month figure sits
+          beside it.
+        </p>
+        <div class="frames">
+          <div class="frame">
+            <span class="frame-label">1280 x 960, MONTHLY mode</span>
+            <div class="laptop tall" data-view="month-monthly"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="board">
+        <h2>Mobile</h2>
+        <p>The month becomes a list; the day cards keep their hatching and flags.</p>
+        <div class="frames">
+          <div class="frame">
+            <span class="frame-label">390 x 844, Today</span>
+            <div class="phone" data-view="m-today"></div>
+          </div>
+          <div class="frame">
+            <span class="frame-label">390 x 844, Month, DAILY</span>
+            <div class="phone" data-view="m-month"></div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <script>
+      // September 2026, Dana Holt. Organization rules: required 8:00, break
+      // allowance 30 min once presence passes 6:00, Mon to Fri, holidays CZ.
+      var REQ = 480;
+      var DAYS = [
+        { d: 1, presence: 521, breaks: 30 },
+        { d: 2, presence: 485, breaks: 30 },
+        { d: 3, presence: 560, breaks: 30 },
+        { d: 4, presence: 472, breaks: 30 },
+        { d: 5, ex: "Weekend", presence: 130, breaks: 0, flag: "exclockin" },
+        { d: 6, ex: "Weekend" },
+        { d: 7, presence: 510, breaks: 30 },
+        { d: 8, presence: 250, breaks: 0, half: "Vacation" },
+        { d: 9, presence: 960, breaks: 30, flag: "autoclosed" },
+        { d: 10, presence: 522, breaks: 30 },
+        { d: 11, presence: 217, breaks: 14, today: true },
+        { d: 12, ex: "Weekend" },
+        { d: 13, ex: "Weekend" },
+        { d: 14, up: true },
+        { d: 15, up: true },
+        { d: 16, ex: "Sick" },
+        { d: 17, up: true },
+        { d: 18, up: true },
+        { d: 19, ex: "Weekend" },
+        { d: 20, ex: "Weekend" },
+        { d: 21, ex: "Vacation" },
+        { d: 22, ex: "Vacation" },
+        { d: 23, up: true },
+        { d: 24, up: true },
+        { d: 25, up: true },
+        { d: 26, ex: "Weekend" },
+        { d: 27, ex: "Weekend" },
+        { d: 28, ex: "St Wenceslas Day" },
+        { d: 29, up: true },
+        { d: 30, up: true },
+      ];
+      var DOW = ["Tue", "Wed", "Thu", "Fri", "Sat", "Sun", "Mon"];
+      DAYS.forEach(function (x) {
+        x.dow = DOW[(x.d - 1) % 7];
+        if (x.presence != null) {
+          var deducted = x.presence > 360 ? Math.max(30, x.breaks) : x.breaks;
+          x.worked = x.presence - deducted;
+        }
+        x.req = x.ex ? 0 : x.half ? REQ / 2 : REQ;
+        if (x.worked != null && !x.up) x.bal = x.worked - x.req;
+      });
+
+      function sum(pred, key) {
+        return DAYS.filter(pred).reduce(function (a, x) {
+          return a + (x[key] || 0);
+        }, 0);
+      }
+      var toDate = function (x) {
+        return x.d <= 11;
+      };
+      var workedToDate = sum(toDate, "worked");
+      var reqToDate = sum(toDate, "req");
+      var monthReq = sum(function () {
+        return true;
+      }, "req");
+      var excludedCount = DAYS.filter(function (x) {
+        return x.ex;
+      }).length;
+      var flagged = DAYS.filter(function (x) {
+        return x.flag;
+      }).length;
+
+      function stat(label, value, cls, sub) {
+        return (
+          '<div class="stat compact"><span class="stat-label">' +
+          label +
+          '</span><div><span class="stat-value ' +
+          (cls || "") +
+          '">' +
+          value +
+          "</span>" +
+          (sub ? '<span class="stat-sub">' + sub + "</span>" : "") +
+          "</div></div>"
+        );
+      }
+
+      function flagChip(flag, short) {
+        return (
+          '<span class="flag flag-warn">' +
+          icon(FLAGS[flag].icon) +
+          (short || FLAGS[flag].label) +
+          "</span>"
+        );
+      }
+
+      function header(view, mode) {
+        var seg =
+          '<span class="segmented"><span' +
+          (view === "today" ? ' class="active"' : "") +
+          ">Today</span><span" +
+          (view === "week" ? ' class="active"' : "") +
+          ">Week</span><span" +
+          (view === "month" ? ' class="active"' : "") +
+          ">Month</span></span>";
+        var range =
+          view === "today"
+            ? "Friday 11 September"
+            : view === "week"
+              ? "7 - 13 September"
+              : "September 2026";
+        return (
+          '<div class="row between" style="margin-bottom:20px; align-items:flex-start">' +
+          '<div><h1 class="page-title">My attendance</h1><p class="page-sub">Your sessions, breaks and balance in Studio Modrá.' +
+          (mode ? ' Balance is measured <b style="color:var(--text)">' + mode + "</b>." : "") +
+          "</p></div>" +
+          '<div class="row">' +
+          seg +
+          '<button class="btn btn-outline btn-icon btn-sm" type="button">' +
+          icon("chevron-left") +
+          "</button>" +
+          '<span style="font-weight:600; min-width:150px; text-align:center">' +
+          range +
+          "</span>" +
+          '<button class="btn btn-outline btn-icon btn-sm" type="button">' +
+          icon("chevron-right") +
+          "</button></div></div>"
+        );
+      }
+
+      function widgetBreak() {
+        return (
+          '<div class="clock"><div class="clock-state warm">' +
+          icon("coffee") +
+          "On break</div>" +
+          '<div class="clock-timer">0<small>:</small>14</div>' +
+          '<div class="clock-since">since 12:05, of the 30 min allowance</div>' +
+          '<div class="clock-actions two"><button class="btn btn-primary btn-xl" type="button">' +
+          icon("play") +
+          'End break</button><button class="btn btn-soft btn-xl" type="button">' +
+          icon("log-out") +
+          "Clock out</button></div>" +
+          '<div class="clock-today"><div><div class="k">Worked</div><div class="v">3:23</div></div><div><div class="k">Breaks</div><div class="v">0:14</div></div><div><div class="k">Required</div><div class="v">8:00</div></div></div></div>'
+        );
+      }
+
+      function seg(when, kind, dur, open) {
+        var isBreak = kind === "Break";
+        return (
+          '<div class="seg' +
+          (isBreak ? " break" : "") +
+          (open ? " open" : "") +
+          '"><span class="when">' +
+          when +
+          '</span><span class="what">' +
+          icon(isBreak ? "coffee" : "play") +
+          kind +
+          '</span><span class="dur">' +
+          dur +
+          "</span></div>"
+        );
+      }
+
+      function todayView() {
+        return (
+          header("today") +
+          '<div style="display:grid; grid-template-columns: 400px 1fr; gap: 16px; align-items:start">' +
+          '<div class="card panel" style="width:auto; border:0; box-shadow: 0 0 0 1px color-mix(in oklch, var(--text) 10%, transparent)">' +
+          widgetBreak() +
+          "</div>" +
+          '<div class="stack">' +
+          '<div class="card"><div class="row between"><span class="card-title">' +
+          icon("calendar-days") +
+          "Friday 11 September</span>" +
+          '<button class="btn btn-outline btn-sm" type="button">' +
+          icon("pencil") +
+          "Edit today's times</button></div>" +
+          '<div class="timeline">' +
+          seg("08:42 - 12:05", "Work", "3:23") +
+          seg("12:05", "Break", "0:14", true) +
+          "</div>" +
+          '<div class="totals" style="grid-template-columns: repeat(4,1fr)">' +
+          stat("Presence", "3:37") +
+          stat("Breaks", "0:14") +
+          stat("Worked", "3:23") +
+          stat("Required", "8:00") +
+          "</div>" +
+          '<p class="hint">You can correct today\'s session yourself while it is open or until midnight. Older days go through your admin.</p></div>' +
+          '<div class="card"><span class="card-title">' +
+          icon("rotate-ccw-clock") +
+          "Yesterday, Thursday 10</span>" +
+          '<div class="timeline">' +
+          seg("08:03 - 12:10", "Work", "4:07") +
+          seg("12:10 - 12:40", "Break", "0:30") +
+          seg("12:40 - 16:45", "Work", "4:05") +
+          "</div>" +
+          '<div class="row" style="gap:16px"><span class="muted">Presence <b class="tnum" style="color:var(--text)">8:42</b></span><span class="muted">Worked <b class="tnum" style="color:var(--text)">8:12</b></span><span class="muted">Required <b class="tnum" style="color:var(--text)">8:00</b></span>' +
+          balanceChip(12) +
+          "</div></div>" +
+          "</div></div>"
+        );
+      }
+
+      function weekCard(x) {
+        var cls = "wday" + (x.ex ? " excluded" : "") + (x.today ? " today" : "");
+        var h =
+          '<div class="' +
+          cls +
+          '"><div class="d"><span>' +
+          x.dow +
+          "</span><small>" +
+          x.d +
+          " Sep</small></div>";
+        if (x.ex) {
+          h +=
+            '<div class="big">' +
+            (x.worked != null ? fmt.hm(x.worked) : "") +
+            '</div><div class="req">' +
+            x.ex +
+            "</div>";
+        } else {
+          h +=
+            '<div class="big">' +
+            fmt.hm(x.worked) +
+            '</div><div class="req">of ' +
+            fmt.hm(x.req) +
+            (x.half ? ", half day" : "") +
+            "</div>";
+        }
+        if (x.presence != null) h += '<div class="req">' + fmt.hm(x.presence) + " present</div>";
+        h += '<div class="row" style="gap:4px; flex-wrap:wrap; margin-top:auto">';
+        if (x.today) h += '<span class="flag flag-ok">' + icon("coffee") + "On break</span>";
+        else if (x.bal != null) h += balanceChip(x.bal);
+        if (x.flag) h += flagChip(x.flag, x.flag === "exclockin" ? "Excluded day" : null);
+        if (x.half)
+          h +=
+            '<span class="tag small" style="--tag: var(--c-vacation)"><span class="tag-dot"></span>Vacation ½</span>';
+        return h + "</div></div>";
+      }
+
+      function weekView() {
+        var week = DAYS.filter(function (x) {
+          return x.d >= 7 && x.d <= 13;
+        });
+        var w = week.reduce(function (a, x) {
+          return a + (x.worked || 0);
+        }, 0);
+        var r = week.reduce(function (a, x) {
+          return a + (x.req || 0);
+        }, 0);
+        return (
+          header("week") +
+          '<div class="totals" style="grid-template-columns: repeat(4,1fr); margin-bottom:16px">' +
+          stat("Worked", fmt.hm(w)) +
+          stat("Required", fmt.hm(r)) +
+          stat("Balance", fmt.hm(w - r, true), w - r >= 0 ? "ok" : "danger", "Friday still open") +
+          stat("Flagged", "1", "", "day to check") +
+          "</div>" +
+          '<div class="week">' +
+          week.map(weekCard).join("") +
+          "</div>" +
+          '<div class="legend" style="margin-top:14px"><span>' +
+          icon(FLAGS.autoclosed.icon) +
+          "Auto-closed, set the real clock-out</span><span>Hatched days are excluded: weekend, holiday or approved absence</span></div>"
+        );
+      }
+
+      function monthCell(x, mode) {
+        var cls = "mday" + (x.ex ? " ex" : "") + (x.up ? " up" : "") + (x.today ? " today" : "");
+        var h =
+          '<div class="' +
+          cls +
+          '"><div class="d"><span>' +
+          x.d +
+          "</span>" +
+          (x.flag ? icon(FLAGS[x.flag].icon) : "") +
+          "</div>";
+        if (x.up) return h + "</div>";
+        if (x.ex) {
+          h +=
+            '<div class="w">' +
+            (x.worked != null ? fmt.hm(x.worked) : "") +
+            '</div><div class="r">' +
+            x.ex +
+            "</div>";
+        } else {
+          h +=
+            '<div class="w">' +
+            fmt.hm(x.worked) +
+            '</div><div class="r">of ' +
+            fmt.hm(x.req) +
+            (x.half ? ", half day" : "") +
+            "</div>";
+        }
+        if (x.presence != null) h += '<div class="r">' + fmt.hm(x.presence) + " present</div>";
+        h += '<div class="b">';
+        if (x.today) h += '<span class="flag flag-ok">' + icon("coffee") + "On break</span>";
+        else if (mode === "daily" && x.bal != null) h += balanceChip(x.bal);
+        return h + "</div></div>";
+      }
+
+      function monthView(mode) {
+        var top =
+          mode === "daily"
+            ? stat("Worked", fmt.hm(workedToDate)) +
+              stat("Required so far", fmt.hm(reqToDate)) +
+              stat("Balance", fmt.hm(workedToDate - reqToDate, true), "ok", "to date") +
+              stat("Excluded days", excludedCount, "", "of 30") +
+              stat("Flagged", flagged, "", "days to check")
+            : stat("Worked", fmt.hm(workedToDate)) +
+              stat("Required so far", fmt.hm(reqToDate)) +
+              stat(
+                "Month balance",
+                fmt.hm(workedToDate - reqToDate, true),
+                "ok",
+                "against required to date"
+              ) +
+              stat("Month required", fmt.hm(monthReq), "", "17½ working days") +
+              stat("Excluded days", excludedCount, "", "of 30");
+        var cells = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+          .map(function (n) {
+            return '<div class="h">' + n + "</div>";
+          })
+          .join("");
+        cells += '<div class="mday gone"></div>';
+        cells += DAYS.map(function (x) {
+          return monthCell(x, mode);
+        }).join("");
+        cells +=
+          '<div class="mday gone"></div><div class="mday gone"></div><div class="mday gone"></div><div class="mday gone"></div>';
+        var legend =
+          '<div class="legend" style="margin-top:14px"><span>' +
+          icon(FLAGS.autoclosed.icon) +
+          FLAGS.autoclosed.label +
+          "</span><span>" +
+          icon(FLAGS.exclockin.icon) +
+          FLAGS.exclockin.label +
+          "</span><span>Hatched: excluded day</span><span>Dashed: upcoming</span></div>";
+        return (
+          header("month", mode === "daily" ? "each day" : "over the month") +
+          '<div class="totals" style="margin-bottom:16px">' +
+          top +
+          "</div>" +
+          '<div class="mgrid">' +
+          cells +
+          "</div>" +
+          legend
+        );
+      }
+
+      document.querySelectorAll(".laptop[data-view]").forEach(function (el) {
+        var v = el.getAttribute("data-view");
+        var content =
+          v === "today"
+            ? todayView()
+            : v === "week"
+              ? weekView()
+              : monthView(v === "month-daily" ? "daily" : "monthly");
+        el.innerHTML = shellFrame({
+          active: "my",
+          crumb: ["Attendance", "My attendance"],
+          live: true,
+          support: true,
+          content: content,
+        });
+      });
+
+      function mobileToday() {
+        return (
+          '<h1 class="page-title" style="font-size:22px; margin-bottom:10px">My attendance</h1>' +
+          '<div style="margin-bottom:12px"><span class="segmented"><span class="active">Today</span><span>Week</span><span>Month</span></span></div>' +
+          '<div class="card card-sm" style="padding:18px">' +
+          widgetBreak() +
+          "</div>" +
+          '<div class="card card-sm" style="margin-top:12px"><div class="row between"><span class="card-title" style="font-size:15px">Friday 11 September</span>' +
+          '<button class="btn btn-ghost btn-icon btn-sm" type="button">' +
+          icon("pencil") +
+          "</button></div>" +
+          '<div class="timeline">' +
+          seg("08:42 - 12:05", "Work", "3:23") +
+          seg("12:05", "Break", "0:14", true) +
+          "</div></div>"
+        );
+      }
+
+      function mobileMonth() {
+        var rows = DAYS.filter(function (x) {
+          return x.d <= 13;
+        })
+          .map(function (x) {
+            var h =
+              '<div class="r' +
+              (x.ex ? " ex" : "") +
+              '"><div class="d">' +
+              x.dow +
+              "<small>" +
+              x.d +
+              " Sep</small></div>";
+            if (x.ex)
+              h +=
+                '<div class="cellv"><b>' +
+                (x.worked != null ? fmt.hm(x.worked) : "") +
+                "</b><small>" +
+                x.ex +
+                "</small></div>";
+            else
+              h +=
+                '<div class="cellv"><b>' +
+                fmt.hm(x.worked) +
+                "</b><small>of " +
+                fmt.hm(x.req) +
+                (x.half ? ", half day" : "") +
+                "</small></div>";
+            h += '<div class="row" style="gap:4px">';
+            if (x.flag) h += '<span class="flag flag-warn">' + icon(FLAGS[x.flag].icon) + "</span>";
+            if (x.today) h += '<span class="flag flag-ok">' + icon("coffee") + "</span>";
+            else if (x.bal != null) h += balanceChip(x.bal);
+            return h + "</div></div>";
+          })
+          .join("");
+        return (
+          '<h1 class="page-title" style="font-size:22px; margin-bottom:10px">My attendance</h1>' +
+          '<div style="margin-bottom:12px"><span class="segmented"><span>Today</span><span>Week</span><span class="active">Month</span></span></div>' +
+          '<div class="row between" style="margin-bottom:10px"><span style="font-weight:600">September 2026</span><span class="chip">Balance each day</span></div>' +
+          '<div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:8px; margin-bottom:12px">' +
+          stat("Worked", fmt.hm(workedToDate)) +
+          stat("Required", fmt.hm(reqToDate)) +
+          stat("Balance", fmt.hm(workedToDate - reqToDate, true), "ok") +
+          "</div>" +
+          '<div class="mlist">' +
+          rows +
+          "</div>"
+        );
+      }
+
+      document.querySelectorAll(".phone[data-view]").forEach(function (el) {
+        var v = el.getAttribute("data-view");
+        el.innerHTML = phoneFrame({
+          active: "attendance",
+          clock: "break",
+          content: v === "m-today" ? mobileToday() : mobileMonth(),
+        });
+        el.querySelectorAll(".stat.compact .stat-value").forEach(function (s) {
+          s.style.fontSize = "22px";
+        });
+      });
+    </script>
+  </body>
+</html>

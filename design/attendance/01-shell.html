@@ -1,0 +1,550 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Attendance design: navigation shell</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;500;600;700;800&family=Hanken+Grotesk:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="assets/tokens.css" />
+    <link rel="stylesheet" href="assets/mock.css" />
+    <script src="assets/mock.js"></script>
+    <script src="assets/icons.js"></script>
+    <script src="assets/shell.js"></script>
+  </head>
+  <body>
+    <div class="sheet">
+      <header class="sheet-head">
+        <div>
+          <h1>Navigation shell</h1>
+          <p>
+            The flat six-link bar becomes a sectioned shell: a collapsible sidebar on a laptop, a
+            five-slot bottom bar on a phone with the clock as the centre action. Admin sections
+            appear only for org admins and group admins. The content behind the shell is today's
+            dashboard, unchanged.
+          </p>
+          <nav class="sheet-nav">
+            <a class="current" href="01-shell.html">Shell</a>
+            <a href="02-clock-widget.html">Clock widget</a>
+            <a href="03-my-attendance.html">My attendance</a>
+            <a href="04-team-attendance.html">Team attendance</a>
+            <a href="05-organization-settings.html">Organization settings</a>
+          </nav>
+        </div>
+        <div class="theme-toggle" role="group" aria-label="Theme">
+          <button type="button" data-theme-pick="light">Light</button>
+          <button type="button" data-theme-pick="dark">Dark</button>
+          <button type="button" data-theme-pick="system">System</button>
+        </div>
+      </header>
+
+      <section class="board">
+        <h2>Desktop, org admin</h2>
+        <p>
+          Dana Holt owns Studio Modrá and is clocked in, so My attendance carries a live dot.
+          Support shows because she is a support admin; it is hidden for everyone else, as today.
+        </p>
+        <div class="frames">
+          <div class="frame">
+            <span class="frame-label">1280 x 800, sidebar expanded</span>
+            <div class="laptop">
+              <div class="app shell">
+                <aside class="sidebar">
+                  <div class="sidebar-head">
+                    <a class="logo" href="#"
+                      ><span class="logo-mark"></span><span>flexi<b>day</b></span></a
+                    >
+                    <button class="btn btn-ghost btn-icon btn-sm" type="button" title="Collapse">
+                      <i data-icon="panel-left-close"></i>
+                    </button>
+                  </div>
+                  <div class="nav-label">Time off</div>
+                  <a class="nav-item active" href="#"
+                    ><i data-icon="layout-grid"></i><span>Dashboard</span></a
+                  >
+                  <a class="nav-item" href="#"
+                    ><i data-icon="calendar"></i><span>Requests</span
+                    ><span class="count">2</span></a
+                  >
+                  <a class="nav-item" href="#"
+                    ><i data-icon="chart-column"></i><span>Report</span></a
+                  >
+                  <a class="nav-item" href="#"><i data-icon="users"></i><span>Groups</span></a>
+                  <a class="nav-item" href="#"
+                    ><i data-icon="refresh-cw"></i><span>Calendar sync</span></a
+                  >
+                  <div class="nav-label">Attendance</div>
+                  <a class="nav-item" href="#"
+                    ><i data-icon="timer"></i><span>My attendance</span
+                    ><span class="live" title="Clocked in"></span
+                  ></a>
+                  <a class="nav-item" href="#"
+                    ><i data-icon="calendar-range"></i><span>Team attendance</span></a
+                  >
+                  <div class="nav-label">Organization</div>
+                  <a class="nav-item" href="#"
+                    ><i data-icon="building-2"></i><span>Organization</span></a
+                  >
+                  <a class="nav-item" href="#"
+                    ><i data-icon="credit-card"></i><span>Billing</span></a
+                  >
+                  <div class="sidebar-foot">
+                    <a class="nav-item" href="#"
+                      ><i data-icon="settings"></i><span>Settings</span></a
+                    >
+                    <a class="nav-item" href="#"
+                      ><i data-icon="life-buoy"></i><span>Support</span></a
+                    >
+                    <div class="user-block">
+                      <span class="avatar lg">DH</span>
+                      <div>
+                        <div class="name">Dana Holt</div>
+                        <div class="org">Studio Modrá</div>
+                      </div>
+                    </div>
+                  </div>
+                </aside>
+                <div class="main">
+                  <header class="topbar">
+                    <span class="crumb"
+                      >Time off <span class="faint">/</span> <b>Dashboard</b></span
+                    >
+                    <span class="grow"></span>
+                    <button class="btn btn-primary btn-sm" type="button">
+                      <i data-icon="plus"></i>New request
+                    </button>
+                    <button
+                      class="btn btn-outline btn-icon btn-sm"
+                      type="button"
+                      title="Notifications"
+                    >
+                      <i data-icon="bell"></i>
+                    </button>
+                    <button class="btn btn-outline btn-icon btn-sm" type="button" title="Theme">
+                      <i data-icon="sun"></i>
+                    </button>
+                    <button class="btn btn-outline btn-icon btn-sm" type="button" title="Language">
+                      <i data-icon="globe"></i>
+                    </button>
+                    <button class="btn btn-ghost btn-sm" type="button" style="padding: 0 8px 0 4px">
+                      <span class="avatar">DH</span><i data-icon="chevron-down"></i>
+                    </button>
+                  </header>
+                  <div class="content" data-dashboard="Dana"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="board">
+        <h2>Desktop, org admin, sidebar collapsed</h2>
+        <p>
+          Icons only at 68 px. Section labels become hairlines, the live dot moves to the icon's
+          corner, and item names show as tooltips on hover.
+        </p>
+        <div class="frames">
+          <div class="frame">
+            <span class="frame-label">1280 x 800, sidebar collapsed</span>
+            <div class="laptop">
+              <div class="app shell collapsed">
+                <aside class="sidebar">
+                  <div class="sidebar-head">
+                    <a class="logo" href="#"
+                      ><span class="logo-mark"></span><span>flexi<b>day</b></span></a
+                    >
+                    <button class="btn btn-ghost btn-icon btn-sm" type="button" title="Expand">
+                      <i data-icon="panel-left"></i>
+                    </button>
+                  </div>
+                  <div class="nav-label">Time off</div>
+                  <a class="nav-item active" href="#" title="Dashboard"
+                    ><i data-icon="layout-grid"></i><span>Dashboard</span></a
+                  >
+                  <a class="nav-item" href="#" title="Requests"
+                    ><i data-icon="calendar"></i><span>Requests</span></a
+                  >
+                  <a class="nav-item" href="#" title="Report"
+                    ><i data-icon="chart-column"></i><span>Report</span></a
+                  >
+                  <a class="nav-item" href="#" title="Groups"
+                    ><i data-icon="users"></i><span>Groups</span></a
+                  >
+                  <a class="nav-item" href="#" title="Calendar sync"
+                    ><i data-icon="refresh-cw"></i><span>Calendar sync</span></a
+                  >
+                  <div class="nav-label">Attendance</div>
+                  <a class="nav-item" href="#" title="My attendance"
+                    ><i data-icon="timer"></i><span>My attendance</span><span class="live"></span
+                  ></a>
+                  <a class="nav-item" href="#" title="Team attendance"
+                    ><i data-icon="calendar-range"></i><span>Team attendance</span></a
+                  >
+                  <div class="nav-label">Organization</div>
+                  <a class="nav-item" href="#" title="Organization"
+                    ><i data-icon="building-2"></i><span>Organization</span></a
+                  >
+                  <a class="nav-item" href="#" title="Billing"
+                    ><i data-icon="credit-card"></i><span>Billing</span></a
+                  >
+                  <div class="sidebar-foot">
+                    <a class="nav-item" href="#" title="Settings"
+                      ><i data-icon="settings"></i><span>Settings</span></a
+                    >
+                    <a class="nav-item" href="#" title="Support"
+                      ><i data-icon="life-buoy"></i><span>Support</span></a
+                    >
+                    <div class="user-block">
+                      <span class="avatar lg">DH</span>
+                      <div>
+                        <div class="name">Dana Holt</div>
+                        <div class="org">Studio Modrá</div>
+                      </div>
+                    </div>
+                  </div>
+                </aside>
+                <div class="main">
+                  <header class="topbar">
+                    <span class="crumb"
+                      >Time off <span class="faint">/</span> <b>Dashboard</b></span
+                    >
+                    <span class="grow"></span>
+                    <button class="btn btn-primary btn-sm" type="button">
+                      <i data-icon="plus"></i>New request
+                    </button>
+                    <button class="btn btn-outline btn-icon btn-sm" type="button">
+                      <i data-icon="bell"></i>
+                    </button>
+                    <button class="btn btn-outline btn-icon btn-sm" type="button">
+                      <i data-icon="sun"></i>
+                    </button>
+                    <button class="btn btn-outline btn-icon btn-sm" type="button">
+                      <i data-icon="globe"></i>
+                    </button>
+                    <button class="btn btn-ghost btn-sm" type="button" style="padding: 0 8px 0 4px">
+                      <span class="avatar">DH</span><i data-icon="chevron-down"></i>
+                    </button>
+                  </header>
+                  <div class="content" data-dashboard="Dana"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="board">
+        <h2>Desktop, member</h2>
+        <p>
+          Aisha Khan belongs to Design and administers nothing. Team attendance, Organization and
+          Billing are absent, so the Organization section disappears entirely. Settings stays,
+          because it is hers.
+        </p>
+        <div class="frames">
+          <div class="frame">
+            <span class="frame-label">1280 x 800, non-admin</span>
+            <div class="laptop">
+              <div class="app shell">
+                <aside class="sidebar">
+                  <div class="sidebar-head">
+                    <a class="logo" href="#"
+                      ><span class="logo-mark"></span><span>flexi<b>day</b></span></a
+                    >
+                    <button class="btn btn-ghost btn-icon btn-sm" type="button" title="Collapse">
+                      <i data-icon="panel-left-close"></i>
+                    </button>
+                  </div>
+                  <div class="nav-label">Time off</div>
+                  <a class="nav-item active" href="#"
+                    ><i data-icon="layout-grid"></i><span>Dashboard</span></a
+                  >
+                  <a class="nav-item" href="#"><i data-icon="calendar"></i><span>Requests</span></a>
+                  <a class="nav-item" href="#"
+                    ><i data-icon="chart-column"></i><span>Report</span></a
+                  >
+                  <a class="nav-item" href="#"><i data-icon="users"></i><span>Groups</span></a>
+                  <a class="nav-item" href="#"
+                    ><i data-icon="refresh-cw"></i><span>Calendar sync</span></a
+                  >
+                  <div class="nav-label">Attendance</div>
+                  <a class="nav-item" href="#"
+                    ><i data-icon="timer"></i><span>My attendance</span></a
+                  >
+                  <div class="sidebar-foot">
+                    <a class="nav-item" href="#"
+                      ><i data-icon="settings"></i><span>Settings</span></a
+                    >
+                    <div class="user-block">
+                      <span class="avatar lg">AK</span>
+                      <div>
+                        <div class="name">Aisha Khan</div>
+                        <div class="org">Studio Modrá</div>
+                      </div>
+                    </div>
+                  </div>
+                </aside>
+                <div class="main">
+                  <header class="topbar">
+                    <span class="crumb"
+                      >Time off <span class="faint">/</span> <b>Dashboard</b></span
+                    >
+                    <span class="grow"></span>
+                    <button class="btn btn-primary btn-sm" type="button">
+                      <i data-icon="plus"></i>New request
+                    </button>
+                    <button class="btn btn-outline btn-icon btn-sm" type="button">
+                      <i data-icon="bell"></i>
+                    </button>
+                    <button class="btn btn-outline btn-icon btn-sm" type="button">
+                      <i data-icon="sun"></i>
+                    </button>
+                    <button class="btn btn-outline btn-icon btn-sm" type="button">
+                      <i data-icon="globe"></i>
+                    </button>
+                    <button class="btn btn-ghost btn-sm" type="button" style="padding: 0 8px 0 4px">
+                      <span class="avatar">AK</span><i data-icon="chevron-down"></i>
+                    </button>
+                  </header>
+                  <div class="content" data-dashboard="Aisha"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="board">
+        <h2>Mobile</h2>
+        <p>
+          Five slots: Dashboard, Requests, the clock, Attendance, More. The clock disc shows state
+          (out, in, on break) and opens the widget as a bottom sheet. Everything that is not on the
+          bar lives behind More, grouped by the same sections as the sidebar.
+        </p>
+        <div class="frames">
+          <div class="frame">
+            <span class="frame-label">390 x 844, org admin, clocked in</span>
+            <div class="phone" data-phone="Dana Holt" data-clock="in"></div>
+          </div>
+          <div class="frame">
+            <span class="frame-label">390 x 844, org admin, More open</span>
+            <div class="phone" data-phone="Dana Holt" data-clock="out" data-more="admin"></div>
+          </div>
+          <div class="frame">
+            <span class="frame-label">390 x 844, member, More open</span>
+            <div class="phone" data-phone="Aisha Khan" data-clock="out" data-more="member"></div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <script>
+      // Dashboard content and phone chrome are rendered from data so the four
+      // frames stay identical where they should be.
+      var TAGS = {
+        3: [{ color: "--c-vacation", label: "Marco" }],
+        4: [{ color: "--c-vacation", label: "Marco" }],
+        8: [{ color: "--c-vacation", label: "Dana ½" }],
+        10: [{ color: "--c-home", label: "Sofia" }],
+        16: [{ color: "--c-sick", label: "Dana" }],
+        21: [{ color: "--c-vacation", label: "Dana" }],
+        22: [{ color: "--c-vacation", label: "Dana" }],
+        28: [{ color: "--c-bank", label: "St Wenceslas Day" }],
+      };
+
+      function calendar(mini) {
+        var names = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+        var html = '<div class="cal' + (mini ? " mini" : "") + '">';
+        names.forEach(function (n) {
+          html += '<div class="h">' + (mini ? n[0] : n) + "</div>";
+        });
+        var cells = [{ d: 31, off: true }];
+        for (var d = 1; d <= 30; d++) cells.push({ d: d });
+        for (var o = 1; o <= 4; o++) cells.push({ d: o, off: true });
+        cells.forEach(function (c, i) {
+          var weekend = i % 7 >= 5;
+          var cls = "c" + (c.off || weekend ? " off" : "") + (!c.off && c.d === 11 ? " now" : "");
+          var tags = (!c.off && TAGS[c.d]) || [];
+          html += '<div class="' + cls + '"><span>' + c.d + "</span>";
+          if (mini) {
+            html += '<span class="row" style="gap:3px">';
+            tags.forEach(function (t) {
+              html += '<span class="tag-dot" style="background: var(' + t.color + ')"></span>';
+            });
+            html += "</span>";
+          } else {
+            tags.forEach(function (t) {
+              html +=
+                '<span class="tag small" style="--tag: var(' +
+                t.color +
+                ')"><span class="tag-dot"></span>' +
+                t.label +
+                "</span>";
+            });
+          }
+          html += "</div>";
+        });
+        return html + "</div>";
+      }
+
+      var STATS = [
+        { label: "Remaining", value: 14, sub: "days", icon: "tree-palm", tint: "--c-vacation" },
+        { label: "Used", value: 9, sub: "days", icon: "calendar-days", tint: "--c-pto" },
+        { label: "Pending", value: 2, sub: "requests", icon: "hourglass", tint: "--warm" },
+        { label: "Out today", value: 3, sub: "teammates", icon: "users", tint: "--c-home" },
+      ];
+
+      function statCards() {
+        return STATS.map(function (s) {
+          return (
+            '<div class="stat" style="--tint: var(' +
+            s.tint +
+            ')">' +
+            '<div class="row between"><span class="stat-label">' +
+            s.label +
+            "</span>" +
+            '<span class="stat-icon">' +
+            icon(s.icon) +
+            "</span></div>" +
+            '<div><span class="stat-value">' +
+            s.value +
+            '</span><span class="stat-sub">' +
+            s.sub +
+            "</span></div></div>"
+          );
+        }).join("");
+      }
+
+      function statStrip() {
+        return STATS.map(function (s) {
+          return (
+            '<div class="stat compact" style="--tint: var(' +
+            s.tint +
+            '); align-items:center; padding: 12px 4px">' +
+            '<span class="stat-icon" style="width:28px;height:28px;border-radius:9px">' +
+            icon(s.icon) +
+            "</span>" +
+            '<span class="stat-value" style="font-size:22px">' +
+            s.value +
+            "</span></div>"
+          );
+        }).join("");
+      }
+
+      document.querySelectorAll("[data-dashboard]").forEach(function (el) {
+        var name = el.getAttribute("data-dashboard");
+        el.innerHTML =
+          '<div class="row between" style="margin-bottom: 22px">' +
+          '<div><h1 class="page-title">Good afternoon, ' +
+          name +
+          "</h1>" +
+          "<p class=\"page-sub\">Here's who's in, who's out, and what's coming up.</p></div>" +
+          '<div class="row"><span class="segmented"><span class="active">Mine</span><span>Design</span></span>' +
+          '<button class="btn btn-outline btn-icon btn-sm" type="button">' +
+          icon("chevron-left") +
+          "</button>" +
+          '<span style="font-weight:600; min-width: 130px; text-align:center">September 2026</span>' +
+          '<button class="btn btn-outline btn-icon btn-sm" type="button">' +
+          icon("chevron-right") +
+          "</button></div></div>" +
+          '<div style="display:grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 20px">' +
+          statCards() +
+          "</div>" +
+          calendar(false);
+      });
+
+      function bottomBar(clock) {
+        var disc = clockDisc(clock, "3:37");
+        return (
+          '<nav class="bottombar">' +
+          '<a class="tab-item active" href="#">' +
+          icon("layout-grid") +
+          "<span>Dashboard</span></a>" +
+          '<a class="tab-item" href="#">' +
+          icon("calendar") +
+          "<span>Requests</span></a>" +
+          '<a class="clock-action ' +
+          disc.cls +
+          '" href="#"><span class="disc">' +
+          icon(disc.icon) +
+          "</span><span>" +
+          disc.label +
+          "</span></a>" +
+          '<a class="tab-item" href="#">' +
+          icon("timer") +
+          "<span>Attendance</span></a>" +
+          '<a class="tab-item" href="#">' +
+          icon("menu") +
+          "<span>More</span></a>" +
+          "</nav>"
+        );
+      }
+
+      function moreSheet(kind) {
+        var html = '<div class="scrim"></div><div class="bottom-sheet"><div class="grabber"></div>';
+        html += '<div class="nav-label" style="padding-top:0">Time off</div>';
+        html += '<a class="nav-item" href="#">' + icon("chart-column") + "<span>Report</span></a>";
+        html += '<a class="nav-item" href="#">' + icon("users") + "<span>Groups</span></a>";
+        html +=
+          '<a class="nav-item" href="#">' + icon("refresh-cw") + "<span>Calendar sync</span></a>";
+        if (kind === "admin") {
+          html += '<div class="nav-label">Attendance</div>';
+          html +=
+            '<a class="nav-item" href="#">' +
+            icon("calendar-range") +
+            "<span>Team attendance</span></a>";
+          html += '<div class="nav-label">Organization</div>';
+          html +=
+            '<a class="nav-item" href="#">' + icon("building-2") + "<span>Organization</span></a>";
+          html +=
+            '<a class="nav-item" href="#">' + icon("credit-card") + "<span>Billing</span></a>";
+        }
+        html += '<div style="height:1px; background: var(--border); margin: 10px 0"></div>';
+        html += '<a class="nav-item" href="#">' + icon("settings") + "<span>Settings</span></a>";
+        if (kind === "admin")
+          html += '<a class="nav-item" href="#">' + icon("life-buoy") + "<span>Support</span></a>";
+        return html + "</div>";
+      }
+
+      // The phone chrome is written out here rather than through phoneFrame()
+      // for the same reason as the desktop shell: this sheet is the shell.
+      document.querySelectorAll("[data-phone]").forEach(function (el) {
+        var name = el.getAttribute("data-phone");
+        el.innerHTML =
+          '<div class="app" style="position:relative; height:100%">' +
+          '<div class="status-bar"><span>12:19</span><span style="font-size:12px">5G</span></div>' +
+          '<header class="m-top"><a class="logo" href="#"><span class="logo-mark"></span><span>flexi<b>day</b></span></a>' +
+          '<span class="grow"></span>' +
+          '<button class="btn btn-outline btn-icon btn-sm" type="button">' +
+          icon("bell") +
+          "</button>" +
+          '<span class="avatar">' +
+          fmt.initials(name) +
+          "</span></header>" +
+          '<div class="m-content">' +
+          '<h1 class="page-title" style="font-size:22px">Good afternoon, ' +
+          name.split(" ")[0] +
+          "</h1>" +
+          "<p class=\"page-sub\" style=\"margin-bottom:16px\">Here's who's in, who's out, and what's coming up.</p>" +
+          '<div style="display:grid; grid-template-columns: repeat(4,1fr); gap:8px; margin-bottom:16px">' +
+          statStrip() +
+          "</div>" +
+          '<div class="row between" style="margin-bottom:10px"><span style="font-weight:600">September 2026</span>' +
+          '<span class="row" style="gap:6px"><button class="btn btn-outline btn-icon btn-sm" type="button">' +
+          icon("chevron-left") +
+          "</button>" +
+          '<button class="btn btn-outline btn-icon btn-sm" type="button">' +
+          icon("chevron-right") +
+          "</button></span></div>" +
+          calendar(true) +
+          "</div>" +
+          bottomBar(el.getAttribute("data-clock")) +
+          (el.getAttribute("data-more") ? moreSheet(el.getAttribute("data-more")) : "") +
+          '<div class="home-indicator"></div></div>';
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,551 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Attendance design: team attendance</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;500;600;700;800&family=Hanken+Grotesk:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="assets/tokens.css" />
+    <link rel="stylesheet" href="assets/mock.css" />
+    <script src="assets/mock.js"></script>
+    <script src="assets/icons.js"></script>
+    <script src="assets/shell.js"></script>
+    <style>
+      .matrix td,
+      .matrix th {
+        padding-left: 10px;
+        padding-right: 10px;
+      }
+      .matrix th.day {
+        text-align: center;
+      }
+      .matrix th.day small {
+        display: block;
+        color: var(--text-faint);
+        font-weight: 600;
+        font-size: 11.5px;
+      }
+      .matrix th.today,
+      .matrix td.today {
+        background: color-mix(in oklch, var(--primary) 5%, transparent);
+      }
+      .matrix td.day {
+        text-align: center;
+      }
+      .matrix td.day .cellv {
+        align-items: center;
+      }
+      .matrix td.day .cellv .f {
+        display: inline-flex;
+        align-items: center;
+        gap: 3px;
+        color: var(--warm);
+        font-size: 11.5px;
+        font-weight: 600;
+      }
+      .matrix td.act {
+        width: 96px;
+        text-align: right;
+      }
+      .matrix tr:not(.hover) td.act .btn {
+        visibility: hidden;
+      }
+      .m-people .p {
+        display: grid;
+        grid-template-columns: auto 1fr auto;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 0;
+        border-bottom: 1px solid var(--border);
+      }
+      .m-people .p small {
+        color: var(--text-faint);
+        display: block;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="sheet">
+      <header class="sheet-head">
+        <div>
+          <h1>Team attendance</h1>
+          <p>
+            One row per person, one column per day in the range, the period balance at the end. Who
+            is in right now sits above the table. Flags appear inside the day cell and are listed
+            underneath. Hover a row and the correction affordance appears; it opens a dialog with
+            the session's times, its breaks and the audit trail.
+          </p>
+          <nav class="sheet-nav">
+            <a href="01-shell.html">Shell</a>
+            <a href="02-clock-widget.html">Clock widget</a>
+            <a href="03-my-attendance.html">My attendance</a>
+            <a class="current" href="04-team-attendance.html">Team attendance</a>
+            <a href="05-organization-settings.html">Organization settings</a>
+          </nav>
+        </div>
+        <div class="theme-toggle" role="group" aria-label="Theme">
+          <button type="button" data-theme-pick="light">Light</button>
+          <button type="button" data-theme-pick="dark">Dark</button>
+          <button type="button" data-theme-pick="system">System</button>
+        </div>
+      </header>
+
+      <section class="board">
+        <h2>Org admin, all groups</h2>
+        <p>
+          Dana sees every Employment in Studio Modrá, including her own and the group manager's,
+          with a group filter. Worked time is coloured by that day's balance. Noah's row is hovered.
+        </p>
+        <div class="frames">
+          <div class="frame">
+            <span class="frame-label">1280 x 920, week of 7 September</span>
+            <div class="laptop tall" data-view="org"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="board">
+        <h2>Group admin, one group</h2>
+        <p>
+          Marco manages Engineering and sees only its members. No group filter, and not his own row:
+          a manager's attendance is visible to org admins alone.
+        </p>
+        <div class="frames">
+          <div class="frame">
+            <span class="frame-label">1280 x 800, group admin</span>
+            <div class="laptop" data-view="group"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="board">
+        <h2>Correcting a session</h2>
+        <p>
+          From Noah's Wednesday. The sweep closed the session at 00:05; the admin sets 17:10, and
+          the event list below will record who changed what.
+        </p>
+        <div class="frames">
+          <div class="frame">
+            <span class="frame-label">1280 x 920, correction dialog</span>
+            <div class="laptop tall" data-view="dialog"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="board">
+        <h2>Mobile</h2>
+        <p>On a phone the matrix collapses to one day at a time, today by default.</p>
+        <div class="frames">
+          <div class="frame">
+            <span class="frame-label">390 x 844, org admin, today</span>
+            <div class="phone" data-view="m-org"></div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <script>
+      var REQ = 480;
+      var EX = { ex: true };
+      // Worked minutes per day, Monday 7 to Sunday 13 September. Presence is
+      // worked plus the 30 min allowance once it applies. `live` is an open
+      // session with its start; `flag` one of the three dashboard flags.
+      var PEOPLE = [
+        {
+          name: "Dana Holt",
+          group: "Owner",
+          days: [
+            { worked: 480 },
+            { worked: 250, half: true },
+            { worked: 930, flag: "autoclosed" },
+            { worked: 462 },
+            { worked: 203, live: "08:42", onBreak: true },
+            { worked: 130, ex: true, flag: "exclockin" },
+            EX,
+          ],
+        },
+        {
+          name: "Aisha Khan",
+          group: "Design",
+          days: [
+            { worked: 495 },
+            { worked: 470 },
+            { worked: 480 },
+            { worked: 500 },
+            { worked: 217, live: "08:42" },
+            EX,
+            EX,
+          ],
+        },
+        {
+          name: "Noah Weber",
+          group: "Design",
+          hover: true,
+          days: [
+            { worked: 470 },
+            { worked: 480 },
+            { worked: 930, flag: "autoclosed" },
+            { worked: 485 },
+            {},
+            EX,
+            EX,
+          ],
+        },
+        {
+          name: "Sofia Almeida",
+          group: "Design",
+          days: [
+            { worked: 480 },
+            { worked: 490 },
+            { worked: 475 },
+            { worked: 480 },
+            { worked: 235 },
+            { worked: 150, ex: true, flag: "exclockin" },
+            EX,
+          ],
+        },
+        {
+          name: "Marco Rossi",
+          group: "Engineering, manager",
+          days: [
+            { worked: 480 },
+            { worked: 455 },
+            { worked: 520 },
+            { worked: 462 },
+            { worked: 182, live: "09:03", onBreak: true },
+            EX,
+            EX,
+          ],
+        },
+        {
+          name: "Priya Nair",
+          group: "Engineering",
+          eng: true,
+          days: [
+            { worked: 500 },
+            { worked: 480 },
+            { worked: 490 },
+            { worked: 470 },
+            { worked: 244, live: "08:15" },
+            EX,
+            EX,
+          ],
+        },
+        {
+          name: "Yuki Tanaka",
+          group: "Engineering",
+          eng: true,
+          days: [
+            { ex: true, why: "Vacation" },
+            { ex: true, why: "Vacation" },
+            { worked: 480 },
+            { worked: 500 },
+            { worked: 240, half: true },
+            EX,
+            EX,
+          ],
+        },
+        {
+          name: "Elena Petrova",
+          group: "Engineering",
+          eng: true,
+          days: [
+            { worked: 480 },
+            { worked: 485 },
+            { worked: 470 },
+            { worked: 799, flag: "open", live: "Thu 22:30" },
+            {},
+            EX,
+            EX,
+          ],
+        },
+        {
+          name: "Tom Becker",
+          group: "Sales",
+          days: [
+            { worked: 470 },
+            { worked: 480 },
+            { worked: 490 },
+            { worked: 480 },
+            { worked: 231 },
+            EX,
+            EX,
+          ],
+        },
+      ];
+      var DAYS = ["Mon 7", "Tue 8", "Wed 9", "Thu 10", "Fri 11", "Sat 12", "Sun 13"];
+      var SHORT = { autoclosed: "Auto-closed", exclockin: "Excluded day", open: "Still open" };
+
+      function req(d) {
+        return d.ex ? 0 : d.half ? REQ / 2 : REQ;
+      }
+      function presence(d) {
+        return d.worked + (d.worked + 30 > 360 ? 30 : 0);
+      }
+      function liveDay(p) {
+        return p.days.find(function (d) {
+          return d.live;
+        });
+      }
+      function liveLabel(d) {
+        return d.onBreak ? "on break" : "since " + d.live;
+      }
+      function balance(p) {
+        return p.days.reduce(function (a, d) {
+          if (d.live || d.worked == null) return a;
+          return a + d.worked - req(d);
+        }, 0);
+      }
+
+      function cell(d, i) {
+        var cls = "day" + (d.ex ? " ex" : "") + (i === 4 ? " today" : "");
+        var h = '<td class="' + cls + '"><div class="cellv">';
+        if (d.ex && d.worked == null) {
+          h += "<b>" + (d.why || "Weekend") + "</b>";
+        } else if (d.worked == null) {
+          h += '<b class="faint">Not in yet</b>';
+        } else if (d.live) {
+          h +=
+            "<b>" +
+            fmt.hm(d.worked) +
+            '</b><small class="ok" style="font-weight:600">' +
+            liveLabel(d) +
+            "</small>";
+        } else {
+          var bal = d.worked - req(d);
+          var tone = d.ex ? "" : bal > 0 ? " ok" : bal < 0 ? " danger" : "";
+          h += '<b class="' + tone + '">' + fmt.hm(d.worked) + "</b>";
+          h +=
+            "<small>" +
+            (d.ex ? d.why || "Weekend" : "of " + fmt.hm(req(d)) + (d.half ? ", half" : "")) +
+            "</small>";
+          h += "<small>" + fmt.hm(presence(d)) + " present</small>";
+        }
+        if (d.flag) h += '<span class="f">' + icon(FLAGS[d.flag].icon) + SHORT[d.flag] + "</span>";
+        return h + "</div></td>";
+      }
+
+      function matrix(rows) {
+        var h = '<table class="table matrix"><thead><tr><th>Person</th>';
+        DAYS.forEach(function (d, i) {
+          var parts = d.split(" ");
+          h +=
+            '<th class="day' +
+            (i === 4 ? " today" : "") +
+            '">' +
+            parts[0] +
+            "<small>" +
+            parts[1] +
+            " Sep</small></th>";
+        });
+        h += '<th class="num">Week</th><th></th></tr></thead><tbody>';
+        rows.forEach(function (p) {
+          h +=
+            '<tr class="' +
+            (p.hover ? "hover" : "") +
+            '"><td><div class="person"><span class="avatar' +
+            (liveDay(p) ? " live" : "") +
+            '">' +
+            fmt.initials(p.name) +
+            '</span><div><div style="font-weight:600">' +
+            p.name +
+            '</div><div class="g">' +
+            p.group +
+            "</div></div></div></td>";
+          h += p.days.map(cell).join("");
+          h +=
+            '<td class="num">' +
+            balanceChip(balance(p)) +
+            '</td><td class="act"><button class="btn btn-outline btn-sm" type="button">' +
+            icon("pencil") +
+            "Correct</button></td></tr>";
+        });
+        return h + "</tbody></table>";
+      }
+
+      function inNow(rows) {
+        var live = rows.filter(liveDay);
+        return (
+          '<div class="row" style="gap:12px; margin-bottom:14px"><span style="font-weight:600">In now</span><div class="in-now">' +
+          live
+            .map(function (p) {
+              return (
+                '<span class="who"><span class="avatar live">' +
+                fmt.initials(p.name) +
+                "</span>" +
+                p.name.split(" ")[0] +
+                "<small>" +
+                liveLabel(liveDay(p)) +
+                "</small></span>"
+              );
+            })
+            .join("") +
+          "</div></div>"
+        );
+      }
+
+      function legend() {
+        return (
+          '<div class="legend" style="margin-top:14px"><span>' +
+          icon(FLAGS.autoclosed.icon) +
+          "Auto-closed after the ceiling, set the real time</span><span>" +
+          icon(FLAGS.open.icon) +
+          "Still open from an earlier day</span><span>" +
+          icon(FLAGS.exclockin.icon) +
+          "Clocked in on an excluded day, counts toward the month</span><span>Hatched: excluded day</span></div>"
+        );
+      }
+
+      function pageHead(sub, filter) {
+        return (
+          '<div class="row between" style="margin-bottom:18px; align-items:flex-start"><div><h1 class="page-title">Team attendance</h1><p class="page-sub">' +
+          sub +
+          "</p></div>" +
+          '<div class="row">' +
+          (filter
+            ? '<span class="select" style="width:170px">' +
+              filter +
+              icon("chevron-down") +
+              "</span>"
+            : "") +
+          '<span class="segmented"><span class="active">Week</span><span>Month</span><span>Range</span></span>' +
+          '<button class="btn btn-outline btn-icon btn-sm" type="button">' +
+          icon("chevron-left") +
+          "</button>" +
+          '<span style="font-weight:600; min-width:150px; text-align:center">7 - 13 September</span>' +
+          '<button class="btn btn-outline btn-icon btn-sm" type="button">' +
+          icon("chevron-right") +
+          "</button></div></div>"
+        );
+      }
+
+      function orgView() {
+        return (
+          pageHead("Everyone in Studio Modrá, 9 people.", "All groups") +
+          inNow(PEOPLE) +
+          '<div class="card" style="padding:4px 8px">' +
+          matrix(PEOPLE) +
+          "</div>" +
+          legend()
+        );
+      }
+      function groupView() {
+        var eng = PEOPLE.filter(function (p) {
+          return p.eng;
+        });
+        return (
+          pageHead("Engineering, 3 people.") +
+          inNow(eng) +
+          '<div class="card" style="padding:4px 8px">' +
+          matrix(eng) +
+          "</div>" +
+          legend()
+        );
+      }
+
+      function dialog() {
+        return (
+          '<div class="overlay"><div class="dialog"><div><h2>Correct Wednesday 9 September</h2><p class="card-desc">Noah Weber. Closed automatically at 00:05 after 16 hours.</p></div>' +
+          '<div style="display:grid; grid-template-columns:1fr 1fr; gap:12px">' +
+          '<div class="field"><label class="label">Clock in</label><span class="input">08:05</span></div>' +
+          '<div class="field"><label class="label">Clock out</label><span class="input" style="border-color: var(--primary); box-shadow: 0 0 0 3px var(--ring)">17:10</span><span class="hint">Was 00:05, set by the sweep</span></div></div>' +
+          '<div class="field"><label class="label">Breaks</label><div class="row"><span class="input compact">12:00</span><span class="muted">to</span><span class="input compact">12:30</span><button class="btn btn-ghost btn-icon btn-sm" type="button">' +
+          icon("x") +
+          '</button><button class="btn btn-ghost btn-sm" type="button">' +
+          icon("plus") +
+          "Add break</button></div></div>" +
+          '<div><div class="label" style="margin-bottom:8px">History</div><div class="events">' +
+          '<div class="ev"><span class="t">Wed 08:05</span><span>Clocked in. Noah Weber</span></div>' +
+          '<div class="ev"><span class="t">Wed 12:00</span><span>Break started. Noah Weber</span></div>' +
+          '<div class="ev"><span class="t">Wed 12:30</span><span>Break ended. Noah Weber</span></div>' +
+          '<div class="ev"><span class="t">Thu 00:05</span><span>Closed automatically after 16 h. System</span></div></div></div>' +
+          '<div class="row between"><button class="btn btn-ghost danger btn-sm" type="button">Delete session</button><span class="row"><button class="btn btn-outline" type="button">Cancel</button><button class="btn btn-primary" type="button">Save correction</button></span></div>' +
+          "</div></div>"
+        );
+      }
+
+      document.querySelectorAll(".laptop[data-view]").forEach(function (el) {
+        var v = el.getAttribute("data-view");
+        if (v === "group") {
+          el.innerHTML = shellFrame({
+            active: "team",
+            crumb: ["Attendance", "Team attendance"],
+            live: true,
+            roles: { org: false, group: true },
+            user: { name: "Marco Rossi", org: "Studio Modrá" },
+            content: groupView(),
+          });
+        } else {
+          el.innerHTML = shellFrame({
+            active: "team",
+            crumb: ["Attendance", "Team attendance"],
+            live: true,
+            support: true,
+            content: orgView(),
+          });
+          if (v === "dialog") {
+            el.querySelector(".app").style.position = "relative";
+            el.querySelector(".app").insertAdjacentHTML("beforeend", dialog());
+          }
+        }
+      });
+
+      function mobileOrg() {
+        var rows = PEOPLE.map(function (p) {
+          var d = p.days[4];
+          var live = liveDay(p);
+          var h =
+            '<div class="p"><span class="avatar' +
+            (live ? " live" : "") +
+            '">' +
+            fmt.initials(p.name) +
+            '</span><div><div style="font-weight:600">' +
+            p.name +
+            "</div><small>" +
+            p.group +
+            "</small></div>";
+          if (live)
+            h +=
+              '<div class="cellv" style="align-items:flex-end"><b>' +
+              fmt.hm(live.worked) +
+              '</b><small class="ok" style="font-weight:600">' +
+              liveLabel(live) +
+              "</small></div>";
+          else if (d.worked == null) h += '<span class="faint">Not in yet</span>';
+          else
+            h +=
+              '<div class="cellv" style="align-items:flex-end"><b>' +
+              fmt.hm(d.worked) +
+              "</b><small>of " +
+              fmt.hm(req(d)) +
+              "</small></div>";
+          return h + "</div>";
+        }).join("");
+        return (
+          '<div class="row between" style="margin-bottom:12px"><h1 class="page-title" style="font-size:22px">Team attendance</h1><span class="select" style="width:130px">All groups' +
+          icon("chevron-down") +
+          "</span></div>" +
+          '<div class="row between" style="margin-bottom:12px"><button class="btn btn-outline btn-icon btn-sm" type="button">' +
+          icon("chevron-left") +
+          '</button><span style="font-weight:600">Friday 11 September</span><button class="btn btn-outline btn-icon btn-sm" type="button">' +
+          icon("chevron-right") +
+          "</button></div>" +
+          '<div class="chip" style="margin-bottom:8px"><span class="tag-dot" style="background:var(--ok)"></span>' +
+          PEOPLE.filter(liveDay).length +
+          " in now</div>" +
+          '<div class="m-people">' +
+          rows +
+          "</div>"
+        );
+      }
+
+      document.querySelectorAll(".phone[data-view]").forEach(function (el) {
+        el.innerHTML = phoneFrame({ active: "more", clock: "break", content: mobileOrg() });
+      });
+    </script>
+  </body>
+</html>

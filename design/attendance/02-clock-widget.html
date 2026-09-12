@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Attendance design: clock widget</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;500;600;700;800&family=Hanken+Grotesk:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="assets/tokens.css" />
+    <link rel="stylesheet" href="assets/mock.css" />
+    <script src="assets/mock.js"></script>
+    <script src="assets/icons.js"></script>
+    <script src="assets/shell.js"></script>
+  </head>
+  <body>
+    <div class="sheet">
+      <header class="sheet-head">
+        <div>
+          <h1>Clock widget</h1>
+          <p>
+            One component, two homes: the bottom sheet the phone's centre action opens, and a card
+            at the top of My attendance on a laptop. The big button is always the one thing to do
+            next; secondary actions sit beside it, never above. Notices stack above the button and
+            never block it, except when the plan has lapsed and there is no button at all.
+          </p>
+          <nav class="sheet-nav">
+            <a href="01-shell.html">Shell</a>
+            <a class="current" href="02-clock-widget.html">Clock widget</a>
+            <a href="03-my-attendance.html">My attendance</a>
+            <a href="04-team-attendance.html">Team attendance</a>
+            <a href="05-organization-settings.html">Organization settings</a>
+          </nav>
+        </div>
+        <div class="theme-toggle" role="group" aria-label="Theme">
+          <button type="button" data-theme-pick="light">Light</button>
+          <button type="button" data-theme-pick="dark">Dark</button>
+          <button type="button" data-theme-pick="system">System</button>
+        </div>
+      </header>
+
+      <section class="board">
+        <h2>Mobile, as the bottom sheet</h2>
+        <p>Six states, each as the sheet the centre action opens over the dimmed dashboard.</p>
+        <div class="frames">
+          <div class="frame">
+            <span class="frame-label">Out</span>
+            <div class="phone" data-state="out"></div>
+          </div>
+          <div class="frame">
+            <span class="frame-label">In, since 08:42</span>
+            <div class="phone" data-state="in"></div>
+          </div>
+          <div class="frame">
+            <span class="frame-label">On break</span>
+            <div class="phone" data-state="break"></div>
+          </div>
+          <div class="frame">
+            <span class="frame-label">Auto-closed, needs correction</span>
+            <div class="phone" data-state="autoclosed"></div>
+          </div>
+          <div class="frame">
+            <span class="frame-label">Attendance inactive, plan lapsed</span>
+            <div class="phone" data-state="inactive"></div>
+          </div>
+          <div class="frame">
+            <span class="frame-label">One-time location notice</span>
+            <div class="phone" data-state="location"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="board">
+        <h2>Desktop, as the card on My attendance</h2>
+        <p>Same markup at card width. The timer drops a size; nothing else changes.</p>
+        <div class="frames">
+          <div class="frame">
+            <span class="frame-label">In</span>
+            <div class="panel" data-card="in"></div>
+          </div>
+          <div class="frame">
+            <span class="frame-label">Auto-closed, needs correction</span>
+            <div class="panel" data-card="autoclosed"></div>
+          </div>
+          <div class="frame">
+            <span class="frame-label">Attendance inactive</span>
+            <div class="panel" data-card="inactive"></div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <script>
+      function today(cells) {
+        return (
+          '<div class="clock-today">' +
+          cells
+            .map(function (c) {
+              return (
+                '<div><div class="k">' +
+                c[0] +
+                '</div><div class="v ' +
+                (c[2] || "") +
+                '">' +
+                c[1] +
+                "</div></div>"
+              );
+            })
+            .join("") +
+          "</div>"
+        );
+      }
+
+      // Monday to Thursday of this week: 8:00, 4:10 (half day), 15:30, 8:12
+      // worked against 8:00, 4:00, 8:00, 8:00 required.
+      var OUT_TODAY = today([
+        ["Yesterday", "8:12"],
+        ["This week", "35:52"],
+        ["Week balance", "+7:52", "ok"],
+      ]);
+      var OUT_ACTIONS =
+        '<div class="clock-actions"><button class="btn btn-primary btn-xl" type="button">' +
+        icon("log-in") +
+        "Clock in</button></div>";
+      var NOT_IN = '<div class="clock-state">' + icon("clock") + "Not clocked in</div>";
+
+      function widget(state) {
+        var h = '<div class="clock">';
+        if (state === "out") {
+          h += NOT_IN;
+          h += '<div class="clock-since">Friday 11 September, nothing recorded yet</div>';
+          h += OUT_ACTIONS + OUT_TODAY;
+        } else if (state === "in") {
+          h += '<div class="clock-state ok">' + icon("play") + "Clocked in</div>";
+          h += '<div class="clock-timer">3<small>:</small>37</div>';
+          h += '<div class="clock-since">since 08:42</div>';
+          h +=
+            '<div class="clock-actions two"><button class="btn btn-soft btn-xl" type="button">' +
+            icon("coffee") +
+            'Take a break</button><button class="btn btn-primary btn-xl" type="button">' +
+            icon("log-out") +
+            "Clock out</button></div>";
+          h += today([
+            ["Worked", "3:37"],
+            ["Required", "8:00"],
+            ["To go", "4:23"],
+          ]);
+        } else if (state === "break") {
+          h += '<div class="clock-state warm">' + icon("coffee") + "On break</div>";
+          h += '<div class="clock-timer">0<small>:</small>14</div>';
+          h += '<div class="clock-since">since 12:05, of the 30 min allowance</div>';
+          h +=
+            '<div class="clock-actions two"><button class="btn btn-primary btn-xl" type="button">' +
+            icon("play") +
+            'End break</button><button class="btn btn-soft btn-xl" type="button">' +
+            icon("log-out") +
+            "Clock out</button></div>";
+          h += today([
+            ["Worked", "3:23"],
+            ["Breaks", "0:14"],
+            ["Required", "8:00"],
+          ]);
+        } else if (state === "autoclosed") {
+          h +=
+            '<div class="notice notice-warn">' +
+            icon("clock-alert") +
+            "<div><strong>Wednesday was closed for you</strong><p>The session reached 16 hours and was closed at 00:05 on Thursday. Set the time you actually left.</p>" +
+            '<button class="btn btn-outline btn-sm" type="button" style="margin-top:10px">' +
+            icon("pencil") +
+            "Fix clock-out</button></div></div>";
+          h += NOT_IN + OUT_ACTIONS + OUT_TODAY;
+        } else if (state === "inactive") {
+          h +=
+            '<div class="notice">' +
+            icon("lock") +
+            "<div><strong>Clocking in is off</strong><p>Studio Modrá's plan has lapsed, so attendance is paused. Your history stays readable. Ask an org admin about renewing.</p></div></div>";
+          h +=
+            '<div class="clock-actions"><button class="btn btn-outline btn-xl" type="button">' +
+            icon("timer") +
+            "View my attendance</button></div>";
+          h += today([
+            ["Last day", "Tue 2 Sep"],
+            ["August", "168:40"],
+            ["Balance", "+0:40", "ok"],
+          ]);
+        } else if (state === "location") {
+          h +=
+            '<div class="notice notice-primary">' +
+            icon("map-pin") +
+            '<div><strong>Studio Modrá records where you clock in and out</strong><p>Your browser asks for permission each time, and declining changes nothing. Coordinates are kept for twelve months and seen only by you and your admins. <a class="link" href="#">Privacy policy</a></p>' +
+            '<button class="btn btn-soft btn-sm" type="button" style="margin-top:10px">Got it</button></div></div>';
+          h += NOT_IN + OUT_ACTIONS + OUT_TODAY;
+        }
+        return h + "</div>";
+      }
+
+      document.querySelectorAll(".phone[data-state]").forEach(function (el) {
+        var state = el.getAttribute("data-state");
+        el.innerHTML = phoneFrame({
+          active: "dashboard",
+          clock: state === "inactive" ? "off" : state === "in" || state === "break" ? state : "out",
+          content:
+            '<h1 class="page-title" style="font-size:22px">Good afternoon, Dana</h1>' +
+            "<p class=\"page-sub\">Here's who's in, who's out, and what's coming up.</p>",
+          sheet:
+            '<div class="scrim"></div><div class="bottom-sheet"><div class="grabber"></div>' +
+            widget(state) +
+            "</div>",
+        });
+      });
+
+      document.querySelectorAll("[data-card]").forEach(function (el) {
+        el.innerHTML = '<div class="app">' + widget(el.getAttribute("data-card")) + "</div>";
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,344 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Attendance design: organization settings</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;500;600;700;800&family=Hanken+Grotesk:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="assets/tokens.css" />
+    <link rel="stylesheet" href="assets/mock.css" />
+    <script src="assets/mock.js"></script>
+    <script src="assets/icons.js"></script>
+    <script src="assets/shell.js"></script>
+    <style>
+      .fields {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 16px 20px;
+      }
+      .fields .span2 {
+        grid-column: span 2;
+      }
+      .fields .span3 {
+        grid-column: span 3;
+      }
+      .subhead {
+        font-weight: 600;
+        padding-top: 6px;
+        border-top: 1px solid var(--border);
+        margin-top: 4px;
+      }
+      .location {
+        border: 1px solid var(--border);
+        border-radius: var(--radius-xl);
+        padding: 16px 18px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .usage {
+        height: 6px;
+        border-radius: 999px;
+        background: var(--surface-2);
+        overflow: hidden;
+      }
+      .usage > span {
+        display: block;
+        height: 100%;
+        border-radius: 999px;
+        background: var(--primary);
+      }
+      .phone .fields {
+        grid-template-columns: 1fr;
+      }
+      .phone .fields .span2,
+      .phone .fields .span3 {
+        grid-column: auto;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="sheet">
+      <header class="sheet-head">
+        <div>
+          <h1>Organization settings</h1>
+          <p>
+            The existing organization screen with one new card, Attendance, after the plan and
+            sick-day cards. Its switch turns the feature on; everything else waits behind it. The
+            timezone is the only field without a default, so the browser's zone is proposed and the
+            switch refuses until one is chosen. Location is its own block at the bottom with the
+            responsibility note beside the switch.
+          </p>
+          <nav class="sheet-nav">
+            <a href="01-shell.html">Shell</a>
+            <a href="02-clock-widget.html">Clock widget</a>
+            <a href="03-my-attendance.html">My attendance</a>
+            <a href="04-team-attendance.html">Team attendance</a>
+            <a class="current" href="05-organization-settings.html">Organization settings</a>
+          </nav>
+        </div>
+        <div class="theme-toggle" role="group" aria-label="Theme">
+          <button type="button" data-theme-pick="light">Light</button>
+          <button type="button" data-theme-pick="dark">Dark</button>
+          <button type="button" data-theme-pick="system">System</button>
+        </div>
+      </header>
+
+      <section class="board">
+        <h2>Pro plan, attendance on</h2>
+        <p>
+          Defaults as specified: Monday to Friday, 30 minutes above six hours, 8:00 a day, each day,
+          ceilings of 16 and 2 hours, location off.
+        </p>
+        <div class="frames">
+          <div class="frame">
+            <span class="frame-label">1280 wide, the whole page as it scrolls</span>
+            <div class="laptop xtall" data-view="pro"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="board">
+        <h2>Free plan</h2>
+        <p>
+          The switch is disabled and the card says why. Nothing else renders until the plan allows
+          it.
+        </p>
+        <div class="frames">
+          <div class="frame">
+            <span class="frame-label">1280 x 800, Free</span>
+            <div class="laptop" data-view="free"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="board">
+        <h2>Mobile</h2>
+        <p>The attendance card on a phone, single column.</p>
+        <div class="frames">
+          <div class="frame">
+            <span class="frame-label">390 x 844, Pro, enabled</span>
+            <div class="phone" data-view="m-pro"></div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <script>
+      function field(label, control, hint, cls) {
+        return (
+          '<div class="field' +
+          (cls ? " " + cls : "") +
+          '"><label class="label">' +
+          label +
+          "</label>" +
+          control +
+          (hint ? '<span class="hint">' + hint + "</span>" : "") +
+          "</div>"
+        );
+      }
+      function select(value) {
+        return '<span class="select">' + value + icon("chevron-down") + "</span>";
+      }
+      function input(value, unit) {
+        return (
+          '<span class="input">' +
+          value +
+          (unit ? '<span class="unit">' + unit + "</span>" : "") +
+          "</span>"
+        );
+      }
+
+      function detailsCard() {
+        return (
+          '<div class="card"><span class="card-title">' +
+          icon("building-2") +
+          "Details</span>" +
+          '<div class="stack">' +
+          field("Name", input("Studio Modrá")) +
+          field(
+            "Billing email",
+            input("billing@studiomodra.cz"),
+            "Invoices and receipts go here."
+          ) +
+          '<div><button class="btn btn-primary disabled" type="button">Save</button></div></div></div>'
+        );
+      }
+      function planCard(plan) {
+        var pro = plan === "Pro";
+        return (
+          '<div class="card"><span class="card-title">Plan</span><div class="row" style="gap:8px; align-items:baseline"><span style="font-family:var(--font-display); font-size:20px; font-weight:700">' +
+          plan +
+          "</span>" +
+          (pro ? '<span class="muted" style="font-size:12px">Active</span>' : "") +
+          "</div>" +
+          '<p class="card-desc" style="margin:0">' +
+          (pro ? "Up to 10 groups, 50 members each." : "Up to 1 group, 5 members.") +
+          "</p>" +
+          '<div><div class="row between" style="margin-bottom:6px"><span>Usage</span><span class="muted tnum" style="font-size:12px">' +
+          (pro ? "3 / 10 groups" : "1 / 1 groups") +
+          '</span></div><div class="usage"><span style="width:' +
+          (pro ? "30%" : "100%") +
+          '"></span></div></div>' +
+          '<div><button class="btn btn-outline btn-sm" type="button">Manage billing</button></div></div>'
+        );
+      }
+      function sickCard(paid) {
+        return (
+          '<div class="card"><span class="card-title">' +
+          icon("heart-pulse") +
+          "Sick-day benefit</span>" +
+          '<div class="row between"><span class="label">Grant paid sick days</span><span class="switch' +
+          (paid ? " on" : " disabled") +
+          '"></span></div>' +
+          '<p class="hint" style="margin:0">Members can book sick days that do not use their vacation quota.</p>' +
+          (paid
+            ? ""
+            : '<p class="hint" style="margin:0; font-weight:600">Available on Pro and Enterprise.</p>') +
+          "</div>"
+        );
+      }
+
+      function attendanceCard(state) {
+        var on = state === "pro";
+        var h =
+          '<div class="card"><div class="row between"><span class="card-title">' +
+          icon("timer") +
+          "Attendance</span>" +
+          '<span class="switch' +
+          (on ? " on" : " disabled") +
+          '"></span></div>';
+        if (!on) {
+          return (
+            h +
+            '<p class="card-desc" style="margin:0">Clock in and out, breaks, worked time and a team dashboard.</p>' +
+            '<div class="notice notice-primary">' +
+            icon("lock") +
+            "<div><strong>Available on Pro and Enterprise</strong><p>Attendance turns on for the whole organization once the plan allows it. Nothing is recorded until you switch it on.</p>" +
+            '<button class="btn btn-outline btn-sm" type="button" style="margin-top:10px">See plans</button></div></div></div>'
+          );
+        }
+        h +=
+          '<p class="card-desc" style="margin:-8px 0 0">On for everyone in Studio Modrá. People clock in from the app; admins see the team.</p>';
+        h += '<div class="fields">';
+        h += field(
+          "Timezone",
+          select("Europe/Prague"),
+          "Required to turn attendance on. Proposed from your browser. Sets the day boundary; a night shift belongs to the day it started."
+        );
+        h += field("Holiday country", select("Czechia"), "Public holidays here are excluded days.");
+        h += field(
+          "Working days",
+          '<div class="days"><span class="day-pill on">Mo</span><span class="day-pill on">Tu</span><span class="day-pill on">We</span><span class="day-pill on">Th</span><span class="day-pill on">Fr</span><span class="day-pill">Sa</span><span class="day-pill">Su</span></div>',
+          "Other days are excluded; clocking in on them still counts."
+        );
+        h += '<div class="subhead span3">Breaks</div>';
+        h += field(
+          "Break allowance",
+          input("30", "min"),
+          "Deducted from every day that passes the threshold, whether or not a break was taken. A longer break is deducted in full."
+        );
+        h += field(
+          "Threshold",
+          input("6:00", "h:mm"),
+          "Presence below this deducts only breaks actually taken."
+        );
+        h += "<div></div>";
+        h += '<div class="subhead span3">Required time</div>';
+        h += field(
+          "Required per day",
+          input("8:00", "h:mm"),
+          "A person can be given their own required time."
+        );
+        h += field(
+          "Balance",
+          '<span class="segmented" style="width:100%"><span class="active">Each day</span><span>Over the month</span></span>',
+          "Each day colours every day against its required time. Over the month reports one balance and colours nothing else. Neither enforces anything.",
+          "span2"
+        );
+        h += '<div class="subhead span3">Ceilings</div>';
+        h += field(
+          "Close a session after",
+          input("16:00", "h:mm"),
+          "A forgotten clock-out is closed here and flagged for correction."
+        );
+        h += field(
+          "Close a break after",
+          input("2:00", "h:mm"),
+          "A forgotten break ends here and is flagged the same way."
+        );
+        h += "</div>";
+        h +=
+          '<div class="location"><div class="row between"><div><div class="label">Record location at clock-in and clock-out</div><p class="hint" style="margin:2px 0 0">The browser asks each person for permission every time. Declining is never recorded, never flagged. Coordinates are kept for twelve months.</p></div><span class="switch"></span></div>' +
+          '<div class="notice" style="padding:12px 14px">' +
+          icon("info") +
+          '<div><strong>Agreeing this with your employees is your responsibility</strong><p>Flexi Day records nothing about that agreement. The privacy policy tells employees what is stored, for how long and who sees it. <a class="link" href="#">Read it</a></p></div></div></div>';
+        h +=
+          '<div class="row"><button class="btn btn-primary" type="button">Save</button><span class="hint">Changes apply from the next clock-in.</span></div>';
+        return h + "</div>";
+      }
+
+      function groupsCard() {
+        return (
+          '<div class="card"><span class="card-title">' +
+          icon("users") +
+          "Groups</span><div>" +
+          ["Design", "Engineering", "Sales"]
+            .map(function (g, i) {
+              return (
+                '<div class="row between" style="padding:10px 0; border-bottom:1px solid var(--border)"><div><div style="font-weight:500">' +
+                g +
+                '</div><div class="hint">' +
+                [3, 4, 1][i] +
+                " members</div></div>" +
+                '<button class="btn btn-outline btn-sm" type="button">Open group</button></div>'
+              );
+            })
+            .join("") +
+          "</div></div>"
+        );
+      }
+
+      function page(state) {
+        var pro = state === "pro";
+        return (
+          '<div style="margin-bottom:24px"><h1 class="page-title">Organization</h1><p class="page-sub">Your organization, its plan, its groups and its admins.</p></div>' +
+          '<div class="stack" style="gap:16px"><div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; align-items:start">' +
+          detailsCard() +
+          planCard(pro ? "Pro" : "Free") +
+          sickCard(pro) +
+          "</div>" +
+          attendanceCard(state) +
+          groupsCard() +
+          "</div>"
+        );
+      }
+
+      document.querySelectorAll(".laptop[data-view]").forEach(function (el) {
+        el.innerHTML = shellFrame({
+          active: "org",
+          crumb: ["Organization", "Organization"],
+          live: true,
+          support: true,
+          content: page(el.getAttribute("data-view")),
+        });
+      });
+
+      document.querySelectorAll(".phone[data-view]").forEach(function (el) {
+        el.innerHTML = phoneFrame({
+          active: "more",
+          clock: "in",
+          elapsed: "3:37",
+          content:
+            '<div style="margin-bottom:14px"><h1 class="page-title" style="font-size:22px">Organization</h1></div>' +
+            attendanceCard("pro"),
+        });
+        el.querySelector(".card").style.padding = "18px";
+      });
+    </script>
+  </body>
+</html>
