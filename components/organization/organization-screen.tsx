@@ -18,6 +18,7 @@ import {
   useUpdateOrganization,
 } from "@/lib/api/queries";
 import type { OrganizationDetail } from "@/lib/api/organization";
+import { AttendanceCard } from "@/components/organization/attendance-card";
 import { AvatarBubble } from "@/components/brand/avatar-bubble";
 import { useTranslation } from "@/lib/i18n/use-translation";
 import { cn } from "@/lib/utils";
@@ -124,6 +125,7 @@ function OrganizationDetailView({
         <PlanCard detail={detail} />
         <SickDayBenefitCard detail={detail} organizationId={organizationId} />
       </div>
+      <AttendanceCard detail={detail} organizationId={organizationId} />
       <GroupsCard detail={detail} />
       <AdminsCard detail={detail} organizationId={organizationId} />
     </div>

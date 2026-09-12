@@ -33,6 +33,11 @@ vi.mock("@/lib/api/queries", () => ({
     error: null,
   }),
   useUpdateOrganization: () => ({ mutateAsync: updateOrganization, isPending: false }),
+  // The attendance card has its own suite; here it stays unresolved so this one
+  // keeps asserting the cards it was written for.
+  useAttendanceSettings: () => ({ data: undefined, isPending: true, error: null }),
+  useUpdateAttendanceSettings: () => ({ mutateAsync: vi.fn(), isPending: false }),
+  useBankHolidayCountries: () => ({ data: [], isLoading: false, error: null }),
   useAddOrganizationAdmin: () => ({ mutateAsync: addAdmin, isPending: false }),
   useRemoveOrganizationAdmin: () => ({ mutateAsync: removeAdmin, isPending: false }),
 }));

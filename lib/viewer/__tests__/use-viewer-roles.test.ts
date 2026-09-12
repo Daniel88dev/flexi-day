@@ -3,6 +3,7 @@ import { renderHook } from "@testing-library/react";
 import type { GroupListItem } from "@/lib/api/types";
 import type { OrganizationDetail, OrganizationSummary } from "@/lib/api/organization";
 import type { BillingOverview } from "@/lib/api/billing";
+import type { AttendanceSettings } from "@/lib/api/attendance-settings";
 
 type QueryState<T> = { data: T | undefined; isPending: boolean };
 
@@ -15,9 +16,13 @@ const state = {
   organization: pending<OrganizationDetail>(),
   groups: pending<GroupListItem[]>(),
   subscription: pending<BillingOverview>(),
+  attendanceSettings: pending<AttendanceSettings>(),
 };
 const useOrganizationMock = vi.fn<(id?: string | null) => QueryState<OrganizationDetail>>(
   () => state.organization
+);
+const useAttendanceSettingsMock = vi.fn<(id: string | null) => QueryState<AttendanceSettings>>(
+  () => state.attendanceSettings
 );
 
 vi.mock("@/lib/auth-client", () => ({
@@ -29,6 +34,7 @@ vi.mock("@/lib/api/queries", () => ({
   useOrganization: (id?: string | null) => useOrganizationMock(id),
   useGroups: () => state.groups,
   useSubscription: () => state.subscription,
+  useAttendanceSettings: (id: string | null) => useAttendanceSettingsMock(id),
 }));
 
 import { useViewerRoles } from "../use-viewer-roles";
@@ -90,6 +96,22 @@ const detail = (
   viewer: { userId: "me" },
 });
 
+const attendance = (active: boolean): AttendanceSettings => ({
+  organizationId: "org-1",
+  attendanceEnabled: active,
+  locationEnabled: false,
+  timezone: active ? "Europe/Prague" : null,
+  holidayCountry: null,
+  workingDays: [1, 2, 3, 4, 5],
+  breakMinutes: 30,
+  breakThresholdMinutes: 360,
+  requiredMinutesPerDay: 480,
+  balanceMode: "DAILY",
+  sessionCeilingMinutes: 960,
+  breakCeilingMinutes: 120,
+  active,
+});
+
 const acme: OrganizationDetail["organization"] = {
   id: "org-1",
   name: "Acme",
@@ -106,7 +128,9 @@ describe("useViewerRoles", () => {
     state.organization = pending();
     state.groups = pending();
     state.subscription = pending();
+    state.attendanceSettings = pending();
     useOrganizationMock.mockClear();
+    useAttendanceSettingsMock.mockClear();
   });
 
   it("reports loading and no roles while any composed query is still pending", () => {
@@ -120,6 +144,7 @@ describe("useViewerRoles", () => {
       isGroupAdmin: false,
       administeredGroups: [],
       plan: null,
+      attendanceActive: false,
     });
     expect(useOrganizationMock).toHaveBeenCalledWith(null);
   });
@@ -160,6 +185,7 @@ describe("useViewerRoles", () => {
       isGroupAdmin: false,
       administeredGroups: [],
       plan: { name: "FREE", active: false },
+      attendanceActive: false,
     });
     expect(useOrganizationMock).toHaveBeenCalledWith(null);
   });
@@ -172,6 +198,7 @@ describe("useViewerRoles", () => {
         { id: "g-2", groupName: "Support" },
       ])
     );
+    state.attendanceSettings = loaded(attendance(false));
     // Manages Sales themselves — Support is theirs through the organization.
     state.groups = loaded([group("g-1", "Sales", "org-1", { manager: true, adminAccess: true })]);
     state.subscription = loaded(overview({ ...acme, hasPaddleCustomer: true }, "PRO"));
@@ -189,6 +216,7 @@ describe("useViewerRoles", () => {
         { id: "g-2", groupName: "Support", viaOrgAdmin: true },
       ],
       plan: { name: "PRO", active: true },
+      attendanceActive: false,
     });
   });
 
@@ -197,6 +225,7 @@ describe("useViewerRoles", () => {
     state.organization = loaded(
       detail({ ...acme, isOwner: false, billingEmail: null }, [{ id: "g-2", groupName: "Support" }])
     );
+    state.attendanceSettings = loaded(attendance(false));
     state.groups = loaded([]);
     state.subscription = loaded(
       overview({ ...acme, isOwner: false, billingEmail: null, hasPaddleCustomer: true }, "PRO")
@@ -212,6 +241,7 @@ describe("useViewerRoles", () => {
       isGroupAdmin: true,
       administeredGroups: [{ id: "g-2", groupName: "Support", viaOrgAdmin: true }],
       plan: { name: "PRO", active: true },
+      attendanceActive: false,
     });
   });
 
@@ -233,6 +263,7 @@ describe("useViewerRoles", () => {
       isGroupAdmin: true,
       administeredGroups: [{ id: "g-1", groupName: "Sales", viaOrgAdmin: false }],
       plan: { name: "FREE", active: false },
+      attendanceActive: false,
     });
     expect(useOrganizationMock).toHaveBeenCalledWith(null);
   });
@@ -264,9 +295,41 @@ describe("useViewerRoles", () => {
     ]);
   });
 
+  it("reports attendance active from the settings payload", () => {
+    state.organizations = loaded([{ id: "org-1", name: "Acme", isOwner: true }]);
+    state.organization = loaded(detail(acme, []));
+    state.attendanceSettings = loaded(attendance(true));
+    state.groups = loaded([]);
+    state.subscription = loaded(overview({ ...acme, hasPaddleCustomer: true }, "PRO"));
+
+    expect(renderHook(() => useViewerRoles()).result.current.attendanceActive).toBe(true);
+    expect(useAttendanceSettingsMock).toHaveBeenCalledWith("org-1");
+  });
+
+  it("keeps loading until the attendance settings have answered", () => {
+    state.organizations = loaded([{ id: "org-1", name: "Acme", isOwner: true }]);
+    state.organization = loaded(detail(acme, []));
+    state.groups = loaded([]);
+    state.subscription = loaded(overview({ ...acme, hasPaddleCustomer: true }, "PRO"));
+
+    expect(renderHook(() => useViewerRoles()).result.current.isLoading).toBe(true);
+  });
+
+  it("never asks for the settings of a viewer who administers no organization", () => {
+    state.organizations = loaded([]);
+    state.groups = loaded([]);
+    state.subscription = loaded(overview(null));
+
+    const { result } = renderHook(() => useViewerRoles());
+
+    expect(result.current.attendanceActive).toBe(false);
+    expect(useAttendanceSettingsMock).toHaveBeenCalledWith(null);
+  });
+
   it("reports a lapsed paid plan as inactive", () => {
     state.organizations = loaded([{ id: "org-1", name: "Acme", isOwner: true }]);
     state.organization = loaded(detail(acme, []));
+    state.attendanceSettings = loaded(attendance(false));
     state.groups = loaded([]);
     state.subscription = loaded(overview({ ...acme, hasPaddleCustomer: true }, "PRO", false));
 

@@ -24,6 +24,11 @@ import {
   updateGroupWorkingDays,
 } from "./groups";
 import {
+  getAttendanceSettings,
+  updateAttendanceSettings,
+  type UpdateAttendanceSettingsInput,
+} from "./attendance-settings";
+import {
   addOrganizationAdmin,
   getOrganization,
   listOrganizationCandidates,
@@ -145,6 +150,8 @@ export const qk = {
     ["organization", organizationId ?? "own"] as const,
   organizationCandidates: (organizationId?: string | null) =>
     ["organization-candidates", organizationId ?? "own"] as const,
+  attendanceSettings: (organizationId?: string | null) =>
+    ["attendance-settings", organizationId ?? "own"] as const,
   // Hashed: query keys reach Sentry on failures and this one is free text.
   supportOrganizations: (query: string) =>
     ["support-organizations", opaqueSearchKey(query)] as const,
@@ -714,6 +721,27 @@ export function useUpdateOrganization(organizationId?: string | null) {
       qc.invalidateQueries({ queryKey: qk.groups() });
       qc.invalidateQueries({ queryKey: ["group"] });
       qc.invalidateQueries({ queryKey: qk.subscription() });
+    },
+  });
+}
+
+/** Org-admin only; skipped for anyone else, who would only get a 403 or a 404. */
+export function useAttendanceSettings(organizationId: string | null) {
+  return useQuery({
+    queryKey: qk.attendanceSettings(organizationId),
+    queryFn: () => getAttendanceSettings(organizationId),
+    enabled: !!organizationId,
+  });
+}
+
+export function useUpdateAttendanceSettings(organizationId?: string | null) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: Omit<UpdateAttendanceSettingsInput, "organizationId">) =>
+      updateAttendanceSettings({ ...input, organizationId }),
+    onSuccess: (settings) => {
+      qc.setQueryData(qk.attendanceSettings(organizationId), settings);
+      qc.invalidateQueries({ queryKey: qk.attendanceSettings(organizationId) });
     },
   });
 }
