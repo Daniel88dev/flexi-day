@@ -15,17 +15,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useSession, authClient } from "@/lib/auth-client";
 import { useTranslation } from "@/lib/i18n/use-translation";
-
-function getInitials(name?: string | null) {
-  if (!name) return "?";
-  return name
-    .split(" ")
-    .map((p) => p[0])
-    .filter(Boolean)
-    .slice(0, 2)
-    .join("")
-    .toUpperCase();
-}
+import { initials } from "@/lib/utils";
 
 export function UserMenu() {
   const router = useRouter();
@@ -49,7 +39,7 @@ export function UserMenu() {
           className="hover:bg-muted/70 flex h-8 items-center gap-1.5 rounded-full pr-2 pl-1"
         >
           <span className="bg-primary/10 ring-primary/20 text-primary flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-bold ring-1">
-            {name ? getInitials(name) : <User className="h-3.5 w-3.5" />}
+            {name ? initials(name) : <User className="h-3.5 w-3.5" />}
           </span>
           <ChevronDown className="text-muted-foreground h-3 w-3" />
           <span className="sr-only">{t.userMenu.label}</span>
@@ -60,7 +50,7 @@ export function UserMenu() {
         <DropdownMenuLabel>
           <div className="flex items-center gap-2.5 py-0.5">
             <span className="bg-primary/10 ring-primary/20 text-primary flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold ring-1">
-              {getInitials(name)}
+              {initials(name)}
             </span>
             <div className="flex min-w-0 flex-col">
               <span className="truncate text-sm leading-tight font-semibold">
