@@ -8,8 +8,10 @@ import { formatMinutes } from "@/lib/attendance/duration";
 import { buildTimeline, formatClockTime } from "@/lib/attendance/today";
 import { useNow } from "@/lib/attendance/use-now";
 import { useTranslation } from "@/lib/i18n/use-translation";
+import { anySessionLocated } from "@/lib/attendance/location";
 import { ClockWidget } from "./clock-widget";
 import { DayTotals } from "./day-totals";
+import { SessionLocation } from "./session-location";
 
 function Timeline({ session, now }: { session: AttendanceSession; now: Date }) {
   const { t } = useTranslation();
@@ -62,6 +64,9 @@ export function MyAttendanceScreen() {
 
   const state = query.data;
   const sessions = state?.sessions ?? [];
+  // An organization that switched location off keeps what it already took, so
+  // the strip follows the data as well as the switch.
+  const showLocation = (state?.locationEnabled ?? false) || anySessionLocated(sessions);
 
   return (
     <div className="flex flex-col gap-6">
@@ -92,7 +97,10 @@ export function MyAttendanceScreen() {
             ) : (
               <>
                 {sessions.map((session) => (
-                  <Timeline key={session.id} session={session} now={now} />
+                  <div key={session.id} className="flex flex-col gap-2">
+                    <Timeline session={session} now={now} />
+                    {showLocation ? <SessionLocation session={session} /> : null}
+                  </div>
                 ))}
                 <DayTotals sessions={sessions} now={now} />
               </>

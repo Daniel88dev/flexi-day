@@ -160,6 +160,17 @@ export const cs: Dictionary = {
     emptyDay: "Dnes zatím nic zaznamenáno.",
     loading: "Načítám tvoje píchačky…",
     unavailable: "Píchačky teď nejsou dostupné.",
+    locationNoticeTitle: "Tahle organizace zaznamenává, kde píchneš",
+    locationNoticeBody:
+      "Prohlížeč se tě při příchodu a odchodu zeptá na polohu. Můžeš odmítnout — nic se tak jako tak nezaznamená a nic dalšího se tím nemění.",
+    locationNoticePrivacy: "Přečíst zásady ochrany soukromí",
+    locationNoticeDismiss: "Rozumím",
+    locationIn: "Příchod na",
+    locationOut: "Odchod na",
+    // A non-breaking space: the strip is two narrow columns on a phone, and
+    // "±9" wrapping away from its "m" reads as nothing at all.
+    locationAccuracy: (metres: number) => `±${metres}\u00a0m`,
+    locationMissing: "—",
   },
 
   report: {

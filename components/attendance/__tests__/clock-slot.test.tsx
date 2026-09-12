@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, screen } from "@testing-library/react";
-import { renderWithClient } from "@/lib/test-utils";
+import { NO_SESSION_LOCATION, renderWithClient } from "@/lib/test-utils";
 import type { AttendanceState } from "@/lib/api/attendance";
 import { ClockSlot } from "../clock-slot";
 
@@ -61,6 +61,7 @@ describe("ClockSlot", () => {
         endedAt: null,
         timezone: ZONE,
         closedBy: null,
+        ...NO_SESSION_LOCATION,
         open: true,
         breaks: [],
       },

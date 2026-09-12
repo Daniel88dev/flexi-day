@@ -158,6 +158,17 @@ export const en = {
     emptyDay: "Nothing recorded today yet.",
     loading: "Loading your clock…",
     unavailable: "Your clock is unavailable right now.",
+    locationNoticeTitle: "This organization records where you clock",
+    locationNoticeBody:
+      "Your browser will ask for your location when you clock in and out. You can say no — nothing is recorded either way, and it changes nothing else.",
+    locationNoticePrivacy: "Read the privacy policy",
+    locationNoticeDismiss: "Got it",
+    locationIn: "Clocked in at",
+    locationOut: "Clocked out at",
+    // A non-breaking space: the strip is two narrow columns on a phone, and
+    // "±9" wrapping away from its "m" reads as nothing at all.
+    locationAccuracy: (metres: number) => `±${metres}\u00a0m`,
+    locationMissing: "—",
   },
 
   report: {

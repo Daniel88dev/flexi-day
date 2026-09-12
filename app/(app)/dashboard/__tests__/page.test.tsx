@@ -52,11 +52,14 @@ function day(
   };
 }
 
-let settings: UserSettings = {
+const DEFAULT_SETTINGS: UserSettings = {
   emailNotifications: true,
   dashboardScope: "MINE",
   dashboardGroupId: null,
+  attendanceLocationNoticeDismissed: false,
 };
+
+let settings: UserSettings = DEFAULT_SETTINGS;
 
 let vacations: VacationListItem[] = [day("v-1", dana, "2026-08-17")];
 
@@ -120,7 +123,7 @@ vi.mock("@/lib/api/queries", () => ({
 
 describe("DashboardPage scope switch", () => {
   beforeEach(() => {
-    settings = { emailNotifications: true, dashboardScope: "MINE", dashboardGroupId: null };
+    settings = { ...DEFAULT_SETTINGS, dashboardScope: "MINE", dashboardGroupId: null };
     vacations = [day("v-1", dana, "2026-08-17")];
     useVacationsSpy.mockClear();
   });
@@ -132,14 +135,14 @@ describe("DashboardPage scope switch", () => {
   });
 
   it("asks for the stored group when the preference is group scope", () => {
-    settings = { emailNotifications: true, dashboardScope: "GROUP", dashboardGroupId: "g-1" };
+    settings = { ...DEFAULT_SETTINGS, dashboardScope: "GROUP", dashboardGroupId: "g-1" };
     renderWithClient(<DashboardPage />);
 
     expect(useVacationsSpy).toHaveBeenLastCalledWith(expect.objectContaining({ groupId: "g-1" }));
   });
 
   it("falls back to the personal calendar when the stored group is no longer viewable", () => {
-    settings = { emailNotifications: true, dashboardScope: "GROUP", dashboardGroupId: "g-3" };
+    settings = { ...DEFAULT_SETTINGS, dashboardScope: "GROUP", dashboardGroupId: "g-3" };
     renderWithClient(<DashboardPage />);
 
     // g-3 is `self` access, so the group calendar would 403 — the first
@@ -157,7 +160,7 @@ describe("DashboardPage scope switch", () => {
   });
 
   it("labels a mirrored teammate's leave with its source group", () => {
-    settings = { emailNotifications: true, dashboardScope: "GROUP", dashboardGroupId: "g-1" };
+    settings = { ...DEFAULT_SETTINGS, dashboardScope: "GROUP", dashboardGroupId: "g-1" };
     vacations = [day("v-2", sam, "2026-08-18", "Team B")];
     renderWithClient(<DashboardPage />);
 
@@ -170,7 +173,7 @@ describe("DashboardPage bank holidays", () => {
   const visibleMonthDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-15`;
 
   beforeEach(() => {
-    settings = { emailNotifications: true, dashboardScope: "MINE", dashboardGroupId: null };
+    settings = { ...DEFAULT_SETTINGS, dashboardScope: "MINE", dashboardGroupId: null };
     vacations = [];
     bankHolidayRows = [];
     useBankHolidaysMultiSpy.mockClear();
@@ -198,7 +201,7 @@ describe("DashboardPage bank holidays", () => {
   });
 
   it("uses only the selected group's country from the membership list in GROUP scope", () => {
-    settings = { emailNotifications: true, dashboardScope: "GROUP", dashboardGroupId: "g-1" };
+    settings = { ...DEFAULT_SETTINGS, dashboardScope: "GROUP", dashboardGroupId: "g-1" };
     renderWithClient(<DashboardPage />);
 
     // g-1 is in the mocked useGroups list with CZ — no detail fetch, and the

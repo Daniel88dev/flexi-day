@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { screen } from "@testing-library/react";
-import { renderWithClient } from "@/lib/test-utils";
+import { NO_SESSION_LOCATION, renderWithClient } from "@/lib/test-utils";
 import type { AttendanceState } from "@/lib/api/attendance";
 import { MyAttendanceScreen } from "../my-attendance-screen";
 
@@ -13,6 +13,8 @@ vi.mock("@/lib/api/queries", () => ({
   useClockOut: () => idle,
   useStartBreak: () => idle,
   useEndBreak: () => idle,
+  useMySettings: () => ({ data: { attendanceLocationNoticeDismissed: true } }),
+  useUpdateMySettings: () => idle,
 }));
 
 const ZONE = "Europe/Prague";
@@ -55,6 +57,7 @@ describe("MyAttendanceScreen", () => {
           endedAt: "2026-09-11T14:00:00Z",
           timezone: ZONE,
           closedBy: "USER",
+          ...NO_SESSION_LOCATION,
           open: false,
           breaks: [
             {
@@ -88,6 +91,7 @@ describe("MyAttendanceScreen", () => {
         endedAt: null,
         timezone: ZONE,
         closedBy: null,
+        ...NO_SESSION_LOCATION,
         open: true,
         breaks: [],
       },
@@ -99,6 +103,7 @@ describe("MyAttendanceScreen", () => {
           endedAt: null,
           timezone: ZONE,
           closedBy: null,
+          ...NO_SESSION_LOCATION,
           open: true,
           breaks: [],
         },
@@ -107,5 +112,53 @@ describe("MyAttendanceScreen", () => {
     renderWithClient(<MyAttendanceScreen />);
 
     expect(screen.getByText(/Still open/)).toBeInTheDocument();
+  });
+  describe("where the day was clocked", () => {
+    const closed = (overrides = {}) => ({
+      id: "session-1",
+      businessDate: "2026-09-11",
+      startedAt: "2026-09-11T06:00:00Z",
+      endedAt: "2026-09-11T14:00:00Z",
+      timezone: ZONE,
+      closedBy: "USER" as const,
+      ...NO_SESSION_LOCATION,
+      open: false,
+      breaks: [],
+      ...overrides,
+    });
+
+    it("leaves the strip off where the organization does not record location", () => {
+      query.data = state({ sessions: [closed()] });
+      renderWithClient(<MyAttendanceScreen />);
+
+      expect(screen.queryByTestId("session-location")).toBeNull();
+    });
+
+    it("shows the strip, empty, where the organization does", () => {
+      query.data = state({ locationEnabled: true, sessions: [closed()] });
+      renderWithClient(<MyAttendanceScreen />);
+
+      expect(screen.getByTestId("session-location")).toBeInTheDocument();
+      expect(screen.getAllByText("—")).toHaveLength(2);
+    });
+
+    it("shows the coordinates it has", () => {
+      query.data = state({
+        locationEnabled: true,
+        sessions: [closed({ startLatitude: 50.0755, startLongitude: 14.4378, startAccuracy: 9 })],
+      });
+      renderWithClient(<MyAttendanceScreen />);
+
+      expect(screen.getByText("50.0755, 14.4378 ±9 m")).toBeInTheDocument();
+    });
+
+    it("keeps showing a fix taken before the organization switched location off", () => {
+      query.data = state({
+        sessions: [closed({ endLatitude: 50.09, endLongitude: 14.45, endAccuracy: 20 })],
+      });
+      renderWithClient(<MyAttendanceScreen />);
+
+      expect(screen.getByText("50.0900, 14.4500 ±20 m")).toBeInTheDocument();
+    });
   });
 });
