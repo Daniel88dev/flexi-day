@@ -30,6 +30,7 @@ export const clockState = {
   openSession: null,
   openBreak: null,
   sessions: [],
+  autoClosedSession: null,
 };
 
 /** Mutable seams the shell tests flip between cases; every mock factory reads them. */

@@ -69,6 +69,15 @@ export type AttendanceState = {
   openSession: AttendanceSession | null;
   openBreak: AttendanceBreak | null;
   sessions: AttendanceSession[];
+  /**
+   * The most recent session the ceiling sweep touched, on this business date or
+   * the one before — not necessarily one of `sessions`, because the sweep runs
+   * in the small hours and the day has moved on by the time anyone reads it.
+   *
+   * Two cases: `closedBy: "SWEEP"` is the session itself, and a break with
+   * `autoClosed` is one closed inside a session that may still be open.
+   */
+  autoClosedSession: AttendanceSession | null;
 };
 
 /** The stable `context.reason` on a 409 from any of the four writes. */

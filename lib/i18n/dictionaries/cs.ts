@@ -171,6 +171,12 @@ export const cs: Dictionary = {
     // "±9" wrapping away from its "m" reads as nothing at all.
     locationAccuracy: (metres: number) => `±${metres}\u00a0m`,
     locationMissing: "—",
+    autoClosedTitle: (day: string) => `${day} – uzavřeno automaticky`,
+    autoClosedSessionBody: (length: string, time: string, day: string) =>
+      `Směna dosáhla ${length} a byla uzavřena v ${time}, ${day}. Nastav čas, kdy jsi opravdu odešel.`,
+    autoClosedBreakBody: (length: string, time: string, day: string) =>
+      `Pauza dosáhla ${length} a byla uzavřena v ${time}, ${day}. Nastav čas, kdy jsi se opravdu vrátil.`,
+    autoClosedFlag: "Uzavřeno automaticky",
   },
 
   report: {

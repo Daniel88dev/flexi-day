@@ -169,6 +169,12 @@ export const en = {
     // "±9" wrapping away from its "m" reads as nothing at all.
     locationAccuracy: (metres: number) => `±${metres}\u00a0m`,
     locationMissing: "—",
+    autoClosedTitle: (day: string) => `${day} was closed for you`,
+    autoClosedSessionBody: (length: string, time: string, day: string) =>
+      `The session reached ${length} and was closed at ${time} on ${day}. Set the time you actually left.`,
+    autoClosedBreakBody: (length: string, time: string, day: string) =>
+      `A break reached ${length} and was closed at ${time} on ${day}. Set the time you actually came back.`,
+    autoClosedFlag: "Auto-closed",
   },
 
   report: {

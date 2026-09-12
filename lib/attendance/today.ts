@@ -34,7 +34,35 @@ export type TimelineSegment = {
   /** Null while the segment is still running. */
   endedAt: string | null;
   minutes: number;
+  /** The sweep ended this one at the ceiling, so the number is wrong. */
+  autoClosed: boolean;
 };
+
+/** The break the sweep closed, if this session holds one. */
+export const autoClosedBreakOf = (session: AttendanceSession): AttendanceBreak | undefined =>
+  session.breaks.find((entry) => entry.autoClosed);
+
+/**
+ * An instant's weekday in a given zone, capitalised. The notice names days
+ * rather than dates, because what it asks about is nearly always last night and
+ * "Wednesday" is how anybody would refer to it — and Czech weekdays are lower
+ * case on their own, while both dictionaries open a sentence with one.
+ */
+export function formatWeekday(iso: string, locale: string, timeZone: string): string {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return iso;
+  const day = new Intl.DateTimeFormat(locale, { weekday: "long", timeZone }).format(date);
+  return day.charAt(0).toUpperCase() + day.slice(1);
+}
+
+/**
+ * {@link formatWeekday} for a business date, which is a plain day rather than an
+ * instant: read at UTC noon, so no zone offset can move it off its own day.
+ */
+export function formatBusinessWeekday(businessDate: string, locale: string): string {
+  const iso = `${businessDate}T12:00:00Z`;
+  return Number.isNaN(new Date(iso).getTime()) ? businessDate : formatWeekday(iso, locale, "UTC");
+}
 
 /**
  * One session as the alternating work and break rows the day view shows. A
@@ -49,7 +77,7 @@ export function buildTimeline(session: AttendanceSession, now: Date): TimelineSe
   const pushWork = (from: string, to: string | null) => {
     const minutes = minutesBetween(from, to ?? now);
     if (to !== null && minutes === 0) return;
-    segments.push({ kind: "work", startedAt: from, endedAt: to, minutes });
+    segments.push({ kind: "work", startedAt: from, endedAt: to, minutes, autoClosed: false });
   };
 
   let cursor = session.startedAt;
@@ -60,6 +88,7 @@ export function buildTimeline(session: AttendanceSession, now: Date): TimelineSe
       startedAt: entry.startedAt,
       endedAt: entry.endedAt,
       minutes: spanMinutes(entry, now),
+      autoClosed: entry.autoClosed,
     });
     // An open break runs to the end of the session, so nothing follows it.
     if (entry.endedAt === null) return segments;

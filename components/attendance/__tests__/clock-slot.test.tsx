@@ -28,6 +28,7 @@ const state = (overrides: Partial<AttendanceState> = {}): AttendanceState => ({
   openSession: null,
   openBreak: null,
   sessions: [],
+  autoClosedSession: null,
   ...overrides,
 });
 
