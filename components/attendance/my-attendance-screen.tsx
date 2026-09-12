@@ -1,6 +1,6 @@
 "use client";
 
-import { CalendarDays, Coffee, Play } from "lucide-react";
+import { CalendarDays, ClockAlert, Coffee, Play } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAttendanceState } from "@/lib/api/queries";
 import type { AttendanceSession } from "@/lib/api/attendance";
@@ -12,6 +12,25 @@ import { anySessionLocated } from "@/lib/attendance/location";
 import { ClockWidget } from "./clock-widget";
 import { DayTotals } from "./day-totals";
 import { SessionLocation } from "./session-location";
+
+/** The mockups' flag: one chip, on a break's row or above the session it closed. */
+function AutoClosedFlag({ size = "sm" }: { size?: "sm" | "xs" }) {
+  const { t } = useTranslation();
+
+  return (
+    <span
+      className={
+        size === "xs"
+          ? "flex items-center gap-1 text-xs font-semibold [&_svg]:size-[14px]"
+          : "flex items-center gap-1 text-sm font-semibold [&_svg]:size-4"
+      }
+      style={{ color: "var(--warm)" }}
+    >
+      <ClockAlert />
+      {t.clock.autoClosedFlag}
+    </span>
+  );
+}
 
 function Timeline({ session, now }: { session: AttendanceSession; now: Date }) {
   const { t } = useTranslation();
@@ -42,6 +61,7 @@ function Timeline({ session, now }: { session: AttendanceSession; now: Date }) {
           <span className="text-sm" style={{ color: "var(--text-muted)" }}>
             {segment.kind === "break" ? t.clock.breakSegment : t.clock.work}
           </span>
+          {segment.autoClosed ? <AutoClosedFlag size="xs" /> : null}
           <span className="ml-auto font-semibold tabular-nums">
             {formatMinutes(segment.minutes)}
           </span>
@@ -98,6 +118,9 @@ export function MyAttendanceScreen() {
               <>
                 {sessions.map((session) => (
                   <div key={session.id} className="flex flex-col gap-2">
+                    {/* The session's own close. A break the sweep closed is
+                        flagged on its own row instead. */}
+                    {session.closedBy === "SWEEP" ? <AutoClosedFlag /> : null}
                     <Timeline session={session} now={now} />
                     {showLocation ? <SessionLocation session={session} /> : null}
                   </div>

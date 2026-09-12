@@ -30,6 +30,7 @@ const state = (overrides: Partial<AttendanceState> = {}): AttendanceState => ({
   openSession: null,
   openBreak: null,
   sessions: [],
+  autoClosedSession: null,
   ...overrides,
 });
 
@@ -159,6 +160,61 @@ describe("MyAttendanceScreen", () => {
       renderWithClient(<MyAttendanceScreen />);
 
       expect(screen.getByText("50.0900, 14.4500 ±20 m")).toBeInTheDocument();
+    });
+  });
+
+  describe("a day the sweep closed", () => {
+    const swept = (overrides = {}) => ({
+      id: "session-1",
+      businessDate: "2026-09-11",
+      startedAt: "2026-09-11T06:00:00Z",
+      endedAt: "2026-09-11T22:00:00Z",
+      timezone: ZONE,
+      closedBy: "SWEEP" as const,
+      ...NO_SESSION_LOCATION,
+      open: false,
+      breaks: [],
+      ...overrides,
+    });
+
+    it("flags the session", () => {
+      query.data = state({ sessions: [swept()] });
+      renderWithClient(<MyAttendanceScreen />);
+
+      expect(screen.getByText("Auto-closed")).toBeInTheDocument();
+    });
+
+    it("leaves an ordinary day unflagged", () => {
+      query.data = state({ sessions: [swept({ closedBy: "USER" as const })] });
+      renderWithClient(<MyAttendanceScreen />);
+
+      expect(screen.queryByText("Auto-closed")).not.toBeInTheDocument();
+    });
+
+    it("flags the break stretch rather than the session when that is what was closed", () => {
+      query.data = state({
+        sessions: [
+          swept({
+            closedBy: "USER" as const,
+            breaks: [
+              {
+                id: "break-1",
+                sessionId: "session-1",
+                startedAt: "2026-09-11T10:00:00Z",
+                endedAt: "2026-09-11T12:00:00Z",
+                autoClosed: true,
+                open: false,
+              },
+            ],
+          }),
+        ],
+      });
+      renderWithClient(<MyAttendanceScreen />);
+
+      // On the break's own row: 12:00 – 14:00 in Prague, two hours of it.
+      const flag = screen.getByText("Auto-closed");
+      expect(flag.closest("li")).toHaveTextContent("12:00 – 14:00");
+      expect(screen.queryByText("Break")).toBeInTheDocument();
     });
   });
 });

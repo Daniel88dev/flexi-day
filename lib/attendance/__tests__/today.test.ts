@@ -2,10 +2,13 @@ import { describe, expect, it } from "vitest";
 import type { AttendanceBreak, AttendanceSession } from "@/lib/api/attendance";
 import { NO_SESSION_LOCATION } from "@/lib/test-utils";
 import {
+  autoClosedBreakOf,
   breaksMinutes,
   buildTimeline,
   clockStateOf,
+  formatBusinessWeekday,
   formatClockTime,
+  formatWeekday,
   minutesBetween,
   presenceMinutes,
   spanMinutes,
@@ -103,18 +106,21 @@ describe("buildTimeline", () => {
         startedAt: "2026-09-11T06:00:00Z",
         endedAt: "2026-09-11T10:00:00Z",
         minutes: 240,
+        autoClosed: false,
       },
       {
         kind: "break",
         startedAt: "2026-09-11T10:00:00Z",
         endedAt: "2026-09-11T10:30:00Z",
         minutes: 30,
+        autoClosed: false,
       },
       {
         kind: "work",
         startedAt: "2026-09-11T10:30:00Z",
         endedAt: "2026-09-11T14:00:00Z",
         minutes: 210,
+        autoClosed: false,
       },
     ]);
   });
@@ -129,6 +135,7 @@ describe("buildTimeline", () => {
       startedAt: "2026-09-11T12:00:00Z",
       endedAt: null,
       minutes: 60,
+      autoClosed: false,
     });
   });
 
@@ -144,7 +151,13 @@ describe("buildTimeline", () => {
     const session = aSession("2026-09-11T12:00:00Z", null);
 
     expect(buildTimeline(session, NOW)).toEqual([
-      { kind: "work", startedAt: "2026-09-11T12:00:00Z", endedAt: null, minutes: 60 },
+      {
+        kind: "work",
+        startedAt: "2026-09-11T12:00:00Z",
+        endedAt: null,
+        minutes: 60,
+        autoClosed: false,
+      },
     ]);
   });
 
@@ -207,5 +220,81 @@ describe("clockStateOf", () => {
         openBreak: aBreak("2026-09-11T12:00:00Z"),
       })
     ).toBe("break");
+  });
+});
+
+describe("autoClosedBreakOf", () => {
+  it("returns the break the sweep closed", () => {
+    const swept: AttendanceBreak = {
+      ...aBreak("2026-09-11T10:00:00Z", "2026-09-11T12:00:00Z"),
+      autoClosed: true,
+    };
+    const session = aSession("2026-09-11T06:00:00Z", "2026-09-11T14:00:00Z", [
+      aBreak("2026-09-11T08:00:00Z", "2026-09-11T08:30:00Z"),
+      swept,
+    ]);
+
+    expect(autoClosedBreakOf(session)?.id).toBe(swept.id);
+  });
+
+  it("returns undefined when every break was ended by the person", () => {
+    const session = aSession("2026-09-11T06:00:00Z", "2026-09-11T14:00:00Z", [
+      aBreak("2026-09-11T08:00:00Z", "2026-09-11T08:30:00Z"),
+    ]);
+
+    expect(autoClosedBreakOf(session)).toBeUndefined();
+  });
+});
+
+describe("buildTimeline auto-closed marking", () => {
+  it("carries the flag on the break segment and not on the work around it", () => {
+    const session = aSession("2026-09-11T06:00:00Z", "2026-09-11T14:00:00Z", [
+      { ...aBreak("2026-09-11T10:00:00Z", "2026-09-11T12:00:00Z"), autoClosed: true },
+    ]);
+
+    expect(buildTimeline(session, NOW).map((segment) => segment.autoClosed)).toEqual([
+      false,
+      true,
+      false,
+    ]);
+  });
+});
+
+describe("formatBusinessWeekday", () => {
+  it("names the weekday of a business date", () => {
+    expect(formatBusinessWeekday("2026-09-10", "en")).toBe("Thursday");
+  });
+
+  it("answers in the caller's locale, capitalised", () => {
+    expect(formatBusinessWeekday("2026-09-10", "cs")).toBe("Čtvrtek");
+  });
+
+  it("reads the date itself rather than the browser's zone", () => {
+    // A midnight instant in a negative offset would land on the 9th.
+    expect(formatBusinessWeekday("2026-09-10", "en")).not.toBe("Wednesday");
+  });
+
+  it("hands back anything it cannot parse", () => {
+    expect(formatBusinessWeekday("not-a-date", "en")).toBe("not-a-date");
+  });
+});
+
+describe("formatWeekday", () => {
+  it("names the weekday an instant falls on in the organization's zone", () => {
+    // 22:05Z on Thursday is already Friday in Prague, which is the whole point:
+    // a 16-hour session is closed after midnight.
+    expect(formatWeekday("2026-09-10T22:05:00Z", "en", ZONE)).toBe("Friday");
+  });
+
+  it("reads the zone it is given, not the browser's", () => {
+    expect(formatWeekday("2026-09-10T22:05:00Z", "en", "UTC")).toBe("Thursday");
+  });
+
+  it("answers in the caller's locale, capitalised", () => {
+    expect(formatWeekday("2026-09-10T12:00:00Z", "cs", ZONE)).toBe("Čtvrtek");
+  });
+
+  it("hands back anything it cannot parse", () => {
+    expect(formatWeekday("not-an-instant", "en", ZONE)).toBe("not-an-instant");
   });
 });

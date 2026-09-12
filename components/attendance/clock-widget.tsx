@@ -1,10 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { Clock, Coffee, Lock, LogIn, LogOut, MapPin, Play, Timer } from "lucide-react";
+import { Clock, ClockAlert, Coffee, Lock, LogIn, LogOut, MapPin, Play, Timer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ApiError } from "@/lib/api/client";
-import type { AttendanceConflictContext } from "@/lib/api/attendance";
+import type { AttendanceConflictContext, AttendanceSession } from "@/lib/api/attendance";
 import {
   useAttendanceState,
   useClockIn,
@@ -16,8 +16,12 @@ import {
 } from "@/lib/api/queries";
 import { formatMinutes } from "@/lib/attendance/duration";
 import {
+  autoClosedBreakOf,
   clockStateOf,
+  formatBusinessWeekday,
   formatClockTime,
+  formatWeekday,
+  minutesBetween,
   spanMinutes,
   type ClockState,
 } from "@/lib/attendance/today";
@@ -108,6 +112,45 @@ function LocationNotice() {
       >
         {t.clock.locationNoticeDismiss}
       </Button>
+    </Notice>
+  );
+}
+
+/**
+ * What the sweep closed, and what to do about it. The break case wins when
+ * there is one, because a session the sweep closed *and* a break it closed
+ * inside the same day is one correction, and the break is the earlier wrong
+ * number.
+ *
+ * No button yet: nothing can edit a session until the corrections endpoint
+ * exists, and a button that does nothing is worse than a sentence that says
+ * what to do.
+ */
+function AutoClosedNotice({ session }: { session: AttendanceSession }) {
+  const { t, locale } = useTranslation();
+
+  const entry = autoClosedBreakOf(session);
+  const span = entry ?? session;
+  // The sweep closes both ends of whatever it touches, so a span it closed
+  // always has one; the fallback is only here to keep the types honest.
+  const closedAt = span.endedAt ?? span.startedAt;
+  const body = entry ? t.clock.autoClosedBreakBody : t.clock.autoClosedSessionBody;
+
+  return (
+    <Notice
+      tone="warn"
+      icon={<ClockAlert />}
+      title={t.clock.autoClosedTitle(formatBusinessWeekday(session.businessDate, locale))}
+    >
+      <p style={{ color: "var(--text-muted)" }}>
+        {body(
+          formatMinutes(minutesBetween(span.startedAt, closedAt)),
+          formatClockTime(closedAt, session.timezone),
+          // A 16-hour session is closed after midnight, so the time alone would
+          // read as this morning rather than the end of the day being corrected.
+          formatWeekday(closedAt, locale, session.timezone)
+        )}
+      </p>
     </Notice>
   );
 }
@@ -234,6 +277,8 @@ export function ClockWidget({
           <p style={{ color: "var(--text-muted)" }}>{error}</p>
         </Notice>
       ) : null}
+
+      {state.autoClosedSession ? <AutoClosedNotice session={state.autoClosedSession} /> : null}
 
       <div className="flex flex-col items-center gap-1">
         <span

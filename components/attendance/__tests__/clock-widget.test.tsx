@@ -61,6 +61,20 @@ const openBreak = (startedAt = "2026-09-11T10:05:00Z") =>
     open: true,
   }) satisfies AttendanceBreak;
 
+/** A session the sweep closed at its ceiling, with no break in it. */
+const sweptSession = (businessDate = "2026-09-10") =>
+  ({
+    id: "session-swept",
+    businessDate,
+    startedAt: `${businessDate}T06:05:00Z`,
+    endedAt: `${businessDate}T22:05:00Z`,
+    timezone: ZONE,
+    closedBy: "SWEEP",
+    ...NO_SESSION_LOCATION,
+    open: false,
+    breaks: [],
+  }) satisfies AttendanceSession;
+
 const state = (overrides: Partial<AttendanceState> = {}): AttendanceState => ({
   organizationId: "org-1",
   employmentId: "emp-1",
@@ -72,6 +86,7 @@ const state = (overrides: Partial<AttendanceState> = {}): AttendanceState => ({
   openSession: null,
   openBreak: null,
   sessions: [],
+  autoClosedSession: null,
   ...overrides,
 });
 
@@ -317,6 +332,76 @@ describe("ClockWidget", () => {
 
       expect(screen.getByText("Clocked in")).toBeInTheDocument();
       expect(screen.queryAllByRole("status")).toHaveLength(0);
+    });
+  });
+
+  describe("a clock the sweep closed", () => {
+    it("names the day and what it was closed at", () => {
+      query.data = state({ autoClosedSession: sweptSession() });
+      renderWithClient(<ClockWidget />);
+
+      expect(screen.getByText("Thursday was closed for you")).toBeInTheDocument();
+      expect(
+        screen.getByText(
+          "The session reached 16:00 and was closed at 00:05 on Friday. Set the time you actually left."
+        )
+      ).toBeInTheDocument();
+    });
+
+    it("leaves the clock-in button alone — a swept day never blocks the next one", () => {
+      query.data = state({ autoClosedSession: sweptSession() });
+      renderWithClient(<ClockWidget />);
+
+      expect(screen.getByRole("button", { name: "Clock in" })).toBeInTheDocument();
+      expect(screen.getByText("Not clocked in")).toBeInTheDocument();
+    });
+
+    it("stands beside a running session, because the day it asks about is an earlier one", () => {
+      query.data = state({ openSession: openSession(), autoClosedSession: sweptSession() });
+      renderWithClient(<ClockWidget />);
+
+      expect(screen.getByText("Thursday was closed for you")).toBeInTheDocument();
+      expect(screen.getByText("Clocked in")).toBeInTheDocument();
+    });
+
+    it("speaks of the break when that is what the sweep closed", () => {
+      const session = {
+        ...sweptSession("2026-09-11"),
+        closedBy: "USER" as const,
+        breaks: [
+          {
+            id: "break-swept",
+            sessionId: "session-swept",
+            startedAt: "2026-09-11T10:00:00Z",
+            endedAt: "2026-09-11T12:00:00Z",
+            autoClosed: true,
+            open: false,
+          },
+        ],
+      } satisfies AttendanceSession;
+      query.data = state({ autoClosedSession: session });
+      renderWithClient(<ClockWidget />);
+
+      expect(
+        screen.getByText(
+          "A break reached 2:00 and was closed at 14:00 on Friday. Set the time you actually came back."
+        )
+      ).toBeInTheDocument();
+    });
+
+    it("says nothing when the sweep closed nothing", () => {
+      query.data = state({ openSession: openSession() });
+      renderWithClient(<ClockWidget />);
+
+      expect(screen.queryByText(/was closed for you/)).not.toBeInTheDocument();
+    });
+
+    it("stays out of the way when attendance is not active at all", () => {
+      query.data = state({ active: false, autoClosedSession: sweptSession() });
+      renderWithClient(<ClockWidget />);
+
+      expect(screen.getByText("Clocking in is off")).toBeInTheDocument();
+      expect(screen.queryByText(/was closed for you/)).not.toBeInTheDocument();
     });
   });
 });
