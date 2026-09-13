@@ -134,3 +134,87 @@ export const updateSessionLocation = (sessionId: string, fix: AttendanceLocation
       body: fix,
     }
   );
+
+/** Why nothing, or only half, is owed on a business date. */
+export type AttendanceExclusionCause = "NOT_EMPLOYED" | "NON_WORKING_DAY" | "HOLIDAY" | "ABSENCE";
+
+export type AttendanceExclusion = {
+  cause: AttendanceExclusionCause;
+  /** `HALF` halves the required time rather than taking the day. */
+  extent: "FULL" | "HALF";
+  /** The holiday's own name, or the absence's record type. Null where the cause says it all. */
+  label: string | null;
+};
+
+/** One business date of a month: the figures, and the sessions behind them. */
+export type AttendanceDay = {
+  businessDate: string;
+  presenceMinutes: number;
+  breaksMinutes: number;
+  deductedMinutes: number;
+  workedMinutes: number;
+  requiredMinutes: number;
+  /**
+   * Null on a date still to come, throughout `MONTHLY` mode, and on a day off
+   * nobody worked.
+   */
+  balanceMinutes: number | null;
+  upcoming: boolean;
+  open: boolean;
+  autoClosed: boolean;
+  /** Null on an ordinary working day. */
+  exclusion: AttendanceExclusion | null;
+  /** Somebody at work on a day nobody owed: allowed, counted, and worth a look. */
+  excludedClockIn: boolean;
+  /** Auto-closed, clocked into a day off, or still open on a day that has passed. */
+  flagged: boolean;
+  sessions: AttendanceSession[];
+};
+
+export type AttendanceTotals = {
+  presenceMinutes: number;
+  workedMinutes: number;
+  /** Over the dates already begun, which is what the balance is measured against. */
+  requiredMinutes: number;
+  /** Over the whole month, upcoming dates included. */
+  requiredRangeMinutes: number;
+  balanceMinutes: number;
+  flaggedDays: number;
+  /** Whole days off in the month, upcoming ones included. A half day is not one. */
+  excludedDays: number;
+};
+
+export type AttendanceBalanceMode = "DAILY" | "MONTHLY";
+
+/**
+ * A month of the caller's own attendance. The rules travel with it — the screen
+ * prints "of 8:00" and colours against the balance mode, and an employee can
+ * read neither anywhere else.
+ */
+export type AttendanceMonth = {
+  organizationId: UUID;
+  employmentId: UUID;
+  timezone: string | null;
+  /** Today in that zone, so the screen knows which day is live. */
+  businessDate: string | null;
+  year: number;
+  month: number;
+  balanceMode: AttendanceBalanceMode;
+  /** What the days were measured against: the override where there is one. */
+  requiredMinutesPerDay: number;
+  requiredMinutesOverride: number | null;
+  breakMinutes: number;
+  breakThresholdMinutes: number;
+  days: AttendanceDay[];
+  totals: AttendanceTotals;
+};
+
+export function getAttendanceMonth(
+  year: number,
+  month: number,
+  organizationId?: string | null
+): Promise<AttendanceMonth> {
+  const params = new URLSearchParams({ year: String(year), month: String(month) });
+  if (organizationId) params.set("organizationId", organizationId);
+  return api<AttendanceMonth>(`/api/attendance/month?${params.toString()}`);
+}

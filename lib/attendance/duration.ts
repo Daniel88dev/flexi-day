@@ -22,3 +22,14 @@ export function parseMinutes(value: string): number | null {
   const total = hours * 60 + minutes;
   return total > 24 * 60 ? null : total;
 }
+
+/**
+ * A balance: `+0:11`, `-0:25`, `0:00`. Signed and never clamped, unlike
+ * {@link formatMinutes}, which formats a length of time and has no negative to
+ * show.
+ */
+export function formatSignedMinutes(minutes: number): string {
+  const safe = Number.isFinite(minutes) ? Math.round(minutes) : 0;
+  if (safe === 0) return "0:00";
+  return `${safe > 0 ? "+" : "-"}${formatMinutes(Math.abs(safe))}`;
+}

@@ -38,13 +38,13 @@ data arrays at the bottom of each file and worked time follows the rule in
   totals and the whole month on one screen. On a phone it is a list.
 - **`MONTHLY` mode hides the per-day balance chip entirely** rather than showing it uncoloured, so
   the one number on top is the only balance on the page.
-- **What the `MONTHLY` balance is measured against, mid-month.** `docs/attendance.md` says
-  "required time × working days in the month", which on the 11th would read as a large shortfall
-  for the days not yet worked. The mockup measures against the required time to date and shows the
-  full-month figure beside it. One of the two needs to win before the month screen is built.
+- **What the `MONTHLY` balance is measured against, mid-month.** Settled as the mockup has it:
+  against the required time to date, with the full-month figure beside it, so the days nobody has
+  worked yet are not a shortfall. `flexi-day-be/docs/attendance.md` now says so.
 - **Time is `h:mm` everywhere** (`8:11`, `+0:11`, `-0:25`), tabular figures, hyphen for minus.
-- **The per-person required-time override** (parent issue, story 39) has no screen yet. The
-  settings hint mentions it; where it lives is open.
+- **The per-person required-time override** (parent issue, story 39) lives on the organization
+  screen, in a People card under the attendance settings — one row per Employment, empty meaning
+  the organization's own figure.
 
 ## Keeping the assets honest
 
