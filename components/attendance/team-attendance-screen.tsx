@@ -376,7 +376,14 @@ function Matrix({
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead className="min-w-44">{t.teamAttendance.person}</TableHead>
+            {/* Pinned: a month is 30 columns wide, and a row nobody can put a
+                name to is not worth scrolling to. */}
+            <TableHead
+              className="sticky left-0 z-10 min-w-44 border-r"
+              style={{ background: "var(--bg)", borderColor: "var(--border)" }}
+            >
+              {t.teamAttendance.person}
+            </TableHead>
             {dates.map((date) => {
               const heading = dayHeading(date, locale);
               return (
@@ -407,7 +414,10 @@ function Matrix({
             const open = openOf.get(person.employmentId);
             return (
               <TableRow key={person.employmentId} data-testid={`team-row-${person.userId}`}>
-                <TableCell>
+                <TableCell
+                  className="sticky left-0 z-10 border-r"
+                  style={{ background: "var(--bg)", borderColor: "var(--border)" }}
+                >
                   <Person
                     person={person}
                     subtitle={groupNames(person, t.teamAttendance.noGroup)}

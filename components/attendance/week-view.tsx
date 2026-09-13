@@ -95,7 +95,7 @@ export function WeekView({
         <Stat
           label={t.clock.flagged}
           value={String(totals.flaggedDays)}
-          sub={t.clock.daysToCheck}
+          sub={t.clock.daysToCheck(totals.flaggedDays)}
         />
       </StatRow>
 

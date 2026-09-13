@@ -189,7 +189,7 @@ export const cs: Dictionary = {
     monthBalance: "Saldo za měsíc",
     againstToDate: "proti dosud požadovanému",
     flagged: "K prověření",
-    daysToCheck: "dnů k prověření",
+    daysToCheck: (n: number) => `${plural(n, "den", "dny", "dnů")} k prověření`,
     ofRequired: (value: string) => `z ${value}`,
     present: (value: string) => `${value} přítomnost`,
     stillOpenFlag: "Stále otevřeno",

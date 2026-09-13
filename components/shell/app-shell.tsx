@@ -17,7 +17,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         }
       >
         <AppSidebar />
-        <SidebarInset className="min-w-0 max-md:pb-[72px]">
+        <SidebarInset className="min-w-0 max-md:pb-[calc(72px+env(safe-area-inset-bottom))]">
           <TopBar />
           <GraceBanner />
           <div className="mx-auto w-full max-w-[1340px] flex-1 px-7 py-8 max-md:px-4">

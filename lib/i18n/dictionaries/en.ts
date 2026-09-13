@@ -187,7 +187,7 @@ export const en = {
     monthBalance: "Month balance",
     againstToDate: "against required to date",
     flagged: "Flagged",
-    daysToCheck: "days to check",
+    daysToCheck: (n: number): string => (n === 1 ? "day to check" : "days to check"),
     ofRequired: (value: string) => `of ${value}`,
     present: (value: string) => `${value} present`,
     stillOpenFlag: "Still open",
