@@ -65,6 +65,22 @@ export function formatBusinessWeekday(businessDate: string, locale: string): str
 }
 
 /**
+ * A business date spelled out — `Wednesday, 9 September` — for a dialog title
+ * and for the labels a screen reader reads off a day cell. Read at UTC noon,
+ * like {@link formatBusinessWeekday}, so no offset can move it off its day.
+ */
+export function formatBusinessDay(businessDate: string, locale: string): string {
+  const date = new Date(`${businessDate}T12:00:00Z`);
+  if (Number.isNaN(date.getTime())) return businessDate;
+  return new Intl.DateTimeFormat(locale, {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    timeZone: "UTC",
+  }).format(date);
+}
+
+/**
  * One session as the alternating work and break rows the day view shows. A
  * closed work stretch under a minute is dropped rather than rendered as a 0:00
  * row: clocking in and going straight on a break, or ending one and clocking

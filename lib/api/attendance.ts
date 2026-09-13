@@ -1,5 +1,5 @@
 import { api } from "./client";
-import type { Iso, UUID } from "./types";
+import type { Iso, UserSummary, UUID } from "./types";
 
 export type AttendanceClosedBy = "USER" | "ADMIN" | "SWEEP";
 
@@ -218,3 +218,180 @@ export function getAttendanceMonth(
   if (organizationId) params.set("organizationId", organizationId);
   return api<AttendanceMonth>(`/api/attendance/month?${params.toString()}`);
 }
+
+/** The longest range the team dashboard answers for, in days. */
+export const TEAM_RANGE_MAX_DAYS = 93;
+
+export type AttendanceTeamGroup = { id: UUID; groupName: string };
+
+/** A day of the team dashboard: the month's figures without the sessions behind them. */
+export type AttendanceTeamDay = Omit<AttendanceDay, "sessions">;
+
+/** One row of the team dashboard. */
+export type AttendanceTeamPerson = {
+  employmentId: UUID;
+  userId: UUID;
+  user: UserSummary;
+  /** The organization's live groups this person belongs to. Empty for a manager in none. */
+  groups: AttendanceTeamGroup[];
+  /** What their days were measured against: the override where there is one. */
+  requiredMinutesPerDay: number;
+  requiredMinutesOverride: number | null;
+  days: AttendanceTeamDay[];
+  totals: AttendanceTotals;
+};
+
+/** Somebody clocked in right now, whichever business date the session belongs to. */
+export type AttendanceTeamOpenSession = {
+  employmentId: UUID;
+  userId: UUID;
+  sessionId: UUID;
+  businessDate: string;
+  startedAt: Iso;
+  onBreak: boolean;
+  breakStartedAt: Iso | null;
+};
+
+/**
+ * The viewer's standing, whether or not a group was named: `ORGANIZATION` for
+ * an org admin, `GROUPS` for a group admin. The one thing that decides whether
+ * a group filter makes sense.
+ */
+export type AttendanceTeamScope = "ORGANIZATION" | "GROUPS";
+
+export type AttendanceTeam = {
+  organizationId: UUID;
+  timezone: string | null;
+  /** Today in that zone, so the screen knows which column is live. */
+  businessDate: string | null;
+  from: string;
+  to: string;
+  balanceMode: AttendanceBalanceMode;
+  /** The organization's figure; a row carries its own where it differs. */
+  requiredMinutesPerDay: number;
+  breakMinutes: number;
+  breakThresholdMinutes: number;
+  scope: AttendanceTeamScope;
+  /** The group the answer was narrowed to, null for the viewer's whole audience. */
+  group: AttendanceTeamGroup | null;
+  people: AttendanceTeamPerson[];
+  inNow: AttendanceTeamOpenSession[];
+};
+
+export type TeamAttendanceParams = {
+  organizationId: string;
+  from: string;
+  to: string;
+  groupId?: string | null;
+};
+
+/**
+ * The team dashboard: every Employment the caller may see over a range. The
+ * backend decides the scope from the visibility matrix and answers 403 to
+ * anyone who administers nothing, so the screen asks only for an admin.
+ */
+export function getTeamAttendance(params: TeamAttendanceParams): Promise<AttendanceTeam> {
+  const query = new URLSearchParams({
+    organizationId: params.organizationId,
+    from: params.from,
+    to: params.to,
+  });
+  if (params.groupId) query.set("groupId", params.groupId);
+  return api<AttendanceTeam>(`/api/attendance/team?${query.toString()}`);
+}
+
+/** Everything a session's timeline can say. */
+export type AttendanceEventKind =
+  | "CLOCK_IN"
+  | "CLOCK_OUT"
+  | "BREAK_START"
+  | "BREAK_END"
+  | "LOCATION_UPDATED"
+  | "SESSION_EDITED"
+  | "BREAK_EDITED"
+  | "BREAK_DELETED"
+  | "SESSION_DELETED";
+
+/**
+ * One entry of the timeline. A null `user` is the ceiling sweep, or an account
+ * that has since gone — the UI must not tell those apart, since neither is a
+ * person who can be asked about it.
+ *
+ * `before` and `after` carry only the fields the change touched, so their shape
+ * follows `eventType`. Nothing renders them raw.
+ */
+export type AttendanceEvent = {
+  id: UUID;
+  sessionId: UUID;
+  eventType: AttendanceEventKind;
+  user: UserSummary | null;
+  before: unknown;
+  after: unknown;
+  createdAt: Iso;
+};
+
+/** One person's business date: what the correction dialog opens onto. */
+export type AttendanceDaySessions = {
+  organizationId: UUID;
+  employmentId: UUID;
+  userId: UUID;
+  businessDate: string;
+  timezone: string | null;
+  sessions: AttendanceSession[];
+};
+
+/** The stable `context.reason` a correction can be refused with. */
+export type AttendanceCorrectionReason =
+  | "SELF_SERVICE_WINDOW"
+  | "END_BEFORE_START"
+  | "BREAK_OUTSIDE_SESSION"
+  | "SESSION_ALREADY_OPEN"
+  | "BREAK_ALREADY_OPEN";
+
+/** A patch of one end, or both. `endedAt: null` reopens; an absent key changes nothing. */
+export type AttendanceCorrection = { startedAt?: string; endedAt?: string | null };
+
+export type AttendanceDayParams = {
+  organizationId: string;
+  businessDate: string;
+  /** Somebody else's, for an admin; omitted for the caller's own. */
+  userId?: string | null;
+};
+
+export function getAttendanceDay(params: AttendanceDayParams): Promise<AttendanceDaySessions> {
+  const query = new URLSearchParams({
+    organizationId: params.organizationId,
+    businessDate: params.businessDate,
+  });
+  if (params.userId) query.set("userId", params.userId);
+  return api<AttendanceDaySessions>(`/api/attendance/day?${query.toString()}`);
+}
+
+export function getSessionEvents(sessionId: string): Promise<AttendanceEvent[]> {
+  return api<{ sessionId: UUID; events: AttendanceEvent[] }>(
+    `/api/attendance/sessions/${encodeURIComponent(sessionId)}/events`
+  ).then((answer) => answer.events);
+}
+
+/** The four corrections. Each answers with the session as it now stands. */
+export const correctSession = (sessionId: string, patch: AttendanceCorrection) =>
+  api<AttendanceSession>(`/api/attendance/sessions/${encodeURIComponent(sessionId)}`, {
+    method: "PATCH",
+    body: patch,
+  });
+
+export const correctBreak = (breakId: string, patch: AttendanceCorrection) =>
+  api<AttendanceSession>(`/api/attendance/breaks/${encodeURIComponent(breakId)}`, {
+    method: "PATCH",
+    body: patch,
+  });
+
+export const removeBreak = (breakId: string) =>
+  api<AttendanceSession>(`/api/attendance/breaks/${encodeURIComponent(breakId)}`, {
+    method: "DELETE",
+  });
+
+export const removeSession = (sessionId: string) =>
+  api<AttendanceSession>(`/api/attendance/sessions/${encodeURIComponent(sessionId)}`, {
+    method: "DELETE",
+  });

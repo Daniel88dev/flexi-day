@@ -22,7 +22,8 @@ export const excludedSurface = {
  * backend older than this build sends a day without one. A missing day off is
  * a wrong figure; reading `extent` off nothing is a blank screen.
  */
-export const isExcluded = (day: AttendanceDay): boolean => day.exclusion?.extent === "FULL";
+export const isExcluded = (day: Pick<AttendanceDay, "exclusion">): boolean =>
+  day.exclusion?.extent === "FULL";
 
 /** One figure above a week or a month, with the aside that explains it. */
 export function Stat({ label, value, sub }: { label: string; value: string; sub?: string }) {
@@ -146,7 +147,13 @@ export function DayFigures({
  * Today's open session is somebody at work, so it reads as a state rather than
  * a flag.
  */
-export function DayFlags({ day, today }: { day: AttendanceDay; today: string | null }) {
+export function DayFlags({
+  day,
+  today,
+}: {
+  day: Pick<AttendanceDay, "businessDate" | "autoClosed" | "excludedClockIn" | "open">;
+  today: string | null;
+}) {
   const { t } = useTranslation();
 
   return (
