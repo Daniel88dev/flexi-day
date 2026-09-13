@@ -28,6 +28,7 @@ import {
 import { useNow } from "@/lib/attendance/use-now";
 import { useTranslation } from "@/lib/i18n/use-translation";
 import type { Dictionary } from "@/lib/i18n";
+import { cn } from "@/lib/utils";
 import { DayTotals } from "./day-totals";
 
 /** The icon and colour each running state wears, in the widget and on the disc. */
@@ -264,6 +265,7 @@ export function ClockWidget({
 
   const { Icon, color } = FACE[status];
   const running = state.openBreak ?? state.openSession;
+  const twoActions = status === "in" || status === "break";
   const clockOutAction = (variant: "default" | "secondary") => (
     <Button
       size="lg"
@@ -278,7 +280,7 @@ export function ClockWidget({
   );
 
   return (
-    <div className="flex flex-col gap-4" data-clock-state={status}>
+    <div className="@container flex flex-col gap-4" data-clock-state={status}>
       {locationEnabled ? <LocationNotice /> : null}
 
       {openStartedAt ? (
@@ -328,7 +330,11 @@ export function ClockWidget({
         )}
       </div>
 
-      <div className="flex flex-col gap-2 sm:flex-row">
+      {/* A grid, not a flex row: the widget sits in a narrow card on desktop and
+          full width in the phone sheet, so the two actions have to track the
+          container rather than the viewport — `sm:flex-row` sent Clock out past
+          the card's edge. */}
+      <div className={cn("grid gap-2", twoActions && "@min-[24rem]:grid-cols-2")}>
         {status === "out" && !openStartedAt ? (
           <Button size="lg" className="w-full" disabled={pending} onClick={() => clockIn.mutate()}>
             <LogIn />

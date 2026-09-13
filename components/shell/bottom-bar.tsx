@@ -97,9 +97,12 @@ export function BottomBar() {
 
   return (
     <>
+      {/* The safe-area inset grows the bar rather than eating into it: with
+          border-box, `h-[72px]` plus a padding meant for the home indicator
+          squeezes the tabs under it instead of clearing it. */}
       <nav
         aria-label={t.nav.menu}
-        className="fixed inset-x-0 bottom-0 z-30 grid h-[72px] grid-cols-5 border-t px-1.5 pb-[env(safe-area-inset-bottom)] md:hidden"
+        className="fixed inset-x-0 bottom-0 z-30 grid h-[calc(72px+env(safe-area-inset-bottom))] grid-cols-5 border-t px-1.5 pb-[env(safe-area-inset-bottom)] md:hidden"
         style={{
           background: "var(--nav-bg)",
           backdropFilter: "blur(14px)",
