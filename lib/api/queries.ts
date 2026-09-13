@@ -31,9 +31,19 @@ import {
 import {
   clockIn,
   clockOut,
+  correctBreak,
+  correctSession,
   endBreak,
+  getAttendanceDay,
   getAttendanceMonth,
   getAttendanceState,
+  getSessionEvents,
+  getTeamAttendance,
+  removeBreak,
+  removeSession,
+  type AttendanceCorrection,
+  type AttendanceDayParams,
+  type TeamAttendanceParams,
   startBreak,
   type AttendanceSession,
   type AttendanceSessionEnd,
@@ -168,8 +178,19 @@ export const qk = {
     ["attendance-state", organizationId ?? "own"] as const,
   attendanceMonth: (year: number, month: number, organizationId?: string | null) =>
     ["attendance-month", year, month, organizationId ?? "own"] as const,
+  attendanceDay: (params: AttendanceDayParams) =>
+    ["attendance-day", params.organizationId, params.businessDate, params.userId ?? "own"] as const,
+  attendanceEvents: (sessionId: string) => ["attendance-events", sessionId] as const,
   employments: (organizationId?: string | null) =>
     ["employments", organizationId ?? "own"] as const,
+  attendanceTeam: (params: TeamAttendanceParams) =>
+    [
+      "attendance-team",
+      params.organizationId,
+      params.from,
+      params.to,
+      params.groupId ?? "all",
+    ] as const,
   // Hashed: query keys reach Sentry on failures and this one is free text.
   supportOrganizations: (query: string) =>
     ["support-organizations", opaqueSearchKey(query)] as const,
@@ -847,6 +868,82 @@ export function useAttendanceMonth(
     queryFn: () => getAttendanceMonth(year, month, organizationId),
     refetchOnWindowFocus: true,
     enabled,
+  });
+}
+
+/**
+ * One person's business date, which is what the correction dialog opens onto.
+ * `enabled` is the dialog being open: nothing asks for a day nobody is looking
+ * at, and the answer is stale the moment a correction lands.
+ */
+export function useAttendanceDay(params: AttendanceDayParams | null, enabled = true) {
+  return useQuery({
+    queryKey: params ? qk.attendanceDay(params) : ["attendance-day", "unscoped"],
+    queryFn: () => getAttendanceDay(params!),
+    enabled: !!params && enabled,
+  });
+}
+
+/** A session's timeline, read beside the fields that are about to change it. */
+export function useSessionEvents(sessionId: string | null, enabled = true) {
+  return useQuery({
+    queryKey: qk.attendanceEvents(sessionId ?? "none"),
+    queryFn: () => getSessionEvents(sessionId!),
+    enabled: !!sessionId && enabled,
+  });
+}
+
+/**
+ * A correction moves figures every attendance read has already computed — the
+ * day, the month, the team matrix and the clock — so all four prefixes go
+ * rather than one key. Corrections are rare and the reads are cheap; a screen
+ * still showing the old number is the expensive outcome.
+ */
+function useCorrection<T>(mutationFn: (input: T) => Promise<AttendanceSession>) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn,
+    onSuccess: (session) => {
+      for (const key of [
+        "attendance-day",
+        "attendance-month",
+        "attendance-team",
+        "attendance-state",
+      ]) {
+        qc.invalidateQueries({ queryKey: [key] });
+      }
+      qc.invalidateQueries({ queryKey: qk.attendanceEvents(session.id) });
+    },
+  });
+}
+
+export const useCorrectSession = () =>
+  useCorrection(({ sessionId, patch }: { sessionId: string; patch: AttendanceCorrection }) =>
+    correctSession(sessionId, patch)
+  );
+
+export const useCorrectBreak = () =>
+  useCorrection(({ breakId, patch }: { breakId: string; patch: AttendanceCorrection }) =>
+    correctBreak(breakId, patch)
+  );
+
+export const useRemoveBreak = () => useCorrection((breakId: string) => removeBreak(breakId));
+
+export const useRemoveSession = () =>
+  useCorrection((sessionId: string) => removeSession(sessionId));
+
+/**
+ * The team dashboard, an admin surface like the roster: `enabled` is the
+ * caller's say on whether the viewer administers anything, since the backend
+ * would only answer 403. Refetched on focus like the month, because somebody
+ * clocked in right now ages by the minute.
+ */
+export function useTeamAttendance(params: TeamAttendanceParams | null, enabled = true) {
+  return useQuery({
+    queryKey: params ? qk.attendanceTeam(params) : ["attendance-team", "unscoped"],
+    queryFn: () => getTeamAttendance(params!),
+    refetchOnWindowFocus: true,
+    enabled: !!params && enabled,
   });
 }
 

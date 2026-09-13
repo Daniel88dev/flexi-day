@@ -26,6 +26,14 @@ vi.mock("@/lib/api/queries", () => ({
   useEndBreak: () => idle,
   useMySettings: () => ({ data: { attendanceLocationNoticeDismissed: true } }),
   useUpdateMySettings: () => idle,
+  // The correction dialog hangs off today's card; it reads nothing until it
+  // is opened, which none of these tests does.
+  useAttendanceDay: () => ({ data: undefined, isPending: false, error: null }),
+  useSessionEvents: () => ({ data: undefined, isPending: false, error: null }),
+  useCorrectSession: () => idle,
+  useCorrectBreak: () => idle,
+  useRemoveBreak: () => idle,
+  useRemoveSession: () => idle,
 }));
 
 const ZONE = "Europe/Prague";
