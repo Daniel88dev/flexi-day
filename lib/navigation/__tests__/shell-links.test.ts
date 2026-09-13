@@ -77,6 +77,21 @@ describe("buildSections", () => {
     ]);
     expect(sections[1]!.links).toEqual([
       expect.objectContaining({ href: "/my-attendance", label: "My attendance" }),
+      expect.objectContaining({ href: "/team-attendance", label: "Team attendance" }),
+    ]);
+  });
+
+  it("gives a plain member only their own attendance", () => {
+    const [, attendance] = buildSections(en, clocking);
+
+    expect(labels(attendance!.links)).toEqual(["My attendance"]);
+  });
+
+  it("holds Team attendance back while roles are loading", () => {
+    const sections = buildSections(en, { ...loading, attendanceActive: true });
+
+    expect(labels(sections.find((section) => section.id === "attendance")!.links)).toEqual([
+      "My attendance",
     ]);
   });
 
@@ -130,6 +145,17 @@ describe("splitForBottomBar", () => {
     expect(labels(bar)).toEqual(["Dashboard", "Requests", "My attendance"]);
     expect(sheet.map((section) => section.id)).toEqual(["timeOff"]);
     expect(labels(sheet[0]!.links)).toEqual(["Report", "Groups", "Calendar sync"]);
+  });
+
+  it("keeps Team attendance in the sheet so the bar is the same for every role", () => {
+    const { bar, sheet } = splitForBottomBar(
+      buildSections(en, { ...admin, attendanceActive: true })
+    );
+
+    expect(labels(bar)).toEqual(["Dashboard", "Requests", "My attendance"]);
+    expect(labels(sheet.find((section) => section.id === "attendance")!.links)).toEqual([
+      "Team attendance",
+    ]);
   });
 });
 

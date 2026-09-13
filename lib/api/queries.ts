@@ -34,6 +34,8 @@ import {
   endBreak,
   getAttendanceMonth,
   getAttendanceState,
+  getTeamAttendance,
+  type TeamAttendanceParams,
   startBreak,
   type AttendanceSession,
   type AttendanceSessionEnd,
@@ -170,6 +172,14 @@ export const qk = {
     ["attendance-month", year, month, organizationId ?? "own"] as const,
   employments: (organizationId?: string | null) =>
     ["employments", organizationId ?? "own"] as const,
+  attendanceTeam: (params: TeamAttendanceParams) =>
+    [
+      "attendance-team",
+      params.organizationId,
+      params.from,
+      params.to,
+      params.groupId ?? "all",
+    ] as const,
   // Hashed: query keys reach Sentry on failures and this one is free text.
   supportOrganizations: (query: string) =>
     ["support-organizations", opaqueSearchKey(query)] as const,
@@ -847,6 +857,21 @@ export function useAttendanceMonth(
     queryFn: () => getAttendanceMonth(year, month, organizationId),
     refetchOnWindowFocus: true,
     enabled,
+  });
+}
+
+/**
+ * The team dashboard, an admin surface like the roster: `enabled` is the
+ * caller's say on whether the viewer administers anything, since the backend
+ * would only answer 403. Refetched on focus like the month, because somebody
+ * clocked in right now ages by the minute.
+ */
+export function useTeamAttendance(params: TeamAttendanceParams | null, enabled = true) {
+  return useQuery({
+    queryKey: params ? qk.attendanceTeam(params) : ["attendance-team", "unscoped"],
+    queryFn: () => getTeamAttendance(params!),
+    refetchOnWindowFocus: true,
+    enabled: !!params && enabled,
   });
 }
 

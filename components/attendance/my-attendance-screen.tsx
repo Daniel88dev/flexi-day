@@ -9,13 +9,13 @@ import type { AttendanceSession } from "@/lib/api/attendance";
 import { formatMinutes } from "@/lib/attendance/duration";
 import {
   addDays,
-  addMonths,
   monthsOfWeek,
   pickDays,
   startOfWeek,
   weekDates,
   yearMonthOf,
 } from "@/lib/attendance/month";
+import { stepAnchor } from "@/lib/attendance/team";
 import { buildTimeline, formatClockTime } from "@/lib/attendance/today";
 import { useNow } from "@/lib/attendance/use-now";
 import { useTranslation } from "@/lib/i18n/use-translation";
@@ -274,12 +274,8 @@ export function MyAttendanceScreen() {
   const anchor = anchored ?? today;
 
   const step = (direction: -1 | 1) => {
-    if (view === "week") {
-      setAnchored(addDays(startOfWeek(anchor), direction * 7));
-      return;
-    }
-    const { year, month } = addMonths(yearMonthOf(anchor), direction);
-    setAnchored(`${year}-${String(month).padStart(2, "0")}-01`);
+    if (view === "today") return;
+    setAnchored(stepAnchor(view, anchor, direction));
   };
 
   return (

@@ -3,7 +3,14 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const apiMock = vi.fn();
 vi.mock("../client", () => ({ api: (...args: unknown[]) => apiMock(...args) }));
 
-import { clockIn, clockOut, endBreak, getAttendanceState, startBreak } from "../attendance";
+import {
+  clockIn,
+  clockOut,
+  endBreak,
+  getAttendanceState,
+  getTeamAttendance,
+  startBreak,
+} from "../attendance";
 
 describe("attendance api", () => {
   beforeEach(() => {
@@ -40,5 +47,39 @@ describe("attendance api", () => {
       method: "POST",
       body: {},
     });
+  });
+});
+
+describe("getTeamAttendance", () => {
+  beforeEach(() => {
+    apiMock.mockReset();
+    apiMock.mockResolvedValue({});
+  });
+
+  it("names the organization and the range, and the group only when there is one", async () => {
+    await getTeamAttendance({ organizationId: "org 1", from: "2026-09-07", to: "2026-09-13" });
+    expect(apiMock).toHaveBeenCalledWith(
+      "/api/attendance/team?organizationId=org+1&from=2026-09-07&to=2026-09-13"
+    );
+
+    await getTeamAttendance({
+      organizationId: "org-1",
+      from: "2026-09-07",
+      to: "2026-09-13",
+      groupId: "eng",
+    });
+    expect(apiMock).toHaveBeenLastCalledWith(
+      "/api/attendance/team?organizationId=org-1&from=2026-09-07&to=2026-09-13&groupId=eng"
+    );
+
+    await getTeamAttendance({
+      organizationId: "org-1",
+      from: "2026-09-07",
+      to: "2026-09-13",
+      groupId: null,
+    });
+    expect(apiMock).toHaveBeenLastCalledWith(
+      "/api/attendance/team?organizationId=org-1&from=2026-09-07&to=2026-09-13"
+    );
   });
 });

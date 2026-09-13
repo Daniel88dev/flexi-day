@@ -10,6 +10,7 @@ import {
   Settings,
   Timer,
   Users,
+  UsersRound,
 } from "lucide-react";
 import type { Dictionary } from "@/lib/i18n";
 
@@ -70,7 +71,12 @@ export function buildSections(t: Dictionary, access: ShellAccess): NavSection[] 
       id: "attendance",
       label: t.nav.sections.attendance,
       links: access.attendanceActive
-        ? [{ href: "/my-attendance", label: t.nav.myAttendance, icon: Timer }]
+        ? [
+            { href: "/my-attendance", label: t.nav.myAttendance, icon: Timer },
+            ...(admin
+              ? [{ href: "/team-attendance", label: t.nav.teamAttendance, icon: UsersRound }]
+              : []),
+          ]
         : [],
     },
     {
