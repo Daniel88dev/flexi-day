@@ -1,7 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { CalendarDays, ChevronLeft, ChevronRight, ClockAlert, Coffee, Play } from "lucide-react";
+import {
+  CalendarDays,
+  ChevronLeft,
+  ChevronRight,
+  ClockAlert,
+  Coffee,
+  Pencil,
+  Play,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAttendanceMonth, useAttendanceState } from "@/lib/api/queries";
@@ -22,6 +30,7 @@ import { useTranslation } from "@/lib/i18n/use-translation";
 import { anySessionLocated } from "@/lib/attendance/location";
 import { cn } from "@/lib/utils";
 import { ClockWidget } from "./clock-widget";
+import { CorrectionDialog } from "./correction-dialog";
 import { DayTotals } from "./day-totals";
 import { MonthView } from "./month-view";
 import { SessionLocation } from "./session-location";
@@ -91,12 +100,16 @@ function TodayView() {
   const { t } = useTranslation();
   const query = useAttendanceState();
   const now = useNow(query.data?.openSession != null);
+  const [correcting, setCorrecting] = useState(false);
 
   const state = query.data;
   const sessions = state?.sessions ?? [];
   // An organization that switched location off keeps what it already took, so
   // the strip follows the data as well as the switch.
   const showLocation = (state?.locationEnabled ?? false) || anySessionLocated(sessions);
+  // Today is the person's own to correct; an older day is an admin's, which is
+  // what the hint under the card says rather than a button that would 403.
+  const correctable = state?.active === true && state.businessDate !== null && sessions.length > 0;
 
   return (
     <div className="grid gap-4 lg:grid-cols-[minmax(0,380px)_1fr] lg:items-start">
@@ -108,9 +121,17 @@ function TodayView() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 [&_svg]:size-[18px]">
-            <CalendarDays />
-            {t.clock.today}
+          <CardTitle className="flex flex-wrap items-center justify-between gap-2 [&_svg]:size-[18px]">
+            <span className="flex items-center gap-2">
+              <CalendarDays />
+              {t.clock.today}
+            </span>
+            {correctable ? (
+              <Button type="button" size="sm" variant="outline" onClick={() => setCorrecting(true)}>
+                <Pencil />
+                {t.corrections.editToday}
+              </Button>
+            ) : null}
           </CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
@@ -130,10 +151,22 @@ function TodayView() {
                 </div>
               ))}
               <DayTotals sessions={sessions} now={now} />
+              <p className="text-sm" style={{ color: "var(--text-muted)" }}>
+                {t.corrections.selfServiceHint}
+              </p>
             </>
           )}
         </CardContent>
       </Card>
+
+      {correctable && state ? (
+        <CorrectionDialog
+          organizationId={state.organizationId}
+          businessDate={state.businessDate!}
+          open={correcting}
+          onOpenChange={setCorrecting}
+        />
+      ) : null}
     </div>
   );
 }

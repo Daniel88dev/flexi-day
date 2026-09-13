@@ -32,7 +32,17 @@ vi.mock("@/lib/api/queries", () => ({
   },
   useGroups: () => groups,
   useOrganization: () => organizationDetail,
+  // The correction dialog, which reads nothing until a cell opens it.
+  useAttendanceDay: () => correctionDay,
+  useSessionEvents: () => ({ data: [], isPending: false, error: null }),
+  useCorrectSession: () => idle,
+  useCorrectBreak: () => idle,
+  useRemoveBreak: () => idle,
+  useRemoveSession: () => idle,
 }));
+
+const idle = { mutateAsync: vi.fn(), isPending: false };
+const correctionDay = { data: undefined, isPending: true, error: null };
 
 vi.mock("@/lib/viewer/use-viewer-roles", () => ({
   useViewerRoles: () => roles.current,
@@ -277,6 +287,21 @@ describe("TeamAttendanceScreen", () => {
       screen.getByText("Team attendance is for group admins and organization admins.")
     ).toBeInTheDocument();
     expect(teamRequests.every((request) => request === null)).toBe(true);
+  });
+
+  it("opens the correction dialog from a day somebody worked", async () => {
+    teamQuery.data = team({ people: [person("noah", "Noah Weber", plainWeek())] });
+    renderWithClient(<TeamAttendanceScreen />);
+
+    // The weekend nobody worked has nothing to correct and so is not a button.
+    expect(screen.queryByRole("button", { name: /Noah Weber's Saturday/ })).not.toBeInTheDocument();
+
+    await userEvent.click(
+      screen.getAllByRole("button", { name: /Noah Weber's Wednesday, September 9/ })[0]!
+    );
+
+    expect(screen.getByRole("dialog")).toHaveTextContent("Correct Wednesday, September 9");
+    expect(screen.getByRole("dialog")).toHaveTextContent("Noah Weber");
   });
 
   it("refuses a custom range that is inside out or longer than a quarter, and asks nothing", async () => {

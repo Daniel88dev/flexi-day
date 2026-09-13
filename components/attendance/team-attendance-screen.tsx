@@ -44,12 +44,16 @@ import {
   type DateRange,
   type TeamView,
 } from "@/lib/attendance/team";
-import { formatBusinessWeekday, formatClockTime } from "@/lib/attendance/today";
+import { formatBusinessDay, formatBusinessWeekday, formatClockTime } from "@/lib/attendance/today";
 import { useSession } from "@/lib/auth-client";
 import { useTranslation } from "@/lib/i18n/use-translation";
 import { useViewerRoles } from "@/lib/viewer/use-viewer-roles";
 import { cn } from "@/lib/utils";
 import { BalanceChip, DayFlags, excludedSurface, isExcluded } from "./attendance-figures";
+import { CorrectionDialog } from "./correction-dialog";
+
+/** Who and which day a correction was asked for. */
+type Correcting = { userId: string; name: string; businessDate: string };
 
 const ALL_GROUPS = "__all__";
 
@@ -296,7 +300,69 @@ function Legend() {
   );
 }
 
-function Matrix({ team, locale }: { team: AttendanceTeam; locale: string }) {
+/**
+ * A day with something in it opens the correction dialog. An empty past day
+ * has no session to correct, and an upcoming one has nothing to say yet, so
+ * neither is a button — the mockup's affordance, on the cell that names the
+ * day rather than on the row, which would not.
+ */
+const correctable = (
+  day: AttendanceTeamDay,
+  open: AttendanceTeamOpenSession | undefined
+): boolean => !day.upcoming && (day.presenceMinutes > 0 || open !== undefined);
+
+/** The affordance itself: the cell becomes the button, where there is something to correct. */
+function Correctable({
+  person,
+  day,
+  open,
+  className,
+  onCorrect,
+  children,
+}: {
+  person: AttendanceTeamPerson;
+  day: AttendanceTeamDay;
+  open: AttendanceTeamOpenSession | undefined;
+  className?: string;
+  onCorrect: (correcting: Correcting) => void;
+  children: React.ReactNode;
+}) {
+  const { t, locale } = useTranslation();
+  if (!correctable(day, open)) return <>{children}</>;
+
+  return (
+    <button
+      type="button"
+      className={cn(
+        "hover:bg-muted/60 cursor-pointer rounded-lg py-1 transition-colors",
+        className
+      )}
+      aria-label={t.corrections.correctDay(
+        person.user.name,
+        formatBusinessDay(day.businessDate, locale)
+      )}
+      onClick={() =>
+        onCorrect({
+          userId: person.userId,
+          name: person.user.name,
+          businessDate: day.businessDate,
+        })
+      }
+    >
+      {children}
+    </button>
+  );
+}
+
+function Matrix({
+  team,
+  locale,
+  onCorrect,
+}: {
+  team: AttendanceTeam;
+  locale: string;
+  onCorrect: (correcting: Correcting) => void;
+}) {
   const { t } = useTranslation();
   const today = team.businessDate;
   const dates = team.people[0]?.days.map((day) => day.businessDate) ?? [];
@@ -360,14 +426,22 @@ function Matrix({ team, locale }: { team: AttendanceTeam; locale: string }) {
                         : {}),
                     }}
                   >
-                    <DayCell
+                    <Correctable
+                      person={person}
                       day={day}
                       open={open?.businessDate === day.businessDate ? open : undefined}
-                      mode={team.balanceMode}
-                      today={today}
-                      timezone={team.timezone}
-                      locale={locale}
-                    />
+                      className="w-full"
+                      onCorrect={onCorrect}
+                    >
+                      <DayCell
+                        day={day}
+                        open={open?.businessDate === day.businessDate ? open : undefined}
+                        mode={team.balanceMode}
+                        today={today}
+                        timezone={team.timezone}
+                        locale={locale}
+                      />
+                    </Correctable>
                   </TableCell>
                 ))}
                 <TableCell className="text-right align-top">
@@ -388,11 +462,13 @@ function DayList({
   day,
   onDay,
   locale,
+  onCorrect,
 }: {
   team: AttendanceTeam;
   day: string;
   onDay: (day: string) => void;
   locale: string;
+  onCorrect: (correcting: Correcting) => void;
 }) {
   const { t } = useTranslation();
   const dates = team.people[0]?.days.map((entry) => entry.businessDate) ?? [];
@@ -446,15 +522,23 @@ function DayList({
                 live={open !== undefined}
               />
               {entry ? (
-                <DayCell
+                <Correctable
+                  person={person}
                   day={entry}
                   open={open?.businessDate === day ? open : undefined}
-                  mode={team.balanceMode}
-                  today={team.businessDate}
-                  timezone={team.timezone}
-                  locale={locale}
-                  align="end"
-                />
+                  className="px-1"
+                  onCorrect={onCorrect}
+                >
+                  <DayCell
+                    day={entry}
+                    open={open?.businessDate === day ? open : undefined}
+                    mode={team.balanceMode}
+                    today={team.businessDate}
+                    timezone={team.timezone}
+                    locale={locale}
+                    align="end"
+                  />
+                </Correctable>
               ) : null}
             </li>
           );
@@ -482,6 +566,7 @@ export function TeamAttendanceScreen() {
   const [custom, setCustom] = useState<DateRange | null>(null);
   const [groupId, setGroupId] = useState<string | null>(null);
   const [pickedDay, setPickedDay] = useState<string | null>(null);
+  const [correcting, setCorrecting] = useState<Correcting | null>(null);
 
   const organizations = teamOrganizations(
     roles.organization,
@@ -703,12 +788,31 @@ export function TeamAttendanceScreen() {
                   {t.teamAttendance.nothingRecorded}
                 </p>
               )}
-              <Matrix team={team} locale={locale} />
-              <DayList team={team} day={day} onDay={setPickedDay} locale={locale} />
+              <Matrix team={team} locale={locale} onCorrect={setCorrecting} />
+              <DayList
+                team={team}
+                day={day}
+                onDay={setPickedDay}
+                locale={locale}
+                onCorrect={setCorrecting}
+              />
             </>
           )}
 
           <Legend />
+
+          {correcting && activeOrganization ? (
+            <CorrectionDialog
+              organizationId={activeOrganization.id}
+              userId={correcting.userId}
+              personName={correcting.name}
+              businessDate={correcting.businessDate}
+              open
+              onOpenChange={(next) => {
+                if (!next) setCorrecting(null);
+              }}
+            />
+          ) : null}
         </>
       ) : null}
     </div>
