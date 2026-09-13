@@ -280,6 +280,7 @@ export const cs: Dictionary = {
       SELF_SERVICE_WINDOW:
         "Takto starý den může změnit jen správce. Obrať se na správce skupiny nebo organizace.",
       SESSION_ALREADY_OPEN: "Jiná směna je stále otevřená, tuhle proto nelze znovu otevřít.",
+      SESSION_OVERLAPS: "Jiná směna už tento čas pokrývá.",
       BREAK_ALREADY_OPEN: "Jiná pauza této směny je stále otevřená.",
     },
     events: {

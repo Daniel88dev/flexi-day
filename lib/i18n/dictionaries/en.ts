@@ -277,6 +277,7 @@ export const en = {
       SELF_SERVICE_WINDOW:
         "Only an admin can change a day this old. Ask a group admin, or an organization admin.",
       SESSION_ALREADY_OPEN: "Another session is still open, so this one cannot reopen.",
+      SESSION_OVERLAPS: "Another session already covers that time.",
       BREAK_ALREADY_OPEN: "Another break on this session is still open.",
     },
     events: {
