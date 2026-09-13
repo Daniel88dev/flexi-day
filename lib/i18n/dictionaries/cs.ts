@@ -142,6 +142,8 @@ export const cs: Dictionary = {
     inactiveTitle: "Evidence docházky je vypnutá",
     inactiveBody:
       "Docházka je pro tvoji organizaci pozastavená, takže není co zaznamenávat. Historie zůstává čitelná. Zeptej se správce organizace.",
+    inactiveOpenBody:
+      "Docházka je pro tvoji organizaci pozastavená. Směnu, která ti zůstala otevřená, ještě uzavřít můžeš, novou už nezačneš. Zeptej se správce organizace.",
     viewMyAttendance: "Zobrazit moji docházku",
     alreadyOpen: (time: string) => `Příchod zaznamenán v ${time}`,
     alreadyOpenBody: "Příchod už byl zaznamenán jinde. Až skončíš, zaznamenej odchod.",

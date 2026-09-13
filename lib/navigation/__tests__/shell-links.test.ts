@@ -15,10 +15,13 @@ const member: ShellAccess = {
   administersSomething: false,
   supportAdmin: false,
   attendanceActive: false,
+  attendanceOpen: false,
 };
 const admin: ShellAccess = { ...member, administersSomething: true };
 const loading: ShellAccess = { ...admin, rolesLoading: true };
 const clocking: ShellAccess = { ...member, attendanceActive: true };
+/** Attendance lapsed while this person was still clocked in. */
+const stranded: ShellAccess = { ...admin, attendanceOpen: true };
 
 const labels = (links: { label: string }[]) => links.map((link) => link.label);
 
@@ -102,8 +105,15 @@ describe("buildSections", () => {
     ]);
   });
 
+  it("keeps My attendance reachable for a session the lapse caught open", () => {
+    const attendance = buildSections(en, stranded).find((section) => section.id === "attendance");
+
+    // Their own clock, to close it — and not the team, which needs a live plan.
+    expect(labels(attendance!.links)).toEqual(["My attendance"]);
+  });
+
   it("never returns a section without links", () => {
-    for (const access of [member, admin, loading, clocking]) {
+    for (const access of [member, admin, loading, clocking, stranded]) {
       for (const section of buildSections(en, access)) {
         expect(section.links.length).toBeGreaterThan(0);
       }

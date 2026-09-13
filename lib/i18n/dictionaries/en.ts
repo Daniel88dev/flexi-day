@@ -140,6 +140,8 @@ export const en = {
     inactiveTitle: "Clocking in is off",
     inactiveBody:
       "Attendance is paused for your organization, so there is nothing to clock. Your history stays readable. Ask an org admin about it.",
+    inactiveOpenBody:
+      "Attendance is paused for your organization. You can still close the session you left running, and nothing new can be started. Ask an org admin about it.",
     viewMyAttendance: "View my attendance",
     alreadyOpen: (time: string) => `Clocked in since ${time}`,
     alreadyOpenBody: "You were already clocked in somewhere else. Clock out when you are done.",

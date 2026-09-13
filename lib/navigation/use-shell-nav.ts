@@ -35,6 +35,7 @@ export function useShellNav(): ShellNav {
     administersSomething: roles.isOrgAdmin || roles.isGroupAdmin,
     supportAdmin,
     attendanceActive: attendance.data?.active ?? false,
+    attendanceOpen: attendance.data?.openSession != null,
   };
   const sections = buildSections(t, access);
   const utility = buildUtilityLinks(t, access);

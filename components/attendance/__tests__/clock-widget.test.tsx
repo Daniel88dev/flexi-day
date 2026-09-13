@@ -143,10 +143,35 @@ describe("ClockWidget", () => {
 
     expect(screen.getByText("Clocking in is off")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Clock in" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Clock out" })).toBeNull();
     expect(screen.getByRole("link", { name: "View my attendance" })).toHaveAttribute(
       "href",
       "/my-attendance"
     );
+  });
+
+  it("still offers a clock-out when the lapse caught a session open", () => {
+    query.data = state({ active: false, openSession: openSession() });
+    renderWithClient(<ClockWidget />);
+
+    expect(
+      screen.getByText(/You can still close the session you left running/)
+    ).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Clock in" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Take a break" })).toBeNull();
+
+    fireEvent.click(screen.getByRole("button", { name: "Clock out" }));
+    expect(clockOut.mutate).toHaveBeenCalled();
+  });
+
+  it("reports a refused clock-out on an inactive organization", () => {
+    query.data = state({ active: false, openSession: openSession() });
+    clockOut.error = new ApiError(402, "Attendance requires a paid plan", undefined, [
+      { message: "Attendance requires a paid plan", context: { reason: "PLAN_LIMIT" } },
+    ]);
+    renderWithClient(<ClockWidget />);
+
+    expect(screen.getByText("Attendance is not active for your organization.")).toBeInTheDocument();
   });
 
   it("renders a 409 for an open session as clocked in since, with a clock-out and no clock-in", () => {
