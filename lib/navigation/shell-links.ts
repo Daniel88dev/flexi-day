@@ -32,6 +32,12 @@ export type ShellAccess = {
    * org-admin settings — most people who need the link administer nothing.
    */
   attendanceActive: boolean;
+  /**
+   * The viewer has a session still running. A lapse can leave one open, and the
+   * clock still closes what it will no longer open, so the link has to survive
+   * the lapse that stranded it.
+   */
+  attendanceOpen: boolean;
 };
 
 export const BOTTOM_BAR_CLOCK_INDEX = 2;
@@ -77,7 +83,9 @@ export function buildSections(t: Dictionary, access: ShellAccess): NavSection[] 
               ? [{ href: "/team-attendance", label: t.nav.teamAttendance, icon: UsersRound }]
               : []),
           ]
-        : [],
+        : access.attendanceOpen
+          ? [{ href: "/my-attendance", label: t.nav.myAttendance, icon: Timer }]
+          : [],
     },
     {
       id: "organization",

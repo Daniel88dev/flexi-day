@@ -229,11 +229,34 @@ export function ClockWidget({
   ) : null;
 
   if (status === "inactive") {
+    // A lapse can catch somebody mid-session. The clock refuses to open
+    // anything and still closes what is open, so the notice carries the one
+    // action left rather than stranding a session that would otherwise run to
+    // its ceiling and be swept.
+    const stranded = state.openSession !== null;
     return (
       <div className="flex flex-col gap-4" data-clock-state="inactive">
         <Notice icon={<Lock />} title={t.clock.inactiveTitle}>
-          <p style={{ color: "var(--text-muted)" }}>{t.clock.inactiveBody}</p>
+          <p style={{ color: "var(--text-muted)" }}>
+            {stranded ? t.clock.inactiveOpenBody : t.clock.inactiveBody}
+          </p>
+          {stranded ? (
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={pending}
+              onClick={() => clockOut.mutate()}
+            >
+              <LogOut />
+              {t.clock.clockOut}
+            </Button>
+          ) : null}
         </Notice>
+        {error ? (
+          <Notice tone="warn" icon={<Clock />} title={t.clock.failed}>
+            <p style={{ color: "var(--text-muted)" }}>{error}</p>
+          </Notice>
+        ) : null}
         {attendanceLink}
       </div>
     );
