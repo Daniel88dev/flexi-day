@@ -45,15 +45,21 @@ export async function copyText(text: string) {
 export function ToastHost() {
   const [items, setItems] = useState<Toast[]>([]);
   useEffect(() => {
+    const timers = new Set<ReturnType<typeof setTimeout>>();
     const fn = (t: Toast) => {
       setItems((prev) => [...prev, t]);
       // Long enough to be noticed away from the pointer — a save confirmation
       // is the whole reason the toast exists.
-      setTimeout(() => setItems((prev) => prev.filter((x) => x.id !== t.id)), 4000);
+      const timer = setTimeout(() => {
+        timers.delete(timer);
+        setItems((prev) => prev.filter((x) => x.id !== t.id));
+      }, 4000);
+      timers.add(timer);
     };
     listeners.add(fn);
     return () => {
       listeners.delete(fn);
+      for (const timer of timers) clearTimeout(timer);
     };
   }, []);
 

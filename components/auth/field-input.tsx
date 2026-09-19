@@ -1,17 +1,15 @@
 "use client";
 
-import { forwardRef, type InputHTMLAttributes } from "react";
+import { type InputHTMLAttributes, type Ref } from "react";
 import { cn } from "@/lib/utils";
 
 interface FieldInputProps extends InputHTMLAttributes<HTMLInputElement> {
   label?: string;
   icon?: React.ReactNode;
+  ref?: Ref<HTMLInputElement>;
 }
 
-export const FieldInput = forwardRef<HTMLInputElement, FieldInputProps>(function FieldInput(
-  { label, icon, id, className, ...rest },
-  ref
-) {
+export function FieldInput({ label, icon, id, className, ref, ...rest }: FieldInputProps) {
   return (
     <div>
       {label ? (
@@ -52,4 +50,4 @@ export const FieldInput = forwardRef<HTMLInputElement, FieldInputProps>(function
       </div>
     </div>
   );
-});
+}

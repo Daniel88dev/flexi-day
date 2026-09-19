@@ -110,11 +110,11 @@ describe("BillingPage", () => {
 
   it("lists attachments on the paid plan cards in Czech", () => {
     renderWithClient(
-      <I18nContext.Provider
+      <I18nContext
         value={{ locale: "cs", setLocale: () => {}, t: dictionaries.cs, localeReady: true }}
       >
         <BillingPage />
-      </I18nContext.Provider>
+      </I18nContext>
     );
 
     expect(screen.getAllByText("Přílohy k žádostem (obrázky a PDF)")).toHaveLength(2);

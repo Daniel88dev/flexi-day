@@ -1,6 +1,6 @@
 "use client";
 
-import { useContext } from "react";
+import { use } from "react";
 import { I18nContext } from "./i18n-provider";
 
 /**
@@ -8,5 +8,5 @@ import { I18nContext } from "./i18n-provider";
  * Usage: `const { t } = useTranslation(); …t.settings.title…`
  */
 export function useTranslation() {
-  return useContext(I18nContext);
+  return use(I18nContext);
 }
