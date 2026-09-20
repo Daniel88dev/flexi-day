@@ -64,16 +64,28 @@ const eslintConfig = defineConfig([
       // a submit handler is intentional and stable enough for ID generation.
       "react-hooks/purity": "off",
 
-      // The three below are suppressed rather than accepted, each with a
-      // burn-down issue. 18 hits, all inside one test-setup module:
-      // https://github.com/Daniel88dev/flexi-day/issues/148
-      "@eslint-react/no-unnecessary-use-prefix": "off",
-      // 12 hits across 6 files, concentrated in two calendar components:
+      // The two below are suppressed rather than accepted, each with a
+      // burn-down issue. 12 hits across 6 files, concentrated in two calendar
+      // components:
       // https://github.com/Daniel88dev/flexi-day/issues/149
       "@eslint-react/no-array-index-key": "off",
       // 12 hits across 7 files:
       // https://github.com/Daniel88dev/flexi-day/issues/150
       "@eslint-react/use-state": "off",
+    },
+  },
+
+  {
+    // @eslint-react exempts hook-shaped stand-ins written inline in a vi.mock
+    // factory, but not ones lifted into a module so two suites can share them.
+    // Every use-prefixed key in this file has to match an export of
+    // lib/api/queries for vi.mock to intercept it, so the names are not ours to
+    // choose and the rule's advice would break the mock. Scoped to the one file
+    // rather than to test files at large: this is the repo's only shared mock
+    // module, and a second one should have to earn its own entry here.
+    files: ["components/shell/__tests__/shell-test-setup.ts"],
+    rules: {
+      "@eslint-react/no-unnecessary-use-prefix": "off",
     },
   },
 
