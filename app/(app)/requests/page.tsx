@@ -231,6 +231,7 @@ export default function RequestsPage() {
         {(["all", "mine", "pending", "approved", "rejected", "cancelled"] as Filter[]).map((f) => (
           <button
             key={f}
+            type="button"
             onClick={() => {
               setFilter(f);
               setActionError(null);

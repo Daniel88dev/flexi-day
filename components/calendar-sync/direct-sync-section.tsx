@@ -27,6 +27,7 @@ function LockedProvider({
       onMouseLeave={onLeave}
     >
       <button
+        type="button"
         disabled
         className="cs-btn cs-btn-ghost cs-btn-block"
         style={{ padding: "14px 18px", justifyContent: "flex-start", gap: 11 }}
