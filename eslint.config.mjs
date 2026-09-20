@@ -32,7 +32,16 @@ const eslintConfig = defineConfig([
     },
   },
 
-  eslintReact.configs.recommended,
+  // strict rather than recommended: eight more rules, and jsx-no-children-prop
+  // raised to error. Six of the eight fire nowhere here and are kept anyway,
+  // because a guard costs least to install before the API it guards is in use.
+  // That argument stops at the preset boundary. Every other category preset —
+  // naming-convention, web-api, dom, jsx, rsc, x — is a subset of strict, and the
+  // rules `all` holds beyond it are all-only: upstream left them out of every
+  // curated preset, so adopting them on future cost would rest on no judgement but
+  // ours. Silence is not the reason either — no-missing-context-display-name has
+  // live findings here and is excluded all the same.
+  eslintReact.configs.strict,
 
   {
     rules: {
@@ -42,7 +51,8 @@ const eslintConfig = defineConfig([
       // rule in that preset, so eslint-plugin-react-hooks stays authoritative.
       // Nothing upstream expresses this direction, so a newly overlapping rule
       // arrives as ordinary warning drift — hence @eslint-react's own Dependabot
-      // group.
+      // group. Re-derived against @eslint-react 5.20.0 under strict: twelve
+      // entries, nine of them active, no drift.
       "@eslint-react/error-boundaries": "off",
       "@eslint-react/exhaustive-deps": "off",
       "@eslint-react/globals": "off",

@@ -11,8 +11,12 @@ function Probe() {
     <div>
       <span data-testid="locale">{locale}</span>
       <span data-testid="label">{t.nav.dashboard}</span>
-      <button onClick={() => setLocale("cs")}>cs</button>
-      <button onClick={() => setLocale("en")}>en</button>
+      <button type="button" onClick={() => setLocale("cs")}>
+        cs
+      </button>
+      <button type="button" onClick={() => setLocale("en")}>
+        en
+      </button>
     </div>
   );
 }

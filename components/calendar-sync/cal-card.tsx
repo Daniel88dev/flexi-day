@@ -109,6 +109,7 @@ export function CalCard({
         </div>
         <div className="relative" ref={ref}>
           <button
+            type="button"
             onClick={() => setMenu((m) => !m)}
             aria-label={t.calSync.card.moreActions}
             className="grid place-items-center rounded-lg"
@@ -140,6 +141,7 @@ export function CalCard({
               ).map(([label, icon, fn]) => (
                 <button
                   key={label}
+                  type="button"
                   onClick={() => {
                     setMenu(false);
                     fn();
@@ -154,6 +156,7 @@ export function CalCard({
                 </button>
               ))}
               <button
+                type="button"
                 onClick={() => {
                   setMenu(false);
                   onDelete(config);
@@ -202,6 +205,7 @@ export function CalCard({
           {config.feedUrl}
         </span>
         <button
+          type="button"
           onClick={copyUrl}
           className="cs-btn cs-btn-primary cs-btn-sm"
           style={{ padding: "7px 12px" }}

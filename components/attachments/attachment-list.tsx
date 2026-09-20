@@ -31,6 +31,8 @@ function formatMoment(iso: string, locale: string) {
 
 type RowJob = { id: string; action: "url" | "delete" };
 
+const NO_FAILED_IDS: readonly string[] = [];
+
 /** A row already gone is not an error: the refetch takes it off the list. */
 function deleteErrorMessage(error: unknown, t: Dictionary): string | null {
   if (error instanceof ApiError && error.status === 403) return t.attachments.deleteForbidden;
@@ -45,7 +47,7 @@ function deleteErrorMessage(error: unknown, t: Dictionary): string | null {
 export function AttachmentList({
   attachments,
   people,
-  failedIds = [],
+  failedIds = NO_FAILED_IDS,
   canDelete,
   onDelete,
 }: {
@@ -53,7 +55,7 @@ export function AttachmentList({
   /** Whoever the detail already names; an uploader not among them is an admin. */
   people: UserSummary[];
   /** Rows this session registered whose bytes never arrived; shown as failed at once. */
-  failedIds?: string[];
+  failedIds?: readonly string[];
   canDelete?: (attachment: Attachment) => boolean;
   /** Runs after the user confirms; the row leaves once the detail is refetched. */
   onDelete?: (attachment: Attachment) => Promise<unknown>;
