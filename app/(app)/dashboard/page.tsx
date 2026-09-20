@@ -75,7 +75,7 @@ export default function DashboardPage() {
   const initial = todayParts();
   const [year, setYear] = useState(initial.year);
   const [month, setMonth] = useState(initial.month);
-  const [filter, setFilter] = useState<Set<CalendarRecordType>>(new Set(DEFAULT_LEAVE_TYPES));
+  const [filter, setFilter] = useState<Set<CalendarRecordType>>(() => new Set(DEFAULT_LEAVE_TYPES));
   const [presetDate, setPresetDate] = useState<string | null>(null);
   const [newRequestOpen, setNewRequestOpen] = useState(false);
   // Session-only overrides of the stored preference — a look at the team

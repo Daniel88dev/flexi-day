@@ -76,23 +76,25 @@ function AttendanceForm({
   const [locationEnabled, setLocationEnabled] = useState(settings.locationEnabled);
   // Only a proposal: nothing is stored until Save, and this is the one field
   // with no default to fall back on.
-  const [timezone, setTimezone] = useState(settings.timezone ?? browserTimezone() ?? "");
+  const [timezone, setTimezone] = useState(() => settings.timezone ?? browserTimezone() ?? "");
   const [holidayCountry, setHolidayCountry] = useState(
     settings.holidayCountry ?? NO_HOLIDAY_COUNTRY
   );
   const [workingDays, setWorkingDays] = useState<Set<number>>(() => new Set(settings.workingDays));
   const [breakMinutes, setBreakMinutes] = useState(String(settings.breakMinutes));
-  const [breakThreshold, setBreakThreshold] = useState(
+  const [breakThreshold, setBreakThreshold] = useState(() =>
     formatMinutes(settings.breakThresholdMinutes)
   );
-  const [requiredPerDay, setRequiredPerDay] = useState(
+  const [requiredPerDay, setRequiredPerDay] = useState(() =>
     formatMinutes(settings.requiredMinutesPerDay)
   );
   const [balanceMode, setBalanceMode] = useState<BalanceMode>(settings.balanceMode);
-  const [sessionCeiling, setSessionCeiling] = useState(
+  const [sessionCeiling, setSessionCeiling] = useState(() =>
     formatMinutes(settings.sessionCeilingMinutes)
   );
-  const [breakCeiling, setBreakCeiling] = useState(formatMinutes(settings.breakCeilingMinutes));
+  const [breakCeiling, setBreakCeiling] = useState(() =>
+    formatMinutes(settings.breakCeilingMinutes)
+  );
   const [error, setError] = useState<string | null>(null);
 
   const paid = detail.plan.plan !== "FREE";

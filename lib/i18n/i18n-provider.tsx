@@ -35,7 +35,7 @@ export const I18nContext = createContext<I18nContextValue>({
 export function I18nProvider({ children }: { children: React.ReactNode }) {
   // First render must match the statically-exported HTML (English) to avoid a
   // hydration mismatch; the mount effect then corrects to the detected locale.
-  const [locale, setLocaleState] = useState<Locale>(DEFAULT_LOCALE);
+  const [locale, setLocale] = useState<Locale>(DEFAULT_LOCALE);
   const [localeReady, setLocaleReady] = useState(false);
 
   useEffect(() => {
@@ -44,13 +44,13 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
     // after mount. This is the intended one-time correction, not a render loop.
     const detected = detectLocale();
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    setLocaleState(detected);
+    setLocale(detected);
     setLocaleReady(true);
     document.documentElement.lang = detected;
   }, []);
 
-  const setLocale = useCallback((next: Locale) => {
-    setLocaleState(next);
+  const changeLocale = useCallback((next: Locale) => {
+    setLocale(next);
     document.documentElement.lang = next;
     try {
       window.localStorage.setItem(STORAGE_KEY, next);
@@ -60,8 +60,8 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const value = useMemo<I18nContextValue>(
-    () => ({ locale, setLocale, t: dictionaries[locale], localeReady }),
-    [locale, setLocale, localeReady]
+    () => ({ locale, setLocale: changeLocale, t: dictionaries[locale], localeReady }),
+    [locale, changeLocale, localeReady]
   );
 
   return <I18nContext value={value}>{children}</I18nContext>;

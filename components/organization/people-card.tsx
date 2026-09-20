@@ -75,7 +75,7 @@ function PersonRow({
 }) {
   const { t } = useTranslation();
   const update = useUpdateEmploymentRequiredMinutes(organizationId);
-  const [value, setValue] = useState(
+  const [value, setValue] = useState(() =>
     employment.requiredMinutesPerDay === null ? "" : formatMinutes(employment.requiredMinutesPerDay)
   );
   const [error, setError] = useState<string | null>(null);

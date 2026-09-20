@@ -63,11 +63,6 @@ const eslintConfig = defineConfig([
       // Too aggressive — fires on event handlers, not just render. Date.now() in
       // a submit handler is intentional and stable enough for ID generation.
       "react-hooks/purity": "off",
-
-      // Suppressed rather than accepted, with a burn-down issue. 12 hits
-      // across 7 files:
-      // https://github.com/Daniel88dev/flexi-day/issues/150
-      "@eslint-react/use-state": "off",
     },
   },
 
