@@ -15,11 +15,11 @@ vi.mock("@/lib/auth-client", () => ({
 
 function renderIn(locale: "en" | "cs") {
   return render(
-    <I18nContext.Provider
+    <I18nContext
       value={{ locale, setLocale: () => {}, t: dictionaries[locale], localeReady: true }}
     >
       <LandingPage />
-    </I18nContext.Provider>
+    </I18nContext>
   );
 }
 

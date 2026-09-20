@@ -68,8 +68,8 @@ export function useAttachmentUploads({
 }) {
   const { t } = useTranslation();
   const upload = useUploadAttachment();
-  const nextKey = useRef(0);
-  const waiting = useRef(new Map<number, File>());
+  const nextKeyRef = useRef(0);
+  const waitingRef = useRef(new Map<number, File>());
   const [jobs, setJobs] = useState<UploadJob[]>([]);
   // Rows registered this session whose bytes never arrived. The server keeps
   // them UPLOADING until its sweep; the list shows them as failed at once.
@@ -132,7 +132,7 @@ export function useAttachmentUploads({
     for (const file of Array.from(files)) {
       const contentType = declaredContentType(file);
       const job: UploadJob = {
-        key: nextKey.current++,
+        key: nextKeyRef.current++,
         fileName: file.name,
         contentType,
         size: file.size,
@@ -148,7 +148,7 @@ export function useAttachmentUploads({
       open -= 1;
       if (requestId === null) {
         job.queued = true;
-        waiting.current.set(job.key, file);
+        waitingRef.current.set(job.key, file);
       } else {
         sending.push([file, job.key]);
       }
@@ -159,8 +159,8 @@ export function useAttachmentUploads({
 
   /** Sends every waiting file to the Request that now exists; returns how many. */
   function start(id: string): number {
-    const entries = Array.from(waiting.current);
-    waiting.current.clear();
+    const entries = Array.from(waitingRef.current);
+    waitingRef.current.clear();
     for (const [key, file] of entries) send(file, key, id);
     setJobs((current) => current.map((job) => (job.queued ? { ...job, queued: false } : job)));
     return entries.length;
@@ -168,12 +168,12 @@ export function useAttachmentUploads({
 
   /** Drops a waiting or failed job; a job mid-flight keeps going. */
   function remove(key: number) {
-    waiting.current.delete(key);
+    waitingRef.current.delete(key);
     setJobs((current) => current.filter((job) => job.key !== key));
   }
 
   function reset() {
-    waiting.current.clear();
+    waitingRef.current.clear();
     setJobs([]);
     setFailedIds([]);
   }

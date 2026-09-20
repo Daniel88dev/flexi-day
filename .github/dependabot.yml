@@ -9,6 +9,15 @@ updates:
       interval: weekly
     open-pull-requests-limit: 10
     groups:
+      # @eslint-react releases near-daily, and the flat config hand-maintains a
+      # list of its rules switched off in favour of eslint-plugin-react-hooks.
+      # A newly added rule that overlaps that list arrives as warning drift,
+      # which is invisible inside a ten-package PR, so this one moves on its own
+      # at every update type. It is declared first because the catch-all group
+      # below would otherwise claim its minor and patch bumps.
+      eslint-react:
+        patterns:
+          - "@eslint-react/*"
       minor-and-patch:
         update-types:
           - minor

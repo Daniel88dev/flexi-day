@@ -77,10 +77,10 @@ function TwoFactorForm() {
   }, [t]);
 
   // One automatic send when email is the factor in use; resends are manual.
-  const autoSent = useRef(false);
+  const autoSentRef = useRef(false);
   useEffect(() => {
-    if (method !== "otp" || autoSent.current) return;
-    autoSent.current = true;
+    if (method !== "otp" || autoSentRef.current) return;
+    autoSentRef.current = true;
     void sendOtp();
   }, [method, sendOtp]);
 

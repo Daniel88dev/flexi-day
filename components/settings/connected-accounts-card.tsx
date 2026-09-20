@@ -42,7 +42,7 @@ export function ConnectedAccountsCard() {
   const [actionError, setActionError] = useState<string | null>(null);
   const [pending, setPending] = useState<Provider | null>(null);
   const [dismissedLinkError, setDismissedLinkError] = useState(false);
-  const announced = useRef(false);
+  const announcedRef = useRef(false);
 
   const accountsQuery = useLinkedAccounts();
 
@@ -76,8 +76,8 @@ export function ConnectedAccountsCard() {
     // `localeReady` is the gate, not an optimisation: `I18nProvider` corrects
     // the locale from its own mount effect, which runs *after* this one, so
     // firing immediately would announce a Czech page's success in English.
-    if (!linked || announced.current || !localeReady) return;
-    announced.current = true;
+    if (!linked || announcedRef.current || !localeReady) return;
+    announcedRef.current = true;
     pushToast(t.settings.connectedAccounts.connectedToast(linked.name));
     const next = new URLSearchParams(params);
     next.delete("linked");
