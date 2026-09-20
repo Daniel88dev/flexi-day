@@ -109,11 +109,11 @@ export function BottomBar() {
           borderColor: "var(--border)",
         }}
       >
-        {slots.map((link, index) =>
+        {slots.map((link) =>
           link ? (
             <Tab key={link.href} link={link} isActive={isActive(link.href)} />
           ) : (
-            <ClockSlot key={`slot-${index}`} />
+            <ClockSlot key="clock-slot" />
           )
         )}
         <button

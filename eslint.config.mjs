@@ -64,12 +64,8 @@ const eslintConfig = defineConfig([
       // a submit handler is intentional and stable enough for ID generation.
       "react-hooks/purity": "off",
 
-      // The two below are suppressed rather than accepted, each with a
-      // burn-down issue. 12 hits across 6 files, concentrated in two calendar
-      // components:
-      // https://github.com/Daniel88dev/flexi-day/issues/149
-      "@eslint-react/no-array-index-key": "off",
-      // 12 hits across 7 files:
+      // Suppressed rather than accepted, with a burn-down issue. 12 hits
+      // across 7 files:
       // https://github.com/Daniel88dev/flexi-day/issues/150
       "@eslint-react/use-state": "off",
     },

@@ -407,7 +407,7 @@ export function LeaveCalendar({
 
         return (
           <div
-            key={wi}
+            key={weekStart}
             style={{
               position: "relative",
               borderBottom: wi < weeks.length - 1 ? "1px solid var(--border)" : "none",
@@ -421,6 +421,8 @@ export function LeaveCalendar({
                 const dayClickable = d !== null && Boolean(onDayClick);
                 return (
                   <div
+                    // Seven fixed columns that never reorder: the column is the cell.
+                    // eslint-disable-next-line @eslint-react/no-array-index-key
                     key={di}
                     className={d ? "transition-colors hover:bg-[var(--surface-2)]" : ""}
                     role={dayClickable ? "button" : undefined}
@@ -489,12 +491,12 @@ export function LeaveCalendar({
                 pointerEvents: "none",
               }}
             >
-              {bank.map((e, i) => {
+              {bank.map((e) => {
                 const cf = Math.max(e.from, weekStart);
                 const ct = Math.min(e.to, weekEnd);
                 return (
                   <div
-                    key={`b${i}`}
+                    key={e.id}
                     style={{
                       gridColumn: `${week.indexOf(cf) + 1} / ${week.indexOf(ct) + 2}`,
                       gridRow: 1,
@@ -516,9 +518,9 @@ export function LeaveCalendar({
               })}
               {barsRaw
                 .filter((b) => b.lane < shownLanes)
-                .map((b, i) => (
+                .map((b) => (
                   <div
-                    key={i}
+                    key={b.range.id}
                     className="@container"
                     style={{
                       gridColumn: `${b.sc} / ${b.ec}`,
@@ -589,7 +591,6 @@ export function groupConsecutiveByUserType<
   let current: CalendarRange | null = null;
   let lastIsoDay: string | null = null;
   let lastKey: string | null = null;
-  let seq = 0;
   for (const item of sorted) {
     const day = Number(item.requestedDay.slice(8, 10));
     // The source group is part of the key so a bar never spans records the
@@ -600,7 +601,10 @@ export function groupConsecutiveByUserType<
       if (item.id) current.vacationIds?.push(item.id);
     } else {
       current = {
-        id: `r${seq++}`,
+        // The grouping key plus the day the range opens on. A counter would
+        // renumber every later range whenever this reruns, which is an array
+        // index by another name — and `id` is what the calendar keys bars on.
+        id: `${key}|${item.requestedDay}`,
         who: item.userId,
         user: item.user,
         type: item.vacationType,

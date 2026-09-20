@@ -58,6 +58,7 @@ export function MonthView({ month, locale }: { month: AttendanceMonth; locale: s
   // Days that were this Employment's to work: somebody who joined on the 15th
   // reads "2 of 16", not "2 of 30".
   const employedDays = month.days.filter((day) => day.exclusion?.cause !== "NOT_EMPLOYED").length;
+  const blanks = leadingBlanks({ year: month.year, month: month.month });
 
   return (
     <div className="flex flex-col gap-4">
@@ -101,11 +102,13 @@ export function MonthView({ month, locale }: { month: AttendanceMonth; locale: s
             {heading}
           </div>
         ))}
-        {Array.from({ length: leadingBlanks({ year: month.year, month: month.month }) }).map(
-          (_, index) => (
-            <div key={`blank-${index}`} aria-hidden />
-          )
-        )}
+        {blanks > 0 ? (
+          <div
+            data-testid="month-grid-offset"
+            aria-hidden
+            style={{ gridColumn: `span ${blanks}` }}
+          />
+        ) : null}
         {month.days.map((day) => (
           <MonthCell key={day.businessDate} day={day} mode={mode} today={today} />
         ))}

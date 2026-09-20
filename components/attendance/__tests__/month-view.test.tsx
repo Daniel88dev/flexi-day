@@ -121,6 +121,25 @@ describe("MonthView", () => {
     expect(screen.getByTestId("month-row-2026-09-01")).toBeInTheDocument();
   });
 
+  it("offsets the grid by the weekdays the month starts after", () => {
+    renderWithClient(<MonthView month={month()} locale="en" />);
+
+    expect(screen.getByTestId("month-grid-offset").style.gridColumn).toBe("span 1");
+  });
+
+  it("opens the grid on the first column when the 1st is a Monday", () => {
+    // 1 June 2026 is a Monday, so nothing precedes it in the grid.
+    renderWithClient(
+      <MonthView
+        month={month({ year: 2026, month: 6, days: [day("2026-06-01"), day("2026-06-02")] })}
+        locale="en"
+      />
+    );
+
+    expect(screen.getByTestId("month-day-2026-06-01")).toBeInTheDocument();
+    expect(screen.queryByTestId("month-grid-offset")).toBeNull();
+  });
+
   it("says so when the month holds nothing at all", () => {
     renderWithClient(
       <MonthView
