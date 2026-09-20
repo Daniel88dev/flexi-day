@@ -62,9 +62,9 @@ function Timeline({ session, now }: { session: AttendanceSession; now: Date }) {
 
   return (
     <ul className="flex flex-col">
-      {buildTimeline(session, now).map((segment, index) => (
+      {buildTimeline(session, now).map((segment) => (
         <li
-          key={`${segment.kind}-${segment.startedAt}-${index}`}
+          key={`${segment.kind}-${segment.startedAt}`}
           className="flex items-center gap-3 border-b py-2 last:border-b-0"
           style={{ borderColor: "var(--border)" }}
         >

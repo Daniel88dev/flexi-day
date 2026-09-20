@@ -63,8 +63,8 @@ function ProviderRow({
             background: "var(--surface-2)",
           }}
         >
-          {steps.map((s, i) => (
-            <li key={i} style={{ marginTop: 4 }}>
+          {steps.map((s) => (
+            <li key={s} style={{ marginTop: 4 }}>
               {s}
             </li>
           ))}

@@ -107,7 +107,7 @@ type PlacedBar = PreviewEntry & {
 
 function MonthPreview({ entries, geometry }: { entries: PreviewEntry[]; geometry: Geometry }) {
   const { t } = useTranslation();
-  const WD = t.calendar.weekdaysShort.map((d) => d[0]);
+  const WD = t.calendar.weekdaysShort;
   const weeks = buildWeeks(geometry.monthDays, geometry.firstWeekdayMondayIdx);
   return (
     <div
@@ -115,12 +115,13 @@ function MonthPreview({ entries, geometry }: { entries: PreviewEntry[]; geometry
       style={{ border: "1px solid var(--border)", background: "var(--surface)" }}
     >
       <div
+        data-testid="preview-weekday-headings"
         className="grid grid-cols-7"
         style={{ background: "var(--surface-2)", borderBottom: "1px solid var(--border)" }}
       >
         {WD.map((w, i) => (
           <div
-            key={i}
+            key={w}
             className="text-[10px] font-bold"
             style={{
               padding: "6px 8px",
@@ -128,7 +129,7 @@ function MonthPreview({ entries, geometry }: { entries: PreviewEntry[]; geometry
               color: i >= 5 ? "var(--text-faint)" : "var(--text-muted)",
             }}
           >
-            {w}
+            {w[0]}
           </div>
         ))}
       </div>
@@ -175,7 +176,7 @@ function MonthPreview({ entries, geometry }: { entries: PreviewEntry[]; geometry
 
           return (
             <div
-              key={wi}
+              key={ws}
               className="relative flex-1"
               style={{
                 borderBottom: wi < weeks.length - 1 ? "1px solid var(--border)" : "none",
@@ -185,6 +186,8 @@ function MonthPreview({ entries, geometry }: { entries: PreviewEntry[]; geometry
               <div className="grid h-full grid-cols-7">
                 {week.map((d, di) => (
                   <div
+                    // Seven fixed columns that never reorder: the column is the cell.
+                    // eslint-disable-next-line @eslint-react/no-array-index-key
                     key={di}
                     style={{
                       borderRight: di < 6 ? "1px solid var(--border)" : "none",
@@ -220,10 +223,13 @@ function MonthPreview({ entries, geometry }: { entries: PreviewEntry[]; geometry
                   padding: "0 3px",
                 }}
               >
-                {shown.map((b, i) => {
+                {shown.map((b) => {
                   const Icon = typeMetaFor(b.type).icon;
                   return (
-                    <div key={i} style={{ gridColumn: `${b.sc} / ${b.ec}`, gridRow: b.lane + 1 }}>
+                    <div
+                      key={b.id}
+                      style={{ gridColumn: `${b.sc} / ${b.ec}`, gridRow: b.lane + 1 }}
+                    >
                       <div
                         title={`${b.name} · ${recordTypeLabel(t.calendarRecordTypes, b.type)}`}
                         className="flex items-center gap-[3px] overflow-hidden text-[9px] font-bold whitespace-nowrap"

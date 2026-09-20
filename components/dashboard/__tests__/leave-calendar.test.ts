@@ -80,6 +80,30 @@ describe("groupConsecutiveByUserType", () => {
     expect(ranges).toHaveLength(2);
   });
 
+  it("gives every range an id of its own", () => {
+    const ranges = groupConsecutiveByUserType([
+      { userId: "u1", vacationType: CalendarRecordType.Vacation, requestedDay: "2026-06-08" },
+      { userId: "u1", vacationType: CalendarRecordType.Vacation, requestedDay: "2026-06-10" },
+      { userId: "u2", vacationType: CalendarRecordType.Vacation, requestedDay: "2026-06-08" },
+      { userId: "u1", vacationType: CalendarRecordType.HomeOffice, requestedDay: "2026-06-08" },
+    ]);
+
+    expect(new Set(ranges.map((r) => r.id)).size).toBe(ranges.length);
+  });
+
+  it("keeps a range's id the same when another range is dropped from the input", () => {
+    const rows = [
+      { userId: "u1", vacationType: CalendarRecordType.Vacation, requestedDay: "2026-06-08" },
+      { userId: "u2", vacationType: CalendarRecordType.Vacation, requestedDay: "2026-06-09" },
+      { userId: "u3", vacationType: CalendarRecordType.Vacation, requestedDay: "2026-06-10" },
+    ];
+
+    const before = groupConsecutiveByUserType(rows);
+    const after = groupConsecutiveByUserType(rows.filter((r) => r.userId !== "u1"));
+
+    expect(after.map((r) => r.id)).toEqual(before.slice(1).map((r) => r.id));
+  });
+
   it("handles unsorted input by sorting before grouping", () => {
     const ranges = groupConsecutiveByUserType([
       { userId: "u1", vacationType: CalendarRecordType.Vacation, requestedDay: "2026-06-10" },

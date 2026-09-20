@@ -27,6 +27,18 @@ describe("SubscribePanel", () => {
 
 describe("PreviewPanel", () => {
   const geometry = { monthLabel: "July 2026", monthDays: 31, firstWeekdayMondayIdx: 2 };
+  const entries: PreviewEntry[] = [
+    {
+      id: "p0",
+      type: CalendarRecordType.Vacation,
+      from: 10,
+      to: 12,
+      name: "You",
+      isMine: true,
+      color: swatch("violet"),
+      note: "Trip",
+    },
+  ];
 
   it("shows an empty hint when there are no entries", () => {
     render(
@@ -41,19 +53,30 @@ describe("PreviewPanel", () => {
     expect(screen.getByText(/Nothing matches/)).toBeInTheDocument();
   });
 
+  it("heads the month grid with one column per weekday, initials repeated", () => {
+    render(
+      <PreviewPanel
+        name="My feed"
+        entries={entries}
+        mode="month"
+        setMode={vi.fn()}
+        geometry={geometry}
+      />
+    );
+
+    const headings = screen.getByTestId("preview-weekday-headings");
+    expect([...headings.children].map((cell) => cell.textContent)).toEqual([
+      "M",
+      "T",
+      "W",
+      "T",
+      "F",
+      "S",
+      "S",
+    ]);
+  });
+
   it("renders agenda rows for entries", () => {
-    const entries: PreviewEntry[] = [
-      {
-        id: "p0",
-        type: CalendarRecordType.Vacation,
-        from: 10,
-        to: 12,
-        name: "You",
-        isMine: true,
-        color: swatch("violet"),
-        note: "Trip",
-      },
-    ];
     render(
       <PreviewPanel
         name="My feed"
