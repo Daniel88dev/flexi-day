@@ -60,8 +60,8 @@ export function EditRequestDialog({
 
   // Null while the Others group is open with no type picked yet.
   const [vacationType, setVacationType] = useState<CalendarRecordType | null>(detail.vacationType);
-  const [startTime, setStartTime] = useState(toInputTime(detail.startTime));
-  const [endTime, setEndTime] = useState(toInputTime(detail.endTime));
+  const [startTime, setStartTime] = useState(() => toInputTime(detail.startTime));
+  const [endTime, setEndTime] = useState(() => toInputTime(detail.endTime));
   const [halfDay, setHalfDay] = useState(detail.halfDay);
   const [note, setNote] = useState(detail.note ?? "");
   const [error, setError] = useState<string | null>(null);

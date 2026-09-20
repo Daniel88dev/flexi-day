@@ -83,7 +83,7 @@ export function TeamUsageChart({ members, series, colors }: Props) {
 
   const [showBars, setShowBars] = useState(true);
   const [showLines, setShowLines] = useState(true);
-  const [hiddenIds, setHiddenIds] = useState<ReadonlySet<string>>(new Set());
+  const [hiddenIds, setHiddenIds] = useState<ReadonlySet<string>>(() => new Set());
 
   const visible = useMemo(
     () => members.filter((member) => !hiddenIds.has(member.id)),
