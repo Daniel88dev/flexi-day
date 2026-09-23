@@ -1,7 +1,7 @@
 // Regenerates icons.js from the lucide-react package the app depends on, so the
 // mockups use the exact glyphs the product ships. Run from the repo root:
 //   node design/attendance/assets/build-icons.mjs
-import { writeFile } from "node:fs/promises";
+import { readFile, writeFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
@@ -14,6 +14,7 @@ const NAMES = [
   "calendar",
   "calendar-days",
   "calendar-off",
+  "calendar-plus",
   "calendar-range",
   "check",
   "chevron-down",
@@ -43,6 +44,7 @@ const NAMES = [
   "map-pin",
   "menu",
   "moon",
+  "notebook-pen",
   "panel-left",
   "panel-left-close",
   "pause",
@@ -57,10 +59,12 @@ const NAMES = [
   "sun",
   "thermometer",
   "timer",
+  "trash-2",
   "tree-palm",
   "triangle-alert",
   "umbrella",
   "user",
+  "user-pen",
   "user-round",
   "users",
   "x",
@@ -68,9 +72,21 @@ const NAMES = [
 
 const here = dirname(fileURLToPath(import.meta.url));
 const icons = {};
+
+// lucide-react 1.47 exports `__iconData.node` where it used to export
+// `__iconNode`, and renamed icons are bare re-exports of their new file.
+async function iconNode(name) {
+  const file = `lucide-react/dist/esm/icons/${name}.mjs`;
+  const mod = await import(file);
+  const node = mod.__iconNode ?? mod.__iconData?.node;
+  if (node) return node;
+  const source = await readFile(fileURLToPath(import.meta.resolve(file)), "utf8");
+  const target = source.match(/from '\.\/([a-z0-9-]+)\.mjs'/);
+  if (!target) throw new Error(`no icon data for ${name}`);
+  return iconNode(target[1]);
+}
 for (const name of NAMES) {
-  const mod = await import(`lucide-react/dist/esm/icons/${name}.mjs`);
-  icons[name] = mod.__iconNode
+  icons[name] = (await iconNode(name))
     .map(([tag, attrs]) => {
       const a = Object.entries(attrs)
         .filter(([k]) => k !== "key")

@@ -1,0 +1,376 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Attendance design: correction dialog</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;500;600;700;800&family=Hanken+Grotesk:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="assets/tokens.css" />
+    <link rel="stylesheet" href="assets/mock.css" />
+    <script src="assets/mock.js"></script>
+    <script src="assets/icons.js"></script>
+    <script src="assets/shell.js"></script>
+    <script src="assets/self-service.js"></script>
+    <style>
+      .session {
+        border: 1px solid var(--border);
+        border-radius: var(--radius-2xl);
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+      .two {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        align-items: start;
+      }
+      .foot {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="sheet">
+      <header class="sheet-head">
+        <div>
+          <h1>Correction dialog</h1>
+          <p>
+            The dialog from 04, opened by the employee on their own day or by an admin on anyone's.
+            It gains "Add break" on a closed session, "Add another session" under the sessions, and
+            a delete rule: the employee may delete what they entered, not what they clocked on an
+            earlier day. Every validation message is written out below, field by field, with the
+            refusals that only the API can make.
+          </p>
+          <nav class="sheet-nav">
+            <a href="01-shell.html">Shell</a>
+            <a href="02-clock-widget.html">Clock widget</a>
+            <a href="03-my-attendance.html">My attendance</a>
+            <a href="04-team-attendance.html">Team attendance</a>
+            <a href="05-organization-settings.html">Organization settings</a>
+            <a href="06-self-service-settings.html">Self-service settings</a>
+            <a href="07-my-attendance-self-service.html">My attendance, self-service</a>
+            <a class="current" href="08-correction-dialog.html">Correction dialog</a>
+            <a href="09-team-attendance-self-service.html">Team attendance, self-service</a>
+          </nav>
+        </div>
+        <div class="theme-toggle" role="group" aria-label="Theme">
+          <button type="button" data-theme-pick="light">Light</button>
+          <button type="button" data-theme-pick="dark">Dark</button>
+          <button type="button" data-theme-pick="system">System</button>
+        </div>
+      </header>
+
+      <section class="board">
+        <h2>Correcting an earlier day, with a break added</h2>
+        <p>
+          Noah on Thursday, fixing Wednesday 9. The sweep closed it at 00:05; he sets 17:10 and adds
+          the 20-minute break he forgot to press. The dialog tells him before he saves that a change
+          to a past day is flagged for his admin. There is no delete button: the session was
+          clocked, and it is not today.
+        </p>
+        <div class="frames">
+          <div class="frame">
+            <span class="frame-label">1280 x 960, employee, inside the window</span>
+            <div class="laptop tall" data-view="dialog"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="board">
+        <h2>Validation on the form</h2>
+        <p>
+          Checked as the person types, under the field it belongs to. Save stays disabled while any
+          of them shows. The entry form and the correction form share the time messages; "Ends the
+          next day" exists only on the entry form, because a correction never moves a session to
+          another day.
+        </p>
+        <div class="frames" id="form-errors"></div>
+      </section>
+
+      <section class="board">
+        <h2>Refusals from the API</h2>
+        <p>
+          The ones the form cannot know for certain, or that a stale tab can still hit. They show
+          above the footer, in the reader's language, keyed by the API's reason code. The window
+          refusal keeps its current wording.
+        </p>
+        <div class="frames" id="api-errors"></div>
+      </section>
+    </div>
+
+    <script>
+      var NOAH = { name: "Noah Weber", org: "Studio Modrá" };
+
+      function footer(o) {
+        o = o || {};
+        return (
+          '<div class="foot">' +
+          (o.left ||
+            '<span class="hint" style="max-width:250px">Clocked on an earlier day, so it can be corrected but not deleted.</span>') +
+          '<span class="row"><button class="btn btn-outline" type="button">Cancel</button><button class="btn btn-primary' +
+          (o.disabled ? " disabled" : "") +
+          '" type="button">' +
+          (o.save || "Save correction") +
+          "</button></span></div>"
+        );
+      }
+
+      function sessionBlock(o) {
+        return (
+          '<div class="session">' +
+          (o.marks ? '<div class="marks">' + o.marks + "</div>" : "") +
+          '<div class="two">' +
+          ss.field("Clock in", ss.input(o.start, { invalid: o.startErr }), { error: o.startErr }) +
+          ss.field("Clock out", ss.input(o.end, { invalid: !!o.endErr, focus: o.endFocus }), {
+            error: o.endErr,
+            hint: o.endErr ? null : o.endHint,
+          }) +
+          "</div>" +
+          (o.breaks ? ss.breaks(o.breaks) : "") +
+          (o.history ? ss.events(o.history) : "") +
+          "</div>"
+        );
+      }
+
+      var HISTORY = [
+        ["Wed 9 Sep 08:05", "Clocked in", "Noah Weber"],
+        ["Wed 9 Sep 12:00", "Break started", "Noah Weber"],
+        ["Wed 9 Sep 12:30", "Break ended", "Noah Weber"],
+        ["Thu 10 Sep 00:05", "Closed automatically after 16 h", "System"],
+      ];
+
+      function mainDialog() {
+        return (
+          '<div class="dialog" style="width:620px"><div><h2>Correct Wednesday 9 September</h2><p class="card-desc" style="margin:6px 0 0">Your own day. You can change it until Wednesday 16 September.</p></div>' +
+          sessionBlock({
+            start: "08:05",
+            end: "17:10",
+            endHint: "Was 00:05, set by the sweep",
+            breaks: [
+              { s: "12:00", e: "12:30" },
+              { s: "15:00", e: "15:20", isNew: true, focus: true },
+            ],
+            history: HISTORY,
+          }) +
+          '<div><button class="btn btn-ghost btn-sm" type="button" style="padding-left:6px">' +
+          icon("calendar-plus") +
+          "Add another session</button></div>" +
+          '<div class="notice notice-review" style="padding:10px 14px">' +
+          icon("user-pen") +
+          '<div><p style="color:var(--text)">This day has passed. Once you save, your admin sees the session marked as changed after the day until they check it.</p></div></div>' +
+          footer() +
+          "</div>"
+        );
+      }
+
+      document.querySelectorAll(".laptop[data-view]").forEach(function (el) {
+        el.innerHTML = shellFrame({
+          active: "my",
+          crumb: ["Attendance", "My attendance"],
+          live: true,
+          user: NOAH,
+          roles: { org: false, group: false },
+          content:
+            '<div><h1 class="page-title">My attendance</h1><p class="page-sub">Your sessions, breaks and balance in Studio Modrá.</p></div>',
+        });
+        var app = el.querySelector(".app");
+        app.style.position = "relative";
+        app.insertAdjacentHTML("beforeend", '<div class="overlay">' + mainDialog() + "</div>");
+      });
+
+      // One panel per message: [frame label, dialog body].
+      var S = { start: "08:05", end: "17:10" };
+      var FORM = [
+        [
+          "A break outside its session",
+          sessionBlock({
+            start: S.start,
+            end: S.end,
+            breaks: [
+              { s: "12:00", e: "12:30" },
+              {
+                s: "16:50",
+                e: "17:30",
+                isNew: true,
+                invalid: true,
+                error: "Has to stay inside the session, 08:05 to 17:10.",
+              },
+            ],
+          }) + footer({ disabled: true }),
+        ],
+        [
+          "Two breaks that overlap",
+          sessionBlock({
+            start: S.start,
+            end: S.end,
+            breaks: [
+              { s: "12:00", e: "12:30" },
+              {
+                s: "12:20",
+                e: "12:45",
+                isNew: true,
+                invalid: true,
+                error: "Overlaps the break from 12:00 to 12:30.",
+              },
+            ],
+          }) + footer({ disabled: true }),
+        ],
+        [
+          "A break that ends before it starts",
+          sessionBlock({
+            start: S.start,
+            end: S.end,
+            breaks: [
+              {
+                s: "15:20",
+                e: "15:00",
+                isNew: true,
+                invalid: true,
+                error: "Has to end after it starts.",
+              },
+            ],
+          }) + footer({ disabled: true }),
+        ],
+        [
+          "A new break with no time yet",
+          sessionBlock({
+            start: S.start,
+            end: S.end,
+            breaks: [
+              { s: "12:00", e: "12:30" },
+              { s: "--:--", e: "--:--", isNew: true, focus: true, error: "Needs a time." },
+            ],
+          }) + footer({ disabled: true }),
+        ],
+        [
+          "Entry: end before start",
+          ss.entryDialog({
+            date: "Tue 8 September 2026",
+            start: "16:55",
+            end: "08:10",
+            errors: {
+              end: "Has to end after it starts. If it ran past midnight, switch on Ends the next day.",
+            },
+            invalid: true,
+          }),
+        ],
+        [
+          "Entry: longer than the session limit",
+          ss.entryDialog({
+            date: "Mon 7 September 2026",
+            start: "22:00",
+            end: "15:00",
+            nextDay: "Ends Tuesday 8 September.",
+            errors: { end: "Can't be longer than 16:00, your organization's session limit." },
+            invalid: true,
+          }),
+        ],
+        [
+          "Entry: ends in the future",
+          ss.entryDialog({
+            date: "Fri 11 September 2026",
+            dateHint: "Today",
+            start: "13:00",
+            end: "17:00",
+            errors: {
+              end: "Can't end later than now, 12:19. Still working? Clock in, then correct the start.",
+            },
+            invalid: true,
+          }),
+        ],
+        [
+          "Entry: over another session",
+          ss.entryDialog({
+            date: "Wed 9 September 2026",
+            start: "07:30",
+            end: "12:00",
+            errors: {
+              start: "Overlaps your session from 08:05 to 17:10 on this day.",
+            },
+            invalid: true,
+          }),
+        ],
+        [
+          "Entry by an admin: outside the employment",
+          ss.entryDialog({
+            title: "Add a session for Tom Becker",
+            desc: "Recorded as entered by you.",
+            person: "Tom Becker",
+            date: "Mon 31 August 2026",
+            start: "08:30",
+            end: "17:00",
+            errors: { date: "Tom Becker's employment began on 1 September. Pick a later day." },
+            invalid: true,
+            note: "Marked as entered for good, with you as the one who entered it.",
+          }),
+        ],
+        [
+          "Clock out before clock in",
+          sessionBlock({
+            start: "08:05",
+            end: "07:40",
+            endErr: "Has to end after it starts.",
+          }) + footer({ disabled: true }),
+        ],
+      ];
+
+      var API = [
+        [
+          "Outside the window (SELF_SERVICE_WINDOW, unchanged)",
+          "Only an admin can change a day this old. Ask a group admin, or an organization admin.",
+        ],
+        [
+          "Self-service off",
+          "Your organization manages attendance corrections through an admin. Ask a group admin, or an organization admin.",
+        ],
+        [
+          "Deleting a clocked session from an earlier day",
+          "This session was clocked on an earlier day. You can correct its times, but only an admin can delete it.",
+        ],
+        [
+          "Another session covers the time (SESSION_OVERLAPS, unchanged)",
+          "Another session already covers that time.",
+        ],
+        [
+          "Employment ended",
+          "Your employment here has ended. Your attendance stays readable, and only an admin can change it.",
+        ],
+        [
+          "Attendance paused or plan lapsed",
+          "Attendance is paused for your organization, so its history can be read but not changed. Ask an org admin about it.",
+        ],
+      ];
+
+      function panel(label, body) {
+        return (
+          '<div class="frame"><span class="frame-label">' +
+          label +
+          '</span><div class="dialog flat">' +
+          body +
+          "</div></div>"
+        );
+      }
+
+      document.getElementById("form-errors").innerHTML = FORM.map(function (p) {
+        // entryDialog returns its own dialog wrapper; unwrap it into a panel.
+        var body = p[1];
+        if (body.indexOf('<div class="dialog') === 0)
+          body = body.replace(/^<div class="dialog[^"]*">/, "").replace(/<\/div>$/, "");
+        return panel(p[0], body);
+      }).join("");
+
+      document.getElementById("api-errors").innerHTML = API.map(function (p) {
+        return panel(p[0], ss.alert(p[1]) + footer({ left: "<span></span>" }));
+      }).join("");
+    </script>
+  </body>
+</html>

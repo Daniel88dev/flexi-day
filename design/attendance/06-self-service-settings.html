@@ -1,0 +1,367 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Attendance design: self-service settings</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;500;600;700;800&family=Hanken+Grotesk:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="assets/tokens.css" />
+    <link rel="stylesheet" href="assets/mock.css" />
+    <script src="assets/mock.js"></script>
+    <script src="assets/icons.js"></script>
+    <script src="assets/shell.js"></script>
+    <script src="assets/self-service.js"></script>
+    <style>
+      .fields {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 16px 20px;
+      }
+      .fields .span2 {
+        grid-column: span 2;
+      }
+      .fields .span3 {
+        grid-column: span 3;
+      }
+      .subhead {
+        font-weight: 600;
+        padding-top: 6px;
+        border-top: 1px solid var(--border);
+        margin-top: 4px;
+      }
+      .block {
+        border: 1px solid var(--border);
+        border-radius: var(--radius-xl);
+        padding: 16px 18px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+      .state {
+        width: 460px;
+        background: var(--card);
+        border-radius: var(--radius-2xl);
+        box-shadow: 0 0 0 1px color-mix(in oklch, var(--text) 10%, transparent);
+        padding: 20px;
+      }
+      .state .block {
+        border: 0;
+        padding: 0;
+      }
+      .phone .block {
+        padding: 14px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="sheet">
+      <header class="sheet-head">
+        <div>
+          <h1>Self-service settings</h1>
+          <p>
+            A new block in the organization's attendance card, between the ceilings and location.
+            One switch turns employee self-service on; while it is on, the admin picks a number of
+            days back or no limit. The line under the control says in plain words what employees can
+            do with the setting as it stands, with the actual dates for today. Group admins cannot
+            open this page, so they read the setting on Team attendance instead.
+          </p>
+          <nav class="sheet-nav">
+            <a href="01-shell.html">Shell</a>
+            <a href="02-clock-widget.html">Clock widget</a>
+            <a href="03-my-attendance.html">My attendance</a>
+            <a href="04-team-attendance.html">Team attendance</a>
+            <a href="05-organization-settings.html">Organization settings</a>
+            <a class="current" href="06-self-service-settings.html">Self-service settings</a>
+            <a href="07-my-attendance-self-service.html">My attendance, self-service</a>
+            <a href="08-correction-dialog.html">Correction dialog</a>
+            <a href="09-team-attendance-self-service.html">Team attendance, self-service</a>
+          </nav>
+        </div>
+        <div class="theme-toggle" role="group" aria-label="Theme">
+          <button type="button" data-theme-pick="light">Light</button>
+          <button type="button" data-theme-pick="dark">Dark</button>
+          <button type="button" data-theme-pick="system">System</button>
+        </div>
+      </header>
+
+      <section class="board">
+        <h2>In the attendance card</h2>
+        <p>
+          Studio Modrá on Pro with self-service on, seven days back. Today is Friday 11 September.
+          The cards above the attendance card are unchanged from 05.
+        </p>
+        <div class="frames">
+          <div class="frame">
+            <span class="frame-label">1280 wide, the attendance card as it scrolls</span>
+            <div class="laptop xtall" data-view="page"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="board">
+        <h2>Every state of the control</h2>
+        <p>
+          Off is where a new organization starts. On with 0 days is where an organization that
+          already used attendance lands after the change, because it is the rule they have today.
+          The number field only shows while "Days back" is picked, and it takes 0 to 366.
+        </p>
+        <div class="frames">
+          <div class="frame">
+            <span class="frame-label">Off, a new organization</span>
+            <div class="state" data-state="off"></div>
+          </div>
+          <div class="frame">
+            <span class="frame-label">On, 0 days: today only</span>
+            <div class="state" data-state="zero"></div>
+          </div>
+          <div class="frame">
+            <span class="frame-label">On, 7 days</span>
+            <div class="state" data-state="days"></div>
+          </div>
+          <div class="frame">
+            <span class="frame-label">On, no limit</span>
+            <div class="state" data-state="nolimit"></div>
+          </div>
+          <div class="frame">
+            <span class="frame-label">A number out of range, Save disabled</span>
+            <div class="state" data-state="invalid"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="board">
+        <h2>What a group admin sees</h2>
+        <p>
+          A group admin has no Organization page. The setting is shown to them read-only on Team
+          attendance, in one line above the table, with who can change it. The org admin gets the
+          same line with a link here. Both appear in context on
+          <a class="link" href="09-team-attendance-self-service.html">sheet 09</a>.
+        </p>
+        <div class="frames">
+          <div class="frame">
+            <span class="frame-label">Group admin, read-only</span>
+            <div class="state" style="width: 760px" data-state="readonly"></div>
+          </div>
+          <div class="frame">
+            <span class="frame-label">Org admin, same line</span>
+            <div class="state" style="width: 760px" data-state="orgline"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="board">
+        <h2>Mobile</h2>
+        <p>The block stacks inside the card like the other fields.</p>
+        <div class="frames">
+          <div class="frame">
+            <span class="frame-label"
+              >390 x 844, the card with the other fields folded, 7 days</span
+            >
+            <div class="phone" data-view="m-days"></div>
+          </div>
+          <div class="frame">
+            <span class="frame-label">390 x 844, the card with the other fields folded, off</span>
+            <div class="phone" data-view="m-off"></div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <script>
+      var field = function (label, control, hint, cls) {
+        return ss.field(label, control, { hint: hint, cls: cls });
+      };
+      function select(value) {
+        return '<span class="select">' + value + icon("chevron-down") + "</span>";
+      }
+      function input(value, unit) {
+        return (
+          '<span class="input">' +
+          value +
+          (unit ? '<span class="unit">' + unit + "</span>" : "") +
+          "</span>"
+        );
+      }
+
+      var EXPLAIN = {
+        off: "Employees clock in and out and take breaks, nothing more. Every correction and every missed day goes through an admin.",
+        zero: "Employees can enter and correct today's attendance, and fix a session still open from an earlier day. Earlier days go through an admin.",
+        days: "Employees can enter and correct their attendance for today and the 7 days before it. Today that is 4 to 11 September. Earlier days go through an admin.",
+        nolimit:
+          "Employees can enter and correct any day of their own employment. Admins can still correct anything.",
+      };
+      var APPLIES =
+        "Applies to everyone in Studio Modrá. Only organization admins can change it. A change affects later edits only: nothing already written is undone or flagged again.";
+
+      // The block, in one of: off, zero, days, nolimit, invalid.
+      function selfService(state) {
+        var on = state !== "off";
+        var h =
+          '<div class="block"><div class="row between" style="align-items:flex-start"><div><div class="label">Employee self-service</div>' +
+          '<p class="hint" style="margin:2px 0 0">Let employees enter sessions they forgot to clock and correct their own times.</p></div>' +
+          '<span class="switch' +
+          (on ? " on" : "") +
+          '" style="margin-top:2px"></span></div>';
+        if (on) {
+          var days = state === "zero" || state === "days" || state === "invalid";
+          var n = state === "zero" ? "0" : state === "invalid" ? "400" : "7";
+          h +=
+            '<div class="row" style="align-items:flex-start; gap:12px; flex-wrap:wrap">' +
+            '<span class="segmented"><span' +
+            (days ? ' class="active"' : "") +
+            ">Days back</span><span" +
+            (days ? "" : ' class="active"') +
+            ">No limit</span></span>" +
+            (days
+              ? '<div class="field" style="gap:4px">' +
+                ss.input(n, {
+                  unit: "days",
+                  width: 120,
+                  invalid: state === "invalid",
+                  focus: state === "invalid",
+                }) +
+                (state === "invalid"
+                  ? '<span class="error-text">Enter a whole number from 0 to 366.</span>'
+                  : '<span class="hint">0 to 366. 0 means today only.</span>') +
+                "</div>"
+              : "") +
+            "</div>";
+        }
+        var key = state === "invalid" ? null : state;
+        if (key)
+          h +=
+            '<div class="notice" style="padding:12px 14px">' +
+            icon(on ? "calendar-days" : "lock") +
+            '<div><p style="color:var(--text)">' +
+            EXPLAIN[key] +
+            "</p></div></div>";
+        h += '<p class="hint" style="margin:0">' + APPLIES + "</p>";
+        return h + "</div>";
+      }
+
+      function readOnlyLine(org) {
+        return (
+          '<div class="notice" style="padding:10px 14px; align-items:center">' +
+          icon(org ? "calendar-days" : "lock") +
+          '<div class="grow"><p style="color:var(--text)"><b>Self-service is on, 7 days back.</b> Members can enter and correct their own attendance for today and the 7 days before it.</p></div>' +
+          (org
+            ? '<a class="link" href="#" style="white-space:nowrap; font-size:13px">Change</a>'
+            : '<span class="hint" style="white-space:nowrap">Set by organization admins</span>') +
+          "</div>"
+        );
+      }
+
+      function attendanceCard() {
+        var h =
+          '<div class="card"><div class="row between"><span class="card-title">' +
+          icon("timer") +
+          'Attendance</span><span class="switch on"></span></div>';
+        h +=
+          '<p class="card-desc" style="margin:-8px 0 0">On for everyone in Studio Modrá. People clock in from the app; admins see the team.</p>';
+        h += '<div class="fields">';
+        h += field(
+          "Timezone",
+          select("Europe/Prague"),
+          "Required to turn attendance on. Proposed from your browser. Sets the day boundary; a night shift belongs to the day it started."
+        );
+        h += field("Holiday country", select("Czechia"), "Public holidays here are excluded days.");
+        h += field(
+          "Working days",
+          '<div class="days"><span class="day-pill on">Mo</span><span class="day-pill on">Tu</span><span class="day-pill on">We</span><span class="day-pill on">Th</span><span class="day-pill on">Fr</span><span class="day-pill">Sa</span><span class="day-pill">Su</span></div>',
+          "Other days are excluded; clocking in on them still counts."
+        );
+        h += '<div class="subhead span3">Breaks</div>';
+        h += field(
+          "Break allowance",
+          input("30", "min"),
+          "Deducted from every day that passes the threshold, whether or not a break was taken. A longer break is deducted in full."
+        );
+        h += field(
+          "Threshold",
+          input("6:00", "h:mm"),
+          "Presence below this deducts only breaks actually taken."
+        );
+        h += "<div></div>";
+        h += '<div class="subhead span3">Required time</div>';
+        h += field(
+          "Required per day",
+          input("8:00", "h:mm"),
+          "A person can be given their own required time."
+        );
+        h += field(
+          "Balance",
+          '<span class="segmented" style="width:100%"><span class="active">Each day</span><span>Over the month</span></span>',
+          "Each day colours every day against its required time. Over the month reports one balance and colours nothing else. Neither enforces anything.",
+          "span2"
+        );
+        h += '<div class="subhead span3">Ceilings</div>';
+        h += field(
+          "Close a session after",
+          input("16:00", "h:mm"),
+          "A forgotten clock-out is closed here and flagged for correction."
+        );
+        h += field(
+          "Close a break after",
+          input("2:00", "h:mm"),
+          "A forgotten break ends here and is flagged the same way."
+        );
+        h += "</div>";
+        h += selfService("days");
+        h +=
+          '<div class="block"><div class="row between"><div><div class="label">Record location at clock-in and clock-out</div><p class="hint" style="margin:2px 0 0">The browser asks each person for permission every time. Declining is never recorded, never flagged. Coordinates are kept for twelve months.</p></div><span class="switch"></span></div>' +
+          '<div class="notice" style="padding:12px 14px">' +
+          icon("info") +
+          '<div><strong>Agreeing this with your employees is your responsibility</strong><p>Flexi Day records nothing about that agreement. The privacy policy tells employees what is stored, for how long and who sees it. <a class="link" href="#">Read it</a></p></div></div></div>';
+        h +=
+          '<div class="row"><button class="btn btn-primary" type="button">Save</button><span class="hint">Rules apply from the next clock-in. Self-service applies as soon as you save.</span></div>';
+        return h + "</div>";
+      }
+
+      document.querySelectorAll(".laptop[data-view]").forEach(function (el) {
+        el.innerHTML = shellFrame({
+          active: "org",
+          crumb: ["Organization", "Organization"],
+          live: true,
+          support: true,
+          content:
+            '<div style="margin-bottom:24px"><h1 class="page-title">Organization</h1><p class="page-sub">Your organization, its plan, its groups and its admins.</p></div>' +
+            attendanceCard(),
+        });
+      });
+
+      document.querySelectorAll(".state[data-state]").forEach(function (el) {
+        var s = el.getAttribute("data-state");
+        if (s === "readonly") el.innerHTML = readOnlyLine(false);
+        else if (s === "orgline") el.innerHTML = readOnlyLine(true);
+        else {
+          el.innerHTML = selfService(s);
+          if (s === "invalid")
+            el.insertAdjacentHTML(
+              "beforeend",
+              '<div class="row" style="margin-top:14px"><button class="btn btn-primary disabled" type="button">Save</button></div>'
+            );
+        }
+      });
+
+      document.querySelectorAll(".phone[data-view]").forEach(function (el) {
+        var off = el.getAttribute("data-view") === "m-off";
+        el.innerHTML = phoneFrame({
+          active: "more",
+          clock: "in",
+          elapsed: "3:37",
+          content:
+            '<div style="margin-bottom:14px"><h1 class="page-title" style="font-size:22px">Organization</h1></div>' +
+            '<div class="card" style="padding:18px"><div class="row between"><span class="card-title">' +
+            icon("timer") +
+            'Attendance</span><span class="switch on"></span></div>' +
+            selfService(off ? "off" : "days") +
+            "</div>",
+        });
+      });
+    </script>
+  </body>
+</html>

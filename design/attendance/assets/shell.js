@@ -18,11 +18,26 @@
 
   var DANA = { name: "Dana Holt", org: "Studio Modrá" };
 
-  // The three dashboard flags: icon and the label the legend uses.
+  // The dashboard flags and self-service markers: icon and the label the legend uses.
   window.FLAGS = {
     autoclosed: { icon: "clock-alert", label: "Auto-closed" },
     exclockin: { icon: "calendar-off", label: "Clocked in on an excluded day" },
     open: { icon: "hourglass", label: "Still open" },
+    // Self-service. Entered is a permanent fact about a session, not something
+    // to check; changed is a flag like the three above and clears the same way.
+    entered: { icon: "notebook-pen", label: "Entered", short: "Entered" },
+    changed: { icon: "user-pen", label: "Changed after the day", short: "Changed later" },
+  };
+
+  window.mark = function (kind, text) {
+    return (
+      '<span class="mk mk-' +
+      kind +
+      '">' +
+      icon(FLAGS[kind].icon) +
+      (text == null ? FLAGS[kind].short : text) +
+      "</span>"
+    );
   };
 
   // How the bottom bar's centre disc reflects the clock state.
