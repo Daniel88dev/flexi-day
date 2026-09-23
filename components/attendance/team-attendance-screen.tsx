@@ -944,6 +944,7 @@ export function TeamAttendanceScreen() {
               businessDate={adding.businessDate}
               today={today ?? fallbackToday}
               timezone={team.timezone}
+              rules={team}
               open
               onOpenChange={(next) => {
                 if (!next) setAdding(null);

@@ -314,6 +314,7 @@ function DayView({ date, today }: { date: string; today: string }) {
           today={today}
           timezone={state.timezone}
           selfService={state.selfService}
+          rules={monthQuery.data}
           open={adding}
           onOpenChange={setAdding}
         />
@@ -464,6 +465,15 @@ export function MyAttendanceScreen() {
   // first render, before the clock's read has answered.
   const today = stateQuery.data?.businessDate ?? new Date().toISOString().slice(0, 10);
   const anchor = anchored ?? today;
+  // Carries the break rules the entry form works its figures out by. The month
+  // grid that offered the day has already read this month, so it comes from cache.
+  const addingMonth = yearMonthOf(adding ?? today);
+  const addingMonthQuery = useAttendanceMonth(
+    addingMonth.year,
+    addingMonth.month,
+    organizationId,
+    adding !== null
+  );
 
   const canAdd = (day: AttendanceDay) =>
     state !== undefined &&
@@ -580,6 +590,7 @@ export function MyAttendanceScreen() {
           today={today}
           timezone={state.timezone}
           selfService={state.selfService}
+          rules={addingMonthQuery.data}
           open
           onOpenChange={(next) => {
             if (!next) setAdding(null);

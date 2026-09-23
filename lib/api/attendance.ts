@@ -324,7 +324,8 @@ export type AttendanceEventKind =
   | "BREAK_EDITED"
   | "BREAK_DELETED"
   | "SESSION_DELETED"
-  | "SESSION_CREATED";
+  | "SESSION_CREATED"
+  | "BREAK_ADDED";
 
 /**
  * One entry of the timeline. A null `user` is the ceiling sweep, or an account
@@ -370,6 +371,8 @@ export type AttendanceCorrectionReason =
   | "OUTSIDE_EMPLOYMENT"
   | "END_IN_FUTURE"
   | "OVER_CEILING"
+  | "BREAK_OVERLAPS"
+  | "SESSION_STILL_OPEN"
   | "PLAN_LIMIT";
 
 /** A patch of one end, or both. `endedAt: null` reopens; an absent key changes nothing. */
@@ -420,6 +423,14 @@ export const removeSession = (sessionId: string) =>
     method: "DELETE",
   });
 
+export type AttendanceBreakSpan = { startedAt: string; endedAt: string };
+
+export const addBreak = (sessionId: string, span: AttendanceBreakSpan) =>
+  api<AttendanceSession>(`/api/attendance/sessions/${encodeURIComponent(sessionId)}/breaks`, {
+    method: "POST",
+    body: span,
+  });
+
 /** A session recorded after the fact: somebody's business date and both ends. */
 export type AttendanceEntry = {
   organizationId: string;
@@ -428,6 +439,8 @@ export type AttendanceEntry = {
   businessDate: string;
   startedAt: string;
   endedAt: string;
+  /** Saved in the same request: one refused break refuses the whole entry. */
+  breaks?: AttendanceBreakSpan[];
 };
 
 export const enterSession = (entry: AttendanceEntry) =>

@@ -1,4 +1,4 @@
-import type { AttendanceBreak, AttendanceSession } from "@/lib/api/attendance";
+import type { AttendanceBreak, AttendanceBreakSpan, AttendanceSession } from "@/lib/api/attendance";
 import { addDays } from "@/lib/attendance/month";
 import { formatClockTime } from "@/lib/attendance/today";
 
@@ -14,8 +14,11 @@ import { formatClockTime } from "@/lib/attendance/today";
 
 const HH_MM = /^\d{2}:\d{2}$/;
 
-/** One editable break: the id it will be patched by, and its two fields. */
-export type BreakDraft = { id: string; startedAt: string; endedAt: string };
+/**
+ * One editable break: the id it will be patched by, and its two fields. A new
+ * one has no row yet, so its id is only the form's.
+ */
+export type BreakDraft = { id: string; startedAt: string; endedAt: string; isNew?: boolean };
 
 export type SessionDraft = {
   startedAt: string;
@@ -25,12 +28,18 @@ export type SessionDraft = {
 };
 
 /** Why a field cannot be saved. The dialog turns these into its own wording. */
-export type CorrectionError = "REQUIRED" | "END_BEFORE_START" | "BREAK_OUTSIDE_SESSION";
+export type CorrectionError =
+  "REQUIRED" | "END_BEFORE_START" | "BREAK_OUTSIDE_SESSION" | "BREAK_OVERLAPS";
 
-export type CorrectionErrors = {
+/** What is wrong with each break, by id, and for an overlap, the id of the break it runs into. */
+export type BreakErrors = {
+  breaks?: Record<string, CorrectionError>;
+  overlaps?: Record<string, string>;
+};
+
+export type CorrectionErrors = BreakErrors & {
   startedAt?: CorrectionError;
   endedAt?: CorrectionError;
-  breaks?: Record<string, CorrectionError>;
 };
 
 /** A patch of the shape both correction endpoints take. */
@@ -103,10 +112,12 @@ export const sessionDraft = (
   })),
 });
 
+export type ResolvedBreak = { id: string; startedAt: string | null; endedAt: string | null };
+
 type Resolved = {
   startedAt: string | null;
   endedAt: string | null;
-  breaks: { id: string; startedAt: string | null; endedAt: string | null }[];
+  breaks: ResolvedBreak[];
 };
 
 const isBefore = (a: string | null, b: string | null) => a !== null && b !== null && a < b;
@@ -133,20 +144,86 @@ const resolve = (draft: SessionDraft, businessDate: string, timezone: string | n
     ? instantAt(addDays(businessDate, 1), draft.endedAt, timezone)
     : sameDayEnd;
 
-  const overnight = endedAt !== null && startedAt !== null && endedAt.slice(0, 10) > businessDate;
+  return {
+    startedAt,
+    endedAt,
+    breaks: resolveBreaks(draft.breaks, businessDate, { startedAt, endedAt }, timezone),
+  };
+};
+
+/**
+ * Break fields as instants, inside a session whose own ends are already
+ * resolved. A break time earlier than the session's start is the next morning
+ * only when the session itself crosses midnight.
+ */
+export const resolveBreaks = (
+  breaks: BreakDraft[],
+  businessDate: string,
+  session: { startedAt: string | null; endedAt: string | null },
+  timezone: string | null
+): ResolvedBreak[] => {
+  const overnight =
+    session.endedAt !== null &&
+    session.startedAt !== null &&
+    session.endedAt.slice(0, 10) > businessDate;
   const dayOf = (time: string, after: string | null) => {
     const sameDay = instantAt(businessDate, time, timezone);
     if (!overnight || !isBefore(sameDay, after)) return sameDay;
     return instantAt(addDays(businessDate, 1), time, timezone);
   };
 
+  return breaks.map((entry) => {
+    const breakStart = dayOf(entry.startedAt, session.startedAt);
+    return { id: entry.id, startedAt: breakStart, endedAt: dayOf(entry.endedAt, breakStart) };
+  });
+};
+
+/**
+ * The rules every break has to keep, the backend's own: both times filled, an
+ * end after its start, inside the session, and over no other break. Of two that
+ * overlap, the later one in the list carries the error, since that is the one
+ * just typed.
+ */
+export const breakErrors = (
+  breaks: ResolvedBreak[],
+  session: { startedAt: string | null; endedAt: string | null }
+): BreakErrors => {
+  const errors: Record<string, CorrectionError> = {};
+  const overlaps: Record<string, string> = {};
+  const checked: (AttendanceBreakSpan & { id: string })[] = [];
+
+  for (const entry of breaks) {
+    if (entry.startedAt === null || entry.endedAt === null) {
+      errors[entry.id] = "REQUIRED";
+      continue;
+    }
+    if (entry.endedAt <= entry.startedAt) {
+      errors[entry.id] = "END_BEFORE_START";
+      continue;
+    }
+    const outside =
+      isBefore(entry.startedAt, session.startedAt) ||
+      (session.endedAt !== null &&
+        (entry.endedAt > session.endedAt || entry.startedAt >= session.endedAt));
+    if (outside) {
+      errors[entry.id] = "BREAK_OUTSIDE_SESSION";
+      continue;
+    }
+
+    const { startedAt, endedAt } = entry;
+    // Half-open, as the backend reads it: back to back is not an overlap.
+    const other = checked.find((done) => done.startedAt < endedAt && done.endedAt > startedAt);
+    if (other) {
+      errors[entry.id] = "BREAK_OVERLAPS";
+      overlaps[entry.id] = other.id;
+      continue;
+    }
+    checked.push({ id: entry.id, startedAt, endedAt });
+  }
+
   return {
-    startedAt,
-    endedAt,
-    breaks: draft.breaks.map((entry) => {
-      const breakStart = dayOf(entry.startedAt, startedAt);
-      return { id: entry.id, startedAt: breakStart, endedAt: dayOf(entry.endedAt, breakStart) };
-    }),
+    ...(Object.keys(errors).length > 0 ? { breaks: errors } : {}),
+    ...(Object.keys(overlaps).length > 0 ? { overlaps } : {}),
   };
 };
 
@@ -172,25 +249,7 @@ export const correctionErrors = (
     errors.endedAt = "END_BEFORE_START";
   }
 
-  const breaks: Record<string, CorrectionError> = {};
-  for (const entry of resolved.breaks) {
-    if (entry.startedAt === null || entry.endedAt === null) {
-      breaks[entry.id] = "REQUIRED";
-      continue;
-    }
-    if (entry.endedAt <= entry.startedAt) {
-      breaks[entry.id] = "END_BEFORE_START";
-      continue;
-    }
-    const outside =
-      isBefore(entry.startedAt, resolved.startedAt) ||
-      (resolved.endedAt !== null &&
-        (entry.endedAt > resolved.endedAt || entry.startedAt >= resolved.endedAt));
-    if (outside) breaks[entry.id] = "BREAK_OUTSIDE_SESSION";
-  }
-
-  if (Object.keys(breaks).length > 0) errors.breaks = breaks;
-  return errors;
+  return { ...errors, ...breakErrors(resolved.breaks, resolved) };
 };
 
 const changed = (next: string | null, current: string | null): boolean =>
@@ -236,4 +295,22 @@ export const toBreakPatch = (
   if (changed(resolved.endedAt, entry.endedAt)) patch.endedAt = resolved.endedAt;
 
   return Object.keys(patch).length === 0 ? null : patch;
+};
+
+export const filledSpans = (breaks: ResolvedBreak[]): AttendanceBreakSpan[] =>
+  breaks.flatMap(({ startedAt, endedAt }) =>
+    startedAt !== null && endedAt !== null ? [{ startedAt, endedAt }] : []
+  );
+
+export const toNewBreaks = (
+  draft: SessionDraft,
+  businessDate: string,
+  timezone: string | null
+): { id: string; span: AttendanceBreakSpan }[] => {
+  const fresh = new Set(draft.breaks.filter((entry) => entry.isNew).map((entry) => entry.id));
+
+  return resolve(draft, businessDate, timezone).breaks.flatMap((entry) => {
+    const [span] = fresh.has(entry.id) ? filledSpans([entry]) : [];
+    return span ? [{ id: entry.id, span }] : [];
+  });
 };

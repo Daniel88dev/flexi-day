@@ -39,6 +39,7 @@ vi.mock("@/lib/api/queries", () => ({
   useCorrectBreak: () => idle,
   useRemoveBreak: () => idle,
   useRemoveSession: () => idle,
+  useAddBreak: () => idle,
   useEnterSession: () => idle,
 }));
 

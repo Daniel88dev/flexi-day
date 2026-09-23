@@ -10,6 +10,7 @@ const correctBreakMock = vi.fn();
 const removeBreakMock = vi.fn();
 const removeSessionMock = vi.fn();
 const enterSessionMock = vi.fn();
+const addBreakMock = vi.fn();
 
 vi.mock("../attendance", () => ({
   getAttendanceDay: (...args: unknown[]) => dayMock(...args),
@@ -19,10 +20,12 @@ vi.mock("../attendance", () => ({
   removeBreak: (...args: unknown[]) => removeBreakMock(...args),
   removeSession: (...args: unknown[]) => removeSessionMock(...args),
   enterSession: (...args: unknown[]) => enterSessionMock(...args),
+  addBreak: (...args: unknown[]) => addBreakMock(...args),
 }));
 
 import {
   qk,
+  useAddBreak,
   useAttendanceDay,
   useCorrectBreak,
   useCorrectSession,
@@ -111,6 +114,7 @@ describe("the correction mutations", () => {
       removeBreakMock,
       removeSessionMock,
       enterSessionMock,
+      addBreakMock,
     ]) {
       mock.mockReset();
       mock.mockResolvedValue({ id: "session-1" });
@@ -150,6 +154,27 @@ describe("the correction mutations", () => {
     };
     await entered.result.current.mutateAsync(recorded);
     expect(enterSessionMock).toHaveBeenCalledWith(recorded);
+
+    const added = renderHook(() => useAddBreak(), { wrapper });
+    const span = { startedAt: "2026-09-09T13:00:00.000Z", endedAt: "2026-09-09T13:20:00.000Z" };
+    await added.result.current.mutateAsync({ sessionId: "session-1", span });
+    expect(addBreakMock).toHaveBeenCalledWith("session-1", span);
+  });
+
+  it("drops the day and the session's timeline after an added break", async () => {
+    const { client, wrapper } = setup();
+    const invalidate = vi.spyOn(client, "invalidateQueries");
+
+    const { result } = renderHook(() => useAddBreak(), { wrapper });
+    await result.current.mutateAsync({
+      sessionId: "session-1",
+      span: { startedAt: "2026-09-09T13:00:00.000Z", endedAt: "2026-09-09T13:20:00.000Z" },
+    });
+
+    const keys = invalidate.mock.calls.map((call) => JSON.stringify(call[0]?.queryKey));
+    expect(keys).toContain(JSON.stringify(["attendance-day"]));
+    expect(keys).toContain(JSON.stringify(["attendance-month"]));
+    expect(keys).toContain(JSON.stringify(qk.attendanceEvents("session-1")));
   });
 
   it("drops the same reads after an entry, and the entered session's timeline", async () => {

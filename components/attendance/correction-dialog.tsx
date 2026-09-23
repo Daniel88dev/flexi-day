@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { CalendarPlus, Trash2, X } from "lucide-react";
+import { CalendarPlus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -14,8 +14,9 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ApiError } from "@/lib/api/client";
-import type { AttendanceEvent, AttendanceSession } from "@/lib/api/attendance";
+import type { AttendanceBreakSpan, AttendanceEvent, AttendanceSession } from "@/lib/api/attendance";
 import {
+  useAddBreak,
   useAttendanceDay,
   useCorrectBreak,
   useCorrectSession,
@@ -27,8 +28,8 @@ import {
   correctionErrors,
   sessionDraft,
   toBreakPatch,
+  toNewBreaks,
   toPatch,
-  type BreakDraft,
   type CorrectionError,
   type SessionDraft,
 } from "@/lib/attendance/correction";
@@ -41,6 +42,7 @@ import { formatBusinessDay, formatClockTime } from "@/lib/attendance/today";
 import { useTranslation } from "@/lib/i18n/use-translation";
 import type { Dictionary } from "@/lib/i18n";
 import { EnteredMark } from "./attendance-figures";
+import { BreakRows, breakMessage, useBreakDrafts } from "./break-rows";
 
 /**
  * An instant as `Thu 10 Sep 08:52` in the organization's zone — the timeline's
@@ -61,25 +63,20 @@ function eventStamp(iso: string, timezone: string | null, locale: string): strin
 
 function eventText(event: AttendanceEvent, timezone: string | null, t: Dictionary): string {
   const after = event.after as { startedAt?: unknown; endedAt?: unknown } | null;
-  if (
-    event.eventType === "SESSION_CREATED" &&
-    typeof after?.startedAt === "string" &&
-    typeof after.endedAt === "string"
-  ) {
-    return t.corrections.sessionEntered(
-      formatClockTime(after.startedAt, timezone),
-      formatClockTime(after.endedAt, timezone)
-    );
+  if (typeof after?.startedAt === "string" && typeof after.endedAt === "string") {
+    const from = formatClockTime(after.startedAt, timezone);
+    const to = formatClockTime(after.endedAt, timezone);
+    if (event.eventType === "SESSION_CREATED") return t.corrections.sessionEntered(from, to);
+    if (event.eventType === "BREAK_ADDED") return t.corrections.breakAdded(from, to);
   }
   return t.corrections.events[event.eventType];
 }
 
-function FieldError({ error }: { error: CorrectionError | undefined }) {
-  const { t } = useTranslation();
-  if (!error) return null;
+function FieldError({ message }: { message: string | undefined }) {
+  if (!message) return null;
   return (
     <span className="text-xs" style={{ color: "var(--destructive)" }}>
-      {t.corrections.errors[error]}
+      {message}
     </span>
   );
 }
@@ -139,6 +136,15 @@ function History({ sessionId, timezone }: { sessionId: string; timezone: string 
   );
 }
 
+/** The id the server gave a break it just added, found by its times in the session it answered with. */
+const savedBreakId = (saved: AttendanceSession, span: AttendanceBreakSpan): string | undefined =>
+  saved.breaks.find(
+    (entry) =>
+      entry.endedAt !== null &&
+      Date.parse(entry.startedAt) === Date.parse(span.startedAt) &&
+      Date.parse(entry.endedAt) === Date.parse(span.endedAt)
+  )?.id;
+
 /**
  * One session's fields, its breaks and its history. Remounted by its `key`
  * whenever the answer changes, so the draft is derived from the row rather
@@ -163,7 +169,9 @@ function SessionCorrection({
   const enteredByOwner =
     ownDay !== undefined && entered && session.enteredByUserId === ownDay.userId;
   const deletable = !ownDay || session.businessDate === ownDay.today || enteredByOwner;
-  const [draft, setDraft] = useState<SessionDraft>(() => sessionDraft(session, timezone));
+  const [times, setTimes] = useState(() => sessionDraft(session, timezone));
+  const rows = useBreakDrafts(() => sessionDraft(session, timezone).breaks);
+  const draft: SessionDraft = { ...times, breaks: rows.breaks };
   const [confirming, setConfirming] = useState(false);
   const [failure, setFailure] = useState<string | null>(null);
 
@@ -171,6 +179,7 @@ function SessionCorrection({
   const correctBreak = useCorrectBreak();
   const removeBreak = useRemoveBreak();
   const removeSession = useRemoveSession();
+  const addBreak = useAddBreak();
 
   const errors = correctionErrors(draft, session.businessDate, timezone);
   const invalid = Boolean(errors.startedAt ?? errors.endedAt ?? errors.breaks);
@@ -178,13 +187,11 @@ function SessionCorrection({
     correctSession.isPending ||
     correctBreak.isPending ||
     removeBreak.isPending ||
-    removeSession.isPending;
+    removeSession.isPending ||
+    addBreak.isPending;
 
-  const setBreak = (id: string, patch: Partial<BreakDraft>) =>
-    setDraft((current) => ({
-      ...current,
-      breaks: current.breaks.map((entry) => (entry.id === id ? { ...entry, ...patch } : entry)),
-    }));
+  const fieldMessage = (error: CorrectionError | undefined) =>
+    error ? t.corrections.errors[error] : undefined;
 
   const save = async () => {
     setFailure(null);
@@ -211,6 +218,7 @@ function SessionCorrection({
     const applyBreaks = async () => {
       for (const entry of breakPatches) await correctBreak.mutateAsync(entry);
     };
+    const newBreaks = toNewBreaks(draft, session.businessDate, timezone);
 
     try {
       if (narrowing) {
@@ -219,6 +227,12 @@ function SessionCorrection({
       } else {
         await applySession();
         await applyBreaks();
+      }
+      // Last, so they are checked against the session and breaks as corrected.
+      for (const { id, span } of newBreaks) {
+        const saved = await addBreak.mutateAsync({ sessionId: session.id, span });
+        // A later request can still fail, and a retry must not add this one twice.
+        rows.markSaved(id, savedBreakId(saved, span) ?? id);
       }
       onDone();
     } catch (error) {
@@ -267,9 +281,9 @@ function SessionCorrection({
             id={`in-${session.id}`}
             type="time"
             value={draft.startedAt}
-            onChange={(event) => setDraft({ ...draft, startedAt: event.target.value })}
+            onChange={(event) => setTimes({ ...times, startedAt: event.target.value })}
           />
-          <FieldError error={errors.startedAt} />
+          <FieldError message={fieldMessage(errors.startedAt)} />
         </div>
         <div className="flex flex-col gap-1.5">
           <Label htmlFor={`out-${session.id}`}>
@@ -279,9 +293,9 @@ function SessionCorrection({
             id={`out-${session.id}`}
             type="time"
             value={draft.endedAt}
-            onChange={(event) => setDraft({ ...draft, endedAt: event.target.value })}
+            onChange={(event) => setTimes({ ...times, endedAt: event.target.value })}
           />
-          <FieldError error={errors.endedAt} />
+          <FieldError message={fieldMessage(errors.endedAt)} />
           <span className="text-xs" style={{ color: "var(--text-muted)" }}>
             {session.endedAt === null
               ? t.corrections.stillOpenHint
@@ -292,53 +306,15 @@ function SessionCorrection({
         </div>
       </div>
 
-      <div className="flex flex-col gap-2">
-        <span className="text-sm font-medium">{t.corrections.breaks}</span>
-        {draft.breaks.length === 0 ? (
-          <span className="text-sm" style={{ color: "var(--text-muted)" }}>
-            {t.corrections.noBreaks}
-          </span>
-        ) : (
-          draft.breaks.map((entry) => (
-            <div key={entry.id} className="flex flex-col gap-1">
-              <div className="flex flex-wrap items-center gap-2">
-                <Label htmlFor={`break-start-${entry.id}`} className="sr-only">
-                  {t.corrections.breaks}
-                </Label>
-                <Input
-                  id={`break-start-${entry.id}`}
-                  type="time"
-                  className="w-32"
-                  value={entry.startedAt}
-                  onChange={(event) => setBreak(entry.id, { startedAt: event.target.value })}
-                />
-                <span style={{ color: "var(--text-muted)" }}>{t.corrections.to}</span>
-                <Label htmlFor={`break-end-${entry.id}`} className="sr-only">
-                  {t.corrections.to}
-                </Label>
-                <Input
-                  id={`break-end-${entry.id}`}
-                  type="time"
-                  className="w-32"
-                  value={entry.endedAt}
-                  onChange={(event) => setBreak(entry.id, { endedAt: event.target.value })}
-                />
-                <Button
-                  type="button"
-                  size="icon"
-                  variant="ghost"
-                  aria-label={t.corrections.removeBreak}
-                  disabled={saving}
-                  onClick={() => void drop(entry.id)}
-                >
-                  <X />
-                </Button>
-              </div>
-              <FieldError error={errors.breaks?.[entry.id]} />
-            </div>
-          ))
-        )}
-      </div>
+      <BreakRows
+        breaks={draft.breaks}
+        messageFor={(id) => breakMessage(id, errors, draft, t)}
+        onChange={rows.change}
+        onRemove={(entry) => (entry.isNew ? rows.remove(entry.id) : void drop(entry.id))}
+        // A running session takes its breaks from the clock.
+        onAdd={session.endedAt !== null ? rows.add : undefined}
+        disabled={saving}
+      />
 
       <History sessionId={session.id} timezone={timezone} />
 

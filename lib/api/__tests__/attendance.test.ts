@@ -4,6 +4,7 @@ const apiMock = vi.fn();
 vi.mock("../client", () => ({ api: (...args: unknown[]) => apiMock(...args) }));
 
 import {
+  addBreak,
   clockIn,
   clockOut,
   correctBreak,
@@ -152,6 +153,32 @@ describe("the correction endpoints", () => {
     expect(apiMock).toHaveBeenLastCalledWith("/api/attendance/sessions", {
       method: "POST",
       body: { ...entry, userId: "user-2" },
+    });
+  });
+
+  it("adds a break to a closed session", async () => {
+    const span = { startedAt: "2026-09-09T13:00:00.000Z", endedAt: "2026-09-09T13:20:00.000Z" };
+
+    await addBreak("s 1", span);
+    expect(apiMock).toHaveBeenCalledWith("/api/attendance/sessions/s%201/breaks", {
+      method: "POST",
+      body: span,
+    });
+  });
+
+  it("sends an entry's breaks with it", async () => {
+    const entry = {
+      organizationId: "org-1",
+      businessDate: "2026-09-08",
+      startedAt: "2026-09-08T06:10:00.000Z",
+      endedAt: "2026-09-08T14:55:00.000Z",
+      breaks: [{ startedAt: "2026-09-08T10:00:00.000Z", endedAt: "2026-09-08T10:30:00.000Z" }],
+    };
+
+    await enterSession(entry);
+    expect(apiMock).toHaveBeenCalledWith("/api/attendance/sessions", {
+      method: "POST",
+      body: entry,
     });
   });
 

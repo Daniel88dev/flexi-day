@@ -17,7 +17,15 @@ import { Switch } from "@/components/ui/switch";
 import { ApiError } from "@/lib/api/client";
 import { useAttendanceDay, useEnterSession } from "@/lib/api/queries";
 import { formatMinutes } from "@/lib/attendance/duration";
-import { entryErrors, entrySpan, type EntryDraft, type EntryError } from "@/lib/attendance/entry";
+import {
+  entryBreaks,
+  entryErrors,
+  entryFigures,
+  entrySpan,
+  type BreakRules,
+  type EntryDraft,
+  type EntryError,
+} from "@/lib/attendance/entry";
 import { addDays } from "@/lib/attendance/month";
 import {
   selfServiceMode,
@@ -28,6 +36,7 @@ import type { KnownSpell } from "@/lib/attendance/team";
 import { formatBusinessDay, formatBusinessWeekday } from "@/lib/attendance/today";
 import { useTranslation } from "@/lib/i18n/use-translation";
 import type { Dictionary } from "@/lib/i18n";
+import { BreakRows, breakMessage, useBreakDrafts } from "./break-rows";
 
 function refusalMessage(error: unknown, t: Dictionary): string {
   if (!(error instanceof ApiError)) return t.entry.failed;
@@ -59,6 +68,8 @@ type Props = {
   selfService?: SelfServiceWindow;
   /** Somebody else's day, for an admin, who never meets the window. Set this or `selfService`. */
   person?: { userId: string; name: string; spell?: KnownSpell };
+  /** For the figures under the breaks. Without them there are none. */
+  rules?: BreakRules;
 };
 
 function EntryForm({
@@ -68,15 +79,18 @@ function EntryForm({
   timezone,
   person,
   selfService,
+  rules,
   onOpenChange,
 }: Omit<Props, "open">) {
   const { t, locale } = useTranslation();
-  const [draft, setDraft] = useState<EntryDraft>({
+  const [fields, setFields] = useState<Omit<EntryDraft, "breaks">>({
     businessDate,
     startedAt: "",
     endedAt: "",
     nextDay: false,
   });
+  const rows = useBreakDrafts();
+  const draft: EntryDraft = { ...fields, breaks: rows.breaks };
   const [failure, setFailure] = useState<string | null>(null);
   const enter = useEnterSession();
 
@@ -96,7 +110,12 @@ function EntryForm({
     sessions: dayQuery.data?.sessions ?? [],
     spell: person?.spell,
   });
-  const invalid = Boolean(errors.businessDate ?? errors.startedAt ?? errors.endedAt);
+  const invalid = Boolean(
+    errors.businessDate ?? errors.startedAt ?? errors.endedAt ?? errors.breaks
+  );
+  const figures = rules
+    ? entryFigures(draft, { timezone, sessions: dayQuery.data?.sessions ?? [], rules })
+    : null;
 
   const hint = (() => {
     if (person || !selfService) return t.entry.hintAdmin(person?.name ?? "");
@@ -145,6 +164,7 @@ function EntryForm({
     const span = entrySpan(draft, timezone);
     if (invalid || span.startedAt === null || span.endedAt === null) return;
     setFailure(null);
+    const breaks = entryBreaks(draft, timezone);
     try {
       await enter.mutateAsync({
         organizationId,
@@ -152,6 +172,7 @@ function EntryForm({
         businessDate: draft.businessDate,
         startedAt: span.startedAt,
         endedAt: span.endedAt,
+        ...(breaks.length > 0 ? { breaks } : {}),
       });
       onOpenChange(false);
     } catch (error) {
@@ -193,7 +214,7 @@ function EntryForm({
               aria-invalid={
                 errors.businessDate !== undefined && errors.businessDate.kind !== "REQUIRED"
               }
-              onChange={(event) => setDraft({ ...draft, businessDate: event.target.value })}
+              onChange={(event) => setFields({ ...fields, businessDate: event.target.value })}
             />
             <span className="text-xs" style={{ color: "var(--text-muted)" }}>
               {hint}
@@ -206,7 +227,7 @@ function EntryForm({
               type="time"
               value={draft.startedAt}
               aria-invalid={errors.startedAt !== undefined && errors.startedAt.kind !== "REQUIRED"}
-              onChange={(event) => setDraft({ ...draft, startedAt: event.target.value })}
+              onChange={(event) => setFields({ ...fields, startedAt: event.target.value })}
             />
           </div>
           <div className="flex flex-col gap-1.5">
@@ -216,7 +237,7 @@ function EntryForm({
               type="time"
               value={draft.endedAt}
               aria-invalid={errors.endedAt !== undefined && errors.endedAt.kind !== "REQUIRED"}
-              onChange={(event) => setDraft({ ...draft, endedAt: event.target.value })}
+              onChange={(event) => setFields({ ...fields, endedAt: event.target.value })}
             />
           </div>
         </div>
@@ -233,7 +254,7 @@ function EntryForm({
           <Switch
             id="entry-next-day"
             checked={draft.nextDay}
-            onCheckedChange={(nextDay) => setDraft({ ...draft, nextDay })}
+            onCheckedChange={(nextDay) => setFields({ ...fields, nextDay })}
           />
           <Label htmlFor="entry-next-day">{t.entry.nextDay}</Label>
           {draft.nextDay && draft.businessDate ? (
@@ -249,6 +270,43 @@ function EntryForm({
             </span>
           ) : null}
         </div>
+
+        <BreakRows
+          breaks={draft.breaks}
+          messageFor={(id) => breakMessage(id, errors, draft, t)}
+          onChange={rows.change}
+          onRemove={(entry) => rows.remove(entry.id)}
+          onAdd={rows.add}
+          tagNew={false}
+          optional
+        />
+
+        {figures ? (
+          <div
+            className="flex flex-wrap gap-x-[18px] gap-y-1 rounded-xl px-3.5 py-2.5 text-[13px]"
+            style={{ background: "var(--surface-2)", color: "var(--text-muted)" }}
+            data-testid="entry-summary"
+          >
+            <span>
+              {t.entry.presence}{" "}
+              <b className="tabular-nums" style={{ color: "var(--text)" }}>
+                {formatMinutes(figures.presenceMinutes)}
+              </b>
+            </span>
+            <span>
+              {t.entry.breaks}{" "}
+              <b className="tabular-nums" style={{ color: "var(--text)" }}>
+                {formatMinutes(figures.breaksMinutes)}
+              </b>
+            </span>
+            <span>
+              {t.entry.worked}{" "}
+              <b className="tabular-nums" style={{ color: "var(--text)" }}>
+                {formatMinutes(figures.workedMinutes)}
+              </b>
+            </span>
+          </div>
+        ) : null}
 
         {failure ? (
           <p className="text-sm" style={{ color: "var(--destructive)" }} role="alert">

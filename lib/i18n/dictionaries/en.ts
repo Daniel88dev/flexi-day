@@ -320,10 +320,18 @@ export const en = {
     end: "End",
     sessionEntered: (from: string, to: string) => `Session entered, ${from} to ${to}`,
     addAnother: "Add another session",
+    addBreak: "Add break",
+    newBreak: "New",
+    breakAdded: (from: string, to: string) => `Break added, ${from} to ${to}`,
+    breakOutside: (from: string, to: string) => `Has to stay inside the session, ${from} to ${to}.`,
+    breakOverlaps: (from: string, to: string) => `Overlaps the break from ${from} to ${to}.`,
     errors: {
       REQUIRED: "Needs a time.",
       END_BEFORE_START: "Has to end after it starts.",
       BREAK_OUTSIDE_SESSION: "Has to stay inside the session.",
+      BREAK_OVERLAPS: "Another break already covers that time.",
+      SESSION_STILL_OPEN:
+        "A break can be added once the session has ended. Until then, use Take a break.",
       SELF_SERVICE_WINDOW:
         "Only an admin can change a day this old. Ask a group admin, or an organization admin.",
       SESSION_ALREADY_OPEN: "Another session is still open, so this one cannot reopen.",
@@ -355,6 +363,7 @@ export const en = {
       BREAK_DELETED: "Break removed",
       SESSION_DELETED: "Session deleted",
       SESSION_CREATED: "Session entered",
+      BREAK_ADDED: "Break added",
     },
   },
 
@@ -381,6 +390,10 @@ export const en = {
     saving: "Adding…",
     cancel: "Cancel",
     failed: "Could not add the session.",
+    breaks: "Breaks",
+    optional: "(optional)",
+    presence: "Presence",
+    worked: "Worked",
     overCeiling: (limit: string) =>
       `Can't be longer than ${limit}, your organization's session limit.`,
     errors: {

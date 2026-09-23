@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { entryErrors, entrySpan, type EntryDraft } from "../entry";
+import { entryBreaks, entryErrors, entryFigures, entrySpan, type EntryDraft } from "../entry";
 
 const PRAGUE = "Europe/Prague";
 
@@ -8,6 +8,7 @@ const draft = (overrides: Partial<EntryDraft> = {}): EntryDraft => ({
   startedAt: "08:10",
   endedAt: "16:55",
   nextDay: false,
+  breaks: [],
   ...overrides,
 });
 
@@ -114,5 +115,151 @@ describe("entryErrors", () => {
         spell: { began: null, ended: "2026-09-08" },
       }).businessDate
     ).toEqual({ kind: "AFTER_EMPLOYMENT", ended: "2026-09-08" });
+  });
+});
+
+describe("entryErrors, for the breaks", () => {
+  it("returns nothing for a break inside the session", () => {
+    expect(check(draft({ breaks: [{ id: "b1", startedAt: "12:00", endedAt: "12:30" }] }))).toEqual(
+      {}
+    );
+  });
+
+  it("refuses a break outside the session, one that ends before it starts, and one with no time", () => {
+    const errors = check(
+      draft({
+        breaks: [
+          { id: "outside", startedAt: "16:45", endedAt: "17:15" },
+          { id: "backwards", startedAt: "12:30", endedAt: "12:00" },
+          { id: "empty", startedAt: "", endedAt: "" },
+        ],
+      })
+    );
+
+    expect(errors.breaks).toEqual({
+      outside: "BREAK_OUTSIDE_SESSION",
+      backwards: "END_BEFORE_START",
+      empty: "REQUIRED",
+    });
+  });
+
+  it("refuses the later of two overlapping breaks, naming the earlier", () => {
+    const errors = check(
+      draft({
+        breaks: [
+          { id: "b1", startedAt: "12:00", endedAt: "12:30" },
+          { id: "b2", startedAt: "12:20", endedAt: "12:45" },
+        ],
+      })
+    );
+
+    expect(errors.breaks).toEqual({ b2: "BREAK_OVERLAPS" });
+    expect(errors.overlaps).toEqual({ b2: "b1" });
+  });
+
+  it("reads a break after midnight as the next morning when the session ends the next day", () => {
+    expect(
+      check(
+        draft({
+          startedAt: "22:00",
+          endedAt: "06:15",
+          nextDay: true,
+          breaks: [{ id: "b1", startedAt: "02:00", endedAt: "02:30" }],
+        })
+      )
+    ).toEqual({});
+  });
+});
+
+describe("entryBreaks", () => {
+  it("returns the breaks as instants, in the order they were typed", () => {
+    expect(
+      entryBreaks(
+        draft({
+          startedAt: "22:00",
+          endedAt: "06:15",
+          nextDay: true,
+          breaks: [
+            { id: "b1", startedAt: "23:00", endedAt: "23:15" },
+            { id: "b2", startedAt: "02:00", endedAt: "02:30" },
+          ],
+        }),
+        PRAGUE
+      )
+    ).toEqual([
+      { startedAt: "2026-09-08T21:00:00.000Z", endedAt: "2026-09-08T21:15:00.000Z" },
+      { startedAt: "2026-09-09T00:00:00.000Z", endedAt: "2026-09-09T00:30:00.000Z" },
+    ]);
+  });
+});
+
+describe("entryFigures", () => {
+  const rules = { breakMinutes: 30, breakThresholdMinutes: 360 };
+
+  it("works the day out as a clocked one: the allowance past the threshold", () => {
+    // 08:10 to 16:55 is 8:45 of presence; a 20-minute break is less than the allowance.
+    expect(
+      entryFigures(draft({ breaks: [{ id: "b1", startedAt: "12:00", endedAt: "12:20" }] }), {
+        timezone: PRAGUE,
+        sessions: [],
+        rules,
+      })
+    ).toEqual({ presenceMinutes: 525, breaksMinutes: 20, workedMinutes: 495 });
+  });
+
+  it("deducts a break longer than the allowance in full", () => {
+    expect(
+      entryFigures(draft({ breaks: [{ id: "b1", startedAt: "12:00", endedAt: "12:45" }] }), {
+        timezone: PRAGUE,
+        sessions: [],
+        rules,
+      })
+    ).toEqual({ presenceMinutes: 525, breaksMinutes: 45, workedMinutes: 480 });
+  });
+
+  it("deducts only the breaks taken below the threshold", () => {
+    expect(
+      entryFigures(
+        draft({
+          startedAt: "08:00",
+          endedAt: "12:00",
+          breaks: [{ id: "b1", startedAt: "10:00", endedAt: "10:10" }],
+        }),
+        { timezone: PRAGUE, sessions: [], rules }
+      )
+    ).toEqual({ presenceMinutes: 240, breaksMinutes: 10, workedMinutes: 230 });
+  });
+
+  it("counts the day's other sessions, since the threshold is the day's", () => {
+    const morning = {
+      // 06:00 to 10:00 in Prague, with a 15-minute break.
+      startedAt: "2026-09-08T04:00:00.000Z",
+      endedAt: "2026-09-08T08:00:00.000Z",
+      breaks: [{ startedAt: "2026-09-08T06:00:00.000Z", endedAt: "2026-09-08T06:15:00.000Z" }],
+    };
+
+    expect(
+      entryFigures(draft({ startedAt: "13:00", endedAt: "17:00" }), {
+        timezone: PRAGUE,
+        sessions: [morning],
+        rules,
+      })
+    ).toEqual({ presenceMinutes: 480, breaksMinutes: 15, workedMinutes: 450 });
+  });
+
+  it("leaves out a break the form still refuses", () => {
+    expect(
+      entryFigures(draft({ breaks: [{ id: "b1", startedAt: "18:00", endedAt: "18:30" }] }), {
+        timezone: PRAGUE,
+        sessions: [],
+        rules,
+      })?.breaksMinutes
+    ).toBe(0);
+  });
+
+  it("has nothing to say until both ends are times", () => {
+    expect(
+      entryFigures(draft({ endedAt: "" }), { timezone: PRAGUE, sessions: [], rules })
+    ).toBeNull();
   });
 });

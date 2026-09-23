@@ -323,10 +323,17 @@ export const cs: Dictionary = {
     end: "Konec",
     sessionEntered: (from: string, to: string) => `Zadána směna, ${from} až ${to}`,
     addAnother: "Přidat další směnu",
+    addBreak: "Přidat pauzu",
+    newBreak: "Nová",
+    breakAdded: (from: string, to: string) => `Přidána pauza, ${from} až ${to}`,
+    breakOutside: (from: string, to: string) => `Pauza musí být uvnitř směny, ${from} až ${to}.`,
+    breakOverlaps: (from: string, to: string) => `Překrývá se s pauzou od ${from} do ${to}.`,
     errors: {
       REQUIRED: "Chybí čas.",
       END_BEFORE_START: "Konec musí být po začátku.",
       BREAK_OUTSIDE_SESSION: "Pauza musí být uvnitř směny.",
+      BREAK_OVERLAPS: "Tento čas už pokrývá jiná pauza.",
+      SESSION_STILL_OPEN: "Pauzu jde přidat, až směna skončí. Do té doby použij Jít na pauzu.",
       SELF_SERVICE_WINDOW:
         "Takto starý den může změnit jen správce. Obrať se na správce skupiny nebo organizace.",
       SESSION_ALREADY_OPEN: "Jiná směna je stále otevřená, tuhle proto nelze znovu otevřít.",
@@ -358,6 +365,7 @@ export const cs: Dictionary = {
       BREAK_DELETED: "Odebrána pauza",
       SESSION_DELETED: "Smazána směna",
       SESSION_CREATED: "Zadána směna",
+      BREAK_ADDED: "Přidána pauza",
     },
   },
 
@@ -384,6 +392,10 @@ export const cs: Dictionary = {
     saving: "Přidávám…",
     cancel: "Zrušit",
     failed: "Směnu se nepodařilo přidat.",
+    breaks: "Pauzy",
+    optional: "(nepovinné)",
+    presence: "Přítomnost",
+    worked: "Odpracováno",
     overCeiling: (limit: string) => `Nesmí být delší než ${limit}, limit směny ve tvé organizaci.`,
     errors: {
       dateRequired: "Vyber den.",

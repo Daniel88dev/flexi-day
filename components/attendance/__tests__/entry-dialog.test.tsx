@@ -107,6 +107,79 @@ describe("EntryDialog", () => {
     expect(onOpenChange).toHaveBeenCalledWith(false);
   });
 
+  describe("breaks", () => {
+    const addBreak = async (user: ReturnType<typeof userEvent.setup>, from: string, to: string) => {
+      await user.click(screen.getByRole("button", { name: "Add break" }));
+      const starts = screen.getAllByLabelText("Breaks");
+      const ends = screen.getAllByLabelText("to");
+      await user.type(starts[starts.length - 1]!, from);
+      await user.type(ends[ends.length - 1]!, to);
+    };
+
+    it("saves the breaks with the session in the same request", async () => {
+      own();
+
+      const user = await fill("08:10", "16:55");
+      await addBreak(user, "12:00", "12:30");
+      await user.click(submit());
+
+      expect(enterSession.mutateAsync).toHaveBeenCalledWith({
+        organizationId: "org-1",
+        businessDate: "2026-09-08",
+        startedAt: "2026-09-08T06:10:00.000Z",
+        endedAt: "2026-09-08T14:55:00.000Z",
+        breaks: [{ startedAt: "2026-09-08T10:00:00.000Z", endedAt: "2026-09-08T10:30:00.000Z" }],
+      });
+    });
+
+    it("shows what the day will count: presence, breaks and worked", async () => {
+      own({ rules: { breakMinutes: 30, breakThresholdMinutes: 360 } });
+
+      const user = await fill("08:10", "16:55");
+      await addBreak(user, "12:00", "12:45");
+
+      const summary = screen.getByTestId("entry-summary");
+      expect(summary).toHaveTextContent("Presence 8:45");
+      expect(summary).toHaveTextContent("Breaks 0:45");
+      expect(summary).toHaveTextContent("Worked 8:00");
+    });
+
+    it("refuses a break outside the session, naming the session's times", async () => {
+      own();
+
+      const user = await fill("08:10", "16:55");
+      await addBreak(user, "16:45", "17:15");
+
+      expect(
+        screen.getByText("Has to stay inside the session, 08:10 to 16:55.")
+      ).toBeInTheDocument();
+      expect(submit()).toBeDisabled();
+    });
+
+    it("refuses a break over another, naming the one it runs into", async () => {
+      own();
+
+      const user = await fill("08:10", "16:55");
+      await addBreak(user, "12:00", "12:30");
+      await addBreak(user, "12:20", "12:45");
+
+      expect(screen.getByText("Overlaps the break from 12:00 to 12:30.")).toBeInTheDocument();
+      expect(submit()).toBeDisabled();
+    });
+
+    it("takes a break row back off the form", async () => {
+      own();
+
+      const user = await fill("08:10", "16:55");
+      await user.click(screen.getByRole("button", { name: "Add break" }));
+      expect(screen.getByText("Needs a time.")).toBeInTheDocument();
+      expect(submit()).toBeDisabled();
+
+      await user.click(screen.getByRole("button", { name: "Remove break" }));
+      expect(submit()).toBeEnabled();
+    });
+  });
+
   it("refuses an end before its start, and takes it as a night shift once switched", async () => {
     own();
 

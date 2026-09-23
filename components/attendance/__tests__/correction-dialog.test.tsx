@@ -23,6 +23,7 @@ const correctSession = { mutateAsync: vi.fn(), isPending: false };
 const correctBreak = { mutateAsync: vi.fn(), isPending: false };
 const removeBreak = { mutateAsync: vi.fn(), isPending: false };
 const removeSession = { mutateAsync: vi.fn(), isPending: false };
+const addBreak = { mutateAsync: vi.fn(), isPending: false };
 
 vi.mock("@/lib/api/queries", () => ({
   useAttendanceDay: () => day,
@@ -31,6 +32,7 @@ vi.mock("@/lib/api/queries", () => ({
   useCorrectBreak: () => correctBreak,
   useRemoveBreak: () => removeBreak,
   useRemoveSession: () => removeSession,
+  useAddBreak: () => addBreak,
 }));
 
 const session = (overrides: Partial<AttendanceSession> = {}): AttendanceSession => ({
@@ -88,7 +90,7 @@ describe("CorrectionDialog", () => {
     day.error = null;
     events.data = [];
     events.isPending = false;
-    for (const mutation of [correctSession, correctBreak, removeBreak, removeSession]) {
+    for (const mutation of [correctSession, correctBreak, removeBreak, removeSession, addBreak]) {
       mutation.mutateAsync.mockReset();
       mutation.mutateAsync.mockResolvedValue(session());
       mutation.isPending = false;
@@ -274,8 +276,150 @@ describe("CorrectionDialog", () => {
     await user.clear(start!);
     await user.type(start!, "07:00");
 
-    expect(screen.getByText("Has to stay inside the session.")).toBeInTheDocument();
+    expect(screen.getByText("Has to stay inside the session, 08:05 to 17:10.")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Save correction" })).toBeDisabled();
+  });
+
+  describe("adding a break", () => {
+    const typeNewBreak = async (
+      user: ReturnType<typeof userEvent.setup>,
+      from: string,
+      to: string
+    ) => {
+      await user.click(screen.getByRole("button", { name: "Add break" }));
+      const starts = screen.getAllByLabelText("Breaks");
+      const ends = screen.getAllByLabelText("to");
+      await user.type(starts[starts.length - 1]!, from);
+      await user.type(ends[ends.length - 1]!, to);
+    };
+
+    it("saves a forgotten break on a closed session through the add endpoint", async () => {
+      const user = userEvent.setup();
+      day.data = answer([withBreak()]);
+      open();
+
+      await typeNewBreak(user, "15:00", "15:20");
+      expect(screen.getByText("New")).toBeInTheDocument();
+      await user.click(screen.getByRole("button", { name: "Save correction" }));
+
+      await waitFor(() => {
+        expect(addBreak.mutateAsync).toHaveBeenCalledWith({
+          sessionId: "session-1",
+          span: { startedAt: "2026-09-09T13:00:00.000Z", endedAt: "2026-09-09T13:20:00.000Z" },
+        });
+      });
+      expect(correctBreak.mutateAsync).not.toHaveBeenCalled();
+      expect(correctSession.mutateAsync).not.toHaveBeenCalled();
+    });
+
+    it("is not offered on a session still running", () => {
+      day.data = answer([session({ endedAt: null, closedBy: null, open: true })]);
+      open();
+
+      expect(screen.queryByRole("button", { name: "Add break" })).not.toBeInTheDocument();
+    });
+
+    it("refuses a new break over another, naming the one it runs into", async () => {
+      const user = userEvent.setup();
+      day.data = answer([withBreak()]);
+      open();
+
+      await typeNewBreak(user, "12:20", "12:45");
+
+      expect(screen.getByText("Overlaps the break from 12:00 to 12:30.")).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Save correction" })).toBeDisabled();
+    });
+
+    it("refuses a new break that ends before it starts", async () => {
+      const user = userEvent.setup();
+      open();
+
+      await typeNewBreak(user, "15:20", "15:00");
+
+      expect(screen.getByText("Has to end after it starts.")).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Save correction" })).toBeDisabled();
+    });
+
+    it("asks for a time on a new break left empty", async () => {
+      const user = userEvent.setup();
+      open();
+
+      await user.click(screen.getByRole("button", { name: "Add break" }));
+
+      expect(screen.getByText("Needs a time.")).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Save correction" })).toBeDisabled();
+    });
+
+    it("takes a new break back off the form without calling the API", async () => {
+      const user = userEvent.setup();
+      open();
+
+      await user.click(screen.getByRole("button", { name: "Add break" }));
+      await user.click(screen.getByRole("button", { name: "Remove break" }));
+
+      expect(screen.queryByText("New")).not.toBeInTheDocument();
+      expect(screen.getByText("No breaks recorded.")).toBeInTheDocument();
+      expect(removeBreak.mutateAsync).not.toHaveBeenCalled();
+    });
+
+    it("sends only what did not land when the reader retries after a partial save", async () => {
+      const user = userEvent.setup();
+      const saved = session({
+        breaks: [
+          {
+            id: "server-1",
+            sessionId: "session-1",
+            startedAt: "2026-09-09T13:00:00.000Z",
+            endedAt: "2026-09-09T13:20:00.000Z",
+            autoClosed: false,
+            open: false,
+          },
+        ],
+      });
+      addBreak.mutateAsync
+        .mockResolvedValueOnce(saved)
+        .mockRejectedValueOnce(
+          new ApiError(422, "server wording", undefined, [
+            { message: "server wording", context: { reason: "PLAN_LIMIT" } },
+          ])
+        );
+      open();
+
+      await typeNewBreak(user, "15:00", "15:20");
+      await typeNewBreak(user, "16:00", "16:10");
+      await user.click(screen.getByRole("button", { name: "Save correction" }));
+
+      expect(await screen.findByRole("alert")).toBeInTheDocument();
+      // The first one landed, so it reads as recorded rather than new.
+      expect(screen.getAllByText("New")).toHaveLength(1);
+
+      addBreak.mutateAsync.mockClear();
+      addBreak.mutateAsync.mockResolvedValue(saved);
+      await user.click(screen.getByRole("button", { name: "Save correction" }));
+
+      await waitFor(() => expect(addBreak.mutateAsync).toHaveBeenCalledTimes(1));
+      expect(addBreak.mutateAsync).toHaveBeenCalledWith({
+        sessionId: "session-1",
+        span: { startedAt: "2026-09-09T14:00:00.000Z", endedAt: "2026-09-09T14:10:00.000Z" },
+      });
+    });
+
+    it("says why when the API refuses an overlap the form could not see", async () => {
+      const user = userEvent.setup();
+      addBreak.mutateAsync.mockRejectedValue(
+        new ApiError(409, "server wording", undefined, [
+          { message: "server wording", context: { reason: "BREAK_OVERLAPS" } },
+        ])
+      );
+      open();
+
+      await typeNewBreak(user, "15:00", "15:20");
+      await user.click(screen.getByRole("button", { name: "Save correction" }));
+
+      expect(
+        await screen.findByText("Another break already covers that time.")
+      ).toBeInTheDocument();
+    });
   });
 
   it("sends only the end that moved", async () => {
@@ -348,6 +492,29 @@ describe("CorrectionDialog", () => {
     expect(timeline).toHaveTextContent("Clocked in. Noah Weber");
     // A null actor is the sweep, and reads as the system rather than as nobody.
     expect(timeline).toHaveTextContent("Times corrected. System");
+  });
+
+  it("names who added a break afterwards, with its times", () => {
+    events.data = [
+      {
+        id: "event-added",
+        sessionId: "session-1",
+        eventType: "BREAK_ADDED",
+        user: { id: "user-1", name: "Noah Weber", initials: "NW", avatarColor: "#000" },
+        before: null,
+        after: {
+          breakId: "break-2",
+          startedAt: "2026-09-09T13:00:00.000Z",
+          endedAt: "2026-09-09T13:20:00.000Z",
+        },
+        createdAt: "2026-09-10T06:52:00.000Z",
+      },
+    ];
+    open();
+
+    expect(screen.getByTestId("correction-history")).toHaveTextContent(
+      "Break added, 15:00 to 15:20. Noah Weber"
+    );
   });
 
   describe("an entered session", () => {
