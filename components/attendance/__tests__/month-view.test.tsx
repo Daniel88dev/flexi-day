@@ -1,4 +1,5 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+import userEvent from "@testing-library/user-event";
 import { screen, within } from "@testing-library/react";
 import { renderWithClient } from "@/lib/test-utils";
 import type { AttendanceDay, AttendanceMonth } from "@/lib/api/attendance";
@@ -243,5 +244,46 @@ describe("MonthView, excluded days", () => {
     expect(
       within(screen.getByTestId("month-day-2026-09-04")).getByText("Non-working day")
     ).toBeInTheDocument();
+  });
+
+  describe("entered sessions", () => {
+    it("stamps an entered day in the grid and the list, and explains the stamp", () => {
+      const entered = month();
+      entered.days[0] = day("2026-09-01", { entered: true });
+      renderWithClient(<MonthView month={entered} locale="en" />);
+
+      expect(
+        within(screen.getByTestId("month-day-2026-09-01")).getByText("Entered")
+      ).toBeInTheDocument();
+      expect(
+        within(screen.getByTestId("month-row-2026-09-01")).getByText("Entered")
+      ).toBeInTheDocument();
+      expect(within(screen.getByTestId("month-day-2026-09-02")).queryByText("Entered")).toBeNull();
+      expect(screen.getByText("Entered after the fact")).toBeInTheDocument();
+    });
+
+    it("offers Add on the days the screen allows, and hands back the date", async () => {
+      const onAdd = vi.fn();
+      renderWithClient(
+        <MonthView
+          month={month()}
+          locale="en"
+          canAdd={(entry) => entry.businessDate === "2026-09-01"}
+          onAdd={onAdd}
+        />
+      );
+
+      const add = screen.getAllByRole("button", { name: /^Add a session on/ });
+      expect(add).toHaveLength(1);
+
+      await userEvent.click(add[0]!);
+      expect(onAdd).toHaveBeenCalledWith("2026-09-01");
+    });
+
+    it("offers no Add without a handler", () => {
+      renderWithClient(<MonthView month={month()} locale="en" />);
+
+      expect(screen.queryByRole("button", { name: /^Add a session on/ })).toBeNull();
+    });
   });
 });

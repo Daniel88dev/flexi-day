@@ -1,10 +1,20 @@
 "use client";
 
+import { Plus } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import type { AttendanceBalanceMode, AttendanceDay, AttendanceMonth } from "@/lib/api/attendance";
 import { formatMinutes, formatSignedMinutes } from "@/lib/attendance/duration";
 import { leadingBlanks } from "@/lib/attendance/month";
+import { formatBusinessDay } from "@/lib/attendance/today";
 import { useTranslation } from "@/lib/i18n/use-translation";
-import { DayFigures, Stat, StatRow, excludedSurface, isExcluded } from "./attendance-figures";
+import {
+  DayFigures,
+  EnteredMark,
+  Stat,
+  StatRow,
+  excludedSurface,
+  isExcluded,
+} from "./attendance-figures";
 
 /** Monday-first weekday initials, from the reader's own locale. */
 function weekdayHeadings(locale: string): string[] {
@@ -21,17 +31,22 @@ function MonthCell({
   day,
   mode,
   today,
+  locale,
+  onAdd,
 }: {
   day: AttendanceDay;
   mode: AttendanceBalanceMode;
   today: string | null;
+  locale: string;
+  onAdd?: (businessDate: string) => void;
 }) {
+  const { t } = useTranslation();
   const excluded = isExcluded(day);
 
   return (
     <div
       data-testid={`month-day-${day.businessDate}`}
-      className="flex min-h-24 flex-col gap-0.5 rounded-xl border p-2"
+      className="group relative flex min-h-24 flex-col gap-0.5 rounded-xl border p-2"
       style={{
         borderColor: day.businessDate === today ? "var(--primary)" : "var(--border)",
         borderStyle: day.upcoming && !excluded ? "dashed" : "solid",
@@ -40,6 +55,19 @@ function MonthCell({
     >
       <span className="text-sm font-semibold tabular-nums">{dayNumber(day.businessDate)}</span>
       {day.upcoming && !excluded ? null : <DayFigures day={day} mode={mode} today={today} />}
+      {onAdd ? (
+        // On hover, as the mockup has it, and on keyboard focus.
+        <Button
+          type="button"
+          size="icon-xs"
+          variant="outline"
+          className="absolute right-2 bottom-2 opacity-0 group-hover:opacity-100 focus-visible:opacity-100"
+          aria-label={t.clock.addSessionOn(formatBusinessDay(day.businessDate, locale))}
+          onClick={() => onAdd(day.businessDate)}
+        >
+          <Plus />
+        </Button>
+      ) : null}
     </div>
   );
 }
@@ -49,7 +77,17 @@ function MonthCell({
  * laptop, and the grid keeps the totals and the whole month on one screen — and
  * the same days as a list below that, where seven columns would be unreadable.
  */
-export function MonthView({ month, locale }: { month: AttendanceMonth; locale: string }) {
+export function MonthView({
+  month,
+  locale,
+  canAdd,
+  onAdd,
+}: {
+  month: AttendanceMonth;
+  locale: string;
+  canAdd?: (day: AttendanceDay) => boolean;
+  onAdd?: (businessDate: string) => void;
+}) {
   const { t } = useTranslation();
   const mode = month.balanceMode;
   const today = month.businessDate;
@@ -110,12 +148,23 @@ export function MonthView({ month, locale }: { month: AttendanceMonth; locale: s
           />
         ) : null}
         {month.days.map((day) => (
-          <MonthCell key={day.businessDate} day={day} mode={mode} today={today} />
+          <MonthCell
+            key={day.businessDate}
+            day={day}
+            mode={mode}
+            today={today}
+            locale={locale}
+            onAdd={onAdd && canAdd?.(day) ? onAdd : undefined}
+          />
         ))}
       </div>
 
       <p className="text-xs" style={{ color: "var(--text-faint)" }}>
         {t.clock.hatchedLegend}
+      </p>
+      <p className="flex items-center gap-1.5 text-xs" style={{ color: "var(--text-faint)" }}>
+        <EnteredMark />
+        {t.clock.enteredLegend}
       </p>
 
       <ul className="flex flex-col gap-2 sm:hidden">

@@ -175,6 +175,26 @@ describe("CorrectionDialog", () => {
     });
   });
 
+  it("says an admin's entry is theirs to delete when the API refuses the reader", async () => {
+    day.data = answer([session({ origin: "ENTERED", enteredByUserId: "user-1" })]);
+    removeSession.mutateAsync.mockRejectedValue(
+      new ApiError(403, "server wording", undefined, [
+        { message: "server wording", context: { reason: "SELF_SERVICE_DELETE_ENTERED" } },
+      ])
+    );
+    open({ ownDay: { today: "2026-09-10", selfService: { enabled: true, days: 7 } } });
+
+    const user = userEvent.setup();
+    await user.click(screen.getByRole("button", { name: "Delete session" }));
+    await user.click(screen.getByRole("button", { name: "Delete session" }));
+
+    expect(
+      await screen.findByText(
+        "An admin entered this session. You can correct its times, but only an admin can delete it."
+      )
+    ).toBeInTheDocument();
+  });
+
   describe("refusals from the API", () => {
     const refuse = (reason: string) =>
       correctSession.mutateAsync.mockRejectedValue(
@@ -328,6 +348,81 @@ describe("CorrectionDialog", () => {
     expect(timeline).toHaveTextContent("Clocked in. Noah Weber");
     // A null actor is the sweep, and reads as the system rather than as nobody.
     expect(timeline).toHaveTextContent("Times corrected. System");
+  });
+
+  describe("an entered session", () => {
+    const created = (by: { id: string; name: string }): AttendanceEvent => ({
+      id: "event-created",
+      sessionId: "session-1",
+      eventType: "SESSION_CREATED",
+      user: { ...by, initials: "XX", avatarColor: "#000" },
+      before: null,
+      after: {
+        businessDate: "2026-09-09",
+        startedAt: "2026-09-09T06:05:00.000Z",
+        endedAt: "2026-09-09T15:10:00.000Z",
+        origin: "ENTERED",
+      },
+      createdAt: "2026-09-10T06:52:00.000Z",
+    });
+
+    beforeEach(() => {
+      day.data = answer([session({ origin: "ENTERED" })]);
+    });
+
+    it("carries the mark with who entered it, and the entry at the head of its history", () => {
+      events.data = [created({ id: "dana", name: "Dana Holt" })];
+      open({ userId: "user-1", personName: "Noah Weber" });
+
+      expect(screen.getByText("Entered by Dana Holt")).toBeInTheDocument();
+      expect(screen.getByLabelText("Start")).toHaveValue("08:05");
+      expect(screen.getByLabelText("End")).toHaveValue("17:10");
+      expect(screen.getByTestId("correction-history")).toHaveTextContent(
+        "Session entered, 08:05 to 17:10. Dana Holt"
+      );
+    });
+
+    it("stamps each history entry with its date, since an entry can come days later", () => {
+      events.data = [created({ id: "dana", name: "Dana Holt" })];
+      open();
+
+      expect(screen.getByTestId("correction-history")).toHaveTextContent("Thu, Sep 10 08:52");
+    });
+
+    it("lets the reader delete one they entered themselves on an earlier day", () => {
+      day.data = answer([session({ origin: "ENTERED", enteredByUserId: "user-1" })]);
+      open({ ownDay: { today: "2026-09-10", selfService: { enabled: true, days: 7 } } });
+
+      expect(screen.getByRole("button", { name: "Delete session" })).toBeInTheDocument();
+      expect(
+        screen.getByText("You entered this session, so you can delete it. Its history stays.")
+      ).toBeInTheDocument();
+    });
+
+    it("keeps delete from the reader when an admin entered it for them", () => {
+      day.data = answer([session({ origin: "ENTERED", enteredByUserId: "dana" })]);
+      open({ ownDay: { today: "2026-09-10", selfService: { enabled: true, days: 7 } } });
+
+      expect(screen.queryByRole("button", { name: "Delete session" })).not.toBeInTheDocument();
+      expect(
+        screen.getByText("Entered by an admin, so it can be corrected but not deleted.")
+      ).toBeInTheDocument();
+    });
+  });
+
+  it("offers another session on the day when the screen allows one", async () => {
+    const onAddSession = vi.fn();
+    open({ onAddSession });
+
+    await userEvent.setup().click(screen.getByRole("button", { name: "Add another session" }));
+
+    expect(onAddSession).toHaveBeenCalled();
+  });
+
+  it("offers no other session when the screen does not allow one", () => {
+    open();
+
+    expect(screen.queryByRole("button", { name: "Add another session" })).not.toBeInTheDocument();
   });
 
   it("says so when the day holds nothing to correct", () => {

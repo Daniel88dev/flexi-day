@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   businessDateIn,
   correctableUntil,
+  entryOffered,
   parseDayLimit,
   selfServiceDaysOf,
   selfServiceMode,
@@ -121,5 +122,50 @@ describe("selfServiceDaysOf", () => {
   it("returns the typed number, or undefined when the API would refuse it", () => {
     expect(selfServiceDaysOf({ enabled: true, noLimit: false, days: "14" })).toBe(14);
     expect(selfServiceDaysOf({ enabled: true, noLimit: false, days: "400" })).toBeUndefined();
+  });
+});
+
+describe("entryOffered", () => {
+  const ask = (
+    day: { businessDate: string; upcoming?: boolean; cause?: "NOT_EMPLOYED" | "NON_WORKING_DAY" },
+    options: {
+      window?: { enabled: boolean; days: number | null };
+      active?: boolean;
+      ended?: boolean;
+    } = {}
+  ) =>
+    entryOffered({
+      window: options.window ?? { enabled: true, days: 7 },
+      today: TODAY,
+      active: options.active ?? true,
+      employmentEnded: options.ended ?? false,
+      day: {
+        businessDate: day.businessDate,
+        upcoming: day.upcoming ?? false,
+        exclusion: day.cause ? { cause: day.cause } : null,
+      },
+    });
+
+  it("offers a day inside the window, today included, an excluded working day too", () => {
+    expect(ask({ businessDate: "2026-09-04" })).toBe(true);
+    expect(ask({ businessDate: TODAY })).toBe(true);
+    expect(ask({ businessDate: "2026-09-05", cause: "NON_WORKING_DAY" })).toBe(true);
+  });
+
+  it("refuses a day before the window, one still to come, and one outside the employment", () => {
+    expect(ask({ businessDate: "2026-09-03" })).toBe(false);
+    expect(ask({ businessDate: "2026-09-12", upcoming: true })).toBe(false);
+    expect(
+      ask(
+        { businessDate: "2026-09-01", cause: "NOT_EMPLOYED" },
+        { window: { enabled: true, days: null } }
+      )
+    ).toBe(false);
+  });
+
+  it("refuses everything with the window off, attendance paused or the employment ended", () => {
+    expect(ask({ businessDate: TODAY }, { window: { enabled: false, days: 7 } })).toBe(false);
+    expect(ask({ businessDate: TODAY }, { active: false })).toBe(false);
+    expect(ask({ businessDate: TODAY }, { ended: true })).toBe(false);
   });
 });

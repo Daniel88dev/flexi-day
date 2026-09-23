@@ -46,6 +46,7 @@ vi.mock("@/lib/api/queries", () => ({
   useCorrectBreak: () => idle,
   useRemoveBreak: () => idle,
   useRemoveSession: () => idle,
+  useEnterSession: () => idle,
 }));
 
 const ZONE = "Europe/Prague";
@@ -474,6 +475,130 @@ describe("MyAttendanceScreen", () => {
           "Your organization manages attendance corrections through an admin. To change a time or add a missed day, ask a group admin or an organization admin."
         )
       ).toBeInTheDocument();
+    });
+
+    describe("entering a session", () => {
+      /** September as the month read answers it, with the dates the Day view looks up. */
+      const september = (notEmployedBefore?: string) =>
+        months.set("2026-9", {
+          organizationId: "org-1",
+          employmentId: "emp-1",
+          timezone: ZONE,
+          businessDate: "2026-09-11",
+          year: 2026,
+          month: 9,
+          balanceMode: "DAILY",
+          requiredMinutesPerDay: 480,
+          requiredMinutesOverride: null,
+          breakMinutes: 30,
+          breakThresholdMinutes: 360,
+          days: ["2026-09-08", "2026-09-09", "2026-09-10", "2026-09-11"].map((businessDate) => ({
+            businessDate,
+            presenceMinutes: 0,
+            breaksMinutes: 0,
+            deductedMinutes: 0,
+            workedMinutes: 0,
+            requiredMinutes: 480,
+            balanceMinutes: -480,
+            upcoming: false,
+            open: false,
+            autoClosed: false,
+            exclusion:
+              notEmployedBefore && businessDate < notEmployedBefore
+                ? { cause: "NOT_EMPLOYED" as const, extent: "FULL" as const, label: null }
+                : null,
+            excludedClockIn: false,
+            flagged: false,
+            sessions: [],
+          })),
+          totals: {
+            presenceMinutes: 0,
+            workedMinutes: 0,
+            requiredMinutes: 0,
+            requiredRangeMinutes: 0,
+            balanceMinutes: 0,
+            flaggedDays: 0,
+            excludedDays: 0,
+          },
+        });
+
+      beforeEach(() => september());
+
+      const stepBack = async (days: number) => {
+        for (let step = 0; step < days; step += 1) {
+          await userEvent.click(screen.getByRole("button", { name: "Previous" }));
+        }
+      };
+
+      it("offers Add session on an empty earlier day inside the window, and opens the form on it", async () => {
+        query.data = state({ selfService: { enabled: true, days: 7 } });
+        onDay("2026-09-08", []);
+        renderWithClient(<MyAttendanceScreen />);
+
+        await stepBack(3);
+
+        expect(screen.getByText("Nothing was recorded on this day.")).toBeInTheDocument();
+        expect(
+          screen.getByText("Forgot to clock? Add the session with its start and end.")
+        ).toBeInTheDocument();
+
+        await userEvent.click(screen.getAllByRole("button", { name: "Add session" })[0]!);
+
+        expect(screen.getByRole("heading", { name: "Add a session" })).toBeInTheDocument();
+        expect(screen.getByLabelText("Date")).toHaveValue("2026-09-08");
+      });
+
+      it("hides Add session on a day outside the window", async () => {
+        query.data = state({ selfService: { enabled: true, days: 2 } });
+        onDay("2026-09-08", []);
+        renderWithClient(<MyAttendanceScreen />);
+
+        await stepBack(3);
+
+        expect(screen.queryByRole("button", { name: "Add session" })).not.toBeInTheDocument();
+      });
+
+      it("hides Add session on a day before the Employment began, even with no limit", async () => {
+        query.data = state({ selfService: { enabled: true, days: null } });
+        september("2026-09-09");
+        onDay("2026-09-08", []);
+        renderWithClient(<MyAttendanceScreen />);
+
+        await stepBack(3);
+
+        expect(screen.getByText("Nothing was recorded on this day.")).toBeInTheDocument();
+        expect(screen.queryByRole("button", { name: "Add session" })).not.toBeInTheDocument();
+      });
+
+      it("hides Add session with self-service off, and for an ended Employment", () => {
+        query.data = state({ selfService: { enabled: false, days: 0 } });
+        const { unmount } = renderWithClient(<MyAttendanceScreen />);
+        expect(screen.queryByRole("button", { name: "Add session" })).not.toBeInTheDocument();
+        unmount();
+
+        query.data = state({ employmentEnded: true, selfService: { enabled: true, days: null } });
+        renderWithClient(<MyAttendanceScreen />);
+        expect(screen.queryByRole("button", { name: "Add session" })).not.toBeInTheDocument();
+      });
+
+      it("marks an entered session on its day, beside a clocked one that carries no mark", async () => {
+        query.data = state({ selfService: { enabled: true, days: 7 } });
+        onDay("2026-09-08", [
+          worked("2026-09-08", { id: "entered", origin: "ENTERED" }),
+          worked("2026-09-08", {
+            id: "clocked",
+            startedAt: "2026-09-08T15:00:00Z",
+            endedAt: "2026-09-08T16:00:00Z",
+          }),
+        ]);
+        renderWithClient(<MyAttendanceScreen />);
+
+        await stepBack(3);
+
+        expect(screen.getAllByText("Entered")).toHaveLength(1);
+        // A day that already holds sessions still takes another.
+        expect(screen.getByRole("button", { name: "Add session" })).toBeInTheDocument();
+      });
     });
 
     it("keeps an ended Employment's day readable and says only an admin can change it", () => {

@@ -5,6 +5,7 @@ import {
   anyPresence,
   daysInRange,
   defaultDay,
+  knownSpell,
   rangeOf,
   stepAnchor,
   teamOrganizations,
@@ -125,5 +126,35 @@ describe("anyPresence", () => {
     expect(anyPresence([person([0, 0]), person([0, 30])])).toBe(true);
     expect(anyPresence([person([0, 0]), person([0])])).toBe(false);
     expect(anyPresence([])).toBe(false);
+  });
+});
+
+describe("knownSpell", () => {
+  const days = (...causes: ("NOT_EMPLOYED" | null)[]) =>
+    causes.map((cause, index) => ({
+      businessDate: `2026-09-0${index + 1}`,
+      exclusion: cause ? { cause } : null,
+    }));
+
+  it("knows nothing when every day of the range is inside the employment", () => {
+    expect(knownSpell(days(null, null, null))).toEqual({ began: null, ended: null });
+  });
+
+  it("returns the first day of a spell that began inside the range", () => {
+    expect(knownSpell(days("NOT_EMPLOYED", "NOT_EMPLOYED", null))).toEqual({
+      began: "2026-09-03",
+      ended: null,
+    });
+  });
+
+  it("returns the last day of a spell that ended inside the range", () => {
+    expect(knownSpell(days(null, "NOT_EMPLOYED", "NOT_EMPLOYED"))).toEqual({
+      began: null,
+      ended: "2026-09-01",
+    });
+  });
+
+  it("knows nothing when the whole range is outside the employment", () => {
+    expect(knownSpell(days("NOT_EMPLOYED", "NOT_EMPLOYED"))).toEqual({ began: null, ended: null });
   });
 });

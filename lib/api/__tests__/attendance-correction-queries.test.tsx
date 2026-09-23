@@ -9,6 +9,7 @@ const correctSessionMock = vi.fn();
 const correctBreakMock = vi.fn();
 const removeBreakMock = vi.fn();
 const removeSessionMock = vi.fn();
+const enterSessionMock = vi.fn();
 
 vi.mock("../attendance", () => ({
   getAttendanceDay: (...args: unknown[]) => dayMock(...args),
@@ -17,6 +18,7 @@ vi.mock("../attendance", () => ({
   correctBreak: (...args: unknown[]) => correctBreakMock(...args),
   removeBreak: (...args: unknown[]) => removeBreakMock(...args),
   removeSession: (...args: unknown[]) => removeSessionMock(...args),
+  enterSession: (...args: unknown[]) => enterSessionMock(...args),
 }));
 
 import {
@@ -24,6 +26,7 @@ import {
   useAttendanceDay,
   useCorrectBreak,
   useCorrectSession,
+  useEnterSession,
   useRemoveBreak,
   useRemoveSession,
   useSessionEvents,
@@ -102,7 +105,13 @@ describe("useSessionEvents", () => {
 
 describe("the correction mutations", () => {
   beforeEach(() => {
-    for (const mock of [correctSessionMock, correctBreakMock, removeBreakMock, removeSessionMock]) {
+    for (const mock of [
+      correctSessionMock,
+      correctBreakMock,
+      removeBreakMock,
+      removeSessionMock,
+      enterSessionMock,
+    ]) {
       mock.mockReset();
       mock.mockResolvedValue({ id: "session-1" });
     }
@@ -131,6 +140,33 @@ describe("the correction mutations", () => {
     const deleted = renderHook(() => useRemoveSession(), { wrapper });
     await deleted.result.current.mutateAsync("session-1");
     expect(removeSessionMock).toHaveBeenCalledWith("session-1");
+
+    const entered = renderHook(() => useEnterSession(), { wrapper });
+    const recorded = {
+      organizationId: "org-1",
+      businessDate: "2026-09-08",
+      startedAt: "2026-09-08T06:10:00.000Z",
+      endedAt: "2026-09-08T14:55:00.000Z",
+    };
+    await entered.result.current.mutateAsync(recorded);
+    expect(enterSessionMock).toHaveBeenCalledWith(recorded);
+  });
+
+  it("drops the same reads after an entry, and the entered session's timeline", async () => {
+    const { client, wrapper } = setup();
+    const invalidate = vi.spyOn(client, "invalidateQueries");
+
+    const { result } = renderHook(() => useEnterSession(), { wrapper });
+    await result.current.mutateAsync({
+      organizationId: "org-1",
+      businessDate: "2026-09-08",
+      startedAt: "2026-09-08T06:10:00.000Z",
+      endedAt: "2026-09-08T14:55:00.000Z",
+    });
+
+    const keys = invalidate.mock.calls.map((call) => JSON.stringify(call[0]?.queryKey));
+    expect(keys).toContain(JSON.stringify(["attendance-month"]));
+    expect(keys).toContain(JSON.stringify(qk.attendanceEvents("session-1")));
   });
 
   it("drops every attendance read a correction could have moved, and that session's timeline", async () => {

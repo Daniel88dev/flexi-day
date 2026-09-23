@@ -51,6 +51,32 @@ export function selfServiceVerdict({
   return start === null || businessDate >= start ? "OPEN" : "OUTSIDE";
 }
 
+/** Whether the reader's own day offers "Add session": the one rule every screen asks. */
+export function entryOffered({
+  window,
+  today,
+  active,
+  employmentEnded,
+  day,
+}: {
+  window: SelfServiceWindow;
+  today: string;
+  active: boolean;
+  employmentEnded: boolean;
+  day: { businessDate: string; upcoming: boolean; exclusion: { cause: string } | null };
+}): boolean {
+  if (!active || day.upcoming || day.exclusion?.cause === "NOT_EMPLOYED") return false;
+  return (
+    selfServiceVerdict({
+      window,
+      businessDate: day.businessDate,
+      today,
+      open: false,
+      employmentEnded,
+    }) === "OPEN"
+  );
+}
+
 /** The earliest date inside the window, or null when it has no limit. */
 export function windowStart(today: string, days: number | null): string | null {
   return days === null ? null : addDays(today, -days);

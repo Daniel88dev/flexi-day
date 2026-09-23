@@ -1,6 +1,6 @@
 "use client";
 
-import { CalendarOff, ClockAlert, Play } from "lucide-react";
+import { CalendarOff, ClockAlert, NotebookPen, Play } from "lucide-react";
 import type { AttendanceBalanceMode, AttendanceDay } from "@/lib/api/attendance";
 import { formatMinutes, formatSignedMinutes } from "@/lib/attendance/duration";
 import { exclusionLabel } from "@/lib/attendance/exclusion";
@@ -128,6 +128,7 @@ export function DayFigures({
           <BalanceChip minutes={day.balanceMinutes} />
         ) : null}
         <DayFlags day={day} today={today} />
+        {day.entered ? <EnteredMark /> : null}
         {exclusion !== null && !excluded ? (
           <span
             className="rounded-full px-2 py-0.5 text-xs font-semibold"
@@ -188,5 +189,28 @@ export function DayFlags({
         </span>
       ) : null}
     </>
+  );
+}
+
+/**
+ * A session, or a day holding one, that was entered after the fact rather than
+ * clocked. A permanent fact, not something to check, so it is a quiet outlined
+ * stamp rather than a coloured flag.
+ */
+export function EnteredMark({ label }: { label?: string }) {
+  const { t } = useTranslation();
+
+  return (
+    <span
+      className="inline-flex w-fit items-center gap-1 rounded-full border py-px pr-2 pl-1.5 text-[11.5px] font-semibold whitespace-nowrap [&_svg]:size-[13px]"
+      style={{
+        color: "var(--text-muted)",
+        borderColor: "var(--border-strong)",
+        background: "var(--card)",
+      }}
+    >
+      <NotebookPen aria-hidden />
+      {label ?? t.clock.enteredMark}
+    </span>
   );
 }

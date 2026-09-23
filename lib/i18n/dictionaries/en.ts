@@ -225,6 +225,11 @@ export const en = {
     emptyWeek: "Nothing recorded this week.",
     emptyMonth: "Nothing recorded this month.",
     rangeFailed: "Could not load your attendance.",
+    enteredMark: "Entered",
+    enteredLegend: "Entered after the fact",
+    addSession: "Add session",
+    emptyPastDayPrompt: "Forgot to clock? Add the session with its start and end.",
+    addSessionOn: (day: string) => `Add a session on ${day}`,
   },
   teamAttendance: {
     title: "Team attendance",
@@ -257,6 +262,9 @@ export const en = {
     legendOpen: "Still open from an earlier day",
     legendExcluded: "Clocked in on an excluded day, counts toward the month",
     legendHatched: "Hatched: excluded day",
+    legendEntered: "Recorded after the fact, for good",
+    addSession: "Add",
+    addSessionFor: (person: string, day: string) => `Add a session for ${person} on ${day}`,
     previousDay: "Previous day",
     nextDay: "Next day",
     selfServiceOffTitle: "Self-service is off.",
@@ -305,6 +313,13 @@ export const en = {
     outsideWindowLeftOut:
       "Sessions outside your window are left out here. Only an admin can change them.",
     clockedEarlierHint: "Clocked on an earlier day, so it can be corrected but not deleted.",
+    enteredDeleteHint: "You entered this session, so you can delete it. Its history stays.",
+    enteredByAdminHint: "Entered by an admin, so it can be corrected but not deleted.",
+    enteredBy: (person: string) => `Entered by ${person}`,
+    start: "Start",
+    end: "End",
+    sessionEntered: (from: string, to: string) => `Session entered, ${from} to ${to}`,
+    addAnother: "Add another session",
     errors: {
       REQUIRED: "Needs a time.",
       END_BEFORE_START: "Has to end after it starts.",
@@ -320,6 +335,14 @@ export const en = {
         "This session was clocked on an earlier day. You can correct its times, but only an admin can delete it.",
       EMPLOYMENT_ENDED:
         "Your employment here has ended. Your attendance stays readable, and only an admin can change it.",
+      SELF_SERVICE_DELETE_ENTERED:
+        "An admin entered this session. You can correct its times, but only an admin can delete it.",
+      START_OFF_DATE: "The session has to start on the day it is entered for.",
+      OUTSIDE_EMPLOYMENT: "That day is outside the employment. Pick a day inside it.",
+      END_IN_FUTURE:
+        "An entered session has to have ended already. Still working? Clock in, then correct the start.",
+      PLAN_LIMIT:
+        "Attendance is paused for your organization, so its history can be read but not changed. Ask an org admin about it.",
     },
     events: {
       CLOCK_IN: "Clocked in",
@@ -331,6 +354,54 @@ export const en = {
       BREAK_EDITED: "Break corrected",
       BREAK_DELETED: "Break removed",
       SESSION_DELETED: "Session deleted",
+      SESSION_CREATED: "Session entered",
+    },
+  },
+
+  entry: {
+    title: "Add a session",
+    titleFor: (person: string) => `Add a session for ${person}`,
+    ownDescription: "For a day you did not clock. It is saved as entered.",
+    adminDescription: "Recorded as entered by you.",
+    person: "Person",
+    date: "Date",
+    start: "Start",
+    end: "End",
+    nextDay: "Ends the next day",
+    nextDayHint: (end: string, start: string) =>
+      `Ends ${end}. It stays on ${start}, the day it started.`,
+    hintToday: "Today",
+    hintDays: (days: number) => `Today or up to ${days} ${days === 1 ? "day" : "days"} back`,
+    hintNoLimit: "Any day of your employment",
+    hintAdmin: (person: string) => `Any day of ${person}'s employment`,
+    ownNote: "Marked as entered for good. Your admin sees it that way.",
+    adminNote: (person: string) =>
+      `Marked as entered for good. ${person} sees it that way on their own month.`,
+    submit: "Add session",
+    saving: "Adding…",
+    cancel: "Cancel",
+    failed: "Could not add the session.",
+    overCeiling: (limit: string) =>
+      `Can't be longer than ${limit}, your organization's session limit.`,
+    errors: {
+      dateRequired: "Pick a day.",
+      employmentBegan: (person: string, day: string) =>
+        `${person}'s employment began on ${day}. Pick a later day.`,
+      employmentEnded: (person: string, day: string) =>
+        `${person}'s employment ended on ${day}. Pick an earlier day.`,
+      REQUIRED: "Needs a time.",
+      OUTSIDE_WINDOW: "Only an admin can change a day this old.",
+      FUTURE_DATE: "Pick today or an earlier day.",
+      END_BEFORE_START:
+        "Has to end after it starts. If it ran past midnight, switch on Ends the next day.",
+      endInFuture: (now: string) =>
+        `Can't end later than now, ${now}. Still working? Clock in, then correct the start.`,
+      overlapsOwn: (from: string, to: string) =>
+        `Overlaps your session from ${from} to ${to} on this day.`,
+      overlapsTheirs: (from: string, to: string) =>
+        `Overlaps their session from ${from} to ${to} on this day.`,
+      overlapsOpenOwn: (from: string) => `Overlaps your session still running since ${from}.`,
+      overlapsOpenTheirs: (from: string) => `Overlaps their session still running since ${from}.`,
     },
   },
 

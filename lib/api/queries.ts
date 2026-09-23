@@ -34,6 +34,7 @@ import {
   correctBreak,
   correctSession,
   endBreak,
+  enterSession,
   getAttendanceDay,
   getAttendanceMonth,
   getAttendanceState,
@@ -43,6 +44,7 @@ import {
   removeSession,
   type AttendanceCorrection,
   type AttendanceDayParams,
+  type AttendanceEntry,
   type TeamAttendanceParams,
   startBreak,
   type AttendanceSession,
@@ -931,6 +933,8 @@ export const useRemoveBreak = () => useCorrection((breakId: string) => removeBre
 
 export const useRemoveSession = () =>
   useCorrection((sessionId: string) => removeSession(sessionId));
+
+export const useEnterSession = () => useCorrection((entry: AttendanceEntry) => enterSession(entry));
 
 /**
  * The team dashboard, an admin surface like the roster: `enabled` is the

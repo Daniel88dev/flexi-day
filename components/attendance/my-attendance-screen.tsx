@@ -3,6 +3,7 @@
 import { useState } from "react";
 import {
   CalendarDays,
+  CalendarPlus,
   ChevronLeft,
   ChevronRight,
   ClockAlert,
@@ -14,7 +15,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAttendanceDay, useAttendanceMonth, useAttendanceState } from "@/lib/api/queries";
-import type { AttendanceSession } from "@/lib/api/attendance";
+import type { AttendanceDay, AttendanceSession } from "@/lib/api/attendance";
 import { formatMinutes } from "@/lib/attendance/duration";
 import {
   addDays,
@@ -26,6 +27,7 @@ import {
 } from "@/lib/attendance/month";
 import { stepAnchor } from "@/lib/attendance/team";
 import {
+  entryOffered,
   selfServiceMode,
   selfServiceVerdict,
   type SelfServiceVerdict,
@@ -36,9 +38,11 @@ import { useNow } from "@/lib/attendance/use-now";
 import { useTranslation } from "@/lib/i18n/use-translation";
 import { anySessionLocated } from "@/lib/attendance/location";
 import { cn } from "@/lib/utils";
+import { EnteredMark } from "./attendance-figures";
 import { ClockWidget } from "./clock-widget";
 import { CorrectionDialog } from "./correction-dialog";
 import { DayTotals } from "./day-totals";
+import { EntryDialog } from "./entry-dialog";
 import { MonthView } from "./month-view";
 import { SessionLocation } from "./session-location";
 import { WeekView } from "./week-view";
@@ -155,6 +159,7 @@ function DayView({ date, today }: { date: string; today: string }) {
   );
   const now = useNow(state?.openSession != null);
   const [correcting, setCorrecting] = useState(false);
+  const [adding, setAdding] = useState(false);
 
   const sessions = (isToday ? state?.sessions : pastQuery.data?.sessions) ?? [];
   // An organization that switched location off keeps what it already took, so
@@ -177,6 +182,21 @@ function DayView({ date, today }: { date: string; today: string }) {
     state?.active === true &&
     state.businessDate !== null &&
     sessions.some((session) => verdictFor(session.businessDate, session.open) === "OPEN");
+  // The day's exclusion lives on the month, which is what tells a date before
+  // the Employment began from an ordinary one.
+  const { year, month } = yearMonthOf(date);
+  const monthQuery = useAttendanceMonth(year, month, state?.organizationId ?? null, !!state);
+  const monthDay = monthQuery.data?.days.find((entry) => entry.businessDate === date);
+  const enterable =
+    state !== undefined &&
+    monthDay !== undefined &&
+    entryOffered({
+      window: state.selfService,
+      today,
+      active: state.active,
+      employmentEnded: state.employmentEnded,
+      day: monthDay,
+    });
 
   return (
     <div className="grid gap-4 lg:grid-cols-[minmax(0,380px)_1fr] lg:items-start">
@@ -193,12 +213,25 @@ function DayView({ date, today }: { date: string; today: string }) {
               <CalendarDays />
               {isToday ? t.clock.today : formatBusinessDay(date, locale)}
             </span>
-            {correctable ? (
-              <Button type="button" size="sm" variant="outline" onClick={() => setCorrecting(true)}>
-                <Pencil />
-                {isToday ? t.corrections.editToday : t.clock.correct}
-              </Button>
-            ) : null}
+            <span className="flex flex-wrap gap-2">
+              {correctable ? (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setCorrecting(true)}
+                >
+                  <Pencil />
+                  {isToday ? t.corrections.editToday : t.clock.correct}
+                </Button>
+              ) : null}
+              {enterable && sessions.length > 0 ? (
+                <Button type="button" size="sm" variant="outline" onClick={() => setAdding(true)}>
+                  <CalendarPlus />
+                  {t.clock.addSession}
+                </Button>
+              ) : null}
+            </span>
           </CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
@@ -207,16 +240,41 @@ function DayView({ date, today }: { date: string; today: string }) {
               {t.common.loading}
             </p>
           ) : sessions.length === 0 ? (
-            <p className="text-sm" style={{ color: "var(--text-muted)" }}>
-              {isToday ? t.clock.emptyDay : t.clock.emptyPastDay}
-            </p>
+            <div className="flex flex-col items-start gap-2">
+              <p className="text-sm" style={{ color: "var(--text-muted)" }}>
+                {isToday ? t.clock.emptyDay : t.clock.emptyPastDay}
+              </p>
+              {enterable ? (
+                <>
+                  {isToday ? null : (
+                    <p className="text-sm" style={{ color: "var(--text-muted)" }}>
+                      {t.clock.emptyPastDayPrompt}
+                    </p>
+                  )}
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={isToday ? "outline" : "default"}
+                    onClick={() => setAdding(true)}
+                  >
+                    <CalendarPlus />
+                    {t.clock.addSession}
+                  </Button>
+                </>
+              ) : null}
+            </div>
           ) : (
             <>
               {sessions.map((session) => (
                 <div key={session.id} className="flex flex-col gap-2">
                   {/* The session's own close. A break the sweep closed is
                       flagged on its own row instead. */}
-                  {session.closedBy === "SWEEP" ? <AutoClosedFlag /> : null}
+                  {session.closedBy === "SWEEP" || session.origin === "ENTERED" ? (
+                    <div className="flex flex-wrap items-center gap-2">
+                      {session.origin === "ENTERED" ? <EnteredMark /> : null}
+                      {session.closedBy === "SWEEP" ? <AutoClosedFlag /> : null}
+                    </div>
+                  ) : null}
                   <Timeline session={session} now={now} />
                   {showLocation ? <SessionLocation session={session} /> : null}
                 </div>
@@ -238,6 +296,26 @@ function DayView({ date, today }: { date: string; today: string }) {
           ownDay={{ today, selfService: state.selfService }}
           open={correcting}
           onOpenChange={setCorrecting}
+          onAddSession={
+            enterable
+              ? () => {
+                  setCorrecting(false);
+                  setAdding(true);
+                }
+              : undefined
+          }
+        />
+      ) : null}
+
+      {enterable && state ? (
+        <EntryDialog
+          organizationId={state.organizationId}
+          businessDate={date}
+          today={today}
+          timezone={state.timezone}
+          selfService={state.selfService}
+          open={adding}
+          onOpenChange={setAdding}
         />
       ) : null}
     </div>
@@ -310,11 +388,15 @@ function MonthRange({
   organizationId,
   enabled,
   locale,
+  canAdd,
+  onAdd,
 }: {
   anchor: string;
   organizationId: string | null;
   enabled: boolean;
   locale: string;
+  canAdd: (day: AttendanceDay) => boolean;
+  onAdd: (businessDate: string) => void;
 }) {
   const { t } = useTranslation();
   const { year, month } = yearMonthOf(anchor);
@@ -336,7 +418,7 @@ function MonthRange({
     );
   }
 
-  return <MonthView month={query.data} locale={locale} />;
+  return <MonthView month={query.data} locale={locale} canAdd={canAdd} onAdd={onAdd} />;
 }
 
 /** The range under the stepper, in the reader's own language and order. */
@@ -374,12 +456,24 @@ export function MyAttendanceScreen() {
   const stateQuery = useAttendanceState();
   const [view, setView] = useState<AttendanceView>("day");
   const [anchored, setAnchored] = useState<string | null>(null);
+  const [adding, setAdding] = useState<string | null>(null);
 
-  const organizationId = stateQuery.data?.organizationId ?? null;
+  const state = stateQuery.data;
+  const organizationId = state?.organizationId ?? null;
   // The organization's day, not the browser's; the fallback only covers the
   // first render, before the clock's read has answered.
   const today = stateQuery.data?.businessDate ?? new Date().toISOString().slice(0, 10);
   const anchor = anchored ?? today;
+
+  const canAdd = (day: AttendanceDay) =>
+    state !== undefined &&
+    entryOffered({
+      window: state.selfService,
+      today,
+      active: state.active,
+      employmentEnded: state.employmentEnded,
+      day,
+    });
 
   const step = (direction: -1 | 1) => {
     if (view === "day") {
@@ -474,6 +568,22 @@ export function MyAttendanceScreen() {
           organizationId={organizationId}
           enabled={!!organizationId}
           locale={locale}
+          canAdd={canAdd}
+          onAdd={setAdding}
+        />
+      ) : null}
+
+      {state && adding ? (
+        <EntryDialog
+          organizationId={state.organizationId}
+          businessDate={adding}
+          today={today}
+          timezone={state.timezone}
+          selfService={state.selfService}
+          open
+          onOpenChange={(next) => {
+            if (!next) setAdding(null);
+          }}
         />
       ) : null}
     </div>

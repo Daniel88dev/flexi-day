@@ -9,6 +9,7 @@ import {
   correctBreak,
   correctSession,
   endBreak,
+  enterSession,
   getAttendanceDay,
   getAttendanceState,
   getSessionEvents,
@@ -130,6 +131,27 @@ describe("the correction endpoints", () => {
     expect(apiMock).toHaveBeenLastCalledWith("/api/attendance/breaks/b%201", {
       method: "PATCH",
       body: { endedAt: null },
+    });
+  });
+
+  it("enters a session for the caller, and for a named person", async () => {
+    const entry = {
+      organizationId: "org-1",
+      businessDate: "2026-09-08",
+      startedAt: "2026-09-08T06:10:00.000Z",
+      endedAt: "2026-09-08T14:55:00.000Z",
+    };
+
+    await enterSession(entry);
+    expect(apiMock).toHaveBeenCalledWith("/api/attendance/sessions", {
+      method: "POST",
+      body: entry,
+    });
+
+    await enterSession({ ...entry, userId: "user-2" });
+    expect(apiMock).toHaveBeenLastCalledWith("/api/attendance/sessions", {
+      method: "POST",
+      body: { ...entry, userId: "user-2" },
     });
   });
 

@@ -227,6 +227,11 @@ export const cs: Dictionary = {
     emptyWeek: "Tento týden nic zaznamenáno.",
     emptyMonth: "Tento měsíc nic zaznamenáno.",
     rangeFailed: "Docházku se nepodařilo načíst.",
+    enteredMark: "Zadáno",
+    enteredLegend: "Zadáno dodatečně",
+    addSession: "Přidat směnu",
+    emptyPastDayPrompt: "Zapomněl(a) ses zapsat? Přidej směnu s jejím začátkem a koncem.",
+    addSessionOn: (day: string) => `Přidat směnu: ${day}`,
   },
   teamAttendance: {
     title: "Docházka týmu",
@@ -260,6 +265,9 @@ export const cs: Dictionary = {
     legendOpen: "Stále otevřeno z dřívějšího dne",
     legendExcluded: "Příchod v den volna, počítá se do měsíce",
     legendHatched: "Šrafované: den volna",
+    legendEntered: "Zadáno dodatečně, natrvalo",
+    addSession: "Přidat",
+    addSessionFor: (person: string, day: string) => `Přidat směnu: ${person}, ${day}`,
     previousDay: "Předchozí den",
     nextDay: "Další den",
     selfServiceOffTitle: "Samoobsluha je vypnutá.",
@@ -308,6 +316,13 @@ export const cs: Dictionary = {
     ownDayUntilMidnight: "Tvůj vlastní den. Změnit ho můžeš do půlnoci.",
     outsideWindowLeftOut: "Směny mimo tvé okno tady nejsou. Změnit je může jen správce.",
     clockedEarlierHint: "Zapsáno v dřívější den, takže jde opravit, ale ne smazat.",
+    enteredDeleteHint: "Tuto směnu jsi zadal(a) ty, takže ji můžeš smazat. Její historie zůstane.",
+    enteredByAdminHint: "Zadal ji správce, takže jde opravit, ale ne smazat.",
+    enteredBy: (person: string) => `Zadal(a) ${person}`,
+    start: "Začátek",
+    end: "Konec",
+    sessionEntered: (from: string, to: string) => `Zadána směna, ${from} až ${to}`,
+    addAnother: "Přidat další směnu",
     errors: {
       REQUIRED: "Chybí čas.",
       END_BEFORE_START: "Konec musí být po začátku.",
@@ -323,6 +338,14 @@ export const cs: Dictionary = {
         "Tato směna byla zapsána v dřívější den. Její časy můžeš opravit, smazat ji ale může jen správce.",
       EMPLOYMENT_ENDED:
         "Tvůj pracovní poměr tady skončil. Docházku si můžeš dál prohlížet, změnit ji ale může jen správce.",
+      SELF_SERVICE_DELETE_ENTERED:
+        "Tuto směnu zadal správce. Její časy můžeš opravit, smazat ji ale může jen správce.",
+      START_OFF_DATE: "Směna musí začínat v den, pro který ji zadáváš.",
+      OUTSIDE_EMPLOYMENT: "Tento den je mimo pracovní poměr. Vyber den uvnitř něj.",
+      END_IN_FUTURE:
+        "Zadaná směna už musí být u konce. Pořád pracuješ? Zapiš příchod a pak oprav začátek.",
+      PLAN_LIMIT:
+        "Docházka je ve tvé organizaci pozastavená, takže historii jde číst, ale ne měnit. Obrať se na správce organizace.",
     },
     events: {
       CLOCK_IN: "Příchod",
@@ -334,6 +357,53 @@ export const cs: Dictionary = {
       BREAK_EDITED: "Opravena pauza",
       BREAK_DELETED: "Odebrána pauza",
       SESSION_DELETED: "Smazána směna",
+      SESSION_CREATED: "Zadána směna",
+    },
+  },
+
+  entry: {
+    title: "Přidat směnu",
+    titleFor: (person: string) => `Přidat směnu: ${person}`,
+    ownDescription: "Pro den, kdy ses nezapsal(a). Uloží se jako zadaná.",
+    adminDescription: "Zapíše se jako zadaná tebou.",
+    person: "Osoba",
+    date: "Datum",
+    start: "Začátek",
+    end: "Konec",
+    nextDay: "Končí další den",
+    nextDayHint: (end: string, start: string) =>
+      `Končí ${end}. Zůstává u dne ${start}, kdy začala.`,
+    hintToday: "Dnes",
+    hintDays: (days: number) => `Dnes nebo až ${days} ${plural(days, "den", "dny", "dní")} zpátky`,
+    hintNoLimit: "Kterýkoli den tvého pracovního poměru",
+    hintAdmin: (person: string) => `Kterýkoli den pracovního poměru: ${person}`,
+    ownNote: "Natrvalo označeno jako zadané. Tvůj správce to tak uvidí.",
+    adminNote: (person: string) =>
+      `Natrvalo označeno jako zadané. ${person} to tak uvidí ve svém měsíci.`,
+    submit: "Přidat směnu",
+    saving: "Přidávám…",
+    cancel: "Zrušit",
+    failed: "Směnu se nepodařilo přidat.",
+    overCeiling: (limit: string) => `Nesmí být delší než ${limit}, limit směny ve tvé organizaci.`,
+    errors: {
+      dateRequired: "Vyber den.",
+      employmentBegan: (person: string, day: string) =>
+        `Pracovní poměr (${person}) začal ${day}. Vyber pozdější den.`,
+      employmentEnded: (person: string, day: string) =>
+        `Pracovní poměr (${person}) skončil ${day}. Vyber dřívější den.`,
+      REQUIRED: "Chybí čas.",
+      OUTSIDE_WINDOW: "Takto starý den může změnit jen správce.",
+      FUTURE_DATE: "Vyber dnešek nebo dřívější den.",
+      END_BEFORE_START:
+        "Konec musí být po začátku. Pokud směna běžela přes půlnoc, zapni Končí další den.",
+      endInFuture: (now: string) =>
+        `Nemůže skončit později než teď, ${now}. Pořád pracuješ? Zapiš příchod a pak oprav začátek.`,
+      overlapsOwn: (from: string, to: string) =>
+        `Překrývá tvou směnu od ${from} do ${to} v tento den.`,
+      overlapsTheirs: (from: string, to: string) =>
+        `Překrývá jejich směnu od ${from} do ${to} v tento den.`,
+      overlapsOpenOwn: (from: string) => `Překrývá tvou směnu, která běží od ${from}.`,
+      overlapsOpenTheirs: (from: string) => `Překrývá jejich směnu, která běží od ${from}.`,
     },
   },
 

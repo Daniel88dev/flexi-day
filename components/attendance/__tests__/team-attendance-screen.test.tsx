@@ -39,6 +39,7 @@ vi.mock("@/lib/api/queries", () => ({
   useCorrectBreak: () => idle,
   useRemoveBreak: () => idle,
   useRemoveSession: () => idle,
+  useEnterSession: () => idle,
 }));
 
 const idle = { mutateAsync: vi.fn(), isPending: false };
@@ -330,6 +331,64 @@ describe("TeamAttendanceScreen", () => {
 
     expect(screen.getByRole("dialog")).toHaveTextContent("Correct Wednesday, September 9");
     expect(screen.getByRole("dialog")).toHaveTextContent("Noah Weber");
+  });
+
+  describe("entered sessions", () => {
+    const empty = (businessDate: string, overrides: Partial<AttendanceTeamDay> = {}) =>
+      day(businessDate, {
+        presenceMinutes: 0,
+        breaksMinutes: 0,
+        deductedMinutes: 0,
+        workedMinutes: 0,
+        balanceMinutes: -480,
+        ...overrides,
+      });
+
+    it("offers Add on an empty past day, and opens the form for that person", async () => {
+      const week = plainWeek();
+      week[3] = empty(WEEK[3]!);
+      teamQuery.data = team({ people: [person("tom", "Tom Becker", week)] });
+      renderWithClient(<TeamAttendanceScreen />);
+
+      await userEvent.click(
+        screen.getByRole("button", {
+          name: "Add a session for Tom Becker on Thursday, September 10",
+        })
+      );
+
+      expect(
+        screen.getByRole("heading", { name: "Add a session for Tom Becker" })
+      ).toBeInTheDocument();
+      expect(screen.getByLabelText("Date")).toHaveValue("2026-09-10");
+    });
+
+    it("offers no Add on a day with sessions, one still to come, or one outside the employment", () => {
+      const week = plainWeek();
+      week[0] = empty(WEEK[0]!, {
+        exclusion: { cause: "NOT_EMPLOYED", extent: "FULL", label: null },
+      });
+      week[5] = { ...week[5]!, upcoming: true };
+      week[6] = { ...week[6]!, upcoming: true };
+      teamQuery.data = team({ people: [person("tom", "Tom Becker", week)] });
+      renderWithClient(<TeamAttendanceScreen />);
+
+      expect(screen.queryByRole("button", { name: /^Add a session for/ })).not.toBeInTheDocument();
+    });
+
+    it("stamps an entered day, and explains the stamp in the legend", () => {
+      const week = plainWeek();
+      week[1] = day(WEEK[1]!, { entered: true });
+      teamQuery.data = team({ people: [person("noah", "Noah Weber", week)] });
+      renderWithClient(<TeamAttendanceScreen />);
+
+      expect(
+        within(screen.getByTestId("team-day-noah-2026-09-08")).getByText("Entered")
+      ).toBeInTheDocument();
+      expect(
+        within(screen.getByTestId("team-day-noah-2026-09-09")).queryByText("Entered")
+      ).toBeNull();
+      expect(screen.getByText("Recorded after the fact, for good")).toBeInTheDocument();
+    });
   });
 
   it("refuses a custom range that is inside out or longer than a quarter, and asks nothing", async () => {
