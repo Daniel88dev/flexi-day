@@ -32,6 +32,11 @@ import {
   type CorrectionError,
   type SessionDraft,
 } from "@/lib/attendance/correction";
+import {
+  correctableUntil,
+  selfServiceVerdict,
+  type SelfServiceWindow,
+} from "@/lib/attendance/self-service";
 import { formatBusinessDay, formatClockTime } from "@/lib/attendance/today";
 import { useTranslation } from "@/lib/i18n/use-translation";
 import type { Dictionary } from "@/lib/i18n";
@@ -120,10 +125,12 @@ function History({ sessionId, timezone }: { sessionId: string; timezone: string 
 function SessionCorrection({
   session,
   timezone,
+  deletable,
   onDone,
 }: {
   session: AttendanceSession;
   timezone: string | null;
+  deletable: boolean;
   onDone: () => void;
 }) {
   const { t } = useTranslation();
@@ -304,7 +311,11 @@ function SessionCorrection({
       ) : null}
 
       <div className="flex flex-wrap items-center justify-between gap-2">
-        {confirming ? (
+        {!deletable ? (
+          <span className="max-w-64 text-xs" style={{ color: "var(--text-muted)" }}>
+            {t.corrections.clockedEarlierHint}
+          </span>
+        ) : confirming ? (
           <span className="flex flex-wrap items-center gap-2">
             <span className="text-sm" style={{ color: "var(--text-muted)" }}>
               {t.corrections.deleteSessionConfirm}
@@ -349,15 +360,17 @@ function SessionCorrection({
  * carries figures and not sessions — and because a correction has to re-read
  * what it just changed.
  *
- * Who may actually save is the backend's call. An employee outside the
- * self-service window is told so by the 403 they get, with the same wording
- * the hint under their own day carries.
+ * Who may actually save is the backend's call; the screens only open it on a
+ * day the reader may change. On the reader's own day, `ownDay` hides the delete
+ * a clocked session from an earlier day would be refused, and says until when
+ * the day stays theirs.
  */
 export function CorrectionDialog({
   organizationId,
   userId,
   personName,
   businessDate,
+  ownDay,
   open,
   onOpenChange,
 }: {
@@ -366,6 +379,8 @@ export function CorrectionDialog({
   userId?: string | null;
   personName?: string;
   businessDate: string;
+  /** The reader's own day, under the organization's self-service window. */
+  ownDay?: { today: string; selfService: SelfServiceWindow };
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
@@ -375,15 +390,37 @@ export function CorrectionDialog({
   const day = formatBusinessDay(businessDate, locale);
 
   const timezone = query.data?.timezone ?? null;
+  const sessions = query.data?.sessions ?? [];
+  // Decided per session, as the API does: a day outside the window can still
+  // hold a session left open, and only that one is the reader's to change.
+  const editable = ownDay
+    ? sessions.filter(
+        (session) =>
+          selfServiceVerdict({
+            window: ownDay.selfService,
+            businessDate: session.businessDate,
+            today: ownDay.today,
+            open: session.open,
+            employmentEnded: false,
+          }) === "OPEN"
+      )
+    : sessions;
+
+  const description = (() => {
+    if (personName) return personName;
+    if (!ownDay) return "";
+    const until = correctableUntil(businessDate, ownDay.selfService.days);
+    if (until === null || until < ownDay.today) return t.corrections.ownDay;
+    if (until === ownDay.today) return t.corrections.ownDayUntilMidnight;
+    return t.corrections.ownDayUntil(formatBusinessDay(until, locale));
+  })();
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle className="capitalize">{t.corrections.title(day)}</DialogTitle>
-          <DialogDescription>
-            {personName ?? (userId ? "" : t.corrections.selfServiceHint)}
-          </DialogDescription>
+          <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
 
         {query.isPending ? (
@@ -402,7 +439,12 @@ export function CorrectionDialog({
           </p>
         ) : (
           <div className="flex flex-col gap-3">
-            {(query.data?.sessions ?? []).map((session) => (
+            {editable.length < sessions.length ? (
+              <p className="text-sm" style={{ color: "var(--text-muted)" }}>
+                {t.corrections.outsideWindowLeftOut}
+              </p>
+            ) : null}
+            {editable.map((session) => (
               <SessionCorrection
                 // The draft is derived from the row, so a saved change comes
                 // back as a new component rather than as state to reconcile.
@@ -411,6 +453,9 @@ export function CorrectionDialog({
                   .join(",")}`}
                 session={session}
                 timezone={timezone}
+                // A clocked session from an earlier day is its owner's to
+                // correct, never to remove.
+                deletable={!ownDay || session.businessDate === ownDay.today}
                 onDone={() => onOpenChange(false)}
               />
             ))}

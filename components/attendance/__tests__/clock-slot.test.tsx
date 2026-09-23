@@ -23,6 +23,7 @@ const state = (overrides: Partial<AttendanceState> = {}): AttendanceState => ({
   employmentEnded: false,
   active: true,
   locationEnabled: false,
+  selfService: { enabled: true, days: 0 },
   timezone: ZONE,
   businessDate: "2026-09-11",
   openSession: null,

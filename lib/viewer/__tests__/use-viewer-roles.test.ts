@@ -100,6 +100,8 @@ const attendance = (active: boolean): AttendanceSettings => ({
   organizationId: "org-1",
   attendanceEnabled: active,
   locationEnabled: false,
+  selfServiceEnabled: false,
+  selfServiceDays: 0,
   timezone: active ? "Europe/Prague" : null,
   holidayCountry: null,
   workingDays: [1, 2, 3, 4, 5],

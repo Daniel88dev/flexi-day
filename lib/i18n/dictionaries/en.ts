@@ -178,7 +178,23 @@ export const en = {
     autoClosedBreakBody: (length: string, time: string, day: string) =>
       `A break reached ${length} and was closed at ${time} on ${day}. Set the time you actually came back.`,
     autoClosedFlag: "Auto-closed",
-    views: { today: "Today", week: "Week", month: "Month" },
+    views: { day: "Day", week: "Week", month: "Month" },
+    backToToday: "Today",
+    correct: "Correct",
+    emptyPastDay: "Nothing was recorded on this day.",
+    windowDaysHint: (days: number) =>
+      `You can enter and correct your attendance for today and the ${days} ${days === 1 ? "day" : "days"} before it. Earlier days go through your admin.`,
+    windowZeroHint:
+      "You can enter and correct today's attendance, and a session still open from an earlier day. Earlier days go through your admin.",
+    windowNoLimitHint: "You can enter and correct any day of your own employment.",
+    windowOffNotice:
+      "Your organization manages attendance corrections through an admin. To change a time or add a missed day, ask a group admin or an organization admin.",
+    windowOutsideDaysNotice: (days: number) =>
+      `Only an admin can change a day this old. You can enter and correct today and the ${days} ${days === 1 ? "day" : "days"} before it. For anything earlier, ask a group admin or an organization admin.`,
+    windowOutsideZeroNotice:
+      "Only an admin can change a day this old. You can enter and correct today. For anything earlier, ask a group admin or an organization admin.",
+    windowEndedNotice:
+      "Your employment here has ended. Your attendance stays readable, and only an admin can change it.",
     previousRange: "Previous",
     nextRange: "Next",
     worked: "Worked",
@@ -243,6 +259,19 @@ export const en = {
     legendHatched: "Hatched: excluded day",
     previousDay: "Previous day",
     nextDay: "Next day",
+    selfServiceOffTitle: "Self-service is off.",
+    selfServiceOffBody: "Members clock in and out; every correction goes through an admin.",
+    selfServiceZeroTitle: "Self-service is on, today only.",
+    selfServiceZeroBody:
+      "Members can enter and correct today's attendance, and fix a session still open from an earlier day.",
+    selfServiceDaysTitle: (days: number) =>
+      `Self-service is on, ${days} ${days === 1 ? "day" : "days"} back.`,
+    selfServiceDaysBody: (days: number) =>
+      `Members can enter and correct their own attendance for today and the ${days} ${days === 1 ? "day" : "days"} before it.`,
+    selfServiceNoLimitTitle: "Self-service is on, no limit.",
+    selfServiceNoLimitBody: "Members can enter and correct any day of their own employment.",
+    selfServiceChange: "Change",
+    selfServiceSetBy: "Set by organization admins",
   },
 
   corrections: {
@@ -270,8 +299,12 @@ export const en = {
     loadFailed: "Could not load this day.",
     saveFailed: "Could not save the correction.",
     system: "System",
-    selfServiceHint:
-      "You can correct today's session yourself while it is open or until midnight. Older days go through your admin.",
+    ownDay: "Your own day.",
+    ownDayUntil: (day: string) => `Your own day. You can change it until ${day}.`,
+    ownDayUntilMidnight: "Your own day. You can change it until midnight.",
+    outsideWindowLeftOut:
+      "Sessions outside your window are left out here. Only an admin can change them.",
+    clockedEarlierHint: "Clocked on an earlier day, so it can be corrected but not deleted.",
     errors: {
       REQUIRED: "Needs a time.",
       END_BEFORE_START: "Has to end after it starts.",
@@ -281,6 +314,12 @@ export const en = {
       SESSION_ALREADY_OPEN: "Another session is still open, so this one cannot reopen.",
       SESSION_OVERLAPS: "Another session already covers that time.",
       BREAK_ALREADY_OPEN: "Another break on this session is still open.",
+      SELF_SERVICE_OFF:
+        "Your organization manages attendance corrections through an admin. Ask a group admin, or an organization admin.",
+      SELF_SERVICE_DELETE:
+        "This session was clocked on an earlier day. You can correct its times, but only an admin can delete it.",
+      EMPLOYMENT_ENDED:
+        "Your employment here has ended. Your attendance stays readable, and only an admin can change it.",
     },
     events: {
       CLOCK_IN: "Clocked in",
@@ -1126,7 +1165,28 @@ export const en = {
       locationResponsibilityBody:
         "Flexi Day records nothing about that agreement. The privacy policy tells employees what is stored, for how long and who sees it.",
       locationReadPrivacy: "Read it",
-      saveHint: "Changes apply from the next clock-in.",
+      selfServiceLabel: "Employee self-service",
+      selfServiceHint:
+        "Let employees enter sessions they forgot to clock and correct their own times.",
+      selfServiceSwitch: "Turn employee self-service on",
+      selfServiceLimit: "How far back",
+      selfServiceDaysBack: "Days back",
+      selfServiceNoLimit: "No limit",
+      selfServiceDaysLabel: "Days back from today",
+      selfServiceDaysUnit: "days",
+      selfServiceDaysHint: "0 to 366. 0 means today only.",
+      selfServiceDaysInvalid: "Enter a whole number from 0 to 366.",
+      selfServiceOffBody:
+        "Employees clock in and out and take breaks, nothing more. Every correction and every missed day goes through an admin.",
+      selfServiceZeroBody:
+        "Employees can enter and correct today's attendance, and fix a session still open from an earlier day. Earlier days go through an admin.",
+      selfServiceDaysBody: (days: number, range: string) =>
+        `Employees can enter and correct their attendance for today and the ${days} ${days === 1 ? "day" : "days"} before it. Today that is ${range}. Earlier days go through an admin.`,
+      selfServiceNoLimitBody:
+        "Employees can enter and correct any day of their own employment. Admins can still correct anything.",
+      selfServiceApplies: (name: string) =>
+        `Applies to everyone in ${name}. Only organization admins can change it. A change affects later edits only: nothing already written is undone or flagged again.`,
+      saveHint: "Rules apply from the next clock-in. Self-service applies as soon as you save.",
       saved: "Attendance settings saved",
       saveFailed: "Could not save the attendance settings",
     },

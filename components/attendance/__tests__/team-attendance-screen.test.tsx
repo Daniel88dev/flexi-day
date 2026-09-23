@@ -146,6 +146,7 @@ const team = (overrides: Partial<AttendanceTeam> = {}): AttendanceTeam => ({
   requiredMinutesPerDay: 480,
   breakMinutes: 30,
   breakThresholdMinutes: 360,
+  selfService: { enabled: true, days: 7 },
   scope: "ORGANIZATION",
   group: null,
   people: [],
@@ -208,6 +209,33 @@ describe("TeamAttendanceScreen", () => {
     expect(screen.getByTestId("team-row-noah")).toBeInTheDocument();
     expect(teamRequests.at(-1)).toMatchObject({ organizationId: "org-1", groupId: null });
     expect(screen.queryByRole("combobox", { name: "Group" })).not.toBeInTheDocument();
+  });
+
+  it("shows a group admin the self-service setting read-only", () => {
+    roles.current = { ...orgAdmin, isOrgAdmin: false, isOrgOwner: false, organization: null };
+    groups.data = [
+      {
+        id: "eng",
+        organizationId: "org-1",
+        organization: { id: "org-1", name: "Studio Modrá" },
+        groupName: "Engineering",
+        managerUserId: "olivia",
+      } as GroupListItem,
+    ];
+    teamQuery.data = team({ scope: "GROUPS", people: [person("noah", "Noah Weber", plainWeek())] });
+    renderWithClient(<TeamAttendanceScreen />);
+
+    expect(screen.getByText("Self-service is on, 7 days back.")).toBeInTheDocument();
+    expect(screen.getByText("Set by organization admins")).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Change" })).not.toBeInTheDocument();
+  });
+
+  it("gives an org admin the same line with a way to change it", () => {
+    teamQuery.data = team({ people: [person("noah", "Noah Weber", plainWeek())] });
+    renderWithClient(<TeamAttendanceScreen />);
+
+    expect(screen.getByText("Self-service is on, 7 days back.")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Change" })).toHaveAttribute("href", "/organization");
   });
 
   it("renders the three flags in the cells and who is in now above them", () => {

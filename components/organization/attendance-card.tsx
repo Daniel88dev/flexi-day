@@ -24,9 +24,11 @@ import {
 import type { AttendanceSettings, BalanceMode } from "@/lib/api/attendance-settings";
 import type { OrganizationDetail } from "@/lib/api/organization";
 import { formatMinutes, parseMinutes } from "@/lib/attendance/duration";
+import { selfServiceDaysOf, type SelfServiceDraft } from "@/lib/attendance/self-service";
 import { browserTimezone, listTimezones } from "@/lib/attendance/timezones";
 import { useTranslation } from "@/lib/i18n/use-translation";
 import { cn } from "@/lib/utils";
+import { SelfServiceControl } from "./self-service-control";
 
 // Radix Select refuses an empty item value, so "off" travels as a sentinel.
 const NO_HOLIDAY_COUNTRY = "NONE";
@@ -95,6 +97,11 @@ function AttendanceForm({
   const [breakCeiling, setBreakCeiling] = useState(() =>
     formatMinutes(settings.breakCeilingMinutes)
   );
+  const [selfService, setSelfService] = useState<SelfServiceDraft>(() => ({
+    enabled: settings.selfServiceEnabled,
+    noLimit: settings.selfServiceDays === null,
+    days: String(settings.selfServiceDays ?? 0),
+  }));
   const [error, setError] = useState<string | null>(null);
 
   const paid = detail.plan.plan !== "FREE";
@@ -102,6 +109,8 @@ function AttendanceForm({
   // switching the feature back on needs the plan again.
   const canEnable = paid || settings.attendanceEnabled;
   const zones = listTimezones();
+  const selfServiceDays = selfServiceDaysOf(selfService);
+  const selfServiceInvalid = selfService.enabled && selfServiceDays === undefined;
 
   if (!canEnable && !enabled) {
     return (
@@ -155,6 +164,10 @@ function AttendanceForm({
       setError(t.organization.attendance.timezoneRequired);
       return;
     }
+    if (selfServiceInvalid) {
+      setError(t.organization.attendance.selfServiceDaysInvalid);
+      return;
+    }
     if (workingDays.size === 0) {
       setError(t.organization.attendance.workingDaysRequired);
       return;
@@ -189,6 +202,9 @@ function AttendanceForm({
         balanceMode,
         sessionCeilingMinutes: durations.sessionCeilingMinutes!,
         breakCeilingMinutes: durations.breakCeilingMinutes!,
+        selfServiceEnabled: selfService.enabled,
+        // Hidden while off, so whatever it holds is not the admin's choice to refuse.
+        selfServiceDays: selfServiceDays === undefined ? settings.selfServiceDays : selfServiceDays,
       });
       pushToast(t.organization.attendance.saved);
     } catch (err) {
@@ -412,6 +428,16 @@ function AttendanceForm({
               </Field>
             </div>
 
+            <SelfServiceControl
+              draft={selfService}
+              onChange={(next) => {
+                setError(null);
+                setSelfService(next);
+              }}
+              organizationName={detail.organization.name}
+              timezone={timezone || "UTC"}
+            />
+
             <div className="border-border space-y-3 rounded-xl border p-4">
               <div className="flex items-start justify-between gap-3">
                 <div className="space-y-1">
@@ -447,7 +473,7 @@ function AttendanceForm({
             {error ? <p className="text-destructive text-sm">{error}</p> : null}
 
             <div className="flex flex-wrap items-center gap-3">
-              <Button type="submit" disabled={update.isPending}>
+              <Button type="submit" disabled={update.isPending || selfServiceInvalid}>
                 {update.isPending ? t.organization.saving : t.organization.save}
               </Button>
               <span className="text-muted-foreground text-xs">

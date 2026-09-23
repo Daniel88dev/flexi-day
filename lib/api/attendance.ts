@@ -1,5 +1,6 @@
 import { api } from "./client";
 import type { Iso, UserSummary, UUID } from "./types";
+import type { SelfServiceWindow } from "@/lib/attendance/self-service";
 
 export type AttendanceClosedBy = "USER" | "ADMIN" | "SWEEP";
 
@@ -60,6 +61,8 @@ export type AttendanceState = {
   /** Switched on *and* on a live paid plan. The only thing a lapse changes. */
   active: boolean;
   locationEnabled: boolean;
+  /** Which of their own days the person may correct. Admins never meet it. */
+  selfService: SelfServiceWindow;
   timezone: string | null;
   businessDate: string | null;
   /**
@@ -271,6 +274,7 @@ export type AttendanceTeam = {
   requiredMinutesPerDay: number;
   breakMinutes: number;
   breakThresholdMinutes: number;
+  selfService: SelfServiceWindow;
   scope: AttendanceTeamScope;
   /** The group the answer was narrowed to, null for the viewer's whole audience. */
   group: AttendanceTeamGroup | null;
@@ -346,7 +350,10 @@ export type AttendanceCorrectionReason =
   | "END_BEFORE_START"
   | "BREAK_OUTSIDE_SESSION"
   | "SESSION_ALREADY_OPEN"
-  | "BREAK_ALREADY_OPEN";
+  | "BREAK_ALREADY_OPEN"
+  | "SELF_SERVICE_OFF"
+  | "SELF_SERVICE_DELETE"
+  | "EMPLOYMENT_ENDED";
 
 /** A patch of one end, or both. `endedAt: null` reopens; an absent key changes nothing. */
 export type AttendanceCorrection = { startedAt?: string; endedAt?: string | null };

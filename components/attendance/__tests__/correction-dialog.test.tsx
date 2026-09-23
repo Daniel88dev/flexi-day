@@ -102,17 +102,133 @@ describe("CorrectionDialog", () => {
     expect(screen.getByLabelText("Clock out")).toHaveValue("17:10");
   });
 
-  it("carries the self-service window message on the reader's own day", () => {
-    open();
+  it("tells the reader until when their own day stays theirs to change", () => {
+    open({ ownDay: { today: "2026-09-10", selfService: { enabled: true, days: 7 } } });
 
-    expect(screen.getByText(/correct today's session yourself/i)).toBeInTheDocument();
+    expect(
+      screen.getByText("Your own day. You can change it until Wednesday, September 16.")
+    ).toBeInTheDocument();
+  });
+
+  it("says until midnight when the window closes on the day itself", () => {
+    open({
+      businessDate: "2026-09-09",
+      ownDay: { today: "2026-09-09", selfService: { enabled: true, days: 0 } },
+    });
+
+    expect(screen.getByText("Your own day. You can change it until midnight.")).toBeInTheDocument();
   });
 
   it("names the person instead when an admin opened somebody else's", () => {
     open({ userId: "user-2", personName: "Noah Weber" });
 
     expect(screen.getByText("Noah Weber")).toBeInTheDocument();
-    expect(screen.queryByText(/correct today's session yourself/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/your own day/i)).not.toBeInTheDocument();
+  });
+
+  it("leaves out a closed session outside the window while offering an open one", () => {
+    day.data = answer([
+      session({ id: "closed" }),
+      session({
+        id: "open",
+        startedAt: "2026-09-09T16:00:00.000Z",
+        endedAt: null,
+        closedBy: null,
+        open: true,
+      }),
+    ]);
+    open({ ownDay: { today: "2026-09-10", selfService: { enabled: true, days: 0 } } });
+
+    expect(screen.getByTestId("correction-session-open")).toBeInTheDocument();
+    expect(screen.queryByTestId("correction-session-closed")).not.toBeInTheDocument();
+  });
+
+  it("offers every session to an admin", () => {
+    day.data = answer([session({ id: "closed" }), session({ id: "other" })]);
+    open({ userId: "user-2", personName: "Noah Weber" });
+
+    expect(screen.getByTestId("correction-session-closed")).toBeInTheDocument();
+    expect(screen.getByTestId("correction-session-other")).toBeInTheDocument();
+  });
+
+  describe("the delete rule on the reader's own day", () => {
+    it("hides delete on a clocked session from an earlier day, and says why", () => {
+      open({ ownDay: { today: "2026-09-10", selfService: { enabled: true, days: 7 } } });
+
+      expect(screen.queryByRole("button", { name: "Delete session" })).not.toBeInTheDocument();
+      expect(
+        screen.getByText("Clocked on an earlier day, so it can be corrected but not deleted.")
+      ).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Save correction" })).toBeInTheDocument();
+    });
+
+    it("keeps delete on a session dated today", () => {
+      open({ ownDay: { today: "2026-09-09", selfService: { enabled: true, days: 7 } } });
+
+      expect(screen.getByRole("button", { name: "Delete session" })).toBeInTheDocument();
+    });
+
+    it("keeps delete for an admin on any day", () => {
+      open({ userId: "user-2", personName: "Noah Weber" });
+
+      expect(screen.getByRole("button", { name: "Delete session" })).toBeInTheDocument();
+    });
+  });
+
+  describe("refusals from the API", () => {
+    const refuse = (reason: string) =>
+      correctSession.mutateAsync.mockRejectedValue(
+        new ApiError(403, "server wording", undefined, [
+          { message: "server wording", context: { reason } },
+        ])
+      );
+
+    const saveMovedEnd = async () => {
+      const user = userEvent.setup();
+      await user.clear(screen.getByLabelText("Clock out"));
+      await user.type(screen.getByLabelText("Clock out"), "17:30");
+      await user.click(screen.getByRole("button", { name: "Save correction" }));
+    };
+
+    it("says corrections go through an admin when self-service is off", async () => {
+      refuse("SELF_SERVICE_OFF");
+      open({ ownDay: { today: "2026-09-09", selfService: { enabled: true, days: 0 } } });
+
+      await saveMovedEnd();
+
+      expect(await screen.findByRole("alert")).toHaveTextContent(
+        "Your organization manages attendance corrections through an admin. Ask a group admin, or an organization admin."
+      );
+    });
+
+    it("says the employment has ended", async () => {
+      refuse("EMPLOYMENT_ENDED");
+      open({ ownDay: { today: "2026-09-09", selfService: { enabled: true, days: 0 } } });
+
+      await saveMovedEnd();
+
+      expect(await screen.findByRole("alert")).toHaveTextContent(
+        "Your employment here has ended. Your attendance stays readable, and only an admin can change it."
+      );
+    });
+
+    it("says a clocked session from an earlier day can be corrected but not deleted", async () => {
+      removeSession.mutateAsync.mockRejectedValue(
+        new ApiError(403, "server wording", undefined, [
+          { message: "server wording", context: { reason: "SELF_SERVICE_DELETE" } },
+        ])
+      );
+      const user = userEvent.setup();
+      // A stale tab: it still thought the session was today's.
+      open({ ownDay: { today: "2026-09-09", selfService: { enabled: true, days: 0 } } });
+
+      await user.click(screen.getByRole("button", { name: "Delete session" }));
+      await user.click(screen.getByRole("button", { name: "Delete session" }));
+
+      expect(await screen.findByRole("alert")).toHaveTextContent(
+        "This session was clocked on an earlier day. You can correct its times, but only an admin can delete it."
+      );
+    });
   });
 
   it("refuses a clock-out before its clock-in and saves nothing", async () => {

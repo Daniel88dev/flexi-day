@@ -180,7 +180,23 @@ export const cs: Dictionary = {
     autoClosedBreakBody: (length: string, time: string, day: string) =>
       `Pauza dosáhla ${length} a byla uzavřena v ${time}, ${day}. Nastav čas, kdy jsi se opravdu vrátil.`,
     autoClosedFlag: "Uzavřeno automaticky",
-    views: { today: "Dnes", week: "Týden", month: "Měsíc" },
+    views: { day: "Den", week: "Týden", month: "Měsíc" },
+    backToToday: "Dnes",
+    correct: "Opravit",
+    emptyPastDay: "V tento den se nic nezaznamenalo.",
+    windowDaysHint: (days: number) =>
+      `Docházku za dnešek a ${days} ${plural(days, "den", "dny", "dní")} předtím si můžeš doplnit a opravit sám. Starší dny řeší tvůj správce.`,
+    windowZeroHint:
+      "Dnešní docházku si můžeš doplnit a opravit sám, stejně jako směnu otevřenou z dřívějšího dne. Starší dny řeší tvůj správce.",
+    windowNoLimitHint: "Kterýkoli den svého pracovního poměru si můžeš doplnit a opravit sám.",
+    windowOffNotice:
+      "Opravy docházky ve tvé organizaci řeší správce. Pokud chceš změnit čas nebo doplnit zapomenutý den, obrať se na správce skupiny nebo organizace.",
+    windowOutsideDaysNotice: (days: number) =>
+      `Takto starý den může změnit jen správce. Sám si můžeš doplnit a opravit dnešek a ${days} ${plural(days, "den", "dny", "dní")} předtím. S čímkoli starším se obrať na správce skupiny nebo organizace.`,
+    windowOutsideZeroNotice:
+      "Takto starý den může změnit jen správce. Sám si můžeš doplnit a opravit jen dnešek. S čímkoli starším se obrať na správce skupiny nebo organizace.",
+    windowEndedNotice:
+      "Tvůj pracovní poměr tady skončil. Docházku si můžeš dál prohlížet, změnit ji ale může jen správce.",
     previousRange: "Předchozí",
     nextRange: "Další",
     worked: "Odpracováno",
@@ -246,6 +262,20 @@ export const cs: Dictionary = {
     legendHatched: "Šrafované: den volna",
     previousDay: "Předchozí den",
     nextDay: "Další den",
+    selfServiceOffTitle: "Samoobsluha je vypnutá.",
+    selfServiceOffBody: "Členové zapisují příchody a odchody; každá oprava jde přes správce.",
+    selfServiceZeroTitle: "Samoobsluha je zapnutá, jen pro dnešek.",
+    selfServiceZeroBody:
+      "Členové mohou doplnit a opravit dnešní docházku a upravit směnu, která zůstala otevřená z dřívějšího dne.",
+    selfServiceDaysTitle: (days: number) =>
+      `Samoobsluha je zapnutá, ${days} ${plural(days, "den", "dny", "dní")} zpět.`,
+    selfServiceDaysBody: (days: number) =>
+      `Členové mohou doplnit a opravit svou docházku za dnešek a ${days} ${plural(days, "den", "dny", "dní")} předtím.`,
+    selfServiceNoLimitTitle: "Samoobsluha je zapnutá, bez omezení.",
+    selfServiceNoLimitBody:
+      "Členové mohou doplnit a opravit kterýkoli den svého pracovního poměru.",
+    selfServiceChange: "Změnit",
+    selfServiceSetBy: "Nastavují správci organizace",
   },
 
   corrections: {
@@ -273,8 +303,11 @@ export const cs: Dictionary = {
     loadFailed: "Den se nepodařilo načíst.",
     saveFailed: "Opravu se nepodařilo uložit.",
     system: "Systém",
-    selfServiceHint:
-      "Dnešní směnu si můžeš opravit sám, dokud běží nebo do půlnoci. Starší dny řeší tvůj správce.",
+    ownDay: "Tvůj vlastní den.",
+    ownDayUntil: (day: string) => `Tvůj vlastní den. Změnit ho můžeš do ${day}.`,
+    ownDayUntilMidnight: "Tvůj vlastní den. Změnit ho můžeš do půlnoci.",
+    outsideWindowLeftOut: "Směny mimo tvé okno tady nejsou. Změnit je může jen správce.",
+    clockedEarlierHint: "Zapsáno v dřívější den, takže jde opravit, ale ne smazat.",
     errors: {
       REQUIRED: "Chybí čas.",
       END_BEFORE_START: "Konec musí být po začátku.",
@@ -284,6 +317,12 @@ export const cs: Dictionary = {
       SESSION_ALREADY_OPEN: "Jiná směna je stále otevřená, tuhle proto nelze znovu otevřít.",
       SESSION_OVERLAPS: "Jiná směna už tento čas pokrývá.",
       BREAK_ALREADY_OPEN: "Jiná pauza této směny je stále otevřená.",
+      SELF_SERVICE_OFF:
+        "Opravy docházky ve tvé organizaci řeší správce. Obrať se na správce skupiny nebo organizace.",
+      SELF_SERVICE_DELETE:
+        "Tato směna byla zapsána v dřívější den. Její časy můžeš opravit, smazat ji ale může jen správce.",
+      EMPLOYMENT_ENDED:
+        "Tvůj pracovní poměr tady skončil. Docházku si můžeš dál prohlížet, změnit ji ale může jen správce.",
     },
     events: {
       CLOCK_IN: "Příchod",
@@ -1133,7 +1172,28 @@ export const cs: Dictionary = {
       locationResponsibilityBody:
         "Flexi Day o té domluvě nic nezaznamenává. Zásady ochrany osobních údajů zaměstnancům říkají, co se ukládá, jak dlouho a kdo to vidí.",
       locationReadPrivacy: "Přečíst",
-      saveHint: "Změny platí od dalšího příchodu.",
+      selfServiceLabel: "Samoobsluha zaměstnanců",
+      selfServiceHint:
+        "Zaměstnanci si mohou doplnit směny, které zapomněli zapsat, a opravit si vlastní časy.",
+      selfServiceSwitch: "Zapnout samoobsluhu zaměstnanců",
+      selfServiceLimit: "Jak daleko zpět",
+      selfServiceDaysBack: "Dní zpět",
+      selfServiceNoLimit: "Bez omezení",
+      selfServiceDaysLabel: "Dní zpět od dneška",
+      selfServiceDaysUnit: "dní",
+      selfServiceDaysHint: "0 až 366. 0 znamená jen dnešek.",
+      selfServiceDaysInvalid: "Zadejte celé číslo od 0 do 366.",
+      selfServiceOffBody:
+        "Zaměstnanci zapisují příchody, odchody a přestávky, nic víc. Každá oprava i každý zapomenutý den jde přes správce.",
+      selfServiceZeroBody:
+        "Zaměstnanci mohou doplnit a opravit dnešní docházku a upravit směnu, která zůstala otevřená z dřívějšího dne. Starší dny jdou přes správce.",
+      selfServiceDaysBody: (days: number, range: string) =>
+        `Zaměstnanci mohou doplnit a opravit docházku za dnešek a ${days} ${plural(days, "den", "dny", "dní")} předtím. Dnes je to ${range}. Starší dny jdou přes správce.`,
+      selfServiceNoLimitBody:
+        "Zaměstnanci mohou doplnit a opravit kterýkoli den svého pracovního poměru. Správci mohou dál opravit cokoli.",
+      selfServiceApplies: (name: string) =>
+        `Platí pro všechny v organizaci ${name}. Změnit to mohou jen správci organizace. Změna se týká jen pozdějších úprav: nic, co už je zapsané, se nevrací ani znovu neoznačuje.`,
+      saveHint: "Pravidla platí od dalšího příchodu. Samoobsluha platí hned po uložení.",
       saved: "Nastavení docházky uloženo",
       saveFailed: "Nastavení docházky se nepodařilo uložit",
     },

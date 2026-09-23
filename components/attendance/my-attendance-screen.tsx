@@ -7,12 +7,13 @@ import {
   ChevronRight,
   ClockAlert,
   Coffee,
+  Lock,
   Pencil,
   Play,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useAttendanceMonth, useAttendanceState } from "@/lib/api/queries";
+import { useAttendanceDay, useAttendanceMonth, useAttendanceState } from "@/lib/api/queries";
 import type { AttendanceSession } from "@/lib/api/attendance";
 import { formatMinutes } from "@/lib/attendance/duration";
 import {
@@ -24,7 +25,13 @@ import {
   yearMonthOf,
 } from "@/lib/attendance/month";
 import { stepAnchor } from "@/lib/attendance/team";
-import { buildTimeline, formatClockTime } from "@/lib/attendance/today";
+import {
+  selfServiceMode,
+  selfServiceVerdict,
+  type SelfServiceVerdict,
+  type SelfServiceWindow,
+} from "@/lib/attendance/self-service";
+import { buildTimeline, formatBusinessDay, formatClockTime } from "@/lib/attendance/today";
 import { useNow } from "@/lib/attendance/use-now";
 import { useTranslation } from "@/lib/i18n/use-translation";
 import { anySessionLocated } from "@/lib/attendance/location";
@@ -36,7 +43,7 @@ import { MonthView } from "./month-view";
 import { SessionLocation } from "./session-location";
 import { WeekView } from "./week-view";
 
-type AttendanceView = "today" | "week" | "month";
+type AttendanceView = "day" | "week" | "month";
 
 /** The mockups' flag: one chip, on a break's row or above the session it closed. */
 function AutoClosedFlag({ size = "sm" }: { size?: "sm" | "xs" }) {
@@ -96,20 +103,80 @@ function Timeline({ session, now }: { session: AttendanceSession; now: Date }) {
   );
 }
 
-function TodayView() {
+function WindowNote({
+  verdict,
+  selfService,
+}: {
+  verdict: SelfServiceVerdict;
+  selfService: SelfServiceWindow;
+}) {
   const { t } = useTranslation();
+  const mode = selfServiceMode(selfService);
+  const days = selfService.days ?? 0;
+
+  if (verdict === "OPEN") {
+    return (
+      <p className="text-sm" style={{ color: "var(--text-muted)" }}>
+        {mode === "NO_LIMIT"
+          ? t.clock.windowNoLimitHint
+          : mode === "DAYS"
+            ? t.clock.windowDaysHint(days)
+            : t.clock.windowZeroHint}
+      </p>
+    );
+  }
+
+  const text =
+    verdict === "OFF"
+      ? t.clock.windowOffNotice
+      : verdict === "ENDED"
+        ? t.clock.windowEndedNotice
+        : mode === "DAYS"
+          ? t.clock.windowOutsideDaysNotice(days)
+          : t.clock.windowOutsideZeroNotice;
+
+  return (
+    <div className="bg-muted/50 flex gap-3 rounded-lg p-3">
+      <Lock className="mt-0.5 size-4 shrink-0" aria-hidden />
+      <p className="text-sm">{text}</p>
+    </div>
+  );
+}
+
+/** Today reads from the clock's own answer rather than the day endpoint, so it moves with every click. */
+function DayView({ date, today }: { date: string; today: string }) {
+  const { t, locale } = useTranslation();
   const query = useAttendanceState();
-  const now = useNow(query.data?.openSession != null);
+  const state = query.data;
+  const isToday = date === today;
+  const pastQuery = useAttendanceDay(
+    state && !isToday ? { organizationId: state.organizationId, businessDate: date } : null,
+    !!state && !isToday
+  );
+  const now = useNow(state?.openSession != null);
   const [correcting, setCorrecting] = useState(false);
 
-  const state = query.data;
-  const sessions = state?.sessions ?? [];
+  const sessions = (isToday ? state?.sessions : pastQuery.data?.sessions) ?? [];
   // An organization that switched location off keeps what it already took, so
   // the strip follows the data as well as the switch.
   const showLocation = (state?.locationEnabled ?? false) || anySessionLocated(sessions);
-  // Today is the person's own to correct; an older day is an admin's, which is
-  // what the hint under the card says rather than a button that would 403.
-  const correctable = state?.active === true && state.businessDate !== null && sessions.length > 0;
+  const verdictFor = (businessDate: string, open: boolean) =>
+    state
+      ? selfServiceVerdict({
+          window: state.selfService,
+          businessDate,
+          today,
+          open,
+          employmentEnded: state.employmentEnded,
+        })
+      : null;
+  // The day's own standing, for the note. An open session on it may still be
+  // correctable when the day is not, which is decided session by session.
+  const verdict = verdictFor(date, false);
+  const correctable =
+    state?.active === true &&
+    state.businessDate !== null &&
+    sessions.some((session) => verdictFor(session.businessDate, session.open) === "OPEN");
 
   return (
     <div className="grid gap-4 lg:grid-cols-[minmax(0,380px)_1fr] lg:items-start">
@@ -122,22 +189,26 @@ function TodayView() {
       <Card>
         <CardHeader>
           <CardTitle className="flex flex-wrap items-center justify-between gap-2 [&_svg]:size-[18px]">
-            <span className="flex items-center gap-2">
+            <span className="flex items-center gap-2 first-letter:capitalize">
               <CalendarDays />
-              {t.clock.today}
+              {isToday ? t.clock.today : formatBusinessDay(date, locale)}
             </span>
             {correctable ? (
               <Button type="button" size="sm" variant="outline" onClick={() => setCorrecting(true)}>
                 <Pencil />
-                {t.corrections.editToday}
+                {isToday ? t.corrections.editToday : t.clock.correct}
               </Button>
             ) : null}
           </CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
-          {sessions.length === 0 ? (
+          {!isToday && pastQuery.isPending ? (
             <p className="text-sm" style={{ color: "var(--text-muted)" }}>
-              {t.clock.emptyDay}
+              {t.common.loading}
+            </p>
+          ) : sessions.length === 0 ? (
+            <p className="text-sm" style={{ color: "var(--text-muted)" }}>
+              {isToday ? t.clock.emptyDay : t.clock.emptyPastDay}
             </p>
           ) : (
             <>
@@ -151,18 +222,20 @@ function TodayView() {
                 </div>
               ))}
               <DayTotals sessions={sessions} now={now} />
-              <p className="text-sm" style={{ color: "var(--text-muted)" }}>
-                {t.corrections.selfServiceHint}
-              </p>
             </>
           )}
+          {/* A lapsed plan closes every correction, and the clock already says so. */}
+          {state?.active && verdict ? (
+            <WindowNote verdict={verdict} selfService={state.selfService} />
+          ) : null}
         </CardContent>
       </Card>
 
       {correctable && state ? (
         <CorrectionDialog
           organizationId={state.organizationId}
-          businessDate={state.businessDate!}
+          businessDate={date}
+          ownDay={{ today, selfService: state.selfService }}
           open={correcting}
           onOpenChange={setCorrecting}
         />
@@ -270,6 +343,8 @@ function MonthRange({
 const rangeLabel = (view: AttendanceView, anchor: string, locale: string): string => {
   const at = (iso: string) => new Date(`${iso}T12:00:00Z`);
 
+  if (view === "day") return formatBusinessDay(anchor, locale);
+
   if (view === "month") {
     return new Intl.DateTimeFormat(locale, {
       month: "long",
@@ -297,7 +372,7 @@ const rangeLabel = (view: AttendanceView, anchor: string, locale: string): strin
 export function MyAttendanceScreen() {
   const { t, locale } = useTranslation();
   const stateQuery = useAttendanceState();
-  const [view, setView] = useState<AttendanceView>("today");
+  const [view, setView] = useState<AttendanceView>("day");
   const [anchored, setAnchored] = useState<string | null>(null);
 
   const organizationId = stateQuery.data?.organizationId ?? null;
@@ -307,7 +382,10 @@ export function MyAttendanceScreen() {
   const anchor = anchored ?? today;
 
   const step = (direction: -1 | 1) => {
-    if (view === "today") return;
+    if (view === "day") {
+      setAnchored(addDays(anchor, direction));
+      return;
+    }
     setAnchored(stepAnchor(view, anchor, direction));
   };
 
@@ -326,7 +404,7 @@ export function MyAttendanceScreen() {
             className="flex rounded-full border p-0.5"
             style={{ borderColor: "var(--border)" }}
           >
-            {(["today", "week", "month"] as const).map((candidate) => (
+            {(["day", "week", "month"] as const).map((candidate) => (
               <button
                 key={candidate}
                 type="button"
@@ -348,35 +426,40 @@ export function MyAttendanceScreen() {
             ))}
           </div>
 
-          {view === "today" ? null : (
-            <div className="flex items-center gap-2">
-              <Button
-                type="button"
-                size="icon"
-                variant="outline"
-                aria-label={t.clock.previousRange}
-                onClick={() => step(-1)}
-              >
-                <ChevronLeft />
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              size="icon"
+              variant="outline"
+              aria-label={t.clock.previousRange}
+              onClick={() => step(-1)}
+            >
+              <ChevronLeft />
+            </Button>
+            <span className="min-w-40 text-center font-semibold first-letter:capitalize">
+              {rangeLabel(view, anchor, locale)}
+            </span>
+            <Button
+              type="button"
+              size="icon"
+              variant="outline"
+              aria-label={t.clock.nextRange}
+              // The day an employee reads is never one still to come.
+              disabled={view === "day" && anchor >= today}
+              onClick={() => step(1)}
+            >
+              <ChevronRight />
+            </Button>
+            {view === "day" && anchor !== today ? (
+              <Button type="button" size="sm" variant="ghost" onClick={() => setAnchored(null)}>
+                {t.clock.backToToday}
               </Button>
-              <span className="min-w-40 text-center font-semibold">
-                {rangeLabel(view, anchor, locale)}
-              </span>
-              <Button
-                type="button"
-                size="icon"
-                variant="outline"
-                aria-label={t.clock.nextRange}
-                onClick={() => step(1)}
-              >
-                <ChevronRight />
-              </Button>
-            </div>
-          )}
+            ) : null}
+          </div>
         </div>
       </div>
 
-      {view === "today" ? <TodayView /> : null}
+      {view === "day" ? <DayView date={anchor} today={today} /> : null}
       {view === "week" ? (
         <WeekRange
           anchor={anchor}

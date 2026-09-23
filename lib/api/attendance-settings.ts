@@ -18,6 +18,9 @@ export type AttendanceSettings = {
   balanceMode: BalanceMode;
   sessionCeilingMinutes: number;
   breakCeilingMinutes: number;
+  selfServiceEnabled: boolean;
+  /** Days back from today employees may correct their own attendance; null is no limit. */
+  selfServiceDays: number | null;
   /** Enabled *and* on a live paid plan. False the moment the subscription lapses. */
   active: boolean;
 };
@@ -35,6 +38,8 @@ export type UpdateAttendanceSettingsInput = {
   balanceMode?: BalanceMode;
   sessionCeilingMinutes?: number;
   breakCeilingMinutes?: number;
+  selfServiceEnabled?: boolean;
+  selfServiceDays?: number | null;
 };
 
 const scoped = (path: string, organizationId?: string | null) =>

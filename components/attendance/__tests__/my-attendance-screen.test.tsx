@@ -2,11 +2,19 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { screen } from "@testing-library/react";
 import { NO_SESSION_LOCATION, renderWithClient } from "@/lib/test-utils";
 import userEvent from "@testing-library/user-event";
-import type { AttendanceMonth, AttendanceState } from "@/lib/api/attendance";
+import type {
+  AttendanceDaySessions,
+  AttendanceMonth,
+  AttendanceSession,
+  AttendanceState,
+} from "@/lib/api/attendance";
 import { MyAttendanceScreen } from "../my-attendance-screen";
 
 const query = { data: undefined as AttendanceState | undefined, isPending: false };
 const idle = { mutate: vi.fn(), isPending: false, error: null };
+
+/** Earlier days the Day view reads, keyed by business date. */
+const pastDays = new Map<string, AttendanceDaySessions>();
 
 /** Every month asked for, keyed the way the screen asks for it. */
 const months = new Map<string, AttendanceMonth>();
@@ -26,9 +34,13 @@ vi.mock("@/lib/api/queries", () => ({
   useEndBreak: () => idle,
   useMySettings: () => ({ data: { attendanceLocationNoticeDismissed: true } }),
   useUpdateMySettings: () => idle,
-  // The correction dialog hangs off today's card; it reads nothing until it
-  // is opened, which none of these tests does.
-  useAttendanceDay: () => ({ data: undefined, isPending: false, error: null }),
+  // The Day view reads an earlier day through the same endpoint the correction
+  // dialog uses; the dialog itself is never opened here.
+  useAttendanceDay: (params: { businessDate: string } | null) => ({
+    data: params ? pastDays.get(params.businessDate) : undefined,
+    isPending: false,
+    error: null,
+  }),
   useSessionEvents: () => ({ data: undefined, isPending: false, error: null }),
   useCorrectSession: () => idle,
   useCorrectBreak: () => idle,
@@ -44,6 +56,7 @@ const state = (overrides: Partial<AttendanceState> = {}): AttendanceState => ({
   employmentEnded: false,
   active: true,
   locationEnabled: false,
+  selfService: { enabled: true, days: 0 },
   timezone: ZONE,
   businessDate: "2026-09-11",
   openSession: null,
@@ -59,6 +72,7 @@ describe("MyAttendanceScreen", () => {
     query.isPending = false;
     months.clear();
     monthRequests.length = 0;
+    pastDays.clear();
   });
 
   it("carries the clock beside today, and says when nothing is recorded", () => {
@@ -332,10 +346,150 @@ describe("MyAttendanceScreen", () => {
       expect(monthRequests).toContain("2026-8");
     });
 
-    it("keeps the range stepper off the day the clock is on", () => {
+    it("never steps the day past today", () => {
       renderWithClient(<MyAttendanceScreen />);
 
-      expect(screen.queryByRole("button", { name: "Previous" })).toBeNull();
+      expect(screen.getByRole("button", { name: "Next" })).toBeDisabled();
+    });
+  });
+
+  describe("a day and the self-service window", () => {
+    const worked = (businessDate: string, overrides: Partial<AttendanceSession> = {}) => ({
+      id: `session-${businessDate}`,
+      businessDate,
+      startedAt: `${businessDate}T06:00:00Z`,
+      endedAt: `${businessDate}T14:00:00Z`,
+      timezone: ZONE,
+      closedBy: "USER" as const,
+      ...NO_SESSION_LOCATION,
+      open: false,
+      breaks: [],
+      ...overrides,
+    });
+
+    const onDay = (businessDate: string, sessions: AttendanceSession[]) =>
+      pastDays.set(businessDate, {
+        organizationId: "org-1",
+        employmentId: "emp-1",
+        userId: "user-1",
+        businessDate,
+        timezone: ZONE,
+        sessions,
+      });
+
+    it("steps back to an earlier day and returns to today", async () => {
+      onDay("2026-09-10", [worked("2026-09-10")]);
+      renderWithClient(<MyAttendanceScreen />);
+
+      await userEvent.click(screen.getByRole("button", { name: "Previous" }));
+      expect(screen.getAllByText("Thursday, September 10").length).toBeGreaterThan(0);
+      expect(screen.getByText("08:00 – 16:00")).toBeInTheDocument();
+
+      await userEvent.click(screen.getByRole("button", { name: "Today" }));
+      expect(screen.getByText("Nothing recorded today yet.")).toBeInTheDocument();
+    });
+
+    it("offers a correction on an earlier day inside the window", async () => {
+      query.data = state({ selfService: { enabled: true, days: 7 } });
+      onDay("2026-09-10", [worked("2026-09-10")]);
+      renderWithClient(<MyAttendanceScreen />);
+
+      await userEvent.click(screen.getByRole("button", { name: "Previous" }));
+
+      expect(screen.getByRole("button", { name: "Correct" })).toBeInTheDocument();
+      expect(
+        screen.getByText(
+          "You can enter and correct your attendance for today and the 7 days before it. Earlier days go through your admin."
+        )
+      ).toBeInTheDocument();
+    });
+
+    it("hides the correction on a day outside the window, and says who to ask", async () => {
+      query.data = state({ selfService: { enabled: true, days: 0 } });
+      onDay("2026-09-10", [worked("2026-09-10")]);
+      renderWithClient(<MyAttendanceScreen />);
+
+      await userEvent.click(screen.getByRole("button", { name: "Previous" }));
+
+      expect(screen.queryByRole("button", { name: "Correct" })).not.toBeInTheDocument();
+      expect(
+        screen.getByText(
+          "Only an admin can change a day this old. You can enter and correct today. For anything earlier, ask a group admin or an organization admin."
+        )
+      ).toBeInTheDocument();
+    });
+
+    it("offers a correction on an earlier day still holding an open session", async () => {
+      query.data = state({ selfService: { enabled: true, days: 0 } });
+      onDay("2026-09-10", [worked("2026-09-10", { endedAt: null, open: true })]);
+      renderWithClient(<MyAttendanceScreen />);
+
+      await userEvent.click(screen.getByRole("button", { name: "Previous" }));
+
+      expect(screen.getByRole("button", { name: "Correct" })).toBeInTheDocument();
+    });
+
+    it("offers only the open session of an earlier day outside the window", async () => {
+      query.data = state({ selfService: { enabled: true, days: 0 } });
+      onDay("2026-09-10", [
+        worked("2026-09-10", { id: "closed" }),
+        worked("2026-09-10", {
+          id: "open",
+          startedAt: "2026-09-10T15:00:00Z",
+          endedAt: null,
+          open: true,
+        }),
+      ]);
+      renderWithClient(<MyAttendanceScreen />);
+
+      await userEvent.click(screen.getByRole("button", { name: "Previous" }));
+      await userEvent.click(screen.getByRole("button", { name: "Correct" }));
+
+      expect(screen.getByTestId("correction-session-open")).toBeInTheDocument();
+      expect(screen.queryByTestId("correction-session-closed")).not.toBeInTheDocument();
+      expect(
+        screen.getByText(
+          "Sessions outside your window are left out here. Only an admin can change them."
+        )
+      ).toBeInTheDocument();
+    });
+
+    it("offers today's correction with the window on at 0 days", () => {
+      query.data = state({ sessions: [worked("2026-09-11")] });
+      renderWithClient(<MyAttendanceScreen />);
+
+      expect(screen.getByRole("button", { name: "Edit today's times" })).toBeInTheDocument();
+    });
+
+    it("with self-service off, offers no correction even today and says it goes through an admin", () => {
+      query.data = state({
+        selfService: { enabled: false, days: 0 },
+        sessions: [worked("2026-09-11")],
+      });
+      renderWithClient(<MyAttendanceScreen />);
+
+      expect(screen.queryByRole("button", { name: "Edit today's times" })).not.toBeInTheDocument();
+      expect(
+        screen.getByText(
+          "Your organization manages attendance corrections through an admin. To change a time or add a missed day, ask a group admin or an organization admin."
+        )
+      ).toBeInTheDocument();
+    });
+
+    it("keeps an ended Employment's day readable and says only an admin can change it", () => {
+      query.data = state({
+        employmentEnded: true,
+        selfService: { enabled: true, days: null },
+        sessions: [worked("2026-09-11")],
+      });
+      renderWithClient(<MyAttendanceScreen />);
+
+      expect(screen.queryByRole("button", { name: "Edit today's times" })).not.toBeInTheDocument();
+      expect(
+        screen.getByText(
+          "Your employment here has ended. Your attendance stays readable, and only an admin can change it."
+        )
+      ).toBeInTheDocument();
     });
   });
 });

@@ -51,6 +51,7 @@ import { useViewerRoles } from "@/lib/viewer/use-viewer-roles";
 import { cn } from "@/lib/utils";
 import { BalanceChip, DayFlags, excludedSurface, isExcluded } from "./attendance-figures";
 import { CorrectionDialog } from "./correction-dialog";
+import { SelfServiceLine } from "./self-service-line";
 
 /** Who and which day a correction was asked for. */
 type Correcting = { userId: string; name: string; businessDate: string };
@@ -785,6 +786,11 @@ export function TeamAttendanceScreen() {
         </p>
       ) : team ? (
         <>
+          <SelfServiceLine
+            selfService={team.selfService}
+            canChange={team.scope === "ORGANIZATION"}
+          />
+
           <InNowStrip team={team} locale={locale} />
 
           {team.people.length === 0 ? (
