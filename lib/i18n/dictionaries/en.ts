@@ -227,6 +227,11 @@ export const en = {
     rangeFailed: "Could not load your attendance.",
     enteredMark: "Entered",
     enteredLegend: "Entered after the fact",
+    changedDayCell: "Changed later",
+    changedSessionMark: "Changed after the day",
+    changedMonthLegend: "Changed after the day, until an admin corrects it or marks it checked",
+    changedNotice:
+      "You changed this session after its day. Your admin sees it flagged until they have checked it.",
     addSession: "Add session",
     emptyPastDayPrompt: "Forgot to clock? Add the session with its start and end.",
     addSessionOn: (day: string) => `Add a session on ${day}`,
@@ -263,6 +268,8 @@ export const en = {
     legendExcluded: "Clocked in on an excluded day, counts toward the month",
     legendHatched: "Hatched: excluded day",
     legendEntered: "Recorded after the fact, for good",
+    legendChanged:
+      "Changed by the person after the day, until an admin corrects it or marks it checked",
     addSession: "Add",
     addSessionFor: (person: string, day: string) => `Add a session for ${person} on ${day}`,
     previousDay: "Previous day",
@@ -316,6 +323,15 @@ export const en = {
     enteredDeleteHint: "You entered this session, so you can delete it. Its history stays.",
     enteredByAdminHint: "Entered by an admin, so it can be corrected but not deleted.",
     enteredBy: (person: string) => `Entered by ${person}`,
+    changedBy: (person: string) => `Changed by ${person} after the day`,
+    changedByNotice: (person: string) =>
+      `${person} changed this session after its day. Saving a correction clears the flag. If the change is right, mark it as checked.`,
+    theEmployee: "The employee",
+    pastDayNotice:
+      "This day has passed. Once you save, your admin sees the session marked as changed after the day until they check it.",
+    markChecked: "Mark as checked",
+    markingChecked: "Marking…",
+    markCheckedEditedHint: "Save or undo your changes before marking the session as checked.",
     start: "Start",
     end: "End",
     sessionEntered: (from: string, to: string) => `Session entered, ${from} to ${to}`,
@@ -351,6 +367,8 @@ export const en = {
         "An entered session has to have ended already. Still working? Clock in, then correct the start.",
       PLAN_LIMIT:
         "Attendance is paused for your organization, so its history can be read but not changed. Ask an org admin about it.",
+      ADMIN_ONLY: "Only an admin can mark a session as checked.",
+      SESSION_NOT_CHANGED: "This session has no change after its day to check.",
     },
     events: {
       CLOCK_IN: "Clocked in",
@@ -364,6 +382,7 @@ export const en = {
       SESSION_DELETED: "Session deleted",
       SESSION_CREATED: "Session entered",
       BREAK_ADDED: "Break added",
+      SESSION_CHECKED: "Marked as checked",
     },
   },
 

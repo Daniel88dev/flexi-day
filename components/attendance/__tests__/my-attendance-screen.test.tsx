@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { screen } from "@testing-library/react";
-import { NO_SESSION_LOCATION, renderWithClient } from "@/lib/test-utils";
+import { NO_SESSION_LOCATION, renderWithClient, withClient } from "@/lib/test-utils";
 import userEvent from "@testing-library/user-event";
 import type {
   AttendanceDaySessions,
@@ -48,6 +48,7 @@ vi.mock("@/lib/api/queries", () => ({
   useRemoveSession: () => idle,
   useAddBreak: () => idle,
   useEnterSession: () => idle,
+  useMarkSessionChecked: () => idle,
 }));
 
 const ZONE = "Europe/Prague";
@@ -599,6 +600,25 @@ describe("MyAttendanceScreen", () => {
         expect(screen.getAllByText("Entered")).toHaveLength(1);
         // A day that already holds sessions still takes another.
         expect(screen.getByRole("button", { name: "Add session" })).toBeInTheDocument();
+      });
+
+      it("marks a session its owner changed after the day, says the admin sees it, and drops both once cleared", async () => {
+        query.data = state({ selfService: { enabled: true, days: 7 } });
+        onDay("2026-09-08", [worked("2026-09-08", { changedAfterDay: true })]);
+        const { rerender } = renderWithClient(<MyAttendanceScreen />);
+
+        await stepBack(3);
+
+        const notice =
+          "You changed this session after its day. Your admin sees it flagged until they have checked it.";
+        expect(screen.getByText("Changed after the day")).toBeInTheDocument();
+        expect(screen.getByText(notice)).toBeInTheDocument();
+
+        onDay("2026-09-08", [worked("2026-09-08")]);
+        rerender(withClient(<MyAttendanceScreen />));
+
+        expect(screen.queryByText("Changed after the day")).not.toBeInTheDocument();
+        expect(screen.queryByText(notice)).not.toBeInTheDocument();
       });
     });
 

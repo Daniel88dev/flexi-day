@@ -24,6 +24,7 @@ const correctBreak = { mutateAsync: vi.fn(), isPending: false };
 const removeBreak = { mutateAsync: vi.fn(), isPending: false };
 const removeSession = { mutateAsync: vi.fn(), isPending: false };
 const addBreak = { mutateAsync: vi.fn(), isPending: false };
+const markChecked = { mutateAsync: vi.fn(), isPending: false };
 
 vi.mock("@/lib/api/queries", () => ({
   useAttendanceDay: () => day,
@@ -33,6 +34,7 @@ vi.mock("@/lib/api/queries", () => ({
   useRemoveBreak: () => removeBreak,
   useRemoveSession: () => removeSession,
   useAddBreak: () => addBreak,
+  useMarkSessionChecked: () => markChecked,
 }));
 
 const session = (overrides: Partial<AttendanceSession> = {}): AttendanceSession => ({
@@ -90,7 +92,14 @@ describe("CorrectionDialog", () => {
     day.error = null;
     events.data = [];
     events.isPending = false;
-    for (const mutation of [correctSession, correctBreak, removeBreak, removeSession, addBreak]) {
+    for (const mutation of [
+      correctSession,
+      correctBreak,
+      removeBreak,
+      removeSession,
+      addBreak,
+      markChecked,
+    ]) {
       mutation.mutateAsync.mockReset();
       mutation.mutateAsync.mockResolvedValue(session());
       mutation.isPending = false;
@@ -566,6 +575,16 @@ describe("CorrectionDialog", () => {
       ).toBeInTheDocument();
     });
 
+    it("keeps delete from the reader when an admin entered it for them today", () => {
+      day.data = answer([session({ origin: "ENTERED", enteredByUserId: "dana" })]);
+      open({ ownDay: { today: "2026-09-09", selfService: { enabled: true, days: 7 } } });
+
+      expect(screen.queryByRole("button", { name: "Delete session" })).not.toBeInTheDocument();
+      expect(
+        screen.getByText("Entered by an admin, so it can be corrected but not deleted.")
+      ).toBeInTheDocument();
+    });
+
     it("keeps delete from the reader when an admin entered it for them", () => {
       day.data = answer([session({ origin: "ENTERED", enteredByUserId: "dana" })]);
       open({ ownDay: { today: "2026-09-10", selfService: { enabled: true, days: 7 } } });
@@ -574,6 +593,130 @@ describe("CorrectionDialog", () => {
       expect(
         screen.getByText("Entered by an admin, so it can be corrected but not deleted.")
       ).toBeInTheDocument();
+    });
+  });
+
+  describe("a session changed after its day", () => {
+    beforeEach(() => {
+      day.data = answer([session({ changedAfterDay: true })]);
+    });
+
+    it("tells the admin who changed it, and offers to mark it checked", async () => {
+      const onOpenChange = vi.fn();
+      open({ userId: "user-1", personName: "Noah Weber", onOpenChange });
+
+      expect(screen.getByText("Changed by Noah Weber after the day")).toBeInTheDocument();
+      expect(
+        screen.getByText(/Noah Weber changed this session after its day\./)
+      ).toBeInTheDocument();
+
+      await userEvent.click(screen.getByRole("button", { name: "Mark as checked" }));
+
+      expect(markChecked.mutateAsync).toHaveBeenCalledWith("session-1");
+      expect(correctSession.mutateAsync).not.toHaveBeenCalled();
+      expect(onOpenChange).toHaveBeenCalledWith(false);
+    });
+
+    it("says why when the API refuses to mark it", async () => {
+      markChecked.mutateAsync.mockRejectedValue(
+        new ApiError(409, "server wording", undefined, [
+          { message: "server wording", context: { reason: "SESSION_NOT_CHANGED" } },
+        ])
+      );
+      open({ userId: "user-1", personName: "Noah Weber" });
+
+      await userEvent.click(screen.getByRole("button", { name: "Mark as checked" }));
+
+      expect(
+        await screen.findByText("This session has no change after its day to check.")
+      ).toBeInTheDocument();
+    });
+
+    it("holds mark as checked back while the form carries an unsaved edit", async () => {
+      const user = userEvent.setup();
+      open({ userId: "user-1", personName: "Noah Weber" });
+
+      await user.clear(screen.getByLabelText("Clock out"));
+      await user.type(screen.getByLabelText("Clock out"), "17:30");
+
+      expect(screen.getByRole("button", { name: "Mark as checked" })).toBeDisabled();
+      expect(
+        screen.getByText("Save or undo your changes before marking the session as checked.")
+      ).toBeInTheDocument();
+
+      await user.clear(screen.getByLabelText("Clock out"));
+      await user.type(screen.getByLabelText("Clock out"), "17:10");
+
+      expect(screen.getByRole("button", { name: "Mark as checked" })).toBeEnabled();
+    });
+
+    it("offers no mark as checked on a session nobody changed after its day", () => {
+      day.data = answer([session()]);
+      open({ userId: "user-1", personName: "Noah Weber" });
+
+      expect(screen.queryByRole("button", { name: "Mark as checked" })).not.toBeInTheDocument();
+      expect(screen.queryByText(/after the day/)).not.toBeInTheDocument();
+    });
+
+    it("never offers the employee to mark their own change checked", () => {
+      open({ ownDay: { today: "2026-09-10", selfService: { enabled: true, days: 7 } } });
+
+      expect(screen.queryByRole("button", { name: "Mark as checked" })).not.toBeInTheDocument();
+      expect(screen.getByText("Changed after the day")).toBeInTheDocument();
+    });
+
+    it("names the admin who marked it checked in the timeline", () => {
+      events.data = [
+        {
+          id: "event-checked",
+          sessionId: "session-1",
+          eventType: "SESSION_CHECKED",
+          user: { id: "owner", name: "Olivia Owner", initials: "OO", avatarColor: "#000" },
+          before: { changedAfterDay: true },
+          after: { changedAfterDay: false },
+          createdAt: "2026-09-11T07:00:00.000Z",
+        },
+      ];
+      open({ userId: "user-1", personName: "Noah Weber" });
+
+      expect(screen.getByTestId("correction-history")).toHaveTextContent(
+        "Marked as checked. Olivia Owner"
+      );
+    });
+  });
+
+  describe("the employee's own past day", () => {
+    const warning =
+      "This day has passed. Once you save, your admin sees the session marked as changed after the day until they check it.";
+
+    it("warns before saving that the admin will see the change flagged", () => {
+      open({ ownDay: { today: "2026-09-10", selfService: { enabled: true, days: 7 } } });
+
+      expect(screen.getByText(warning)).toBeInTheDocument();
+    });
+
+    it("says nothing to an admin correcting their own past day, which is never flagged", () => {
+      open({
+        ownDay: {
+          today: "2026-09-10",
+          selfService: { enabled: true, days: 7 },
+          administersOwn: true,
+        },
+      });
+
+      expect(screen.queryByText(warning)).not.toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Save correction" })).toBeInTheDocument();
+    });
+
+    it("says nothing on today's session, or to an admin", () => {
+      const { unmount } = open({
+        ownDay: { today: "2026-09-09", selfService: { enabled: true, days: 7 } },
+      });
+      expect(screen.queryByText(warning)).not.toBeInTheDocument();
+      unmount();
+
+      open({ userId: "user-1", personName: "Noah Weber" });
+      expect(screen.queryByText(warning)).not.toBeInTheDocument();
     });
   });
 

@@ -15,6 +15,7 @@ import {
   getAttendanceState,
   getSessionEvents,
   getTeamAttendance,
+  markSessionChecked,
   removeBreak,
   removeSession,
   startBreak,
@@ -163,6 +164,13 @@ describe("the correction endpoints", () => {
     expect(apiMock).toHaveBeenCalledWith("/api/attendance/sessions/s%201/breaks", {
       method: "POST",
       body: span,
+    });
+  });
+
+  it("marks a session checked with a bare POST to its own check endpoint", async () => {
+    await markSessionChecked("s 1");
+    expect(apiMock).toHaveBeenCalledWith("/api/attendance/sessions/s%201/check", {
+      method: "POST",
     });
   });
 

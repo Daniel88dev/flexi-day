@@ -262,6 +262,23 @@ describe("MonthView, excluded days", () => {
       expect(screen.getByText("Entered after the fact")).toBeInTheDocument();
     });
 
+    it("marks a day changed after the fact apart from an entered one, and explains it", () => {
+      const changed = month();
+      changed.days[1] = day("2026-09-02", { changedAfterDay: true, flagged: true });
+      renderWithClient(<MonthView month={changed} locale="en" />);
+
+      expect(
+        within(screen.getByTestId("month-day-2026-09-02")).getByText("Changed later")
+      ).toBeInTheDocument();
+      expect(within(screen.getByTestId("month-day-2026-09-02")).queryByText("Entered")).toBeNull();
+      expect(
+        within(screen.getByTestId("month-day-2026-09-01")).queryByText("Changed later")
+      ).toBeNull();
+      expect(
+        screen.getByText("Changed after the day, until an admin corrects it or marks it checked")
+      ).toBeInTheDocument();
+    });
+
     it("offers Add on the days the screen allows, and hands back the date", async () => {
       const onAdd = vi.fn();
       renderWithClient(

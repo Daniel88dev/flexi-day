@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   breakErrors,
   correctionErrors,
+  draftEdited,
   filledSpans,
   resolveBreaks,
   instantAt,
@@ -409,5 +410,50 @@ describe("filledSpans", () => {
         { id: "b2", startedAt: "2026-09-09T11:00:00.000Z", endedAt: null },
       ])
     ).toEqual([{ startedAt: "2026-09-09T10:00:00.000Z", endedAt: "2026-09-09T10:30:00.000Z" }]);
+  });
+});
+
+describe("draftEdited", () => {
+  const lunch: AttendanceBreak = {
+    id: "break-1",
+    sessionId: "session-1",
+    startedAt: "2026-09-09T10:00:00.000Z",
+    endedAt: "2026-09-09T10:30:00.000Z",
+    autoClosed: false,
+    open: false,
+  };
+  const saved = session({ breaks: [lunch] });
+
+  it("is false for the draft the session opens on", () => {
+    expect(draftEdited(saved, sessionDraft(saved, PRAGUE), PRAGUE)).toBe(false);
+  });
+
+  it("is true once a clock-in or clock-out is changed", () => {
+    const draft = sessionDraft(saved, PRAGUE);
+
+    expect(draftEdited(saved, { ...draft, startedAt: "08:00" }, PRAGUE)).toBe(true);
+    expect(draftEdited(saved, { ...draft, endedAt: "" }, PRAGUE)).toBe(true);
+  });
+
+  it("is true once a break is moved or a new one is added", () => {
+    const draft = sessionDraft(saved, PRAGUE);
+
+    expect(
+      draftEdited(
+        saved,
+        { ...draft, breaks: [{ id: "break-1", startedAt: "12:00", endedAt: "12:45" }] },
+        PRAGUE
+      )
+    ).toBe(true);
+    expect(
+      draftEdited(
+        saved,
+        {
+          ...draft,
+          breaks: [...draft.breaks, { id: "new-1", startedAt: "", endedAt: "", isNew: true }],
+        },
+        PRAGUE
+      )
+    ).toBe(true);
   });
 });

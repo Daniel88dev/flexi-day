@@ -83,6 +83,9 @@
   --primary-soft: oklch(0.55 var(--accent-c) var(--accent-h) / 0.1);
   --warm: oklch(0.66 0.14 42);
   --warm-soft: oklch(0.66 0.14 42 / 0.12);
+  /* A self-edit waiting for an admin: blue, so it never reads as the flags' orange. */
+  --review: oklch(0.55 0.13 240);
+  --review-soft: oklch(0.55 0.13 240 / 0.12);
   --danger: oklch(0.58 0.18 25);
   --danger-soft: oklch(0.58 0.18 25 / 0.12);
   --ok: oklch(0.58 0.13 155);
@@ -151,6 +154,8 @@
   --primary-soft: oklch(0.68 var(--accent-c) var(--accent-h) / 0.16);
   --warm: oklch(0.74 0.13 44);
   --warm-soft: oklch(0.74 0.13 44 / 0.16);
+  --review: oklch(0.74 0.11 240);
+  --review-soft: oklch(0.74 0.11 240 / 0.16);
   --danger: oklch(0.7 0.16 25);
   --danger-soft: oklch(0.7 0.16 25 / 0.16);
   --ok: oklch(0.72 0.13 155);

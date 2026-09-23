@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { renderWithClient } from "@/lib/test-utils";
+import { renderWithClient, withClient } from "@/lib/test-utils";
 import type {
   AttendanceTeam,
   AttendanceTeamDay,
@@ -41,6 +41,7 @@ vi.mock("@/lib/api/queries", () => ({
   useRemoveSession: () => idle,
   useAddBreak: () => idle,
   useEnterSession: () => idle,
+  useMarkSessionChecked: () => idle,
 }));
 
 const idle = { mutateAsync: vi.fn(), isPending: false };
@@ -389,6 +390,43 @@ describe("TeamAttendanceScreen", () => {
         within(screen.getByTestId("team-day-noah-2026-09-09")).queryByText("Entered")
       ).toBeNull();
       expect(screen.getByText("Recorded after the fact, for good")).toBeInTheDocument();
+    });
+  });
+
+  describe("sessions changed after the day", () => {
+    it("marks the changed day apart from the other flags, and explains it in the legend", () => {
+      const week = plainWeek();
+      week[2] = day(WEEK[2]!, { changedAfterDay: true, flagged: true });
+      teamQuery.data = team({ people: [person("noah", "Noah Weber", week)] });
+      renderWithClient(<TeamAttendanceScreen />);
+
+      const changed = within(screen.getByTestId("team-day-noah-2026-09-09"));
+      expect(changed.getByText("Changed later")).toBeInTheDocument();
+      expect(changed.queryByText("Auto-closed")).toBeNull();
+      expect(changed.queryByText("Entered")).toBeNull();
+      expect(
+        within(screen.getByTestId("team-day-noah-2026-09-08")).queryByText("Changed later")
+      ).toBeNull();
+      expect(
+        screen.getByText(
+          "Changed by the person after the day, until an admin corrects it or marks it checked"
+        )
+      ).toBeInTheDocument();
+    });
+
+    it("drops the marker once the read comes back cleared", () => {
+      const week = plainWeek();
+      week[2] = day(WEEK[2]!, { changedAfterDay: true, flagged: true });
+      teamQuery.data = team({ people: [person("noah", "Noah Weber", week)] });
+      const { rerender } = renderWithClient(<TeamAttendanceScreen />);
+
+      const cleared = plainWeek();
+      teamQuery.data = team({ people: [person("noah", "Noah Weber", cleared)] });
+      rerender(withClient(<TeamAttendanceScreen />));
+
+      expect(
+        within(screen.getByTestId("team-day-noah-2026-09-09")).queryByText("Changed later")
+      ).toBeNull();
     });
   });
 

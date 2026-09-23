@@ -35,6 +35,7 @@ import {
   correctSession,
   endBreak,
   addBreak,
+  markSessionChecked,
   enterSession,
   getAttendanceDay,
   getAttendanceMonth,
@@ -942,6 +943,9 @@ export const useAddBreak = () =>
   useCorrection(({ sessionId, span }: { sessionId: string; span: AttendanceBreakSpan }) =>
     addBreak(sessionId, span)
   );
+
+export const useMarkSessionChecked = () =>
+  useCorrection((sessionId: string) => markSessionChecked(sessionId));
 
 /**
  * The team dashboard, an admin surface like the roster: `enabled` is the

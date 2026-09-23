@@ -8,6 +8,7 @@ import {
   ChevronRight,
   ClockAlert,
   Play,
+  UserPen,
 } from "lucide-react";
 import { AvatarBubble } from "@/components/brand/avatar-bubble";
 import { Button } from "@/components/ui/button";
@@ -324,6 +325,10 @@ function Legend() {
       <li className={item}>
         <CalendarOff style={{ color: "var(--warm)" }} />
         {t.teamAttendance.legendExcluded}
+      </li>
+      <li className={item}>
+        <UserPen style={{ color: "var(--review)" }} />
+        {t.teamAttendance.legendChanged}
       </li>
       <li className={item}>
         <EnteredMark />

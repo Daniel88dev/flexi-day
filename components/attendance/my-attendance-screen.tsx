@@ -38,7 +38,7 @@ import { useNow } from "@/lib/attendance/use-now";
 import { useTranslation } from "@/lib/i18n/use-translation";
 import { anySessionLocated } from "@/lib/attendance/location";
 import { cn } from "@/lib/utils";
-import { EnteredMark } from "./attendance-figures";
+import { ChangedMark, ChangedNotice, EnteredMark } from "./attendance-figures";
 import { ClockWidget } from "./clock-widget";
 import { CorrectionDialog } from "./correction-dialog";
 import { DayTotals } from "./day-totals";
@@ -269,14 +269,20 @@ function DayView({ date, today }: { date: string; today: string }) {
                 <div key={session.id} className="flex flex-col gap-2">
                   {/* The session's own close. A break the sweep closed is
                       flagged on its own row instead. */}
-                  {session.closedBy === "SWEEP" || session.origin === "ENTERED" ? (
+                  {session.closedBy === "SWEEP" ||
+                  session.origin === "ENTERED" ||
+                  session.changedAfterDay ? (
                     <div className="flex flex-wrap items-center gap-2">
                       {session.origin === "ENTERED" ? <EnteredMark /> : null}
+                      {session.changedAfterDay ? <ChangedMark /> : null}
                       {session.closedBy === "SWEEP" ? <AutoClosedFlag /> : null}
                     </div>
                   ) : null}
                   <Timeline session={session} now={now} />
                   {showLocation ? <SessionLocation session={session} /> : null}
+                  {session.changedAfterDay ? (
+                    <ChangedNotice>{t.clock.changedNotice}</ChangedNotice>
+                  ) : null}
                 </div>
               ))}
               <DayTotals sessions={sessions} now={now} />
@@ -293,7 +299,11 @@ function DayView({ date, today }: { date: string; today: string }) {
         <CorrectionDialog
           organizationId={state.organizationId}
           businessDate={date}
-          ownDay={{ today, selfService: state.selfService }}
+          ownDay={{
+            today,
+            selfService: state.selfService,
+            administersOwn: state.administersOwnAttendance ?? false,
+          }}
           open={correcting}
           onOpenChange={setCorrecting}
           onAddSession={

@@ -229,6 +229,12 @@ export const cs: Dictionary = {
     rangeFailed: "Docházku se nepodařilo načíst.",
     enteredMark: "Zadáno",
     enteredLegend: "Zadáno dodatečně",
+    changedDayCell: "Změněno později",
+    changedSessionMark: "Změněno po skončení dne",
+    changedMonthLegend:
+      "Změněno po skončení dne, dokud to správce neopraví nebo neoznačí jako zkontrolované",
+    changedNotice:
+      "Tuto směnu jsi změnil(a) až po jejím dni. Správce ji uvidí označenou, dokud ji nezkontroluje.",
     addSession: "Přidat směnu",
     emptyPastDayPrompt: "Zapomněl(a) ses zapsat? Přidej směnu s jejím začátkem a koncem.",
     addSessionOn: (day: string) => `Přidat směnu: ${day}`,
@@ -266,6 +272,8 @@ export const cs: Dictionary = {
     legendExcluded: "Příchod v den volna, počítá se do měsíce",
     legendHatched: "Šrafované: den volna",
     legendEntered: "Zadáno dodatečně, natrvalo",
+    legendChanged:
+      "Změněno samotným člověkem po skončení dne, dokud to správce neopraví nebo neoznačí jako zkontrolované",
     addSession: "Přidat",
     addSessionFor: (person: string, day: string) => `Přidat směnu: ${person}, ${day}`,
     previousDay: "Předchozí den",
@@ -319,6 +327,15 @@ export const cs: Dictionary = {
     enteredDeleteHint: "Tuto směnu jsi zadal(a) ty, takže ji můžeš smazat. Její historie zůstane.",
     enteredByAdminHint: "Zadal ji správce, takže jde opravit, ale ne smazat.",
     enteredBy: (person: string) => `Zadal(a) ${person}`,
+    changedBy: (person: string) => `${person} změnil(a) po skončení dne`,
+    changedByNotice: (person: string) =>
+      `${person} změnil(a) tuto směnu až po jejím dni. Uložení opravy označení zruší. Pokud je změna správná, označ ji jako zkontrolovanou.`,
+    theEmployee: "Zaměstnanec",
+    pastDayNotice:
+      "Tento den už uplynul. Po uložení uvidí správce směnu označenou jako změněnou po skončení dne, dokud ji nezkontroluje.",
+    markChecked: "Označit jako zkontrolované",
+    markingChecked: "Označuji…",
+    markCheckedEditedHint: "Než směnu označíš jako zkontrolovanou, ulož nebo vrať své změny.",
     start: "Začátek",
     end: "Konec",
     sessionEntered: (from: string, to: string) => `Zadána směna, ${from} až ${to}`,
@@ -353,6 +370,8 @@ export const cs: Dictionary = {
         "Zadaná směna už musí být u konce. Pořád pracuješ? Zapiš příchod a pak oprav začátek.",
       PLAN_LIMIT:
         "Docházka je ve tvé organizaci pozastavená, takže historii jde číst, ale ne měnit. Obrať se na správce organizace.",
+      ADMIN_ONLY: "Jako zkontrolovanou může směnu označit jen správce.",
+      SESSION_NOT_CHANGED: "Tato směna nemá žádnou změnu po skončení dne ke kontrole.",
     },
     events: {
       CLOCK_IN: "Příchod",
@@ -366,6 +385,7 @@ export const cs: Dictionary = {
       SESSION_DELETED: "Smazána směna",
       SESSION_CREATED: "Zadána směna",
       BREAK_ADDED: "Přidána pauza",
+      SESSION_CHECKED: "Označeno jako zkontrolované",
     },
   },
 

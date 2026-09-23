@@ -1,6 +1,6 @@
 "use client";
 
-import { Plus } from "lucide-react";
+import { Plus, UserPen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { AttendanceBalanceMode, AttendanceDay, AttendanceMonth } from "@/lib/api/attendance";
 import { formatMinutes, formatSignedMinutes } from "@/lib/attendance/duration";
@@ -165,6 +165,13 @@ export function MonthView({
       <p className="flex items-center gap-1.5 text-xs" style={{ color: "var(--text-faint)" }}>
         <EnteredMark />
         {t.clock.enteredLegend}
+      </p>
+      <p
+        className="flex items-center gap-1.5 text-xs [&_svg]:size-[14px]"
+        style={{ color: "var(--text-faint)" }}
+      >
+        <UserPen style={{ color: "var(--review)" }} aria-hidden />
+        {t.clock.changedMonthLegend}
       </p>
 
       <ul className="flex flex-col gap-2 sm:hidden">

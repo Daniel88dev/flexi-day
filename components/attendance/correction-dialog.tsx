@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { CalendarPlus, Trash2 } from "lucide-react";
+import { CalendarPlus, Check, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -20,12 +20,14 @@ import {
   useAttendanceDay,
   useCorrectBreak,
   useCorrectSession,
+  useMarkSessionChecked,
   useRemoveBreak,
   useRemoveSession,
   useSessionEvents,
 } from "@/lib/api/queries";
 import {
   correctionErrors,
+  draftEdited,
   sessionDraft,
   toBreakPatch,
   toNewBreaks,
@@ -41,7 +43,7 @@ import {
 import { formatBusinessDay, formatClockTime } from "@/lib/attendance/today";
 import { useTranslation } from "@/lib/i18n/use-translation";
 import type { Dictionary } from "@/lib/i18n";
-import { EnteredMark } from "./attendance-figures";
+import { ChangedMark, ChangedNotice, EnteredMark } from "./attendance-figures";
 import { BreakRows, breakMessage, useBreakDrafts } from "./break-rows";
 
 /**
@@ -154,21 +156,30 @@ function SessionCorrection({
   session,
   timezone,
   ownDay,
+  personName,
   onDone,
 }: {
   session: AttendanceSession;
   timezone: string | null;
-  ownDay?: { today: string; userId: string };
+  ownDay?: { today: string; userId: string; administersOwn: boolean };
+  personName?: string;
   onDone: () => void;
 }) {
   const { t } = useTranslation();
   const events = useSessionEvents(session.id);
   const entered = session.origin === "ENTERED";
+  const changed = session.changedAfterDay === true;
+  const adminReviewing = !ownDay && changed;
+  // Only the owner's own writes set the flag; an admin's never do, their own day included.
+  const flagsOnSave =
+    ownDay !== undefined && !ownDay.administersOwn && session.businessDate < ownDay.today;
   // Only the mark's name comes from the history; who may delete goes by the session.
   const created = events.data?.find((event) => event.eventType === "SESSION_CREATED");
   const enteredByOwner =
     ownDay !== undefined && entered && session.enteredByUserId === ownDay.userId;
-  const deletable = !ownDay || session.businessDate === ownDay.today || enteredByOwner;
+  // The API's rule: an entered session only by whoever entered it, whatever its
+  // date; a clocked one only on its own day.
+  const deletable = !ownDay || (entered ? enteredByOwner : session.businessDate === ownDay.today);
   const [times, setTimes] = useState(() => sessionDraft(session, timezone));
   const rows = useBreakDrafts(() => sessionDraft(session, timezone).breaks);
   const draft: SessionDraft = { ...times, breaks: rows.breaks };
@@ -180,15 +191,18 @@ function SessionCorrection({
   const removeBreak = useRemoveBreak();
   const removeSession = useRemoveSession();
   const addBreak = useAddBreak();
+  const markChecked = useMarkSessionChecked();
 
   const errors = correctionErrors(draft, session.businessDate, timezone);
+  const edited = draftEdited(session, draft, timezone);
   const invalid = Boolean(errors.startedAt ?? errors.endedAt ?? errors.breaks);
   const saving =
     correctSession.isPending ||
     correctBreak.isPending ||
     removeBreak.isPending ||
     removeSession.isPending ||
-    addBreak.isPending;
+    addBreak.isPending ||
+    markChecked.isPending;
 
   const fieldMessage = (error: CorrectionError | undefined) =>
     error ? t.corrections.errors[error] : undefined;
@@ -259,6 +273,16 @@ function SessionCorrection({
     }
   };
 
+  const markAsChecked = async () => {
+    setFailure(null);
+    try {
+      await markChecked.mutateAsync(session.id);
+      onDone();
+    } catch (error) {
+      setFailure(correctionMessage(error, t));
+    }
+  };
+
   const swept = session.closedBy === "SWEEP";
 
   return (
@@ -267,10 +291,19 @@ function SessionCorrection({
       style={{ borderColor: "var(--border)" }}
       data-testid={`correction-session-${session.id}`}
     >
-      {entered ? (
-        <EnteredMark
-          label={created?.user ? t.corrections.enteredBy(created.user.name) : undefined}
-        />
+      {entered || changed ? (
+        <div className="flex flex-wrap items-center gap-2">
+          {entered ? (
+            <EnteredMark
+              label={created?.user ? t.corrections.enteredBy(created.user.name) : undefined}
+            />
+          ) : null}
+          {changed ? (
+            <ChangedMark
+              label={adminReviewing && personName ? t.corrections.changedBy(personName) : undefined}
+            />
+          ) : null}
+        </div>
       ) : null}
       <div className="grid gap-3 sm:grid-cols-2">
         <div className="flex flex-col gap-1.5">
@@ -318,6 +351,13 @@ function SessionCorrection({
 
       <History sessionId={session.id} timezone={timezone} />
 
+      {adminReviewing ? (
+        <ChangedNotice>
+          {t.corrections.changedByNotice(personName ?? t.corrections.theEmployee)}
+        </ChangedNotice>
+      ) : null}
+      {flagsOnSave ? <ChangedNotice>{t.corrections.pastDayNotice}</ChangedNotice> : null}
+
       {failure ? (
         <p className="text-sm" style={{ color: "var(--destructive)" }} role="alert">
           {failure}
@@ -358,10 +398,29 @@ function SessionCorrection({
           </Button>
         )}
 
-        <Button type="button" disabled={invalid || saving} onClick={() => void save()}>
-          {saving ? t.corrections.saving : t.corrections.save}
-        </Button>
+        <span className="flex flex-wrap items-center gap-2">
+          {adminReviewing ? (
+            <Button
+              type="button"
+              variant="outline"
+              disabled={saving || edited}
+              onClick={() => void markAsChecked()}
+            >
+              <Check />
+              {markChecked.isPending ? t.corrections.markingChecked : t.corrections.markChecked}
+            </Button>
+          ) : null}
+          <Button type="button" disabled={invalid || saving} onClick={() => void save()}>
+            {saving && !markChecked.isPending ? t.corrections.saving : t.corrections.save}
+          </Button>
+        </span>
       </div>
+
+      {adminReviewing && edited ? (
+        <p className="text-xs" style={{ color: "var(--text-muted)" }}>
+          {t.corrections.markCheckedEditedHint}
+        </p>
+      ) : null}
 
       {ownDay && enteredByOwner && session.businessDate !== ownDay.today ? (
         <p className="text-xs" style={{ color: "var(--text-muted)" }}>
@@ -401,7 +460,7 @@ export function CorrectionDialog({
   personName?: string;
   businessDate: string;
   /** The reader's own day, under the organization's self-service window. */
-  ownDay?: { today: string; selfService: SelfServiceWindow };
+  ownDay?: { today: string; selfService: SelfServiceWindow; administersOwn?: boolean };
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onAddSession?: () => void;
@@ -475,9 +534,14 @@ export function CorrectionDialog({
                   .join(",")}`}
                 session={session}
                 timezone={timezone}
+                personName={personName}
                 ownDay={
                   ownDay && query.data
-                    ? { today: ownDay.today, userId: query.data.userId }
+                    ? {
+                        today: ownDay.today,
+                        userId: query.data.userId,
+                        administersOwn: ownDay.administersOwn ?? false,
+                      }
                     : undefined
                 }
                 onDone={() => onOpenChange(false)}

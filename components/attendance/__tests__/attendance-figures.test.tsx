@@ -1,7 +1,15 @@
 import { describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
 import type { AttendanceDay } from "@/lib/api/attendance";
-import { BalanceChip, DayFigures, DayFlags, Stat, StatRow } from "../attendance-figures";
+import {
+  BalanceChip,
+  ChangedMark,
+  ChangedNotice,
+  DayFigures,
+  DayFlags,
+  Stat,
+  StatRow,
+} from "../attendance-figures";
 
 const day = (overrides: Partial<AttendanceDay> = {}): AttendanceDay => ({
   businessDate: "2026-09-07",
@@ -81,5 +89,23 @@ describe("DayFigures", () => {
 
     expect(screen.queryByText("-0:30")).toBeNull();
     expect(screen.getByText("8:00")).toBeInTheDocument();
+  });
+});
+
+describe("ChangedMark", () => {
+  it("reads as changed after the day unless given its own label", () => {
+    const { rerender } = render(<ChangedMark />);
+    expect(screen.getByText("Changed after the day")).toBeInTheDocument();
+
+    rerender(<ChangedMark label="Changed by Noah Weber after the day" />);
+    expect(screen.getByText("Changed by Noah Weber after the day")).toBeInTheDocument();
+  });
+});
+
+describe("ChangedNotice", () => {
+  it("renders what it is given", () => {
+    render(<ChangedNotice>Your admin sees it flagged.</ChangedNotice>);
+
+    expect(screen.getByText("Your admin sees it flagged.")).toBeInTheDocument();
   });
 });

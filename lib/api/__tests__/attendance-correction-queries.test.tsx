@@ -11,6 +11,7 @@ const removeBreakMock = vi.fn();
 const removeSessionMock = vi.fn();
 const enterSessionMock = vi.fn();
 const addBreakMock = vi.fn();
+const markCheckedMock = vi.fn();
 
 vi.mock("../attendance", () => ({
   getAttendanceDay: (...args: unknown[]) => dayMock(...args),
@@ -21,6 +22,7 @@ vi.mock("../attendance", () => ({
   removeSession: (...args: unknown[]) => removeSessionMock(...args),
   enterSession: (...args: unknown[]) => enterSessionMock(...args),
   addBreak: (...args: unknown[]) => addBreakMock(...args),
+  markSessionChecked: (...args: unknown[]) => markCheckedMock(...args),
 }));
 
 import {
@@ -30,6 +32,7 @@ import {
   useCorrectBreak,
   useCorrectSession,
   useEnterSession,
+  useMarkSessionChecked,
   useRemoveBreak,
   useRemoveSession,
   useSessionEvents,
@@ -115,6 +118,7 @@ describe("the correction mutations", () => {
       removeSessionMock,
       enterSessionMock,
       addBreakMock,
+      markCheckedMock,
     ]) {
       mock.mockReset();
       mock.mockResolvedValue({ id: "session-1" });
@@ -201,6 +205,24 @@ describe("the correction mutations", () => {
     const { result } = renderHook(() => useCorrectSession(), { wrapper });
     await result.current.mutateAsync({ sessionId: "session-1", patch: { endedAt: null } });
 
+    const keys = invalidate.mock.calls.map((call) => JSON.stringify(call[0]?.queryKey));
+    expect(keys).toEqual([
+      JSON.stringify(["attendance-day"]),
+      JSON.stringify(["attendance-month"]),
+      JSON.stringify(["attendance-team"]),
+      JSON.stringify(["attendance-state"]),
+      JSON.stringify(qk.attendanceEvents("session-1")),
+    ]);
+  });
+
+  it("marks a session checked, then drops every read its flag shows on and its timeline", async () => {
+    const { client, wrapper } = setup();
+    const invalidate = vi.spyOn(client, "invalidateQueries");
+
+    const { result } = renderHook(() => useMarkSessionChecked(), { wrapper });
+    await result.current.mutateAsync("session-1");
+
+    expect(markCheckedMock).toHaveBeenCalledWith("session-1");
     const keys = invalidate.mock.calls.map((call) => JSON.stringify(call[0]?.queryKey));
     expect(keys).toEqual([
       JSON.stringify(["attendance-day"]),

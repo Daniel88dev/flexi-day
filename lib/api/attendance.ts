@@ -29,6 +29,11 @@ export type AttendanceSession = {
   origin?: AttendanceSessionOrigin;
   /** Who entered it; null for a clocked session. Optional as `origin` is. */
   enteredByUserId?: string | null;
+  /**
+   * Its owner changed it after its business date, and no admin has corrected it
+   * or marked it checked since. Optional as `origin` is.
+   */
+  changedAfterDay?: boolean;
   open: boolean;
   /** Null covers declined, never asked and erased alike; the UI must not tell them apart. */
   startLatitude: number | null;
@@ -70,6 +75,11 @@ export type AttendanceState = {
   locationEnabled: boolean;
   /** Which of their own days the person may correct. Admins never meet it. */
   selfService: SelfServiceWindow;
+  /**
+   * The caller administers their own Employment, so their corrections are an
+   * admin's and never flagged. Optional as a backend older than this build sends none.
+   */
+  administersOwnAttendance?: boolean;
   timezone: string | null;
   businessDate: string | null;
   /**
@@ -178,7 +188,9 @@ export type AttendanceDay = {
   excludedClockIn: boolean;
   /** A session on it was entered after the fact. A fact about the day, never a flag. Optional as `origin` is. */
   entered?: boolean;
-  /** Auto-closed, clocked into a day off, or still open on a day that has passed. */
+  /** A session on it was changed by its owner after the day. Optional as `origin` is. */
+  changedAfterDay?: boolean;
+  /** Auto-closed, clocked into a day off, changed after the day, or still open on a day that has passed. */
   flagged: boolean;
   sessions: AttendanceSession[];
 };
@@ -325,7 +337,8 @@ export type AttendanceEventKind =
   | "BREAK_DELETED"
   | "SESSION_DELETED"
   | "SESSION_CREATED"
-  | "BREAK_ADDED";
+  | "BREAK_ADDED"
+  | "SESSION_CHECKED";
 
 /**
  * One entry of the timeline. A null `user` is the ceiling sweep, or an account
@@ -373,6 +386,8 @@ export type AttendanceCorrectionReason =
   | "OVER_CEILING"
   | "BREAK_OVERLAPS"
   | "SESSION_STILL_OPEN"
+  | "ADMIN_ONLY"
+  | "SESSION_NOT_CHANGED"
   | "PLAN_LIMIT";
 
 /** A patch of one end, or both. `endedAt: null` reopens; an absent key changes nothing. */
@@ -421,6 +436,12 @@ export const removeBreak = (breakId: string) =>
 export const removeSession = (sessionId: string) =>
   api<AttendanceSession>(`/api/attendance/sessions/${encodeURIComponent(sessionId)}`, {
     method: "DELETE",
+  });
+
+/** Clears `changedAfterDay` without moving a time: the owner's change was right. Admins only. */
+export const markSessionChecked = (sessionId: string) =>
+  api<AttendanceSession>(`/api/attendance/sessions/${encodeURIComponent(sessionId)}/check`, {
+    method: "POST",
   });
 
 export type AttendanceBreakSpan = { startedAt: string; endedAt: string };

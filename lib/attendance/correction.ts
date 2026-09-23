@@ -112,6 +112,26 @@ export const sessionDraft = (
   })),
 });
 
+/** Whether the form holds anything the session as saved does not. */
+export const draftEdited = (
+  session: AttendanceSession,
+  draft: SessionDraft,
+  timezone: string | null
+): boolean => {
+  const saved = sessionDraft(session, timezone);
+  if (draft.startedAt !== saved.startedAt || draft.endedAt !== saved.endedAt) return true;
+  if (draft.breaks.length !== saved.breaks.length) return true;
+
+  return draft.breaks.some((entry) => {
+    const original = saved.breaks.find((candidate) => candidate.id === entry.id);
+    return (
+      original === undefined ||
+      original.startedAt !== entry.startedAt ||
+      original.endedAt !== entry.endedAt
+    );
+  });
+};
+
 export type ResolvedBreak = { id: string; startedAt: string | null; endedAt: string | null };
 
 type Resolved = {
