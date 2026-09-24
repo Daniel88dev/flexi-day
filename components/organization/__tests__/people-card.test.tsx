@@ -29,6 +29,8 @@ const baseSettings = (overrides: Partial<AttendanceSettings> = {}): AttendanceSe
   organizationId: "org-1",
   attendanceEnabled: true,
   locationEnabled: false,
+  selfServiceEnabled: false,
+  selfServiceDays: 0,
   timezone: "Europe/Prague",
   holidayCountry: "CZ",
   workingDays: [1, 2, 3, 4, 5],

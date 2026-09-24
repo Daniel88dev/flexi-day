@@ -1,7 +1,11 @@
 import { api } from "./client";
 import type { Iso, UserSummary, UUID } from "./types";
+import type { SelfServiceWindow } from "@/lib/attendance/self-service";
 
 export type AttendanceClosedBy = "USER" | "ADMIN" | "SWEEP";
+
+/** How a session came to exist. `ENTERED` is recorded after the fact, and stays so for good. */
+export type AttendanceSessionOrigin = "CLOCKED" | "ENTERED";
 
 export type AttendanceBreak = {
   id: UUID;
@@ -21,6 +25,15 @@ export type AttendanceSession = {
   endedAt: Iso | null;
   timezone: string;
   closedBy: AttendanceClosedBy | null;
+  /** Optional because a backend older than this build sends none; absent reads as clocked. */
+  origin?: AttendanceSessionOrigin;
+  /** Who entered it; null for a clocked session. Optional as `origin` is. */
+  enteredByUserId?: string | null;
+  /**
+   * Its owner changed it after its business date, and no admin has corrected it
+   * or marked it checked since. Optional as `origin` is.
+   */
+  changedAfterDay?: boolean;
   open: boolean;
   /** Null covers declined, never asked and erased alike; the UI must not tell them apart. */
   startLatitude: number | null;
@@ -60,6 +73,13 @@ export type AttendanceState = {
   /** Switched on *and* on a live paid plan. The only thing a lapse changes. */
   active: boolean;
   locationEnabled: boolean;
+  /** Which of their own days the person may correct. Admins never meet it. */
+  selfService: SelfServiceWindow;
+  /**
+   * The caller administers their own Employment, so their corrections are an
+   * admin's and never flagged. Optional as a backend older than this build sends none.
+   */
+  administersOwnAttendance?: boolean;
   timezone: string | null;
   businessDate: string | null;
   /**
@@ -166,7 +186,11 @@ export type AttendanceDay = {
   exclusion: AttendanceExclusion | null;
   /** Somebody at work on a day nobody owed: allowed, counted, and worth a look. */
   excludedClockIn: boolean;
-  /** Auto-closed, clocked into a day off, or still open on a day that has passed. */
+  /** A session on it was entered after the fact. A fact about the day, never a flag. Optional as `origin` is. */
+  entered?: boolean;
+  /** A session on it was changed by its owner after the day. Optional as `origin` is. */
+  changedAfterDay?: boolean;
+  /** Auto-closed, clocked into a day off, changed after the day, or still open on a day that has passed. */
   flagged: boolean;
   sessions: AttendanceSession[];
 };
@@ -271,6 +295,7 @@ export type AttendanceTeam = {
   requiredMinutesPerDay: number;
   breakMinutes: number;
   breakThresholdMinutes: number;
+  selfService: SelfServiceWindow;
   scope: AttendanceTeamScope;
   /** The group the answer was narrowed to, null for the viewer's whole audience. */
   group: AttendanceTeamGroup | null;
@@ -310,7 +335,10 @@ export type AttendanceEventKind =
   | "SESSION_EDITED"
   | "BREAK_EDITED"
   | "BREAK_DELETED"
-  | "SESSION_DELETED";
+  | "SESSION_DELETED"
+  | "SESSION_CREATED"
+  | "BREAK_ADDED"
+  | "SESSION_CHECKED";
 
 /**
  * One entry of the timeline. A null `user` is the ceiling sweep, or an account
@@ -346,7 +374,21 @@ export type AttendanceCorrectionReason =
   | "END_BEFORE_START"
   | "BREAK_OUTSIDE_SESSION"
   | "SESSION_ALREADY_OPEN"
-  | "BREAK_ALREADY_OPEN";
+  | "BREAK_ALREADY_OPEN"
+  | "SELF_SERVICE_OFF"
+  | "SELF_SERVICE_DELETE"
+  | "SELF_SERVICE_DELETE_ENTERED"
+  | "EMPLOYMENT_ENDED"
+  | "SESSION_OVERLAPS"
+  | "START_OFF_DATE"
+  | "OUTSIDE_EMPLOYMENT"
+  | "END_IN_FUTURE"
+  | "OVER_CEILING"
+  | "BREAK_OVERLAPS"
+  | "SESSION_STILL_OPEN"
+  | "ADMIN_ONLY"
+  | "SESSION_NOT_CHANGED"
+  | "PLAN_LIMIT";
 
 /** A patch of one end, or both. `endedAt: null` reopens; an absent key changes nothing. */
 export type AttendanceCorrection = { startedAt?: string; endedAt?: string | null };
@@ -395,3 +437,32 @@ export const removeSession = (sessionId: string) =>
   api<AttendanceSession>(`/api/attendance/sessions/${encodeURIComponent(sessionId)}`, {
     method: "DELETE",
   });
+
+/** Clears `changedAfterDay` without moving a time: the owner's change was right. Admins only. */
+export const markSessionChecked = (sessionId: string) =>
+  api<AttendanceSession>(`/api/attendance/sessions/${encodeURIComponent(sessionId)}/check`, {
+    method: "POST",
+  });
+
+export type AttendanceBreakSpan = { startedAt: string; endedAt: string };
+
+export const addBreak = (sessionId: string, span: AttendanceBreakSpan) =>
+  api<AttendanceSession>(`/api/attendance/sessions/${encodeURIComponent(sessionId)}/breaks`, {
+    method: "POST",
+    body: span,
+  });
+
+/** A session recorded after the fact: somebody's business date and both ends. */
+export type AttendanceEntry = {
+  organizationId: string;
+  /** Somebody else's, for an admin; omitted for the caller's own. */
+  userId?: string;
+  businessDate: string;
+  startedAt: string;
+  endedAt: string;
+  /** Saved in the same request: one refused break refuses the whole entry. */
+  breaks?: AttendanceBreakSpan[];
+};
+
+export const enterSession = (entry: AttendanceEntry) =>
+  api<AttendanceSession>(`/api/attendance/sessions`, { method: "POST", body: entry });

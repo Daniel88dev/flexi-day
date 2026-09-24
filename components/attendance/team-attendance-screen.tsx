@@ -1,7 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { CalendarOff, ChevronLeft, ChevronRight, ClockAlert, Play } from "lucide-react";
+import {
+  CalendarOff,
+  CalendarPlus,
+  ChevronLeft,
+  ChevronRight,
+  ClockAlert,
+  Play,
+  UserPen,
+} from "lucide-react";
 import { AvatarBubble } from "@/components/brand/avatar-bubble";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -37,6 +45,8 @@ import {
   anyPresence,
   daysInRange,
   defaultDay,
+  knownSpell,
+  type KnownSpell,
   rangeOf,
   stepAnchor,
   teamOrganizations,
@@ -49,11 +59,30 @@ import { useSession } from "@/lib/auth-client";
 import { useTranslation } from "@/lib/i18n/use-translation";
 import { useViewerRoles } from "@/lib/viewer/use-viewer-roles";
 import { cn } from "@/lib/utils";
-import { BalanceChip, DayFlags, excludedSurface, isExcluded } from "./attendance-figures";
+import {
+  BalanceChip,
+  DayFlags,
+  EnteredMark,
+  excludedSurface,
+  isExcluded,
+} from "./attendance-figures";
 import { CorrectionDialog } from "./correction-dialog";
+import { EntryDialog } from "./entry-dialog";
+import { SelfServiceLine } from "./self-service-line";
 
 /** Who and which day a correction was asked for. */
 type Correcting = { userId: string; name: string; businessDate: string };
+
+/** Whose day an entry is being added to, with what the range gives away about their spell. */
+type Adding = {
+  person: { userId: string; name: string; spell: KnownSpell };
+  businessDate: string;
+};
+
+const addingFor = (person: AttendanceTeamPerson, businessDate: string): Adding => ({
+  person: { userId: person.userId, name: person.user.name, spell: knownSpell(person.days) },
+  businessDate,
+});
 
 const ALL_GROUPS = "__all__";
 
@@ -162,6 +191,7 @@ function DayCell({
           </span>
         )}
         <DayFlags day={day} today={today} />
+        {day.entered ? <EnteredMark /> : null}
       </div>
     );
   }
@@ -190,6 +220,7 @@ function DayCell({
         </span>
       )}
       <DayFlags day={day} today={today} />
+      {day.entered ? <EnteredMark /> : null}
     </div>
   );
 }
@@ -295,6 +326,14 @@ function Legend() {
         <CalendarOff style={{ color: "var(--warm)" }} />
         {t.teamAttendance.legendExcluded}
       </li>
+      <li className={item}>
+        <UserPen style={{ color: "var(--review)" }} />
+        {t.teamAttendance.legendChanged}
+      </li>
+      <li className={item}>
+        <EnteredMark />
+        {t.teamAttendance.legendEntered}
+      </li>
       <li className={item}>{t.teamAttendance.legendHatched}</li>
     </ul>
   );
@@ -310,6 +349,48 @@ const correctable = (
   day: AttendanceTeamDay,
   open: AttendanceTeamOpenSession | undefined
 ): boolean => !day.upcoming && (day.presenceMinutes > 0 || open !== undefined);
+
+/**
+ * An empty day that has begun takes an entered session: nothing to correct,
+ * something to add. Not a date outside the person's employment, which the
+ * backend would refuse, and not one still running.
+ */
+const addable = (day: AttendanceTeamDay, open: AttendanceTeamOpenSession | undefined): boolean =>
+  !day.upcoming &&
+  day.presenceMinutes === 0 &&
+  !day.open &&
+  open === undefined &&
+  day.exclusion?.cause !== "NOT_EMPLOYED";
+
+function AddSessionButton({
+  person,
+  day,
+  className,
+  onAdd,
+}: {
+  person: AttendanceTeamPerson;
+  day: AttendanceTeamDay;
+  className?: string;
+  onAdd: (adding: Adding) => void;
+}) {
+  const { t, locale } = useTranslation();
+  return (
+    <Button
+      type="button"
+      size="xs"
+      variant="outline"
+      className={className}
+      aria-label={t.teamAttendance.addSessionFor(
+        person.user.name,
+        formatBusinessDay(day.businessDate, locale)
+      )}
+      onClick={() => onAdd(addingFor(person, day.businessDate))}
+    >
+      <CalendarPlus />
+      {t.teamAttendance.addSession}
+    </Button>
+  );
+}
 
 /** The affordance itself: the cell becomes the button, where there is something to correct. */
 function Correctable({
@@ -358,10 +439,12 @@ function Matrix({
   team,
   locale,
   onCorrect,
+  onAdd,
 }: {
   team: AttendanceTeam;
   locale: string;
   onCorrect: (correcting: Correcting) => void;
+  onAdd: (adding: Adding) => void;
 }) {
   const { t } = useTranslation();
   const today = team.businessDate;
@@ -413,7 +496,11 @@ function Matrix({
           {team.people.map((person) => {
             const open = openOf.get(person.employmentId);
             return (
-              <TableRow key={person.employmentId} data-testid={`team-row-${person.userId}`}>
+              <TableRow
+                key={person.employmentId}
+                className="group"
+                data-testid={`team-row-${person.userId}`}
+              >
                 <TableCell
                   className="sticky left-0 z-10 border-r"
                   style={{ background: "var(--bg)", borderColor: "var(--border)" }}
@@ -452,6 +539,18 @@ function Matrix({
                         locale={locale}
                       />
                     </Correctable>
+                    {addable(day, open?.businessDate === day.businessDate ? open : undefined) ? (
+                      <div className="mt-1 flex justify-center">
+                        {/* Shown on the row's hover, as the mockup has it, and
+                            on keyboard focus so it is never out of reach. */}
+                        <AddSessionButton
+                          person={person}
+                          day={day}
+                          className="opacity-0 group-hover:opacity-100 focus-visible:opacity-100"
+                          onAdd={onAdd}
+                        />
+                      </div>
+                    ) : null}
                   </TableCell>
                 ))}
                 <TableCell className="text-right align-top">
@@ -473,12 +572,14 @@ function DayList({
   onDay,
   locale,
   onCorrect,
+  onAdd,
 }: {
   team: AttendanceTeam;
   day: string;
   onDay: (day: string) => void;
   locale: string;
   onCorrect: (correcting: Correcting) => void;
+  onAdd: (adding: Adding) => void;
 }) {
   const { t } = useTranslation();
   const dates = team.people[0]?.days.map((entry) => entry.businessDate) ?? [];
@@ -550,6 +651,11 @@ function DayList({
                   />
                 </Correctable>
               ) : null}
+              {entry && addable(entry, open?.businessDate === day ? open : undefined) ? (
+                <div className="col-span-2 flex justify-end">
+                  <AddSessionButton person={person} day={entry} onAdd={onAdd} />
+                </div>
+              ) : null}
             </li>
           );
         })}
@@ -577,6 +683,7 @@ export function TeamAttendanceScreen() {
   const [groupId, setGroupId] = useState<string | null>(null);
   const [pickedDay, setPickedDay] = useState<string | null>(null);
   const [correcting, setCorrecting] = useState<Correcting | null>(null);
+  const [adding, setAdding] = useState<Adding | null>(null);
 
   const organizations = teamOrganizations(
     roles.organization,
@@ -785,6 +892,11 @@ export function TeamAttendanceScreen() {
         </p>
       ) : team ? (
         <>
+          <SelfServiceLine
+            selfService={team.selfService}
+            canChange={team.scope === "ORGANIZATION"}
+          />
+
           <InNowStrip team={team} locale={locale} />
 
           {team.people.length === 0 ? (
@@ -798,13 +910,14 @@ export function TeamAttendanceScreen() {
                   {t.teamAttendance.nothingRecorded}
                 </p>
               )}
-              <Matrix team={team} locale={locale} onCorrect={setCorrecting} />
+              <Matrix team={team} locale={locale} onCorrect={setCorrecting} onAdd={setAdding} />
               <DayList
                 team={team}
                 day={day}
                 onDay={setPickedDay}
                 locale={locale}
                 onCorrect={setCorrecting}
+                onAdd={setAdding}
               />
             </>
           )}
@@ -820,6 +933,26 @@ export function TeamAttendanceScreen() {
               open
               onOpenChange={(next) => {
                 if (!next) setCorrecting(null);
+              }}
+              onAddSession={() => {
+                const person = team.people.find((entry) => entry.userId === correcting.userId);
+                if (person) setAdding(addingFor(person, correcting.businessDate));
+                setCorrecting(null);
+              }}
+            />
+          ) : null}
+
+          {adding && activeOrganization ? (
+            <EntryDialog
+              organizationId={activeOrganization.id}
+              person={adding.person}
+              businessDate={adding.businessDate}
+              today={today ?? fallbackToday}
+              timezone={team.timezone}
+              rules={team}
+              open
+              onOpenChange={(next) => {
+                if (!next) setAdding(null);
               }}
             />
           ) : null}

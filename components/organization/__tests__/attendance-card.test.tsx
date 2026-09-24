@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { AttendanceCard } from "../attendance-card";
@@ -36,6 +36,8 @@ const baseSettings = (): AttendanceSettings => ({
   organizationId: "org-1",
   attendanceEnabled: false,
   locationEnabled: false,
+  selfServiceEnabled: false,
+  selfServiceDays: 0,
   timezone: null,
   holidayCountry: null,
   workingDays: [1, 2, 3, 4, 5],
@@ -164,6 +166,8 @@ describe("AttendanceCard", () => {
         balanceMode: "DAILY",
         sessionCeilingMinutes: 960,
         breakCeilingMinutes: 120,
+        selfServiceEnabled: false,
+        selfServiceDays: 0,
       });
     });
 
@@ -205,6 +209,114 @@ describe("AttendanceCard", () => {
 
       expect(screen.getByText("Choose at least one working day.")).toBeInTheDocument();
       expect(updateSettings).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("employee self-service", () => {
+    const withWindow = (selfServiceEnabled: boolean, selfServiceDays: number | null) => {
+      settings = {
+        ...baseSettings(),
+        attendanceEnabled: true,
+        timezone: "Europe/Prague",
+        active: true,
+        selfServiceEnabled,
+        selfServiceDays,
+      };
+    };
+
+    const selfServiceSwitch = () =>
+      screen.getByRole("switch", { name: "Turn employee self-service on" });
+
+    beforeEach(() => {
+      vi.useFakeTimers({ toFake: ["Date"] });
+      // Friday 11 September, 12:00 in Prague.
+      vi.setSystemTime(new Date("2026-09-11T10:00:00Z"));
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it("off: says every correction goes through an admin, and offers no limit", () => {
+      withWindow(false, 0);
+      render("PRO");
+
+      expect(selfServiceSwitch()).not.toBeChecked();
+      expect(
+        screen.getByText(/Every correction and every missed day goes through an admin/)
+      ).toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: "Days back" })).not.toBeInTheDocument();
+      expect(screen.getByText(/Only organization admins can change it/)).toBeInTheDocument();
+    });
+
+    it("on with 0 days: today only", () => {
+      withWindow(true, 0);
+      render("PRO");
+
+      expect(selfServiceSwitch()).toBeChecked();
+      expect(screen.getByRole("button", { name: "Days back", pressed: true })).toBeInTheDocument();
+      expect(screen.getByLabelText("Days back from today")).toHaveValue("0");
+      expect(screen.getByText(/can enter and correct today's attendance/)).toBeInTheDocument();
+    });
+
+    it("on with 7 days: names the dates the window covers today", () => {
+      withWindow(true, 7);
+      render("PRO");
+
+      expect(screen.getByLabelText("Days back from today")).toHaveValue("7");
+      expect(
+        screen.getByText(
+          "Employees can enter and correct their attendance for today and the 7 days before it. Today that is September 4 – 11. Earlier days go through an admin."
+        )
+      ).toBeInTheDocument();
+    });
+
+    it("on with no limit: hides the number", () => {
+      withWindow(true, null);
+      render("PRO");
+
+      expect(screen.getByRole("button", { name: "No limit", pressed: true })).toBeInTheDocument();
+      expect(screen.queryByLabelText("Days back from today")).not.toBeInTheDocument();
+      expect(screen.getByText(/any day of their own employment/)).toBeInTheDocument();
+    });
+
+    it("disables Save while the number is out of range", async () => {
+      withWindow(true, 7);
+      render("PRO");
+
+      const days = screen.getByLabelText("Days back from today");
+      await userEvent.clear(days);
+      await userEvent.type(days, "400");
+
+      expect(screen.getByText("Enter a whole number from 0 to 366.")).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Save changes" })).toBeDisabled();
+    });
+
+    it("saves the window with the rest of the rules", async () => {
+      withWindow(false, 0);
+      render("PRO");
+
+      await userEvent.click(selfServiceSwitch());
+      const days = screen.getByLabelText("Days back from today");
+      await userEvent.clear(days);
+      await userEvent.type(days, "14");
+      await userEvent.click(screen.getByRole("button", { name: "Save changes" }));
+
+      expect(updateSettings).toHaveBeenCalledWith(
+        expect.objectContaining({ selfServiceEnabled: true, selfServiceDays: 14 })
+      );
+    });
+
+    it("saves no limit as null", async () => {
+      withWindow(true, 7);
+      render("PRO");
+
+      await userEvent.click(screen.getByRole("button", { name: "No limit" }));
+      await userEvent.click(screen.getByRole("button", { name: "Save changes" }));
+
+      expect(updateSettings).toHaveBeenCalledWith(
+        expect.objectContaining({ selfServiceEnabled: true, selfServiceDays: null })
+      );
     });
   });
 

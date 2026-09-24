@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Attendance design: team attendance</title>
+    <title>Attendance design: team attendance, self-service</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link
       href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;500;600;700;800&family=Hanken+Grotesk:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap"
@@ -14,6 +14,7 @@
     <script src="assets/mock.js"></script>
     <script src="assets/icons.js"></script>
     <script src="assets/shell.js"></script>
+    <script src="assets/self-service.js"></script>
     <style>
       .matrix td,
       .matrix th {
@@ -33,11 +34,15 @@
       .matrix td.today {
         background: color-mix(in oklch, var(--primary) 5%, transparent);
       }
-      .matrix td.day {
+      .matrix td.day,
+      .matrix th.day {
         text-align: center;
+        padding-left: 5px;
+        padding-right: 5px;
       }
       .matrix td.day .cellv {
         align-items: center;
+        gap: 1px;
       }
       .matrix td.day .cellv .f {
         display: inline-flex;
@@ -47,8 +52,12 @@
         font-size: 11.5px;
         font-weight: 600;
       }
+      .matrix td.day .cellv .mk {
+        margin-top: 2px;
+      }
       .matrix td.act {
-        width: 96px;
+        width: 88px;
+        padding-left: 0;
         text-align: right;
       }
       .matrix tr:not(.hover) td.act .btn {
@@ -66,29 +75,53 @@
         color: var(--text-faint);
         display: block;
       }
+      .session {
+        border: 1px solid var(--border);
+        border-radius: var(--radius-2xl);
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+      .two {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        align-items: start;
+      }
+      .foot {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+      }
     </style>
   </head>
   <body>
     <div class="sheet">
       <header class="sheet-head">
         <div>
-          <h1>Team attendance</h1>
+          <h1>Team attendance, self-service</h1>
           <p>
-            One row per person, one column per day in the range, the period balance at the end. Who
-            is in right now sits above the table. Flags appear inside the day cell and are listed
-            underneath. Hover a row and the correction affordance appears; it opens a dialog with
-            the session's times, its breaks and the audit trail.
+            Sheet 04 with two new markers in the day cell, where the existing flags already sit.
+            Entered is a fact about a session and stays for good, so it reads as a quiet outlined
+            stamp. Changed after the day is something to check, like auto-closed, so it is coloured
+            text like the flags, but blue rather than orange, with its own icon. Admins can add a
+            session to anyone's day, and the correction dialog's history names who entered a session
+            and who added each break.
           </p>
           <nav class="sheet-nav">
             <a href="01-shell.html">Shell</a>
             <a href="02-clock-widget.html">Clock widget</a>
             <a href="03-my-attendance.html">My attendance</a>
-            <a class="current" href="04-team-attendance.html">Team attendance</a>
+            <a href="04-team-attendance.html">Team attendance</a>
             <a href="05-organization-settings.html">Organization settings</a>
             <a href="06-self-service-settings.html">Self-service settings</a>
             <a href="07-my-attendance-self-service.html">My attendance, self-service</a>
             <a href="08-correction-dialog.html">Correction dialog</a>
-            <a href="09-team-attendance-self-service.html">Team attendance, self-service</a>
+            <a class="current" href="09-team-attendance-self-service.html"
+              >Team attendance, self-service</a
+            >
           </nav>
         </div>
         <div class="theme-toggle" role="group" aria-label="Theme">
@@ -99,24 +132,67 @@
       </header>
 
       <section class="board">
-        <h2>Org admin, all groups</h2>
+        <h2>Org admin, both markers</h2>
         <p>
-          Dana sees every Employment in Studio Modrá, including her own and the group manager's,
-          with a group filter. Worked time is coloured by that day's balance. Noah's row is hovered.
+          The week of 7 September. Noah entered Tuesday himself and changed Wednesday on Thursday.
+          Dana entered Aisha's Tuesday for her. Elena entered Tuesday and then changed it the next
+          day, so that day carries both markers. Tom has nothing on Thursday; his row is hovered,
+          and the empty day offers to add a session.
         </p>
         <div class="frames">
           <div class="frame">
-            <span class="frame-label">1280 x 920, week of 7 September</span>
-            <div class="laptop tall" data-view="org"></div>
+            <span class="frame-label"
+              >1280 wide, week of 7 September, the whole page as it scrolls</span
+            >
+            <div class="laptop xtall" data-view="org"></div>
           </div>
         </div>
       </section>
 
       <section class="board">
-        <h2>Group admin, one group</h2>
+        <h2>Adding a session for a member</h2>
         <p>
-          Marco manages Engineering and sees only its members. No group filter, and not his own row:
-          a manager's attendance is visible to org admins alone.
+          Opened from Tom's empty Thursday. The same form the employee gets, with the person shown.
+          Admin rights never consult the window, so the date takes any day of Tom's employment.
+        </p>
+        <div class="frames">
+          <div class="frame">
+            <span class="frame-label">1280 x 800, Add a session for Tom Becker</span>
+            <div class="laptop" data-view="add"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="board">
+        <h2>The session timeline</h2>
+        <p>
+          The markers repeat at the top of each session in the correction dialog, with who did it.
+          The history gets two new entries: "Session entered" and "Break added", each with the times
+          and the actor. Stamps carry the date, because an entry can come days after its session.
+          Saving any correction to Noah's Wednesday clears its changed flag; the entered marker on
+          his Tuesday stays whatever happens.
+        </p>
+        <div class="frames">
+          <div class="frame">
+            <span class="frame-label">Noah's Wednesday 9, changed after the day</span>
+            <div class="dialog flat" data-dialog="changed"></div>
+          </div>
+          <div class="frame">
+            <span class="frame-label">Noah's Tuesday 8, entered by Noah</span>
+            <div class="dialog flat" data-dialog="entered-self"></div>
+          </div>
+          <div class="frame">
+            <span class="frame-label">Aisha's Tuesday 8, entered by Dana</span>
+            <div class="dialog flat" data-dialog="entered-admin"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="board">
+        <h2>Group admin</h2>
+        <p>
+          Marco sees the self-service setting read-only above the table, since the Organization page
+          is not his. The markers read the same for him.
         </p>
         <div class="frames">
           <div class="frame">
@@ -127,25 +203,14 @@
       </section>
 
       <section class="board">
-        <h2>Correcting a session</h2>
+        <h2>Mobile</h2>
         <p>
-          From Noah's Wednesday. The sweep closed the session at 00:05; the admin sets 17:10, and
-          the event list below will record who changed what.
+          One day at a time, as in 04. The markers shrink to their icons beside the figures, like
+          the flags on the phone month in 07.
         </p>
         <div class="frames">
           <div class="frame">
-            <span class="frame-label">1280 x 920, correction dialog</span>
-            <div class="laptop tall" data-view="dialog"></div>
-          </div>
-        </div>
-      </section>
-
-      <section class="board">
-        <h2>Mobile</h2>
-        <p>On a phone the matrix collapses to one day at a time, today by default.</p>
-        <div class="frames">
-          <div class="frame">
-            <span class="frame-label">390 x 844, org admin, today</span>
+            <span class="frame-label">390 x 844, org admin, Tuesday 8</span>
             <div class="phone" data-view="m-org"></div>
           </div>
         </div>
@@ -155,9 +220,8 @@
     <script>
       var REQ = 480;
       var EX = { ex: true };
-      // Worked minutes per day, Monday 7 to Sunday 13 September. Presence is
-      // worked plus the 30 min allowance once it applies. `live` is an open
-      // session with its start; `flag` one of the three dashboard flags.
+      // Worked minutes, Monday 7 to Sunday 13 September; the rest as in 04.
+      // `marks` are the self-service markers, `flag` one of the dashboard flags.
       var PEOPLE = [
         {
           name: "Dana Holt",
@@ -177,7 +241,7 @@
           group: "Design",
           days: [
             { worked: 495 },
-            { worked: 470 },
+            { worked: 480, marks: ["entered"] },
             { worked: 480 },
             { worked: 500 },
             { worked: 217, live: "08:42" },
@@ -188,13 +252,12 @@
         {
           name: "Noah Weber",
           group: "Design",
-          hover: true,
           days: [
-            { worked: 470 },
+            { worked: 500 },
+            { worked: 495, marks: ["entered"] },
+            { worked: 495, marks: ["changed"] },
             { worked: 480 },
-            { worked: 930, flag: "autoclosed" },
-            { worked: 485 },
-            {},
+            { worked: 189, live: "09:10" },
             EX,
             EX,
           ],
@@ -259,7 +322,7 @@
           eng: true,
           days: [
             { worked: 480 },
-            { worked: 485 },
+            { worked: 485, marks: ["entered", "changed"] },
             { worked: 470 },
             { worked: 799, flag: "open", live: "Thu 22:30" },
             {},
@@ -270,11 +333,12 @@
         {
           name: "Tom Becker",
           group: "Sales",
+          hover: true,
           days: [
             { worked: 470 },
             { worked: 480 },
             { worked: 490 },
-            { worked: 480 },
+            { gap: true },
             { worked: 231 },
             EX,
             EX,
@@ -300,15 +364,22 @@
       }
       function balance(p) {
         return p.days.reduce(function (a, d) {
-          if (d.live || d.worked == null) return a;
-          return a + d.worked - req(d);
+          if (d.live || (d.worked == null && !d.gap)) return a;
+          return a + (d.worked || 0) - req(d);
         }, 0);
       }
 
-      function cell(d, i) {
+      function cell(d, i, row) {
         var cls = "day" + (d.ex ? " ex" : "") + (i === 4 ? " today" : "");
         var h = '<td class="' + cls + '"><div class="cellv">';
-        if (d.ex && d.worked == null) {
+        if (d.gap) {
+          h += '<b class="faint">No sessions</b><small>of 8:00</small>';
+          if (row.hover)
+            h +=
+              '<button class="btn btn-outline btn-xs" type="button" style="margin-top:4px" aria-label="Add session">' +
+              icon("calendar-plus") +
+              "Add</button>";
+        } else if (d.ex && d.worked == null) {
           h += "<b>" + (d.why || "Weekend") + "</b>";
         } else if (d.worked == null) {
           h += '<b class="faint">Not in yet</b>';
@@ -330,6 +401,9 @@
           h += "<small>" + fmt.hm(presence(d)) + " present</small>";
         }
         if (d.flag) h += '<span class="f">' + icon(FLAGS[d.flag].icon) + SHORT[d.flag] + "</span>";
+        (d.marks || []).forEach(function (m) {
+          h += mark(m);
+        });
         return h + "</div></td>";
       }
 
@@ -360,7 +434,11 @@
             '</div><div class="g">' +
             p.group +
             "</div></div></div></td>";
-          h += p.days.map(cell).join("");
+          h += p.days
+            .map(function (d, i) {
+              return cell(d, i, p);
+            })
+            .join("");
           h +=
             '<td class="num">' +
             balanceChip(balance(p)) +
@@ -374,7 +452,7 @@
       function inNow(rows) {
         var live = rows.filter(liveDay);
         return (
-          '<div class="row" style="gap:12px; margin-bottom:14px"><span style="font-weight:600">In now</span><div class="in-now">' +
+          '<div class="row" style="gap:12px; margin-bottom:12px"><span style="font-weight:600; white-space:nowrap">In now</span><div class="in-now">' +
           live
             .map(function (p) {
               return (
@@ -392,21 +470,37 @@
         );
       }
 
+      function windowLine(org) {
+        return (
+          '<div class="notice" style="padding:8px 14px; align-items:center; margin-bottom:12px">' +
+          icon(org ? "calendar-days" : "lock") +
+          '<div class="grow"><p style="color:var(--text)"><b>Self-service is on, 7 days back.</b> Members can enter and correct their own attendance for today and the 7 days before it.</p></div>' +
+          (org
+            ? '<a class="link" href="#" style="white-space:nowrap; font-size:13px">Change</a>'
+            : '<span class="hint" style="white-space:nowrap">Set by organization admins</span>') +
+          "</div>"
+        );
+      }
+
       function legend() {
         return (
-          '<div class="legend" style="margin-top:14px"><span>' +
+          '<div class="legend" style="margin-top:14px"><span style="color:var(--warm)">' +
           icon(FLAGS.autoclosed.icon) +
-          "Auto-closed after the ceiling, set the real time</span><span>" +
+          '<span class="muted">Auto-closed after the ceiling</span></span><span style="color:var(--warm)">' +
           icon(FLAGS.open.icon) +
-          "Still open from an earlier day</span><span>" +
+          '<span class="muted">Still open from an earlier day</span></span><span style="color:var(--warm)">' +
           icon(FLAGS.exclockin.icon) +
-          "Clocked in on an excluded day, counts toward the month</span><span>Hatched: excluded day</span></div>"
+          '<span class="muted">Worked on an excluded day</span></span><span style="color:var(--review)">' +
+          icon(FLAGS.changed.icon) +
+          '<span class="muted">Changed by the person after the day, until an admin corrects it</span></span><span>' +
+          mark("entered") +
+          "Recorded after the fact, for good</span><span>Hatched: excluded day</span></div>"
         );
       }
 
       function pageHead(sub, filter) {
         return (
-          '<div class="row between" style="margin-bottom:18px; align-items:flex-start"><div><h1 class="page-title">Team attendance</h1><p class="page-sub">' +
+          '<div class="row between" style="margin-bottom:16px; align-items:flex-start"><div><h1 class="page-title">Team attendance</h1><p class="page-sub">' +
           sub +
           "</p></div>" +
           '<div class="row">' +
@@ -430,6 +524,7 @@
       function orgView() {
         return (
           pageHead("Everyone in Studio Modrá, 9 people.", "All groups") +
+          windowLine(true) +
           inNow(PEOPLE) +
           '<div class="card" style="padding:4px 8px">' +
           matrix(PEOPLE) +
@@ -443,6 +538,7 @@
         });
         return (
           pageHead("Engineering, 3 people.") +
+          windowLine(false) +
           inNow(eng) +
           '<div class="card" style="padding:4px 8px">' +
           matrix(eng) +
@@ -451,26 +547,91 @@
         );
       }
 
-      function dialog() {
+      function sessionBlock(o) {
         return (
-          '<div class="overlay"><div class="dialog"><div><h2>Correct Wednesday 9 September</h2><p class="card-desc">Noah Weber. Closed automatically at 00:05 after 16 hours.</p></div>' +
-          '<div style="display:grid; grid-template-columns:1fr 1fr; gap:12px">' +
-          '<div class="field"><label class="label">Clock in</label><span class="input">08:05</span></div>' +
-          '<div class="field"><label class="label">Clock out</label><span class="input" style="border-color: var(--primary); box-shadow: 0 0 0 3px var(--ring)">17:10</span><span class="hint">Was 00:05, set by the sweep</span></div></div>' +
-          '<div class="field"><label class="label">Breaks</label><div class="row"><span class="input compact">12:00</span><span class="muted">to</span><span class="input compact">12:30</span><button class="btn btn-ghost btn-icon btn-sm" type="button">' +
-          icon("x") +
-          '</button><button class="btn btn-ghost btn-sm" type="button">' +
-          icon("plus") +
-          "Add break</button></div></div>" +
-          '<div><div class="label" style="margin-bottom:8px">History</div><div class="events">' +
-          '<div class="ev"><span class="t">Wed 08:05</span><span>Clocked in. Noah Weber</span></div>' +
-          '<div class="ev"><span class="t">Wed 12:00</span><span>Break started. Noah Weber</span></div>' +
-          '<div class="ev"><span class="t">Wed 12:30</span><span>Break ended. Noah Weber</span></div>' +
-          '<div class="ev"><span class="t">Thu 00:05</span><span>Closed automatically after 16 h. System</span></div></div></div>' +
-          '<div class="row between"><button class="btn btn-ghost danger btn-sm" type="button">Delete session</button><span class="row"><button class="btn btn-outline" type="button">Cancel</button><button class="btn btn-primary" type="button">Save correction</button></span></div>' +
-          "</div></div>"
+          '<div class="session"><div class="marks">' +
+          o.marks +
+          "</div>" +
+          '<div class="two">' +
+          ss.field(o.entered ? "Start" : "Clock in", ss.input(o.start)) +
+          ss.field(o.entered ? "End" : "Clock out", ss.input(o.end)) +
+          "</div>" +
+          ss.breaks(o.breaks) +
+          ss.events(o.history) +
+          "</div>"
         );
       }
+
+      function dialogFoot() {
+        return (
+          '<div class="foot"><button class="btn btn-ghost btn-sm" type="button">' +
+          icon("trash-2") +
+          'Delete session</button><span class="row"><button class="btn btn-outline" type="button">Close</button><button class="btn btn-primary" type="button">Save correction</button></span></div>'
+        );
+      }
+
+      var DIALOGS = {
+        changed: function () {
+          return (
+            '<div><h2>Correct Noah Weber\'s Wednesday 9 September</h2><p class="card-desc" style="margin:6px 0 0">Noah Weber, Design.</p></div>' +
+            sessionBlock({
+              marks: mark("changed", "Changed by Noah Weber after the day"),
+              start: "08:05",
+              end: "17:10",
+              breaks: [
+                { s: "12:00", e: "12:30" },
+                { s: "15:00", e: "15:20" },
+              ],
+              history: [
+                ["Wed 9 Sep 08:05", "Clocked in", "Noah Weber"],
+                ["Wed 9 Sep 12:00", "Break started", "Noah Weber"],
+                ["Wed 9 Sep 12:30", "Break ended", "Noah Weber"],
+                ["Thu 10 Sep 00:05", "Closed automatically after 16 h", "System"],
+                ["Thu 10 Sep 08:52", "Times corrected, clock-out 00:05 to 17:10", "Noah Weber"],
+                ["Thu 10 Sep 08:52", "Break added, 15:00 to 15:20", "Noah Weber"],
+              ],
+            }) +
+            '<div class="notice notice-review" style="padding:10px 14px">' +
+            icon("user-pen") +
+            '<div><p style="color:var(--text)">Noah changed this session on Thursday 10 September, after its day. Saving a correction clears the flag.</p></div></div>' +
+            dialogFoot()
+          );
+        },
+        "entered-self": function () {
+          return (
+            '<div><h2>Correct Noah Weber\'s Tuesday 8 September</h2><p class="card-desc" style="margin:6px 0 0">Noah Weber, Design.</p></div>' +
+            sessionBlock({
+              entered: true,
+              marks: mark("entered", "Entered by Noah Weber"),
+              start: "08:10",
+              end: "16:55",
+              breaks: [{ s: "12:00", e: "12:30" }],
+              history: [
+                ["Thu 10 Sep 08:40", "Session entered, 08:10 to 16:55", "Noah Weber"],
+                ["Thu 10 Sep 08:40", "Break added, 12:00 to 12:30", "Noah Weber"],
+              ],
+            }) +
+            dialogFoot()
+          );
+        },
+        "entered-admin": function () {
+          return (
+            '<div><h2>Correct Aisha Khan\'s Tuesday 8 September</h2><p class="card-desc" style="margin:6px 0 0">Aisha Khan, Design.</p></div>' +
+            sessionBlock({
+              entered: true,
+              marks: mark("entered", "Entered by Dana Holt"),
+              start: "08:00",
+              end: "16:30",
+              breaks: [{ s: "12:00", e: "12:30" }],
+              history: [
+                ["Wed 9 Sep 09:15", "Session entered, 08:00 to 16:30", "Dana Holt"],
+                ["Wed 9 Sep 09:16", "Break added, 12:00 to 12:30", "Dana Holt"],
+              ],
+            }) +
+            dialogFoot()
+          );
+        },
+      };
 
       document.querySelectorAll(".laptop[data-view]").forEach(function (el) {
         var v = el.getAttribute("data-view");
@@ -483,50 +644,79 @@
             user: { name: "Marco Rossi", org: "Studio Modrá" },
             content: groupView(),
           });
-        } else {
-          el.innerHTML = shellFrame({
-            active: "team",
-            crumb: ["Attendance", "Team attendance"],
-            live: true,
-            support: true,
-            content: orgView(),
-          });
-          if (v === "dialog") {
-            el.querySelector(".app").style.position = "relative";
-            el.querySelector(".app").insertAdjacentHTML("beforeend", dialog());
-          }
+          return;
         }
+        el.innerHTML = shellFrame({
+          active: "team",
+          crumb: ["Attendance", "Team attendance"],
+          live: true,
+          support: true,
+          content: orgView(),
+        });
+        if (v === "add") {
+          var app = el.querySelector(".app");
+          app.style.position = "relative";
+          app.insertAdjacentHTML(
+            "beforeend",
+            '<div class="overlay">' +
+              ss.entryDialog({
+                title: "Add a session for Tom Becker",
+                desc: "Thursday 10 September has nothing recorded. The session is saved as entered, with you as the one who entered it.",
+                person: "Tom Becker, Sales",
+                date: "Thu 10 September 2026",
+                dateHint: "Any day of Tom's employment",
+                start: "08:30",
+                end: "17:00",
+                focus: "end",
+                breaks: [{ s: "12:15", e: "12:45" }],
+                summary: ["8:30", "0:30", "8:00"],
+                note: "Marked as entered for good. Tom sees it that way on his own month.",
+              }) +
+              "</div>"
+          );
+        }
+      });
+
+      document.querySelectorAll("[data-dialog]").forEach(function (el) {
+        el.innerHTML = DIALOGS[el.getAttribute("data-dialog")]();
       });
 
       function mobileOrg() {
         var rows = PEOPLE.map(function (p) {
-          var d = p.days[4];
-          var live = liveDay(p);
+          var d = p.days[1];
+          var marks = (d.marks || [])
+            .map(function (m) {
+              return (
+                '<span class="flag ' +
+                (m === "entered" ? "flag-entered" : "flag-review") +
+                '" aria-label="' +
+                FLAGS[m].label +
+                '">' +
+                icon(FLAGS[m].icon) +
+                "</span>"
+              );
+            })
+            .join("");
           var h =
-            '<div class="p"><span class="avatar' +
-            (live ? " live" : "") +
-            '">' +
+            '<div class="p"><span class="avatar">' +
             fmt.initials(p.name) +
             '</span><div><div style="font-weight:600">' +
             p.name +
             "</div><small>" +
             p.group +
             "</small></div>";
-          if (live)
-            h +=
-              '<div class="cellv" style="align-items:flex-end"><b>' +
-              fmt.hm(live.worked) +
-              '</b><small class="ok" style="font-weight:600">' +
-              liveLabel(live) +
-              "</small></div>";
-          else if (d.worked == null) h += '<span class="faint">Not in yet</span>';
+          if (d.ex && d.worked == null)
+            h += '<span class="faint">' + (d.why || "Weekend") + "</span>";
           else
             h +=
+              '<div class="row" style="gap:6px">' +
+              marks +
               '<div class="cellv" style="align-items:flex-end"><b>' +
               fmt.hm(d.worked) +
               "</b><small>of " +
               fmt.hm(req(d)) +
-              "</small></div>";
+              (d.half ? ", half" : "") +
+              "</small></div></div>";
           return h + "</div>";
         }).join("");
         return (
@@ -535,12 +725,9 @@
           "</span></div>" +
           '<div class="row between" style="margin-bottom:12px"><button class="btn btn-outline btn-icon btn-sm" type="button">' +
           icon("chevron-left") +
-          '</button><span style="font-weight:600">Friday 11 September</span><button class="btn btn-outline btn-icon btn-sm" type="button">' +
+          '</button><span style="font-weight:600">Tuesday 8 September</span><button class="btn btn-outline btn-icon btn-sm" type="button">' +
           icon("chevron-right") +
           "</button></div>" +
-          '<div class="chip" style="margin-bottom:8px"><span class="tag-dot" style="background:var(--ok)"></span>' +
-          PEOPLE.filter(liveDay).length +
-          " in now</div>" +
           '<div class="m-people">' +
           rows +
           "</div>"

@@ -3,17 +3,19 @@
 import { useState } from "react";
 import {
   CalendarDays,
+  CalendarPlus,
   ChevronLeft,
   ChevronRight,
   ClockAlert,
   Coffee,
+  Lock,
   Pencil,
   Play,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useAttendanceMonth, useAttendanceState } from "@/lib/api/queries";
-import type { AttendanceSession } from "@/lib/api/attendance";
+import { useAttendanceDay, useAttendanceMonth, useAttendanceState } from "@/lib/api/queries";
+import type { AttendanceDay, AttendanceSession } from "@/lib/api/attendance";
 import { formatMinutes } from "@/lib/attendance/duration";
 import {
   addDays,
@@ -24,19 +26,28 @@ import {
   yearMonthOf,
 } from "@/lib/attendance/month";
 import { stepAnchor } from "@/lib/attendance/team";
-import { buildTimeline, formatClockTime } from "@/lib/attendance/today";
+import {
+  entryOffered,
+  selfServiceMode,
+  selfServiceVerdict,
+  type SelfServiceVerdict,
+  type SelfServiceWindow,
+} from "@/lib/attendance/self-service";
+import { buildTimeline, formatBusinessDay, formatClockTime } from "@/lib/attendance/today";
 import { useNow } from "@/lib/attendance/use-now";
 import { useTranslation } from "@/lib/i18n/use-translation";
 import { anySessionLocated } from "@/lib/attendance/location";
 import { cn } from "@/lib/utils";
+import { ChangedMark, ChangedNotice, EnteredMark } from "./attendance-figures";
 import { ClockWidget } from "./clock-widget";
 import { CorrectionDialog } from "./correction-dialog";
 import { DayTotals } from "./day-totals";
+import { EntryDialog } from "./entry-dialog";
 import { MonthView } from "./month-view";
 import { SessionLocation } from "./session-location";
 import { WeekView } from "./week-view";
 
-type AttendanceView = "today" | "week" | "month";
+type AttendanceView = "day" | "week" | "month";
 
 /** The mockups' flag: one chip, on a break's row or above the session it closed. */
 function AutoClosedFlag({ size = "sm" }: { size?: "sm" | "xs" }) {
@@ -96,20 +107,96 @@ function Timeline({ session, now }: { session: AttendanceSession; now: Date }) {
   );
 }
 
-function TodayView() {
+function WindowNote({
+  verdict,
+  selfService,
+}: {
+  verdict: SelfServiceVerdict;
+  selfService: SelfServiceWindow;
+}) {
   const { t } = useTranslation();
-  const query = useAttendanceState();
-  const now = useNow(query.data?.openSession != null);
-  const [correcting, setCorrecting] = useState(false);
+  const mode = selfServiceMode(selfService);
+  const days = selfService.days ?? 0;
 
+  if (verdict === "OPEN") {
+    return (
+      <p className="text-sm" style={{ color: "var(--text-muted)" }}>
+        {mode === "NO_LIMIT"
+          ? t.clock.windowNoLimitHint
+          : mode === "DAYS"
+            ? t.clock.windowDaysHint(days)
+            : t.clock.windowZeroHint}
+      </p>
+    );
+  }
+
+  const text =
+    verdict === "OFF"
+      ? t.clock.windowOffNotice
+      : verdict === "ENDED"
+        ? t.clock.windowEndedNotice
+        : mode === "DAYS"
+          ? t.clock.windowOutsideDaysNotice(days)
+          : t.clock.windowOutsideZeroNotice;
+
+  return (
+    <div className="bg-muted/50 flex gap-3 rounded-lg p-3">
+      <Lock className="mt-0.5 size-4 shrink-0" aria-hidden />
+      <p className="text-sm">{text}</p>
+    </div>
+  );
+}
+
+/** Today reads from the clock's own answer rather than the day endpoint, so it moves with every click. */
+function DayView({ date, today }: { date: string; today: string }) {
+  const { t, locale } = useTranslation();
+  const query = useAttendanceState();
   const state = query.data;
-  const sessions = state?.sessions ?? [];
+  const isToday = date === today;
+  const pastQuery = useAttendanceDay(
+    state && !isToday ? { organizationId: state.organizationId, businessDate: date } : null,
+    !!state && !isToday
+  );
+  const now = useNow(state?.openSession != null);
+  const [correcting, setCorrecting] = useState(false);
+  const [adding, setAdding] = useState(false);
+
+  const sessions = (isToday ? state?.sessions : pastQuery.data?.sessions) ?? [];
   // An organization that switched location off keeps what it already took, so
   // the strip follows the data as well as the switch.
   const showLocation = (state?.locationEnabled ?? false) || anySessionLocated(sessions);
-  // Today is the person's own to correct; an older day is an admin's, which is
-  // what the hint under the card says rather than a button that would 403.
-  const correctable = state?.active === true && state.businessDate !== null && sessions.length > 0;
+  const verdictFor = (businessDate: string, open: boolean) =>
+    state
+      ? selfServiceVerdict({
+          window: state.selfService,
+          businessDate,
+          today,
+          open,
+          employmentEnded: state.employmentEnded,
+        })
+      : null;
+  // The day's own standing, for the note. An open session on it may still be
+  // correctable when the day is not, which is decided session by session.
+  const verdict = verdictFor(date, false);
+  const correctable =
+    state?.active === true &&
+    state.businessDate !== null &&
+    sessions.some((session) => verdictFor(session.businessDate, session.open) === "OPEN");
+  // The day's exclusion lives on the month, which is what tells a date before
+  // the Employment began from an ordinary one.
+  const { year, month } = yearMonthOf(date);
+  const monthQuery = useAttendanceMonth(year, month, state?.organizationId ?? null, !!state);
+  const monthDay = monthQuery.data?.days.find((entry) => entry.businessDate === date);
+  const enterable =
+    state !== undefined &&
+    monthDay !== undefined &&
+    entryOffered({
+      window: state.selfService,
+      today,
+      active: state.active,
+      employmentEnded: state.employmentEnded,
+      day: monthDay,
+    });
 
   return (
     <div className="grid gap-4 lg:grid-cols-[minmax(0,380px)_1fr] lg:items-start">
@@ -122,49 +209,124 @@ function TodayView() {
       <Card>
         <CardHeader>
           <CardTitle className="flex flex-wrap items-center justify-between gap-2 [&_svg]:size-[18px]">
-            <span className="flex items-center gap-2">
+            <span className="flex items-center gap-2 first-letter:capitalize">
               <CalendarDays />
-              {t.clock.today}
+              {isToday ? t.clock.today : formatBusinessDay(date, locale)}
             </span>
-            {correctable ? (
-              <Button type="button" size="sm" variant="outline" onClick={() => setCorrecting(true)}>
-                <Pencil />
-                {t.corrections.editToday}
-              </Button>
-            ) : null}
+            <span className="flex flex-wrap gap-2">
+              {correctable ? (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setCorrecting(true)}
+                >
+                  <Pencil />
+                  {isToday ? t.corrections.editToday : t.clock.correct}
+                </Button>
+              ) : null}
+              {enterable && sessions.length > 0 ? (
+                <Button type="button" size="sm" variant="outline" onClick={() => setAdding(true)}>
+                  <CalendarPlus />
+                  {t.clock.addSession}
+                </Button>
+              ) : null}
+            </span>
           </CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
-          {sessions.length === 0 ? (
+          {!isToday && pastQuery.isPending ? (
             <p className="text-sm" style={{ color: "var(--text-muted)" }}>
-              {t.clock.emptyDay}
+              {t.common.loading}
             </p>
+          ) : sessions.length === 0 ? (
+            <div className="flex flex-col items-start gap-2">
+              <p className="text-sm" style={{ color: "var(--text-muted)" }}>
+                {isToday ? t.clock.emptyDay : t.clock.emptyPastDay}
+              </p>
+              {enterable ? (
+                <>
+                  {isToday ? null : (
+                    <p className="text-sm" style={{ color: "var(--text-muted)" }}>
+                      {t.clock.emptyPastDayPrompt}
+                    </p>
+                  )}
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={isToday ? "outline" : "default"}
+                    onClick={() => setAdding(true)}
+                  >
+                    <CalendarPlus />
+                    {t.clock.addSession}
+                  </Button>
+                </>
+              ) : null}
+            </div>
           ) : (
             <>
               {sessions.map((session) => (
                 <div key={session.id} className="flex flex-col gap-2">
                   {/* The session's own close. A break the sweep closed is
                       flagged on its own row instead. */}
-                  {session.closedBy === "SWEEP" ? <AutoClosedFlag /> : null}
+                  {session.closedBy === "SWEEP" ||
+                  session.origin === "ENTERED" ||
+                  session.changedAfterDay ? (
+                    <div className="flex flex-wrap items-center gap-2">
+                      {session.origin === "ENTERED" ? <EnteredMark /> : null}
+                      {session.changedAfterDay ? <ChangedMark /> : null}
+                      {session.closedBy === "SWEEP" ? <AutoClosedFlag /> : null}
+                    </div>
+                  ) : null}
                   <Timeline session={session} now={now} />
                   {showLocation ? <SessionLocation session={session} /> : null}
+                  {session.changedAfterDay ? (
+                    <ChangedNotice>{t.clock.changedNotice}</ChangedNotice>
+                  ) : null}
                 </div>
               ))}
               <DayTotals sessions={sessions} now={now} />
-              <p className="text-sm" style={{ color: "var(--text-muted)" }}>
-                {t.corrections.selfServiceHint}
-              </p>
             </>
           )}
+          {/* A lapsed plan closes every correction, and the clock already says so. */}
+          {state?.active && verdict ? (
+            <WindowNote verdict={verdict} selfService={state.selfService} />
+          ) : null}
         </CardContent>
       </Card>
 
       {correctable && state ? (
         <CorrectionDialog
           organizationId={state.organizationId}
-          businessDate={state.businessDate!}
+          businessDate={date}
+          ownDay={{
+            today,
+            selfService: state.selfService,
+            administersOwn: state.administersOwnAttendance ?? false,
+          }}
           open={correcting}
           onOpenChange={setCorrecting}
+          onAddSession={
+            enterable
+              ? () => {
+                  setCorrecting(false);
+                  setAdding(true);
+                }
+              : undefined
+          }
+        />
+      ) : null}
+
+      {enterable && state ? (
+        <EntryDialog
+          organizationId={state.organizationId}
+          businessDate={date}
+          today={today}
+          timezone={state.timezone}
+          selfService={state.selfService}
+          rules={monthQuery.data}
+          open={adding}
+          onOpenChange={setAdding}
         />
       ) : null}
     </div>
@@ -237,11 +399,15 @@ function MonthRange({
   organizationId,
   enabled,
   locale,
+  canAdd,
+  onAdd,
 }: {
   anchor: string;
   organizationId: string | null;
   enabled: boolean;
   locale: string;
+  canAdd: (day: AttendanceDay) => boolean;
+  onAdd: (businessDate: string) => void;
 }) {
   const { t } = useTranslation();
   const { year, month } = yearMonthOf(anchor);
@@ -263,12 +429,14 @@ function MonthRange({
     );
   }
 
-  return <MonthView month={query.data} locale={locale} />;
+  return <MonthView month={query.data} locale={locale} canAdd={canAdd} onAdd={onAdd} />;
 }
 
 /** The range under the stepper, in the reader's own language and order. */
 const rangeLabel = (view: AttendanceView, anchor: string, locale: string): string => {
   const at = (iso: string) => new Date(`${iso}T12:00:00Z`);
+
+  if (view === "day") return formatBusinessDay(anchor, locale);
 
   if (view === "month") {
     return new Intl.DateTimeFormat(locale, {
@@ -297,17 +465,41 @@ const rangeLabel = (view: AttendanceView, anchor: string, locale: string): strin
 export function MyAttendanceScreen() {
   const { t, locale } = useTranslation();
   const stateQuery = useAttendanceState();
-  const [view, setView] = useState<AttendanceView>("today");
+  const [view, setView] = useState<AttendanceView>("day");
   const [anchored, setAnchored] = useState<string | null>(null);
+  const [adding, setAdding] = useState<string | null>(null);
 
-  const organizationId = stateQuery.data?.organizationId ?? null;
+  const state = stateQuery.data;
+  const organizationId = state?.organizationId ?? null;
   // The organization's day, not the browser's; the fallback only covers the
   // first render, before the clock's read has answered.
   const today = stateQuery.data?.businessDate ?? new Date().toISOString().slice(0, 10);
   const anchor = anchored ?? today;
+  // Carries the break rules the entry form works its figures out by. The month
+  // grid that offered the day has already read this month, so it comes from cache.
+  const addingMonth = yearMonthOf(adding ?? today);
+  const addingMonthQuery = useAttendanceMonth(
+    addingMonth.year,
+    addingMonth.month,
+    organizationId,
+    adding !== null
+  );
+
+  const canAdd = (day: AttendanceDay) =>
+    state !== undefined &&
+    entryOffered({
+      window: state.selfService,
+      today,
+      active: state.active,
+      employmentEnded: state.employmentEnded,
+      day,
+    });
 
   const step = (direction: -1 | 1) => {
-    if (view === "today") return;
+    if (view === "day") {
+      setAnchored(addDays(anchor, direction));
+      return;
+    }
     setAnchored(stepAnchor(view, anchor, direction));
   };
 
@@ -326,7 +518,7 @@ export function MyAttendanceScreen() {
             className="flex rounded-full border p-0.5"
             style={{ borderColor: "var(--border)" }}
           >
-            {(["today", "week", "month"] as const).map((candidate) => (
+            {(["day", "week", "month"] as const).map((candidate) => (
               <button
                 key={candidate}
                 type="button"
@@ -348,35 +540,40 @@ export function MyAttendanceScreen() {
             ))}
           </div>
 
-          {view === "today" ? null : (
-            <div className="flex items-center gap-2">
-              <Button
-                type="button"
-                size="icon"
-                variant="outline"
-                aria-label={t.clock.previousRange}
-                onClick={() => step(-1)}
-              >
-                <ChevronLeft />
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              size="icon"
+              variant="outline"
+              aria-label={t.clock.previousRange}
+              onClick={() => step(-1)}
+            >
+              <ChevronLeft />
+            </Button>
+            <span className="min-w-40 text-center font-semibold first-letter:capitalize">
+              {rangeLabel(view, anchor, locale)}
+            </span>
+            <Button
+              type="button"
+              size="icon"
+              variant="outline"
+              aria-label={t.clock.nextRange}
+              // The day an employee reads is never one still to come.
+              disabled={view === "day" && anchor >= today}
+              onClick={() => step(1)}
+            >
+              <ChevronRight />
+            </Button>
+            {view === "day" && anchor !== today ? (
+              <Button type="button" size="sm" variant="ghost" onClick={() => setAnchored(null)}>
+                {t.clock.backToToday}
               </Button>
-              <span className="min-w-40 text-center font-semibold">
-                {rangeLabel(view, anchor, locale)}
-              </span>
-              <Button
-                type="button"
-                size="icon"
-                variant="outline"
-                aria-label={t.clock.nextRange}
-                onClick={() => step(1)}
-              >
-                <ChevronRight />
-              </Button>
-            </div>
-          )}
+            ) : null}
+          </div>
         </div>
       </div>
 
-      {view === "today" ? <TodayView /> : null}
+      {view === "day" ? <DayView date={anchor} today={today} /> : null}
       {view === "week" ? (
         <WeekRange
           anchor={anchor}
@@ -391,6 +588,23 @@ export function MyAttendanceScreen() {
           organizationId={organizationId}
           enabled={!!organizationId}
           locale={locale}
+          canAdd={canAdd}
+          onAdd={setAdding}
+        />
+      ) : null}
+
+      {state && adding ? (
+        <EntryDialog
+          organizationId={state.organizationId}
+          businessDate={adding}
+          today={today}
+          timezone={state.timezone}
+          selfService={state.selfService}
+          rules={addingMonthQuery.data}
+          open
+          onOpenChange={(next) => {
+            if (!next) setAdding(null);
+          }}
         />
       ) : null}
     </div>

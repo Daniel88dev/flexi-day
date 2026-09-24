@@ -78,3 +78,20 @@ export function teamOrganizations(
 export function anyPresence(people: AttendanceTeamPerson[]): boolean {
   return people.some((person) => person.days.some((day) => day.presenceMinutes > 0));
 }
+
+/** The ends of a person's spell that their days in the range give away; null where they do not. */
+export type KnownSpell = { began: string | null; ended: string | null };
+
+export function knownSpell(
+  days: { businessDate: string; exclusion: { cause: string } | null }[]
+): KnownSpell {
+  const employed = days.filter((day) => day.exclusion?.cause !== "NOT_EMPLOYED");
+  const first = employed[0];
+  const last = employed.at(-1);
+  if (!first || !last) return { began: null, ended: null };
+
+  return {
+    began: first.businessDate === days[0]?.businessDate ? null : first.businessDate,
+    ended: last.businessDate === days.at(-1)?.businessDate ? null : last.businessDate,
+  };
+}

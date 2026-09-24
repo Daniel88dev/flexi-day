@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { renderWithClient } from "@/lib/test-utils";
+import { renderWithClient, withClient } from "@/lib/test-utils";
 import type {
   AttendanceTeam,
   AttendanceTeamDay,
@@ -39,6 +39,9 @@ vi.mock("@/lib/api/queries", () => ({
   useCorrectBreak: () => idle,
   useRemoveBreak: () => idle,
   useRemoveSession: () => idle,
+  useAddBreak: () => idle,
+  useEnterSession: () => idle,
+  useMarkSessionChecked: () => idle,
 }));
 
 const idle = { mutateAsync: vi.fn(), isPending: false };
@@ -146,6 +149,7 @@ const team = (overrides: Partial<AttendanceTeam> = {}): AttendanceTeam => ({
   requiredMinutesPerDay: 480,
   breakMinutes: 30,
   breakThresholdMinutes: 360,
+  selfService: { enabled: true, days: 7 },
   scope: "ORGANIZATION",
   group: null,
   people: [],
@@ -208,6 +212,33 @@ describe("TeamAttendanceScreen", () => {
     expect(screen.getByTestId("team-row-noah")).toBeInTheDocument();
     expect(teamRequests.at(-1)).toMatchObject({ organizationId: "org-1", groupId: null });
     expect(screen.queryByRole("combobox", { name: "Group" })).not.toBeInTheDocument();
+  });
+
+  it("shows a group admin the self-service setting read-only", () => {
+    roles.current = { ...orgAdmin, isOrgAdmin: false, isOrgOwner: false, organization: null };
+    groups.data = [
+      {
+        id: "eng",
+        organizationId: "org-1",
+        organization: { id: "org-1", name: "Studio Modrá" },
+        groupName: "Engineering",
+        managerUserId: "olivia",
+      } as GroupListItem,
+    ];
+    teamQuery.data = team({ scope: "GROUPS", people: [person("noah", "Noah Weber", plainWeek())] });
+    renderWithClient(<TeamAttendanceScreen />);
+
+    expect(screen.getByText("Self-service is on, 7 days back.")).toBeInTheDocument();
+    expect(screen.getByText("Set by organization admins")).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Change" })).not.toBeInTheDocument();
+  });
+
+  it("gives an org admin the same line with a way to change it", () => {
+    teamQuery.data = team({ people: [person("noah", "Noah Weber", plainWeek())] });
+    renderWithClient(<TeamAttendanceScreen />);
+
+    expect(screen.getByText("Self-service is on, 7 days back.")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Change" })).toHaveAttribute("href", "/organization");
   });
 
   it("renders the three flags in the cells and who is in now above them", () => {
@@ -302,6 +333,101 @@ describe("TeamAttendanceScreen", () => {
 
     expect(screen.getByRole("dialog")).toHaveTextContent("Correct Wednesday, September 9");
     expect(screen.getByRole("dialog")).toHaveTextContent("Noah Weber");
+  });
+
+  describe("entered sessions", () => {
+    const empty = (businessDate: string, overrides: Partial<AttendanceTeamDay> = {}) =>
+      day(businessDate, {
+        presenceMinutes: 0,
+        breaksMinutes: 0,
+        deductedMinutes: 0,
+        workedMinutes: 0,
+        balanceMinutes: -480,
+        ...overrides,
+      });
+
+    it("offers Add on an empty past day, and opens the form for that person", async () => {
+      const week = plainWeek();
+      week[3] = empty(WEEK[3]!);
+      teamQuery.data = team({ people: [person("tom", "Tom Becker", week)] });
+      renderWithClient(<TeamAttendanceScreen />);
+
+      await userEvent.click(
+        screen.getByRole("button", {
+          name: "Add a session for Tom Becker on Thursday, September 10",
+        })
+      );
+
+      expect(
+        screen.getByRole("heading", { name: "Add a session for Tom Becker" })
+      ).toBeInTheDocument();
+      expect(screen.getByLabelText("Date")).toHaveValue("2026-09-10");
+    });
+
+    it("offers no Add on a day with sessions, one still to come, or one outside the employment", () => {
+      const week = plainWeek();
+      week[0] = empty(WEEK[0]!, {
+        exclusion: { cause: "NOT_EMPLOYED", extent: "FULL", label: null },
+      });
+      week[5] = { ...week[5]!, upcoming: true };
+      week[6] = { ...week[6]!, upcoming: true };
+      teamQuery.data = team({ people: [person("tom", "Tom Becker", week)] });
+      renderWithClient(<TeamAttendanceScreen />);
+
+      expect(screen.queryByRole("button", { name: /^Add a session for/ })).not.toBeInTheDocument();
+    });
+
+    it("stamps an entered day, and explains the stamp in the legend", () => {
+      const week = plainWeek();
+      week[1] = day(WEEK[1]!, { entered: true });
+      teamQuery.data = team({ people: [person("noah", "Noah Weber", week)] });
+      renderWithClient(<TeamAttendanceScreen />);
+
+      expect(
+        within(screen.getByTestId("team-day-noah-2026-09-08")).getByText("Entered")
+      ).toBeInTheDocument();
+      expect(
+        within(screen.getByTestId("team-day-noah-2026-09-09")).queryByText("Entered")
+      ).toBeNull();
+      expect(screen.getByText("Recorded after the fact, for good")).toBeInTheDocument();
+    });
+  });
+
+  describe("sessions changed after the day", () => {
+    it("marks the changed day apart from the other flags, and explains it in the legend", () => {
+      const week = plainWeek();
+      week[2] = day(WEEK[2]!, { changedAfterDay: true, flagged: true });
+      teamQuery.data = team({ people: [person("noah", "Noah Weber", week)] });
+      renderWithClient(<TeamAttendanceScreen />);
+
+      const changed = within(screen.getByTestId("team-day-noah-2026-09-09"));
+      expect(changed.getByText("Changed later")).toBeInTheDocument();
+      expect(changed.queryByText("Auto-closed")).toBeNull();
+      expect(changed.queryByText("Entered")).toBeNull();
+      expect(
+        within(screen.getByTestId("team-day-noah-2026-09-08")).queryByText("Changed later")
+      ).toBeNull();
+      expect(
+        screen.getByText(
+          "Changed by the person after the day, until an admin corrects it or marks it checked"
+        )
+      ).toBeInTheDocument();
+    });
+
+    it("drops the marker once the read comes back cleared", () => {
+      const week = plainWeek();
+      week[2] = day(WEEK[2]!, { changedAfterDay: true, flagged: true });
+      teamQuery.data = team({ people: [person("noah", "Noah Weber", week)] });
+      const { rerender } = renderWithClient(<TeamAttendanceScreen />);
+
+      const cleared = plainWeek();
+      teamQuery.data = team({ people: [person("noah", "Noah Weber", cleared)] });
+      rerender(withClient(<TeamAttendanceScreen />));
+
+      expect(
+        within(screen.getByTestId("team-day-noah-2026-09-09")).queryByText("Changed later")
+      ).toBeNull();
+    });
   });
 
   it("refuses a custom range that is inside out or longer than a quarter, and asks nothing", async () => {

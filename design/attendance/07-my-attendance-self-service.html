@@ -1,0 +1,872 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Attendance design: my attendance, self-service</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;500;600;700;800&family=Hanken+Grotesk:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="assets/tokens.css" />
+    <link rel="stylesheet" href="assets/mock.css" />
+    <script src="assets/mock.js"></script>
+    <script src="assets/icons.js"></script>
+    <script src="assets/shell.js"></script>
+    <script src="assets/self-service.js"></script>
+    <style>
+      .mgrid {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 8px;
+      }
+      .mgrid .h {
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--text-faint);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        padding: 0 4px 2px;
+      }
+      .mday {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        padding: 10px 12px 10px;
+        min-height: 70px;
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+        position: relative;
+      }
+      .mday .d {
+        font-weight: 600;
+        font-size: 13px;
+        color: var(--text-muted);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .mday .d .fl {
+        display: inline-flex;
+        gap: 4px;
+      }
+      .mday .d .icon {
+        width: 15px;
+        height: 15px;
+        color: var(--warm);
+      }
+      .mday .d .icon.entered {
+        color: var(--text-muted);
+      }
+      .mday .d .icon.changed {
+        color: var(--review);
+      }
+      .mday .w {
+        font-family: var(--font-display);
+        font-size: 22px;
+        font-weight: 700;
+        letter-spacing: -0.03em;
+        font-variant-numeric: tabular-nums;
+        line-height: 1;
+        margin-top: 4px;
+      }
+      .mday .r {
+        font-size: 12px;
+        color: var(--text-faint);
+      }
+      .mday .b {
+        margin-top: auto;
+        display: flex;
+        gap: 4px;
+        flex-wrap: wrap;
+      }
+      .mday.ex {
+        background: repeating-linear-gradient(
+          -45deg,
+          var(--surface) 0 6px,
+          color-mix(in oklch, var(--text) 4%, var(--surface)) 6px 7px
+        );
+      }
+      .mday.ex .w,
+      .mday.ex .d > span:first-child {
+        color: var(--text-faint);
+      }
+      .mday.up {
+        background: transparent;
+        border-style: dashed;
+      }
+      .mday.today {
+        border-color: color-mix(in oklch, var(--primary) 45%, transparent);
+        background: color-mix(in oklch, var(--primary) 5%, var(--surface));
+      }
+      .mday.gone {
+        visibility: hidden;
+      }
+      .mday.hover {
+        box-shadow: 0 0 0 1px var(--border-strong);
+      }
+      .mday .add {
+        position: absolute;
+        right: 8px;
+        bottom: 8px;
+      }
+      .mlist .r {
+        display: grid;
+        grid-template-columns: 56px 1fr auto;
+        align-items: center;
+        gap: 10px;
+        padding: 9px 0;
+        border-bottom: 1px solid var(--border);
+      }
+      .mlist .r .d {
+        font-weight: 600;
+        color: var(--text-muted);
+        font-size: 13px;
+        line-height: 1.2;
+      }
+      .mlist .r .d small {
+        display: block;
+        color: var(--text-faint);
+        font-weight: 600;
+      }
+      .mlist .r.ex .d,
+      .mlist .r.ex .cellv b {
+        color: var(--text-faint);
+        font-weight: 500;
+      }
+      .state {
+        width: 560px;
+      }
+      .empty {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+        padding: 18px 0 6px;
+      }
+      .empty .disc {
+        width: 40px;
+        height: 40px;
+        border-radius: 999px;
+        display: grid;
+        place-items: center;
+        color: var(--primary-strong);
+        background: var(--primary-soft);
+      }
+      .empty .disc .icon {
+        width: 20px;
+        height: 20px;
+      }
+      .foot {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="sheet">
+      <header class="sheet-head">
+        <div>
+          <h1>My attendance, self-service</h1>
+          <p>
+            What an employee sees once their organization lets them enter and correct their own
+            attendance. The Today tab becomes Day and steps back like Week and Month, so a past day
+            can be opened, corrected or filled. "Add session" appears only on days inside the
+            window. Outside it, or with self-service off, the day stays readable and says who to ask
+            instead of offering a button that would be refused.
+          </p>
+          <nav class="sheet-nav">
+            <a href="01-shell.html">Shell</a>
+            <a href="02-clock-widget.html">Clock widget</a>
+            <a href="03-my-attendance.html">My attendance</a>
+            <a href="04-team-attendance.html">Team attendance</a>
+            <a href="05-organization-settings.html">Organization settings</a>
+            <a href="06-self-service-settings.html">Self-service settings</a>
+            <a class="current" href="07-my-attendance-self-service.html"
+              >My attendance, self-service</a
+            >
+            <a href="08-correction-dialog.html">Correction dialog</a>
+            <a href="09-team-attendance-self-service.html">Team attendance, self-service</a>
+          </nav>
+        </div>
+        <div class="theme-toggle" role="group" aria-label="Theme">
+          <button type="button" data-theme-pick="light">Light</button>
+          <button type="button" data-theme-pick="dark">Dark</button>
+          <button type="button" data-theme-pick="system">System</button>
+        </div>
+      </header>
+
+      <section class="board">
+        <h2>A past day with nothing on it</h2>
+        <p>
+          Noah Weber, a member of Design. Studio Modrá has self-service on, seven days back; today
+          is Friday 11 September and Noah clocked in at 09:10. He forgot to clock on Tuesday, which
+          is inside the window, so the empty day offers to add the session.
+        </p>
+        <div class="frames">
+          <div class="frame">
+            <span class="frame-label">1280 x 800, Day, Tuesday 8 September</span>
+            <div class="laptop" data-view="day-empty"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="board">
+        <h2>Adding the session</h2>
+        <p>
+          Date, start and end, and any breaks. The date is filled from the day he was looking at and
+          only offers days inside the window. The figures under the breaks follow the same rule as a
+          clocked day, so he sees what the day will count before saving.
+        </p>
+        <div class="frames">
+          <div class="frame">
+            <span class="frame-label">1280 x 800, Add a session</span>
+            <div class="laptop" data-view="day-entry"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="board">
+        <h2>The entered session on its day</h2>
+        <p>
+          The marker sits above the session, where the auto-closed flag sits. It says entered, not
+          when or by whom; the history in the correction dialog has that. The day can still be
+          corrected, and more sessions added.
+        </p>
+        <div class="frames">
+          <div class="frame">
+            <span class="frame-label">1280 x 800, Day, Tuesday 8 September after saving</span>
+            <div class="laptop" data-view="day-entered"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="board">
+        <h2>Month with both markers</h2>
+        <p>
+          Saturday 5 was entered on a weekend, so it carries the entered marker and the excluded-day
+          flag. Tuesday 8 is entered. On Thursday Noah fixed Wednesday 9 himself: he set the real
+          clock-out and added a break he forgot, so Wednesday is marked as changed after the day
+          until an admin corrects it. Days inside the window show an add button on hover; Friday 4
+          is hovered.
+        </p>
+        <div class="frames">
+          <div class="frame">
+            <span class="frame-label">1280 x 960, Month, DAILY mode</span>
+            <div class="laptop tall" data-view="month"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="board">
+        <h2>A day changed after it happened</h2>
+        <p>
+          What Noah sees on Wednesday 9 after his own correction. The employee is told plainly that
+          the admin sees the flag, so it does not come as a surprise.
+        </p>
+        <div class="frames">
+          <div class="frame">
+            <span class="frame-label">Day card, Wednesday 9 September</span>
+            <div class="card state" data-state="changed"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="board">
+        <h2>Refused and read-only</h2>
+        <p>
+          No buttons that would fail. Each read-only day names the reason and who can help. The
+          wording matches the API refusals, so a stale tab that tries anyway reads the same text.
+        </p>
+        <div class="frames">
+          <div class="frame">
+            <span class="frame-label">Self-service off, today</span>
+            <div class="card state" data-state="off"></div>
+          </div>
+          <div class="frame">
+            <span class="frame-label">Outside the window, Friday 28 August</span>
+            <div class="card state" data-state="outside"></div>
+          </div>
+          <div class="frame">
+            <span class="frame-label">Employment ended</span>
+            <div class="card state" data-state="ended"></div>
+          </div>
+          <div class="frame">
+            <span class="frame-label"
+              >Correction dialog footer, entered session: delete allowed</span
+            >
+            <div class="dialog flat state" data-state="del-entered"></div>
+          </div>
+          <div class="frame">
+            <span class="frame-label">Correction dialog footer, clocked on an earlier day</span>
+            <div class="dialog flat state" data-state="del-clocked"></div>
+          </div>
+          <div class="frame">
+            <span class="frame-label">The same refusal from the API</span>
+            <div class="dialog flat state" data-state="del-refused"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="board">
+        <h2>Mobile</h2>
+        <p>
+          On a phone "Add a session" is a bottom sheet over the day. The month list carries the
+          markers as icons beside the balance, like the flags.
+        </p>
+        <div class="frames">
+          <div class="frame">
+            <span class="frame-label">390 x 844, Add a session for a night shift</span>
+            <div class="phone" data-view="m-entry"></div>
+          </div>
+          <div class="frame">
+            <span class="frame-label">390 x 844, Month</span>
+            <div class="phone" data-view="m-month"></div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <script>
+      var NOAH = { name: "Noah Weber", org: "Studio Modrá" };
+      var ROLES = { org: false, group: false };
+      var REQ = 480;
+      var WINDOW_HINT =
+        "You can enter and correct your attendance for today and the 7 days before it. Earlier days go through your admin.";
+      var OFF_TEXT =
+        "Your organization manages attendance corrections through an admin. To change a time or add a missed day, ask a group admin or an organization admin.";
+
+      // September 2026, Noah Weber. Worked follows the rule in
+      // flexi-day-be/docs/attendance.md: 30 min deducted once presence passes 6:00.
+      var DAYS = [
+        { d: 1, presence: 515, breaks: 30 },
+        { d: 2, presence: 530, breaks: 30 },
+        { d: 3, presence: 520, breaks: 30 },
+        { d: 4, presence: 500, breaks: 30, hover: true },
+        { d: 5, ex: "Weekend", presence: 150, breaks: 0, flags: ["entered", "exclockin"] },
+        { d: 6, ex: "Weekend" },
+        { d: 7, presence: 530, breaks: 30 },
+        { d: 8, presence: 525, breaks: 30, flags: ["entered"] },
+        { d: 9, presence: 545, breaks: 50, flags: ["changed"] },
+        { d: 10, presence: 510, breaks: 30 },
+        { d: 11, presence: 189, breaks: 0, today: true },
+        { d: 12, ex: "Weekend" },
+        { d: 13, ex: "Weekend" },
+        { d: 14, up: true },
+        { d: 15, up: true },
+        { d: 16, up: true },
+        { d: 17, up: true },
+        { d: 18, up: true },
+        { d: 19, ex: "Weekend" },
+        { d: 20, ex: "Weekend" },
+        { d: 21, up: true },
+        { d: 22, up: true },
+        { d: 23, up: true },
+        { d: 24, up: true },
+        { d: 25, up: true },
+        { d: 26, ex: "Weekend" },
+        { d: 27, ex: "Weekend" },
+        { d: 28, ex: "St Wenceslas Day" },
+        { d: 29, up: true },
+        { d: 30, up: true },
+      ];
+      var DOW = ["Tue", "Wed", "Thu", "Fri", "Sat", "Sun", "Mon"];
+      DAYS.forEach(function (x) {
+        x.dow = DOW[(x.d - 1) % 7];
+        if (x.presence != null) {
+          var deducted = x.presence > 360 ? Math.max(30, x.breaks) : x.breaks;
+          x.worked = x.presence - deducted;
+        }
+        x.req = x.ex ? 0 : REQ;
+        if (x.worked != null && !x.up && !x.today) x.bal = x.worked - x.req;
+        x.flags = x.flags || [];
+      });
+      function sum(pred, key) {
+        return DAYS.filter(pred).reduce(function (a, x) {
+          return a + (x[key] || 0);
+        }, 0);
+      }
+      var toDate = function (x) {
+        return x.d <= 11;
+      };
+      var workedToDate = sum(toDate, "worked");
+      var reqToDate = sum(toDate, "req");
+      var excludedCount = DAYS.filter(function (x) {
+        return x.ex;
+      }).length;
+      var flaggedCount = DAYS.filter(function (x) {
+        return x.flags.some(function (f) {
+          return f !== "entered";
+        });
+      }).length;
+
+      function stat(label, value, cls, sub) {
+        return (
+          '<div class="stat compact"><span class="stat-label">' +
+          label +
+          '</span><div><span class="stat-value ' +
+          (cls || "") +
+          '">' +
+          value +
+          "</span>" +
+          (sub ? '<span class="stat-sub">' + sub + "</span>" : "") +
+          "</div></div>"
+        );
+      }
+
+      function header(view, range, chip) {
+        return (
+          '<div class="row between" style="margin-bottom:20px; align-items:flex-start">' +
+          '<div><h1 class="page-title">My attendance</h1><p class="page-sub">Your sessions, breaks and balance in Studio Modrá.' +
+          (chip
+            ? ' <span class="chip" style="margin-left:6px; padding:2px 10px">' +
+              icon("calendar-days") +
+              "You can enter and correct 4 to 11 September</span>"
+            : "") +
+          "</p></div>" +
+          '<div class="row"><span class="segmented"><span' +
+          (view === "day" ? ' class="active"' : "") +
+          ">Day</span><span>Week</span><span" +
+          (view === "month" ? ' class="active"' : "") +
+          ">Month</span></span>" +
+          '<button class="btn btn-outline btn-icon btn-sm" type="button">' +
+          icon("chevron-left") +
+          '</button><span style="font-weight:600; min-width:170px; text-align:center">' +
+          range +
+          '</span><button class="btn btn-outline btn-icon btn-sm" type="button">' +
+          icon("chevron-right") +
+          "</button>" +
+          (view === "day"
+            ? '<button class="btn btn-ghost btn-sm" type="button">Today</button>'
+            : "") +
+          "</div></div>"
+        );
+      }
+
+      function widgetIn() {
+        return (
+          '<div class="clock"><div class="clock-state ok">' +
+          icon("play") +
+          "Clocked in</div>" +
+          '<div class="clock-timer">3<small>:</small>09</div>' +
+          '<div class="clock-since">since 09:10</div>' +
+          '<div class="clock-actions two"><button class="btn btn-soft btn-xl" type="button">' +
+          icon("coffee") +
+          'Take a break</button><button class="btn btn-primary btn-xl" type="button">' +
+          icon("log-out") +
+          "Clock out</button></div>" +
+          '<div class="clock-today"><div><div class="k">Worked</div><div class="v">3:09</div></div><div><div class="k">Breaks</div><div class="v">0:00</div></div><div><div class="k">Required</div><div class="v">8:00</div></div></div></div>'
+        );
+      }
+
+      function actions(list) {
+        return (
+          '<span class="row" style="gap:8px">' +
+          list
+            .map(function (a) {
+              return (
+                '<button class="btn btn-outline btn-sm" type="button">' +
+                icon(a[0]) +
+                a[1] +
+                "</button>"
+              );
+            })
+            .join("") +
+          "</span>"
+        );
+      }
+
+      function cardHead(title, acts, ic) {
+        return (
+          '<div class="row between"><span class="card-title">' +
+          icon(ic || "calendar-days") +
+          title +
+          "</span>" +
+          (acts || "") +
+          "</div>"
+        );
+      }
+
+      function totals(p, b, w) {
+        return (
+          '<div class="totals" style="grid-template-columns: repeat(4,1fr)">' +
+          stat("Presence", p) +
+          stat("Breaks", b) +
+          stat("Worked", w) +
+          stat("Required", "8:00") +
+          "</div>"
+        );
+      }
+
+      function notice(ic, text, cls) {
+        return (
+          '<div class="notice' +
+          (cls ? " " + cls : "") +
+          '" style="padding:12px 14px">' +
+          icon(ic) +
+          '<div><p style="color:var(--text)">' +
+          text +
+          "</p></div></div>"
+        );
+      }
+
+      function emptyDay() {
+        return (
+          '<div class="card">' +
+          cardHead("Tuesday 8 September") +
+          '<div class="empty"><span class="disc">' +
+          icon("calendar-plus") +
+          '</span><div style="font-weight:600">Nothing was recorded on this day.</div>' +
+          '<p class="muted" style="margin:0">Forgot to clock? Add the session with its start and end, and any breaks.</p>' +
+          '<button class="btn btn-primary" type="button" style="margin-top:6px">' +
+          icon("calendar-plus") +
+          "Add session</button></div>" +
+          '<p class="hint" style="margin:0">' +
+          WINDOW_HINT +
+          "</p></div>"
+        );
+      }
+
+      var TUE_SEGS =
+        ss.seg("08:10 - 12:00", "Work", "3:50") +
+        ss.seg("12:00 - 12:30", "Break", "0:30") +
+        ss.seg("12:30 - 16:55", "Work", "4:25");
+
+      function enteredDay() {
+        return (
+          '<div class="card">' +
+          cardHead(
+            "Tuesday 8 September",
+            actions([
+              ["pencil", "Correct"],
+              ["calendar-plus", "Add session"],
+            ])
+          ) +
+          '<div class="stack" style="gap:6px"><div class="marks">' +
+          mark("entered") +
+          '</div><div class="timeline">' +
+          TUE_SEGS +
+          "</div></div>" +
+          totals("8:45", "0:30", "8:15") +
+          '<div class="row" style="gap:10px">' +
+          balanceChip(15) +
+          '<span class="hint">Worked against required</span></div>' +
+          '<p class="hint" style="margin:0">' +
+          WINDOW_HINT +
+          "</p></div>"
+        );
+      }
+
+      function dayLayout(right) {
+        return (
+          header("day", "Tuesday 8 September") +
+          '<div style="display:grid; grid-template-columns: 400px 1fr; gap: 16px; align-items:start">' +
+          '<div class="card panel" style="width:auto; border:0; box-shadow: 0 0 0 1px color-mix(in oklch, var(--text) 10%, transparent)">' +
+          widgetIn() +
+          "</div>" +
+          right +
+          "</div>"
+        );
+      }
+
+      function monthCell(x) {
+        var cls =
+          "mday" +
+          (x.ex ? " ex" : "") +
+          (x.up ? " up" : "") +
+          (x.today ? " today" : "") +
+          (x.hover ? " hover" : "");
+        var fl = x.flags
+          .map(function (f) {
+            return icon(FLAGS[f].icon, f === "entered" || f === "changed" ? f : "");
+          })
+          .join("");
+        var h =
+          '<div class="' +
+          cls +
+          '"><div class="d"><span>' +
+          x.d +
+          '</span><span class="fl">' +
+          fl +
+          "</span></div>";
+        if (x.up) return h + "</div>";
+        if (x.ex)
+          h +=
+            '<div class="w">' +
+            (x.worked != null ? fmt.hm(x.worked) : "") +
+            '</div><div class="r">' +
+            x.ex +
+            "</div>";
+        else
+          h +=
+            '<div class="w">' +
+            fmt.hm(x.worked) +
+            '</div><div class="r">of ' +
+            fmt.hm(x.req) +
+            "</div>";
+        if (x.presence != null) h += '<div class="r">' + fmt.hm(x.presence) + " present</div>";
+        h += '<div class="b">';
+        if (x.today) h += '<span class="flag flag-ok">' + icon("play") + "Clocked in</span>";
+        else if (x.bal != null) h += balanceChip(x.bal);
+        h += "</div>";
+        if (x.hover)
+          h +=
+            '<button class="btn btn-outline btn-icon btn-sm add" type="button" aria-label="Add session">' +
+            icon("plus") +
+            "</button>";
+        return h + "</div>";
+      }
+
+      function monthView() {
+        var cells = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+          .map(function (n) {
+            return '<div class="h">' + n + "</div>";
+          })
+          .join("");
+        cells += '<div class="mday gone"></div>';
+        cells += DAYS.map(monthCell).join("");
+        cells +=
+          '<div class="mday gone"></div><div class="mday gone"></div><div class="mday gone"></div><div class="mday gone"></div>';
+        return (
+          header("month", "September 2026", true) +
+          '<div class="totals" style="margin-bottom:16px">' +
+          stat("Worked", fmt.hm(workedToDate)) +
+          stat("Required so far", fmt.hm(reqToDate)) +
+          stat(
+            "Balance",
+            fmt.hm(workedToDate - reqToDate, true),
+            workedToDate >= reqToDate ? "ok" : "danger",
+            "to date, today still open"
+          ) +
+          stat("Excluded days", excludedCount, "", "of 30") +
+          stat("Flagged", flaggedCount, "", "days to check") +
+          "</div>" +
+          '<div class="mgrid">' +
+          cells +
+          "</div>" +
+          '<div class="legend" style="margin-top:14px"><span>' +
+          icon(FLAGS.entered.icon) +
+          'Entered after the fact</span><span style="color:var(--review)">' +
+          icon(FLAGS.changed.icon) +
+          '<span class="muted">Changed after the day, until an admin corrects it</span></span><span>' +
+          icon(FLAGS.autoclosed.icon) +
+          FLAGS.autoclosed.label +
+          "</span><span>" +
+          icon(FLAGS.exclockin.icon) +
+          "Worked on an excluded day</span><span>Hatched: excluded day</span><span>Dashed: upcoming</span></div>"
+        );
+      }
+
+      function frame(content, overlay) {
+        return shellFrame({
+          active: "my",
+          crumb: ["Attendance", "My attendance"],
+          live: true,
+          user: NOAH,
+          roles: ROLES,
+          content: content,
+        });
+      }
+
+      var ENTRY = {
+        date: "Tue 8 September 2026",
+        dateHint: "Today or up to 7 days back",
+        start: "08:10",
+        end: "16:55",
+        focus: "end",
+        breaks: [{ s: "12:00", e: "12:30" }],
+        summary: ["8:45", "0:30", "8:15"],
+      };
+
+      document.querySelectorAll(".laptop[data-view]").forEach(function (el) {
+        var v = el.getAttribute("data-view");
+        if (v === "month") el.innerHTML = frame(monthView());
+        else el.innerHTML = frame(dayLayout(v === "day-entered" ? enteredDay() : emptyDay()));
+        if (v === "day-entry") {
+          var app = el.querySelector(".app");
+          app.style.position = "relative";
+          app.insertAdjacentHTML(
+            "beforeend",
+            '<div class="overlay">' + ss.entryDialog(ENTRY) + "</div>"
+          );
+        }
+      });
+
+      var STATES = {
+        changed: function () {
+          return (
+            cardHead(
+              "Wednesday 9 September",
+              actions([
+                ["pencil", "Correct"],
+                ["calendar-plus", "Add session"],
+              ])
+            ) +
+            '<div class="stack" style="gap:6px"><div class="marks">' +
+            mark("changed", FLAGS.changed.label) +
+            '</div><div class="timeline">' +
+            ss.seg("08:05 - 12:00", "Work", "3:55") +
+            ss.seg("12:00 - 12:30", "Break", "0:30") +
+            ss.seg("12:30 - 15:00", "Work", "2:30") +
+            ss.seg("15:00 - 15:20", "Break", "0:20") +
+            ss.seg("15:20 - 17:10", "Work", "1:50") +
+            "</div></div>" +
+            notice(
+              "user-pen",
+              "You changed this session on Thursday 10 September, after its day. Your admin sees it flagged until they have checked it.",
+              "notice-review"
+            )
+          );
+        },
+        off: function () {
+          return (
+            cardHead("Friday 11 September") +
+            '<div class="timeline">' +
+            ss.seg("09:10", "Work", "3:09", true) +
+            "</div>" +
+            notice("lock", OFF_TEXT)
+          );
+        },
+        outside: function () {
+          return (
+            cardHead("Friday 28 August") +
+            '<div class="timeline">' +
+            ss.seg("08:20 - 12:05", "Work", "3:45") +
+            ss.seg("12:05 - 12:35", "Break", "0:30") +
+            ss.seg("12:35 - 16:40", "Work", "4:05") +
+            "</div>" +
+            notice(
+              "lock",
+              "Only an admin can change a day this old. You can enter and correct today and the 7 days before it. For anything earlier, ask a group admin or an organization admin."
+            )
+          );
+        },
+        ended: function () {
+          return (
+            cardHead("Monday 31 August") +
+            '<div class="timeline">' +
+            ss.seg("08:00 - 16:30", "Work", "8:30") +
+            "</div>" +
+            notice(
+              "lock",
+              "Your employment in Studio Modrá ended on 31 August. Your attendance stays readable, and only an admin can change it."
+            )
+          );
+        },
+        "del-entered": function () {
+          return (
+            '<div class="foot"><button class="btn btn-ghost danger btn-sm" type="button">' +
+            icon("trash-2") +
+            'Delete session</button><span class="row"><button class="btn btn-outline" type="button">Cancel</button><button class="btn btn-primary" type="button">Save correction</button></span></div>' +
+            '<p class="hint" style="margin:0">You entered this session, so you can delete it. Its history stays.</p>'
+          );
+        },
+        "del-clocked": function () {
+          return '<div class="foot"><span class="hint" style="max-width:250px">Clocked on an earlier day, so it can be corrected but not deleted.</span><span class="row"><button class="btn btn-outline" type="button">Cancel</button><button class="btn btn-primary" type="button">Save correction</button></span></div>';
+        },
+        "del-refused": function () {
+          return (
+            ss.alert(
+              "This session was clocked on an earlier day. You can correct its times, but only an admin can delete it."
+            ) +
+            '<div class="foot"><span></span><span class="row"><button class="btn btn-outline" type="button">Cancel</button><button class="btn btn-primary" type="button">Save correction</button></span></div>'
+          );
+        },
+      };
+
+      document.querySelectorAll(".state[data-state]").forEach(function (el) {
+        el.innerHTML = STATES[el.getAttribute("data-state")]();
+      });
+
+      function mobileEntry() {
+        var content =
+          '<h1 class="page-title" style="font-size:22px; margin-bottom:10px">My attendance</h1>' +
+          '<div style="margin-bottom:12px"><span class="segmented"><span class="active">Day</span><span>Week</span><span>Month</span></span></div>' +
+          '<div class="card card-sm"><span class="card-title" style="font-size:15px">Tuesday 8 September</span><p class="muted" style="margin:0">Nothing was recorded on this day.</p></div>';
+        var sheet =
+          '<div class="scrim"></div><div class="bottom-sheet"><div class="grabber"></div>' +
+          '<div class="stack" style="gap:14px"><h2 style="font-size:19px">Add a session</h2>' +
+          ss.field("Date", ss.input("Tue 8 September 2026", { icon: "calendar" }), {
+            hint: "Today or up to 7 days back",
+          }) +
+          '<div style="display:grid; grid-template-columns:1fr 1fr; gap:10px">' +
+          ss.field("Start", ss.input("22:00")) +
+          ss.field("End", ss.input("06:15", { focus: true })) +
+          "</div>" +
+          '<div class="row" style="gap:10px"><span class="switch sm on"></span><span class="label" style="font-size:13.5px">Ends the next day</span></div>' +
+          '<p class="hint" style="margin:-8px 0 0">' +
+          icon("moon", "tiny") +
+          " Ends Wednesday 9 September. It stays on Tuesday, the day it started.</p>" +
+          ss.breaks([{ s: "02:00", e: "02:30" }], { optional: true }) +
+          ss.summary("8:15", "0:30", "7:45") +
+          '<button class="btn btn-primary btn-lg" type="button" style="width:100%">' +
+          icon("calendar-plus") +
+          "Add session</button></div></div>";
+        return phoneFrame({
+          active: "attendance",
+          clock: "in",
+          elapsed: "3:09",
+          user: NOAH,
+          content: content,
+          sheet: sheet,
+        });
+      }
+
+      function mobileMonth() {
+        var rows = DAYS.filter(function (x) {
+          return x.d <= 11;
+        })
+          .map(function (x) {
+            var h =
+              '<div class="r' +
+              (x.ex ? " ex" : "") +
+              '"><div class="d">' +
+              x.dow +
+              "<small>" +
+              x.d +
+              " Sep</small></div>";
+            if (x.ex && x.worked == null)
+              h += '<div class="cellv"><b></b><small>' + x.ex + "</small></div>";
+            else
+              h +=
+                '<div class="cellv"><b>' +
+                fmt.hm(x.worked) +
+                "</b><small>" +
+                (x.ex ? x.ex : "of " + fmt.hm(x.req)) +
+                "</small></div>";
+            h += '<div class="row" style="gap:4px">';
+            x.flags.forEach(function (f) {
+              var cls =
+                f === "entered" ? "flag-entered" : f === "changed" ? "flag-review" : "flag-warn";
+              h += '<span class="flag ' + cls + '">' + icon(FLAGS[f].icon) + "</span>";
+            });
+            if (x.today) h += '<span class="flag flag-ok">' + icon("play") + "</span>";
+            else if (x.bal != null) h += balanceChip(x.bal);
+            return h + "</div></div>";
+          })
+          .join("");
+        return phoneFrame({
+          active: "attendance",
+          clock: "in",
+          elapsed: "3:09",
+          user: NOAH,
+          content:
+            '<h1 class="page-title" style="font-size:22px; margin-bottom:10px">My attendance</h1>' +
+            '<div style="margin-bottom:12px"><span class="segmented"><span>Day</span><span>Week</span><span class="active">Month</span></span></div>' +
+            '<div class="row between" style="margin-bottom:6px"><span style="font-weight:600">September 2026</span><span class="chip">Balance each day</span></div>' +
+            '<div class="mlist">' +
+            rows +
+            "</div>",
+        });
+      }
+
+      document.querySelectorAll(".phone[data-view]").forEach(function (el) {
+        el.innerHTML = el.getAttribute("data-view") === "m-entry" ? mobileEntry() : mobileMonth();
+      });
+    </script>
+  </body>
+</html>

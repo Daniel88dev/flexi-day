@@ -1,6 +1,6 @@
 "use client";
 
-import { CalendarOff, ClockAlert, Play } from "lucide-react";
+import { CalendarOff, ClockAlert, NotebookPen, Play, UserPen } from "lucide-react";
 import type { AttendanceBalanceMode, AttendanceDay } from "@/lib/api/attendance";
 import { formatMinutes, formatSignedMinutes } from "@/lib/attendance/duration";
 import { exclusionLabel } from "@/lib/attendance/exclusion";
@@ -128,6 +128,7 @@ export function DayFigures({
           <BalanceChip minutes={day.balanceMinutes} />
         ) : null}
         <DayFlags day={day} today={today} />
+        {day.entered ? <EnteredMark /> : null}
         {exclusion !== null && !excluded ? (
           <span
             className="rounded-full px-2 py-0.5 text-xs font-semibold"
@@ -143,15 +144,18 @@ export function DayFigures({
 
 /**
  * What asks to be looked at on a day: a session the sweep closed, one clocked
- * into a day nobody owed, and one still running on a day that has passed.
- * Today's open session is somebody at work, so it reads as a state rather than
- * a flag.
+ * into a day nobody owed, one its owner changed after the day, and one still
+ * running on a day that has passed. Today's open session is somebody at work,
+ * so it reads as a state rather than a flag.
  */
 export function DayFlags({
   day,
   today,
 }: {
-  day: Pick<AttendanceDay, "businessDate" | "autoClosed" | "excludedClockIn" | "open">;
+  day: Pick<
+    AttendanceDay,
+    "businessDate" | "autoClosed" | "excludedClockIn" | "open" | "changedAfterDay"
+  >;
   today: string | null;
 }) {
   const { t } = useTranslation();
@@ -176,6 +180,7 @@ export function DayFlags({
           {t.clock.excludedClockInFlag}
         </span>
       ) : null}
+      {day.changedAfterDay ? <ChangedMark label={t.clock.changedDayCell} /> : null}
       {day.open ? (
         <span
           className="flex items-center gap-1 text-xs font-semibold [&_svg]:size-[14px]"
@@ -188,5 +193,63 @@ export function DayFlags({
         </span>
       ) : null}
     </>
+  );
+}
+
+/**
+ * A session, or a day holding one, that was entered after the fact rather than
+ * clocked. A permanent fact, not something to check, so it is a quiet outlined
+ * stamp rather than a coloured flag.
+ */
+export function EnteredMark({ label }: { label?: string }) {
+  const { t } = useTranslation();
+
+  return (
+    <span
+      className="inline-flex w-fit items-center gap-1 rounded-full border py-px pr-2 pl-1.5 text-[11.5px] font-semibold whitespace-nowrap [&_svg]:size-[13px]"
+      style={{
+        color: "var(--text-muted)",
+        borderColor: "var(--border-strong)",
+        background: "var(--card)",
+      }}
+    >
+      <NotebookPen aria-hidden />
+      {label ?? t.clock.enteredMark}
+    </span>
+  );
+}
+
+/**
+ * A session its owner changed after its day, which an admin has yet to correct
+ * or mark checked. Something to look at, so it is coloured like the flags, but
+ * blue so it never reads as a wrong number.
+ */
+export function ChangedMark({ label }: { label?: string }) {
+  const { t } = useTranslation();
+
+  return (
+    <span
+      className="inline-flex w-fit items-center gap-1 text-[11.5px] font-semibold whitespace-nowrap [&_svg]:size-[13px]"
+      style={{ color: "var(--review)" }}
+    >
+      <UserPen aria-hidden />
+      {label ?? t.clock.changedSessionMark}
+    </span>
+  );
+}
+
+/** The blue notice that goes with {@link ChangedMark}: what the flag means, for whoever reads it. */
+export function ChangedNotice({ children }: { children: React.ReactNode }) {
+  return (
+    <div
+      className="flex gap-3 rounded-[var(--radius-sm)] border p-3 text-sm"
+      style={{
+        background: "var(--review-soft)",
+        borderColor: "color-mix(in oklch, var(--review) 30%, transparent)",
+      }}
+    >
+      <UserPen className="mt-0.5 size-4 shrink-0" style={{ color: "var(--review)" }} aria-hidden />
+      <p>{children}</p>
+    </div>
   );
 }

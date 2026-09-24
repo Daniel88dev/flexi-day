@@ -9,6 +9,9 @@ const correctSessionMock = vi.fn();
 const correctBreakMock = vi.fn();
 const removeBreakMock = vi.fn();
 const removeSessionMock = vi.fn();
+const enterSessionMock = vi.fn();
+const addBreakMock = vi.fn();
+const markCheckedMock = vi.fn();
 
 vi.mock("../attendance", () => ({
   getAttendanceDay: (...args: unknown[]) => dayMock(...args),
@@ -17,13 +20,19 @@ vi.mock("../attendance", () => ({
   correctBreak: (...args: unknown[]) => correctBreakMock(...args),
   removeBreak: (...args: unknown[]) => removeBreakMock(...args),
   removeSession: (...args: unknown[]) => removeSessionMock(...args),
+  enterSession: (...args: unknown[]) => enterSessionMock(...args),
+  addBreak: (...args: unknown[]) => addBreakMock(...args),
+  markSessionChecked: (...args: unknown[]) => markCheckedMock(...args),
 }));
 
 import {
   qk,
+  useAddBreak,
   useAttendanceDay,
   useCorrectBreak,
   useCorrectSession,
+  useEnterSession,
+  useMarkSessionChecked,
   useRemoveBreak,
   useRemoveSession,
   useSessionEvents,
@@ -102,7 +111,15 @@ describe("useSessionEvents", () => {
 
 describe("the correction mutations", () => {
   beforeEach(() => {
-    for (const mock of [correctSessionMock, correctBreakMock, removeBreakMock, removeSessionMock]) {
+    for (const mock of [
+      correctSessionMock,
+      correctBreakMock,
+      removeBreakMock,
+      removeSessionMock,
+      enterSessionMock,
+      addBreakMock,
+      markCheckedMock,
+    ]) {
       mock.mockReset();
       mock.mockResolvedValue({ id: "session-1" });
     }
@@ -131,6 +148,54 @@ describe("the correction mutations", () => {
     const deleted = renderHook(() => useRemoveSession(), { wrapper });
     await deleted.result.current.mutateAsync("session-1");
     expect(removeSessionMock).toHaveBeenCalledWith("session-1");
+
+    const entered = renderHook(() => useEnterSession(), { wrapper });
+    const recorded = {
+      organizationId: "org-1",
+      businessDate: "2026-09-08",
+      startedAt: "2026-09-08T06:10:00.000Z",
+      endedAt: "2026-09-08T14:55:00.000Z",
+    };
+    await entered.result.current.mutateAsync(recorded);
+    expect(enterSessionMock).toHaveBeenCalledWith(recorded);
+
+    const added = renderHook(() => useAddBreak(), { wrapper });
+    const span = { startedAt: "2026-09-09T13:00:00.000Z", endedAt: "2026-09-09T13:20:00.000Z" };
+    await added.result.current.mutateAsync({ sessionId: "session-1", span });
+    expect(addBreakMock).toHaveBeenCalledWith("session-1", span);
+  });
+
+  it("drops the day and the session's timeline after an added break", async () => {
+    const { client, wrapper } = setup();
+    const invalidate = vi.spyOn(client, "invalidateQueries");
+
+    const { result } = renderHook(() => useAddBreak(), { wrapper });
+    await result.current.mutateAsync({
+      sessionId: "session-1",
+      span: { startedAt: "2026-09-09T13:00:00.000Z", endedAt: "2026-09-09T13:20:00.000Z" },
+    });
+
+    const keys = invalidate.mock.calls.map((call) => JSON.stringify(call[0]?.queryKey));
+    expect(keys).toContain(JSON.stringify(["attendance-day"]));
+    expect(keys).toContain(JSON.stringify(["attendance-month"]));
+    expect(keys).toContain(JSON.stringify(qk.attendanceEvents("session-1")));
+  });
+
+  it("drops the same reads after an entry, and the entered session's timeline", async () => {
+    const { client, wrapper } = setup();
+    const invalidate = vi.spyOn(client, "invalidateQueries");
+
+    const { result } = renderHook(() => useEnterSession(), { wrapper });
+    await result.current.mutateAsync({
+      organizationId: "org-1",
+      businessDate: "2026-09-08",
+      startedAt: "2026-09-08T06:10:00.000Z",
+      endedAt: "2026-09-08T14:55:00.000Z",
+    });
+
+    const keys = invalidate.mock.calls.map((call) => JSON.stringify(call[0]?.queryKey));
+    expect(keys).toContain(JSON.stringify(["attendance-month"]));
+    expect(keys).toContain(JSON.stringify(qk.attendanceEvents("session-1")));
   });
 
   it("drops every attendance read a correction could have moved, and that session's timeline", async () => {
@@ -140,6 +205,24 @@ describe("the correction mutations", () => {
     const { result } = renderHook(() => useCorrectSession(), { wrapper });
     await result.current.mutateAsync({ sessionId: "session-1", patch: { endedAt: null } });
 
+    const keys = invalidate.mock.calls.map((call) => JSON.stringify(call[0]?.queryKey));
+    expect(keys).toEqual([
+      JSON.stringify(["attendance-day"]),
+      JSON.stringify(["attendance-month"]),
+      JSON.stringify(["attendance-team"]),
+      JSON.stringify(["attendance-state"]),
+      JSON.stringify(qk.attendanceEvents("session-1")),
+    ]);
+  });
+
+  it("marks a session checked, then drops every read its flag shows on and its timeline", async () => {
+    const { client, wrapper } = setup();
+    const invalidate = vi.spyOn(client, "invalidateQueries");
+
+    const { result } = renderHook(() => useMarkSessionChecked(), { wrapper });
+    await result.current.mutateAsync("session-1");
+
+    expect(markCheckedMock).toHaveBeenCalledWith("session-1");
     const keys = invalidate.mock.calls.map((call) => JSON.stringify(call[0]?.queryKey));
     expect(keys).toEqual([
       JSON.stringify(["attendance-day"]),
