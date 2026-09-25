@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const apiMock = vi.fn();
 vi.mock("../client", () => ({ api: (...args: unknown[]) => apiMock(...args) }));
 
-import { joinGroupByLink, previewInvite } from "../group-users";
+import { joinGroupByLink, previewInvite, signUpWithInvite } from "../group-users";
 
 describe("invite link api", () => {
   beforeEach(() => {
@@ -24,6 +24,20 @@ describe("invite link api", () => {
     expect(apiMock).toHaveBeenCalledWith("/api/auth/invite/join", {
       method: "POST",
       body: { token: "s3cr3t" },
+    });
+  });
+
+  it("signUpWithInvite POSTs the token and the new account in the body", async () => {
+    const input = {
+      token: "s3cr3t",
+      name: "Dana Holt",
+      email: "dana@northwind.co",
+      password: "sturdy-passphrase",
+    };
+    await signUpWithInvite(input);
+    expect(apiMock).toHaveBeenCalledWith("/api/auth/invite/sign-up", {
+      method: "POST",
+      body: input,
     });
   });
 });

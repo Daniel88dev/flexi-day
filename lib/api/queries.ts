@@ -72,6 +72,7 @@ import {
   previewInvite,
   removeGroupUser,
   revokeGroupInvite,
+  signUpWithInvite,
   updateGroupUsers,
 } from "./group-users";
 import {
@@ -135,6 +136,7 @@ import type {
   CreateGroupInput,
   CreateGroupInviteInput,
   CreateVacationInput,
+  InviteSignUpInput,
   SetGroupMirrorsInput,
   SetUserQuotaInput,
   UpdateGroupHolidayCountryInput,
@@ -636,6 +638,17 @@ export function useInvitePreview(token: string) {
     queryKey: qk.invitePreview(token),
     queryFn: () => previewInvite(token),
     enabled: token.length > 0,
+  });
+}
+
+export function useSignUpWithInvite() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: InviteSignUpInput) => signUpWithInvite(input),
+    onSuccess: () => {
+      invalidateAfterJoin(qc);
+      qc.invalidateQueries({ queryKey: ["invite-preview"] });
+    },
   });
 }
 

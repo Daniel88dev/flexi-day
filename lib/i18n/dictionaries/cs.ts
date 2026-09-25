@@ -1049,6 +1049,7 @@ export const cs: Dictionary = {
       submit: "Přihlásit se",
       submitting: "Přihlašování…",
       failed: "Přihlášení selhalo",
+      accountReady: "Váš účet je připravený a jste ve skupině. Pokračujte přihlášením.",
     },
     signUp: {
       title: "Vytvořte si účet",
@@ -1158,7 +1159,19 @@ export const cs: Dictionary = {
     invitedByUnknown: "Máte pozvánku do této skupiny ve flexiday.",
     join: "Připojit se",
     joining: "Připojování…",
-    signedOut: (email: string) => `Pozvánku přijmete, když se přihlásíte jako ${email}.`,
+    haveAccount: "Už máte účet?",
+    invitedAddressNote:
+      "Pozvánka platí pro tuto adresu. Chcete-li použít jinou, požádejte správce skupiny, ať pozve ji.",
+    signUpSubmit: "Vytvořit účet a připojit se",
+    signUpSubmitting: "Vytváříme účet…",
+    signUpFailed: "Účet se nepodařilo vytvořit. Zkuste to znovu.",
+    passwordCompromised: "Toto heslo se objevilo v úniku dat. Zvolte prosím jiné.",
+    passwordTooLong: "Heslo může mít nejvýše 128 znaků.",
+    accountExists: (email: string) =>
+      `Adresa ${email} už má účet. Přihlaste se a připojte se ke skupině.`,
+    accountUnconfirmed:
+      "Adresu jste nikdy nepotvrdili? Obnovení hesla ji potvrdí. Pak pozvánku otevřete znovu.",
+    forgotPassword: "Zapomenuté heslo?",
     signInToJoin: "Přihlásit se a připojit",
     wrongAccountTitle: "Pozvánka patří jinému účtu",
     wrongAccount: (invited: string, current: string) =>

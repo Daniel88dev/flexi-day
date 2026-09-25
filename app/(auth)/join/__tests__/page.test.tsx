@@ -9,8 +9,12 @@ import type { InvitePreview } from "@/lib/api/types";
 const TOKEN = "s3cr3t-token_abcdefghijklmnopqrstuvwxyz0123456";
 const SIGN_IN_HREF = `/sign-in?redirect=${encodeURIComponent(`/join/?token=${TOKEN}`)}`;
 
+const JOIN_PATH = `/join/?token=${encodeURIComponent(TOKEN)}`;
+
 const replaceMock = vi.fn();
 const signOutMock = vi.fn();
+const signInSocialMock = vi.fn();
+const refetchSessionMock = vi.fn();
 const apiMock = vi.fn();
 
 let search = new URLSearchParams();
@@ -22,8 +26,9 @@ vi.mock("next/navigation", () => ({
 }));
 
 vi.mock("@/lib/auth-client", () => ({
-  useSession: () => ({ data: session, isPending: false }),
+  useSession: () => ({ data: session, isPending: false, refetch: refetchSessionMock }),
   signOut: (...args: unknown[]) => signOutMock(...args),
+  authClient: { signIn: { social: (...args: unknown[]) => signInSocialMock(...args) } },
 }));
 
 vi.mock("@/lib/api/client", async (importOriginal) => ({
@@ -47,9 +52,11 @@ const apiError = (status: number, context?: Record<string, unknown>) =>
 let previewResult: () => Promise<unknown>;
 let groupsResult: { id: string }[];
 let joinResult: () => Promise<unknown>;
+let signUpResult: () => Promise<unknown>;
 
-const joinCalls = () =>
-  apiMock.mock.calls.filter(([path]) => path === "/api/auth/invite/join").length;
+const callsTo = (endpoint: string) => apiMock.mock.calls.filter(([path]) => path === endpoint);
+const joinCalls = () => callsTo("/api/auth/invite/join").length;
+const signUpCalls = () => callsTo("/api/auth/invite/sign-up").length;
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -58,11 +65,19 @@ beforeEach(() => {
   previewResult = () => Promise.resolve(openInvite());
   groupsResult = [];
   joinResult = () => Promise.resolve({ id: "m-1", groupId: "g-1" });
+  signUpResult = () =>
+    Promise.resolve({
+      user: { id: "u-1", email: "dana@northwind.co" },
+      membership: { id: "m-1", groupId: "g-1" },
+    });
   signOutMock.mockResolvedValue({});
+  signInSocialMock.mockResolvedValue({ data: {}, error: null });
+  refetchSessionMock.mockResolvedValue(undefined);
   apiMock.mockImplementation((path: string) => {
     if (path === "/api/auth/invite/preview") return previewResult();
     if (path === "/api/group") return Promise.resolve(groupsResult);
     if (path === "/api/auth/invite/join") return joinResult();
+    if (path === "/api/auth/invite/sign-up") return signUpResult();
     return Promise.reject(new Error(`unexpected request ${path}`));
   });
 });
@@ -178,20 +193,169 @@ describe("JoinPage", () => {
   });
 
   describe("signed out", () => {
-    it("sends the visitor to sign in and back here with the token", async () => {
+    const fillSignUp = async (
+      user: ReturnType<typeof userEvent.setup>,
+      password = "sturdy-passphrase",
+      confirm = password
+    ) => {
+      await user.type(await screen.findByLabelText("Your name"), "Dana Holt");
+      await user.type(screen.getByLabelText("Password"), password);
+      await user.type(screen.getByLabelText("Confirm password"), confirm);
+      await user.click(screen.getByRole("button", { name: /Create account and join/ }));
+    };
+
+    it("offers to sign in and come back here with the token, and sends nothing on load", async () => {
       renderWithClient(<JoinPage />);
 
       expect(await screen.findByText("Join Platform")).toBeInTheDocument();
-      expect(
-        screen.getByText("Sign in as dana@northwind.co to accept the invite.")
-      ).toBeInTheDocument();
       expect(screen.getByRole("link", { name: /Sign in to join/ })).toHaveAttribute(
         "href",
         SIGN_IN_HREF
       );
       expect(apiMock).not.toHaveBeenCalledWith("/api/group");
       expect(joinCalls()).toBe(0);
+      expect(signUpCalls()).toBe(0);
     });
+
+    it("offers sign-up with the invited address filled in and locked", async () => {
+      renderWithClient(<JoinPage />);
+
+      const email = await screen.findByLabelText("Work email");
+      expect(email).toHaveValue("dana@northwind.co");
+      expect(email).toHaveAttribute("readonly");
+      expect(
+        screen.getByText(
+          "The invite is for this address. To use another one, ask your group admin to invite it."
+        )
+      ).toBeInTheDocument();
+    });
+
+    it("creates the account, signs in and lands in the group", async () => {
+      const user = userEvent.setup();
+      renderWithClient(<JoinPage />);
+
+      await fillSignUp(user);
+
+      expect(apiMock).toHaveBeenCalledWith("/api/auth/invite/sign-up", {
+        method: "POST",
+        body: {
+          token: TOKEN,
+          name: "Dana Holt",
+          email: "dana@northwind.co",
+          password: "sturdy-passphrase",
+        },
+      });
+      await waitFor(() => expect(replaceMock).toHaveBeenCalledWith("/dashboard"));
+      expect(refetchSessionMock).toHaveBeenCalled();
+      expect(joinCalls()).toBe(0);
+    });
+
+    it("sends the user to sign in when the account joined but no session started", async () => {
+      signUpResult = () =>
+        Promise.resolve({ user: null, token: null, membership: { id: "m-1", groupId: "g-1" } });
+      const user = userEvent.setup();
+      renderWithClient(<JoinPage />);
+
+      await fillSignUp(user);
+
+      await waitFor(() =>
+        expect(replaceMock).toHaveBeenCalledWith("/sign-in?notice=account-ready")
+      );
+      expect(replaceMock).not.toHaveBeenCalledWith("/dashboard");
+    });
+
+    it("stops a password mismatch before sending anything", async () => {
+      const user = userEvent.setup();
+      renderWithClient(<JoinPage />);
+
+      await fillSignUp(user, "sturdy-passphrase", "sturdy-passphrasf");
+
+      expect(screen.getByText("Passwords do not match.")).toBeInTheDocument();
+      expect(signUpCalls()).toBe(0);
+    });
+
+    it("says so when the password appears in a known breach", async () => {
+      signUpResult = () => Promise.reject(apiError(400, { code: "PASSWORD_COMPROMISED" }));
+      const user = userEvent.setup();
+      renderWithClient(<JoinPage />);
+
+      await fillSignUp(user);
+
+      expect(
+        await screen.findByText(
+          "This password has appeared in a data breach. Please choose a different one."
+        )
+      ).toBeInTheDocument();
+      expect(replaceMock).not.toHaveBeenCalled();
+    });
+
+    it("points an address that already has an account to sign in and Forgot password", async () => {
+      signUpResult = () =>
+        Promise.reject(apiError(422, { code: "USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL" }));
+      const user = userEvent.setup();
+      renderWithClient(<JoinPage />);
+
+      await fillSignUp(user);
+
+      expect(
+        await screen.findByText(
+          "dana@northwind.co already has an account. Sign in to join the group."
+        )
+      ).toBeInTheDocument();
+      expect(
+        screen.getByText(
+          "Never confirmed the address? Resetting the password confirms it. Then open this invite again."
+        )
+      ).toBeInTheDocument();
+      expect(screen.getByRole("link", { name: "Forgot password?" })).toHaveAttribute(
+        "href",
+        "/forgot-password"
+      );
+      expect(screen.getAllByRole("link", { name: /Sign in to join/ })[0]).toHaveAttribute(
+        "href",
+        SIGN_IN_HREF
+      );
+      expect(replaceMock).not.toHaveBeenCalled();
+    });
+
+    it("shows the plan-limit message when the group is full", async () => {
+      signUpResult = () =>
+        Promise.reject(apiError(402, { reason: "PLAN_LIMIT", limit: 10, current: 10 }));
+      const user = userEvent.setup();
+      renderWithClient(<JoinPage />);
+
+      await fillSignUp(user);
+
+      expect(await screen.findByText("This group is at its 10-member limit.")).toBeInTheDocument();
+    });
+
+    it("says the invite was used when someone got there first", async () => {
+      signUpResult = () => Promise.reject(apiError(410, { code: "INVITE_USED" }));
+      const user = userEvent.setup();
+      renderWithClient(<JoinPage />);
+
+      await fillSignUp(user);
+
+      expect(await screen.findByText("This invite has been used")).toBeInTheDocument();
+    });
+
+    it.each(["Google", "Microsoft"])(
+      "returns a %s sign-up to this page with the token",
+      async (provider) => {
+        const user = userEvent.setup();
+        renderWithClient(<JoinPage />);
+
+        await user.click(await screen.findByRole("button", { name: `Continue with ${provider}` }));
+
+        expect(signInSocialMock).toHaveBeenCalledWith(
+          expect.objectContaining({
+            provider: provider.toLowerCase(),
+            callbackURL: `${window.location.origin}${JOIN_PATH}`,
+          })
+        );
+        expect(joinCalls()).toBe(0);
+      }
+    );
   });
 
   describe("an invite that can no longer be used", () => {

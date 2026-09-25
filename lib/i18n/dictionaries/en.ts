@@ -1043,6 +1043,7 @@ export const en = {
       submit: "Sign in",
       submitting: "Signing in…",
       failed: "Sign-in failed",
+      accountReady: "Your account is ready and you're in the group. Sign in to continue.",
     },
     signUp: {
       title: "Create your account",
@@ -1152,7 +1153,19 @@ export const en = {
     invitedByUnknown: "You've been invited to this group on flexiday.",
     join: "Join group",
     joining: "Joining…",
-    signedOut: (email: string) => `Sign in as ${email} to accept the invite.`,
+    haveAccount: "Already have an account?",
+    invitedAddressNote:
+      "The invite is for this address. To use another one, ask your group admin to invite it.",
+    signUpSubmit: "Create account and join",
+    signUpSubmitting: "Creating your account…",
+    signUpFailed: "Couldn't create your account. Please try again.",
+    passwordCompromised:
+      "This password has appeared in a data breach. Please choose a different one.",
+    passwordTooLong: "Password must be at most 128 characters.",
+    accountExists: (email: string) => `${email} already has an account. Sign in to join the group.`,
+    accountUnconfirmed:
+      "Never confirmed the address? Resetting the password confirms it. Then open this invite again.",
+    forgotPassword: "Forgot password?",
     signInToJoin: "Sign in to join",
     wrongAccountTitle: "This invite is for another account",
     wrongAccount: (invited: string, current: string) =>

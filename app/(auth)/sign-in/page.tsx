@@ -10,6 +10,7 @@ import {
   AuthCard,
   AuthDivider,
   AuthError,
+  AuthSuccess,
   GoogleButton,
   MicrosoftButton,
   OAuthErrorAlert,
@@ -41,6 +42,8 @@ function SignInForm() {
     requested && requested.startsWith("/") && !requested.startsWith("//")
       ? requested
       : "/dashboard";
+
+  const notice = params.get("notice") === "account-ready" ? t.auth.signIn.accountReady : null;
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -116,6 +119,7 @@ function SignInForm() {
       </div>
       <AuthDivider />
       <form onSubmit={handleSubmit} className="space-y-4">
+        <AuthSuccess message={notice} />
         <AuthError message={error} />
         <FieldInput
           id="email"

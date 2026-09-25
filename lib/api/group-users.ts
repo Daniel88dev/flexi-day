@@ -6,6 +6,8 @@ import type {
   GroupUser,
   GroupUserListItem,
   InvitePreview,
+  InviteSignUpInput,
+  InviteSignUpResult,
   UpdateGroupUsersInput,
 } from "./types";
 
@@ -25,6 +27,10 @@ export function previewInvite(token: string): Promise<InvitePreview> {
 
 export function joinGroupByLink(token: string): Promise<GroupUser> {
   return api<GroupUser>(`/api/auth/invite/join`, { method: "POST", body: { token } });
+}
+
+export function signUpWithInvite(input: InviteSignUpInput): Promise<InviteSignUpResult> {
+  return api<InviteSignUpResult>(`/api/auth/invite/sign-up`, { method: "POST", body: input });
 }
 
 export function updateGroupUsers(input: UpdateGroupUsersInput): Promise<{ message: string }> {

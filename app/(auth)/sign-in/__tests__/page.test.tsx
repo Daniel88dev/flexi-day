@@ -39,6 +39,22 @@ async function submit(user: ReturnType<typeof userEvent.setup>) {
 }
 
 describe("SignInPage", () => {
+  it("says the account is ready when sign-up with invite could not sign the user in", () => {
+    search = new URLSearchParams({ notice: "account-ready" });
+    render(<SignInPage />);
+
+    expect(
+      screen.getByText("Your account is ready and you're in the group. Sign in to continue.")
+    ).toBeInTheDocument();
+  });
+
+  it("shows no notice for an unknown value", () => {
+    search = new URLSearchParams({ notice: "<b>hi</b>" });
+    render(<SignInPage />);
+
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+  });
+
   it("lands on the dashboard after a plain sign-in", async () => {
     const user = userEvent.setup();
     render(<SignInPage />);

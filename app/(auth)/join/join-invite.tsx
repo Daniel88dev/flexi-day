@@ -9,14 +9,10 @@ import { Button } from "@/components/ui/button";
 import { signOut, useSession } from "@/lib/auth-client";
 import { ApiError } from "@/lib/api/client";
 import { useGroups, useInvitePreview, useJoinGroupByLink } from "@/lib/api/queries";
-import type { InviteStatus } from "@/lib/api/types";
-import { planLimitFromError } from "@/lib/billing/plan-limit-error";
+import { planLimitMessage } from "@/lib/billing/plan-limit-error";
 import { useTranslation } from "@/lib/i18n/use-translation";
-
-type ClosedStatus = Exclude<InviteStatus, "open">;
-
-const errorCode = (error: unknown): string | undefined =>
-  error instanceof ApiError ? error.context<{ code?: string }>()?.code : undefined;
+import { closedStatusOf, errorCode, type ClosedStatus } from "./invite-errors";
+import { JoinSignUp } from "./join-sign-up";
 
 /** `dana@northwind.co` → `d…@northwind.co`: enough to pick the right account. */
 const maskEmail = (email: string): string => {
@@ -33,22 +29,23 @@ export function JoinInvite() {
   const params = useSearchParams();
   const token = params.get("token") ?? "";
 
-  const { data: session, isPending: sessionPending } = useSession();
+  const { data: session, isPending: sessionPending, refetch: refetchSession } = useSession();
   const signedIn = Boolean(session);
   const preview = useInvitePreview(token);
   const groups = useGroups(signedIn);
   const joinGroup = useJoinGroupByLink();
 
-  const closedCopy: Record<ClosedStatus, { code: string; title: string; body: string }> = {
-    used: { code: "INVITE_USED", title: t.join.usedTitle, body: t.join.used },
-    expired: { code: "INVITE_EXPIRED", title: t.join.expiredTitle, body: t.join.expired },
-    revoked: { code: "INVITE_REVOKED", title: t.join.revokedTitle, body: t.join.revoked },
+  const closedCopy: Record<ClosedStatus, { title: string; body: string }> = {
+    used: { title: t.join.usedTitle, body: t.join.used },
+    expired: { title: t.join.expiredTitle, body: t.join.expired },
+    revoked: { title: t.join.revokedTitle, body: t.join.revoked },
   };
 
   const [joinClosed, setJoinClosed] = useState<ClosedStatus | null>(null);
   const [joinedAlready, setJoinedAlready] = useState(false);
   const [joinError, setJoinError] = useState<string | null>(null);
   const [signingOut, setSigningOut] = useState(false);
+  const [leaving, setLeaving] = useState(false);
 
   const signInHref = `/sign-in?redirect=${encodeURIComponent(
     `/join/?token=${encodeURIComponent(token)}`
@@ -68,6 +65,7 @@ export function JoinInvite() {
   );
 
   if (!token) return notFound;
+  if (leaving) return loading;
   if (preview.isPending || sessionPending || (signedIn && groups.isPending)) return loading;
 
   if (preview.error) {
@@ -112,16 +110,62 @@ export function JoinInvite() {
     : t.join.invitedByUnknown;
 
   if (!session) {
+    // The sign-up response set the session cookie; the session store has to
+    // see it before the dashboard's guard does, or it bounces to sign-in.
+    async function handleSignedUp(signedIn: boolean) {
+      setLeaving(true);
+      if (!signedIn) {
+        // Joined and verified, but the session could not be started.
+        router.replace("/sign-in?notice=account-ready");
+        return;
+      }
+      try {
+        await refetchSession();
+      } finally {
+        router.replace("/dashboard");
+      }
+    }
+
     return (
-      <AuthCard title={title} description={description}>
-        <p className="text-muted-foreground mb-5 text-sm">
-          {t.join.signedOut(invite.invitedEmail)}
-        </p>
-        <Button asChild size="lg" className="w-full gap-2 rounded-full">
-          <Link href={signInHref}>
-            {t.join.signInToJoin} <ArrowRight className="h-[18px] w-[18px]" />
-          </Link>
-        </Button>
+      <AuthCard
+        title={title}
+        description={description}
+        footer={
+          <>
+            <span>
+              {t.join.haveAccount}{" "}
+              <Link
+                href={signInHref}
+                className="font-bold hover:underline"
+                style={{ color: "var(--primary)" }}
+              >
+                {t.join.signInToJoin}
+              </Link>
+            </span>
+            <p
+              className="mt-4 text-center text-[12.5px]"
+              style={{ color: "var(--text-faint)", lineHeight: 1.5 }}
+            >
+              {t.auth.signUp.agreePrefix}{" "}
+              <Link href="/terms" className="underline" style={{ color: "var(--text-muted)" }}>
+                {t.auth.signUp.terms}
+              </Link>{" "}
+              {t.auth.signUp.and}{" "}
+              <Link href="/privacy" className="underline" style={{ color: "var(--text-muted)" }}>
+                {t.auth.signUp.privacy}
+              </Link>
+              .
+            </p>
+          </>
+        }
+      >
+        <JoinSignUp
+          token={token}
+          invitedEmail={invite.invitedEmail}
+          signInHref={signInHref}
+          onSignedUp={handleSignedUp}
+          onClosed={setJoinClosed}
+        />
       </AuthCard>
     );
   }
@@ -162,19 +206,9 @@ export function JoinInvite() {
     } catch (err) {
       const code = errorCode(err);
       if (code === "ALREADY_MEMBER") return setJoinedAlready(true);
-      const closedStatus = (Object.keys(closedCopy) as ClosedStatus[]).find(
-        (status) => closedCopy[status].code === code
-      );
+      const closedStatus = closedStatusOf(code);
       if (closedStatus) return setJoinClosed(closedStatus);
-      const planLimit = planLimitFromError(err);
-      if (planLimit) {
-        return setJoinError(
-          planLimit.reason === "READ_ONLY"
-            ? t.billing.readOnlyGroup
-            : t.billing.memberLimitReached(planLimit.limit)
-        );
-      }
-      setJoinError(t.join.failed);
+      setJoinError(planLimitMessage(err, t) ?? t.join.failed);
     }
   }
 

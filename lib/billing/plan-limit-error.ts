@@ -1,4 +1,5 @@
 import { ApiError } from "@/lib/api/client";
+import type { Dictionary } from "@/lib/i18n";
 
 export type PlanLimitReason = "PLAN_LIMIT" | "READ_ONLY";
 
@@ -26,4 +27,13 @@ export function planLimitFromError(error: unknown): PlanLimitInfo | null {
     limit: typeof context.limit === "number" ? context.limit : 0,
     current: typeof context.current === "number" ? context.current : 0,
   };
+}
+
+/** The translated reason a membership was refused, or null when the error is not a plan limit. */
+export function planLimitMessage(error: unknown, t: Dictionary): string | null {
+  const planLimit = planLimitFromError(error);
+  if (!planLimit) return null;
+  return planLimit.reason === "READ_ONLY"
+    ? t.billing.readOnlyGroup
+    : t.billing.memberLimitReached(planLimit.limit);
 }

@@ -517,6 +517,19 @@ export type InvitePreview = {
   expiresAt: Iso;
 };
 
+export type InviteSignUpInput = {
+  token: string;
+  name: string;
+  email: string;
+  password: string;
+};
+
+/** The response also sets the session cookie. `user` is null when no session could be started. */
+export type InviteSignUpResult = {
+  user: { id: string; email: string } | null;
+  membership: GroupUser;
+};
+
 export type CreateGroupInviteInput = {
   groupId: UUID;
   email: string;

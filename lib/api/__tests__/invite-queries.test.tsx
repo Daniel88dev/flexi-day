@@ -5,13 +5,15 @@ import type { ReactNode } from "react";
 
 const previewInviteMock = vi.fn();
 const joinGroupByLinkMock = vi.fn();
+const signUpWithInviteMock = vi.fn();
 vi.mock("../group-users", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../group-users")>()),
   previewInvite: (...args: unknown[]) => previewInviteMock(...args),
   joinGroupByLink: (...args: unknown[]) => joinGroupByLinkMock(...args),
+  signUpWithInvite: (...args: unknown[]) => signUpWithInviteMock(...args),
 }));
 
-import { qk, useInvitePreview, useJoinGroupByLink } from "../queries";
+import { qk, useInvitePreview, useJoinGroupByLink, useSignUpWithInvite } from "../queries";
 
 function wrapperWith(client: QueryClient) {
   return function Wrapper({ children }: { children: ReactNode }) {
@@ -59,6 +61,22 @@ describe("useJoinGroupByLink", () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(joinGroupByLinkMock).toHaveBeenCalledWith("tok");
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: qk.groups() });
+  });
+});
+
+describe("useSignUpWithInvite", () => {
+  it("refetches the caller's groups after signing up into one", async () => {
+    signUpWithInviteMock.mockResolvedValue({ membership: { id: "m-1", groupId: "g-1" } });
+    const client = newClient();
+    const invalidate = vi.spyOn(client, "invalidateQueries");
+    const { result } = renderHook(() => useSignUpWithInvite(), { wrapper: wrapperWith(client) });
+    const input = { token: "tok", name: "Dana", email: "dana@northwind.co", password: "pw" };
+
+    result.current.mutate(input);
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(signUpWithInviteMock).toHaveBeenCalledWith(input);
     expect(invalidate).toHaveBeenCalledWith({ queryKey: qk.groups() });
   });
 });
