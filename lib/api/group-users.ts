@@ -5,6 +5,7 @@ import type {
   GroupInvite,
   GroupUser,
   GroupUserListItem,
+  InvitePreview,
   UpdateGroupUsersInput,
 } from "./types";
 
@@ -14,6 +15,16 @@ export function listGroupUsers(groupId: string): Promise<GroupUserListItem[]> {
 
 export function joinGroupByCode(validationCode: string): Promise<GroupUser> {
   return api<GroupUser>(`/api/group-user/code/${validationCode}`, { method: "POST" });
+}
+
+// The invite link secret rides in the body, never the URL, so it stays out of
+// access logs and Sentry breadcrumbs.
+export function previewInvite(token: string): Promise<InvitePreview> {
+  return api<InvitePreview>(`/api/auth/invite/preview`, { method: "POST", body: { token } });
+}
+
+export function joinGroupByLink(token: string): Promise<GroupUser> {
+  return api<GroupUser>(`/api/auth/invite/join`, { method: "POST", body: { token } });
 }
 
 export function updateGroupUsers(input: UpdateGroupUsersInput): Promise<{ message: string }> {

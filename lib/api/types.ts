@@ -505,6 +505,18 @@ export type GroupInvite = {
   updatedAt: Iso;
 };
 
+export type InviteStatus = "open" | "used" | "expired" | "revoked";
+
+/** What the invite link's holder sees before joining. Public, needs no session. */
+export type InvitePreview = {
+  groupId: UUID;
+  groupName: string;
+  inviterName: string | null;
+  invitedEmail: string;
+  status: InviteStatus;
+  expiresAt: Iso;
+};
+
 export type CreateGroupInviteInput = {
   groupId: UUID;
   email: string;

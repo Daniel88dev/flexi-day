@@ -6,6 +6,7 @@ import SignInPage from "../page";
 const replaceMock = vi.fn();
 const refreshMock = vi.fn();
 const signInEmailMock = vi.fn();
+const signInSocialMock = vi.fn();
 
 let search = new URLSearchParams();
 
@@ -19,7 +20,7 @@ vi.mock("@/lib/auth-client", () => ({
   authClient: {
     signIn: {
       email: (...args: unknown[]) => signInEmailMock(...args),
-      social: vi.fn(),
+      social: (...args: unknown[]) => signInSocialMock(...args),
     },
   },
 }));
@@ -28,6 +29,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   search = new URLSearchParams();
   signInEmailMock.mockResolvedValue({ data: { token: "t", user: {} }, error: null });
+  signInSocialMock.mockResolvedValue({ data: {}, error: null });
 });
 
 async function submit(user: ReturnType<typeof userEvent.setup>) {
@@ -92,5 +94,37 @@ describe("SignInPage", () => {
 
     expect(await screen.findByText("Invalid email or password")).toBeInTheDocument();
     expect(replaceMock).not.toHaveBeenCalled();
+  });
+
+  describe("from an invite link", () => {
+    const JOIN = "/join/?token=s3cr3t-token_abc";
+
+    beforeEach(() => {
+      search = new URLSearchParams({ redirect: JOIN });
+    });
+
+    it("returns a password sign-in to the join page with the token", async () => {
+      const user = userEvent.setup();
+      render(<SignInPage />);
+      await submit(user);
+
+      expect(replaceMock).toHaveBeenCalledWith(JOIN);
+    });
+
+    it.each(["Google", "Microsoft"])(
+      "returns a %s sign-in to the join page with the token",
+      async (provider) => {
+        const user = userEvent.setup();
+        render(<SignInPage />);
+        await user.click(screen.getByRole("button", { name: `Continue with ${provider}` }));
+
+        expect(signInSocialMock).toHaveBeenCalledWith(
+          expect.objectContaining({
+            provider: provider.toLowerCase(),
+            callbackURL: `${window.location.origin}${JOIN}`,
+          })
+        );
+      }
+    );
   });
 });

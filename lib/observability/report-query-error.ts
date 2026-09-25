@@ -4,7 +4,7 @@ import { logger } from "@/lib/observability/logger";
 
 // Handled by the UI as part of normal operation, so they raise no issue — but
 // they are still logged, so they stay visible in the Logs table.
-const EXPECTED_STATUSES = new Set([401, 403, 404, 409, 422]);
+const EXPECTED_STATUSES = new Set([401, 403, 404, 409, 410, 422]);
 
 const isAborted = (error: unknown): boolean =>
   error instanceof Error && (error.name === "AbortError" || error.name === "CancelledError");
