@@ -1,8 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import GroupsPage from "../page";
 import { renderWithClient } from "@/lib/test-utils";
 import type { BillingOverview } from "@/lib/api/billing";
+import { ApiError } from "@/lib/api/client";
 
 const groups = [
   {
@@ -30,6 +32,8 @@ vi.mock("@/lib/auth-client", () => ({
 }));
 
 let billing: BillingOverview | undefined;
+const joinByCode = vi.fn();
+const joinByLink = vi.fn();
 
 const overviewAs = (isOwner: boolean, groupsUsed = 1): BillingOverview => ({
   organization: {
@@ -58,20 +62,23 @@ const overviewAs = (isOwner: boolean, groupsUsed = 1): BillingOverview => ({
 vi.mock("@/lib/api/queries", () => ({
   useGroups: () => ({ data: groups, isLoading: false, error: null }),
   useCreateGroup: () => ({ mutateAsync: vi.fn(), isPending: false }),
-  useJoinGroup: () => ({ mutateAsync: vi.fn(), isPending: false }),
+  useJoinGroup: () => ({ mutateAsync: joinByCode, isPending: false }),
+  useJoinGroupByLink: () => ({ mutateAsync: joinByLink, isPending: false }),
   useSubscription: () => ({ data: billing, isLoading: false, error: null }),
 }));
 
 describe("GroupsPage", () => {
   beforeEach(() => {
     billing = undefined;
+    joinByCode.mockReset().mockResolvedValue({ id: "m-1", groupId: "g-2" });
+    joinByLink.mockReset().mockResolvedValue({ id: "m-1", groupId: "g-2" });
   });
 
   it("renders the create and join cards and the group list", () => {
     renderWithClient(<GroupsPage />);
 
     expect(screen.getByText("Create a group")).toBeInTheDocument();
-    expect(screen.getByText("Join with code")).toBeInTheDocument();
+    expect(screen.getByText("Join a group")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Platform" })).toBeInTheDocument();
     expect(screen.getByText("3 members")).toBeInTheDocument();
     expect(screen.getByText("Manager")).toBeInTheDocument();
@@ -100,5 +107,44 @@ describe("GroupsPage", () => {
 
     expect(screen.queryByText(/groups used/)).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: /Upgrade/ })).not.toBeInTheDocument();
+  });
+
+  it("translates the refusal of a code for an unverified address", async () => {
+    joinByCode.mockRejectedValue(
+      new ApiError(403, "Verify your email address before joining a team", undefined, [
+        {
+          message: "Verify your email address before joining a team",
+          context: { code: "EMAIL_NOT_VERIFIED_USE_INVITE_LINK" },
+        },
+      ])
+    );
+    const user = userEvent.setup();
+    renderWithClient(<GroupsPage />);
+
+    await user.type(screen.getByLabelText("Invite link or code"), "ABCD-EFGH-JKLM");
+    await user.click(screen.getByRole("button", { name: "Join group" }));
+
+    expect(joinByCode).toHaveBeenCalledWith("ABCD-EFGH-JKLM");
+    expect(
+      await screen.findByText(
+        "Use the Join button in your invite email, or confirm your address first."
+      )
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText("Verify your email address before joining a team")
+    ).not.toBeInTheDocument();
+  });
+
+  it("joins by link when an invite link is pasted", async () => {
+    const user = userEvent.setup();
+    renderWithClient(<GroupsPage />);
+
+    await user.click(screen.getByLabelText("Invite link or code"));
+    await user.paste("https://app.flexi-day.com/join/?token=s3cr3t");
+    await user.click(screen.getByRole("button", { name: "Join group" }));
+
+    expect(joinByLink).toHaveBeenCalledWith("s3cr3t");
+    expect(joinByCode).not.toHaveBeenCalled();
+    expect(await screen.findByText("Joined group successfully.")).toBeInTheDocument();
   });
 });

@@ -15,7 +15,7 @@ import { Button } from "@/components/ui/button";
 import { useSignUpWithInvite } from "@/lib/api/queries";
 import { planLimitMessage } from "@/lib/billing/plan-limit-error";
 import { useTranslation } from "@/lib/i18n/use-translation";
-import { closedStatusOf, errorCode, type ClosedStatus } from "./invite-errors";
+import { closedStatusOf, errorCode, type ClosedStatus } from "@/lib/invites/invite-errors";
 
 /**
  * Sign-up for an invitee with no account. The address is the invited one and

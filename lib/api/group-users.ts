@@ -16,7 +16,9 @@ export function listGroupUsers(groupId: string): Promise<GroupUserListItem[]> {
 }
 
 export function joinGroupByCode(validationCode: string): Promise<GroupUser> {
-  return api<GroupUser>(`/api/group-user/code/${validationCode}`, { method: "POST" });
+  return api<GroupUser>(`/api/group-user/code/${encodeURIComponent(validationCode)}`, {
+    method: "POST",
+  });
 }
 
 // The invite link secret rides in the body, never the URL, so it stays out of

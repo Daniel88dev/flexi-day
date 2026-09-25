@@ -11,7 +11,12 @@ import { ApiError } from "@/lib/api/client";
 import { useGroups, useInvitePreview, useJoinGroupByLink } from "@/lib/api/queries";
 import { planLimitMessage } from "@/lib/billing/plan-limit-error";
 import { useTranslation } from "@/lib/i18n/use-translation";
-import { closedStatusOf, errorCode, type ClosedStatus } from "./invite-errors";
+import {
+  closedInviteCopy,
+  closedStatusOf,
+  errorCode,
+  type ClosedStatus,
+} from "@/lib/invites/invite-errors";
 import { JoinSignUp } from "./join-sign-up";
 
 /** `dana@northwind.co` → `d…@northwind.co`: enough to pick the right account. */
@@ -35,11 +40,7 @@ export function JoinInvite() {
   const groups = useGroups(signedIn);
   const joinGroup = useJoinGroupByLink();
 
-  const closedCopy: Record<ClosedStatus, { title: string; body: string }> = {
-    used: { title: t.join.usedTitle, body: t.join.used },
-    expired: { title: t.join.expiredTitle, body: t.join.expired },
-    revoked: { title: t.join.revokedTitle, body: t.join.revoked },
-  };
+  const closedCopy = closedInviteCopy(t);
 
   const [joinClosed, setJoinClosed] = useState<ClosedStatus | null>(null);
   const [joinedAlready, setJoinedAlready] = useState(false);

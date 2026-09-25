@@ -613,15 +613,17 @@ export function useCreateGroup() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (input: CreateGroupInput) => createGroup(input),
-    onSuccess: () => qc.invalidateQueries({ queryKey: qk.groups() }),
+    onSuccess: () => invalidateAfterMembershipChange(qc),
   });
 }
 
-// A new membership changes what the dashboard counts and what the user may
-// mirror from.
-function invalidateAfterJoin(qc: ReturnType<typeof useQueryClient>) {
+// A new membership, joined or created, changes what the dashboard counts and
+// scopes to, the user's balances, and what they may mirror from.
+function invalidateAfterMembershipChange(qc: ReturnType<typeof useQueryClient>) {
   qc.invalidateQueries({ queryKey: qk.groups() });
   qc.invalidateQueries({ queryKey: qk.dashboardSummary() });
+  qc.invalidateQueries({ queryKey: qk.reportScope() });
+  qc.invalidateQueries({ queryKey: ["my-balances"] });
   qc.invalidateQueries({ queryKey: ["group-mirrors"] });
 }
 
@@ -629,7 +631,7 @@ export function useJoinGroup() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (code: string) => joinGroupByCode(code),
-    onSuccess: () => invalidateAfterJoin(qc),
+    onSuccess: () => invalidateAfterMembershipChange(qc),
   });
 }
 
@@ -646,7 +648,7 @@ export function useSignUpWithInvite() {
   return useMutation({
     mutationFn: (input: InviteSignUpInput) => signUpWithInvite(input),
     onSuccess: () => {
-      invalidateAfterJoin(qc);
+      invalidateAfterMembershipChange(qc);
       qc.invalidateQueries({ queryKey: ["invite-preview"] });
     },
   });
@@ -657,7 +659,7 @@ export function useJoinGroupByLink() {
   return useMutation({
     mutationFn: (token: string) => joinGroupByLink(token),
     onSuccess: () => {
-      invalidateAfterJoin(qc);
+      invalidateAfterMembershipChange(qc);
       qc.invalidateQueries({ queryKey: ["invite-preview"] });
     },
   });

@@ -62,6 +62,7 @@ describe("useJoinGroupByLink", () => {
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(joinGroupByLinkMock).toHaveBeenCalledWith("tok");
     expect(invalidate).toHaveBeenCalledWith({ queryKey: qk.groups() });
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: qk.reportScope() });
   });
 });
 

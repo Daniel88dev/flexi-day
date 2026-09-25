@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const apiMock = vi.fn();
 vi.mock("../client", () => ({ api: (...args: unknown[]) => apiMock(...args) }));
 
-import { joinGroupByLink, previewInvite, signUpWithInvite } from "../group-users";
+import { joinGroupByCode, joinGroupByLink, previewInvite, signUpWithInvite } from "../group-users";
 
 describe("invite link api", () => {
   beforeEach(() => {
@@ -16,6 +16,13 @@ describe("invite link api", () => {
     expect(apiMock).toHaveBeenCalledWith("/api/auth/invite/preview", {
       method: "POST",
       body: { token: "s3cr3t" },
+    });
+  });
+
+  it("joinGroupByCode keeps a pasted code inside its path segment", async () => {
+    await joinGroupByCode("ab/../cd?x");
+    expect(apiMock).toHaveBeenCalledWith("/api/group-user/code/ab%2F..%2Fcd%3Fx", {
+      method: "POST",
     });
   });
 
