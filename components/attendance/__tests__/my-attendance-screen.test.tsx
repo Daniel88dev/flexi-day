@@ -349,6 +349,19 @@ describe("MyAttendanceScreen", () => {
       expect(monthRequests).toContain("2026-8");
     });
 
+    it("steps the week and the month on past today", async () => {
+      months.set("2026-9", month(2026, 9));
+      renderWithClient(<MyAttendanceScreen />);
+
+      await userEvent.click(screen.getByRole("tab", { name: "Week" }));
+      await userEvent.click(screen.getByRole("button", { name: "Next" }));
+      expect(screen.getByText("September 14 – 20")).toBeInTheDocument();
+
+      await userEvent.click(screen.getByRole("tab", { name: "Month" }));
+      await userEvent.click(screen.getByRole("button", { name: "Next" }));
+      expect(screen.getByText("October 2026")).toBeInTheDocument();
+    });
+
     it("never steps the day past today", () => {
       renderWithClient(<MyAttendanceScreen />);
 
@@ -390,6 +403,24 @@ describe("MyAttendanceScreen", () => {
 
       await userEvent.click(screen.getByRole("button", { name: "Today" }));
       expect(screen.getByText("Nothing recorded today yet.")).toBeInTheDocument();
+    });
+
+    it("opens on the earlier day a link names, and returns to today", async () => {
+      onDay("2026-09-08", [worked("2026-09-08")]);
+      renderWithClient(<MyAttendanceScreen linkedDate="2026-09-08" />);
+
+      expect(screen.getAllByText("Tuesday, September 8").length).toBeGreaterThan(0);
+      expect(screen.getByText("08:00 – 16:00")).toBeInTheDocument();
+
+      await userEvent.click(screen.getByRole("button", { name: "Today" }));
+      expect(screen.getByText("Nothing recorded today yet.")).toBeInTheDocument();
+    });
+
+    it("opens today when a link names a day the organization has not reached", () => {
+      renderWithClient(<MyAttendanceScreen linkedDate="2026-09-12" />);
+
+      expect(screen.getByText("Nothing recorded today yet.")).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Next" })).toBeDisabled();
     });
 
     it("offers a correction on an earlier day inside the window", async () => {

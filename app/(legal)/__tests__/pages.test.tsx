@@ -24,7 +24,7 @@ describe("Legal pages", () => {
 
   it("Legal pages carry the current update date", () => {
     render(<PrivacyPage />);
-    expect(screen.getByText("Last updated: 12 September 2026")).toBeInTheDocument();
+    expect(screen.getByText("Last updated: 26 September 2026")).toBeInTheDocument();
   });
 
   it("Privacy page describes attendance location, its audience and its retention", () => {
@@ -39,6 +39,29 @@ describe("Legal pages", () => {
     ).toBeInTheDocument();
     expect(
       screen.getByText(/erase them twelve months after the business date/)
+    ).toBeInTheDocument();
+  });
+
+  it("Privacy page lists Apple Push Notification service and what it sees", () => {
+    render(<PrivacyPage />);
+    const row = screen.getByRole("row", { name: /Apple Push Notification service/ });
+    expect(row).toHaveTextContent("Delivers push notifications to your iPhone");
+    expect(row).toHaveTextContent("sees the notification text: names, leave and attendance dates");
+  });
+
+  it("Privacy page gives push notifications the transactional-email legal basis", () => {
+    render(<PrivacyPage />);
+    const push = screen.getByRole("row", { name: /Send push notifications to the iPhone app/ });
+    const email = screen.getByRole("row", { name: /Send transactional emails/ });
+    expect(push).toHaveTextContent("Performance of a contract (b) / legitimate interests (f)");
+    expect(email).toHaveTextContent("Performance of a contract (b) / legitimate interests (f)");
+  });
+
+  it("Privacy page says the push token is kept only when notifications are allowed", () => {
+    render(<PrivacyPage />);
+    expect(screen.getByText("Push token")).toBeInTheDocument();
+    expect(
+      screen.getByText(/only if you allow notifications in the iPhone app/)
     ).toBeInTheDocument();
   });
 
