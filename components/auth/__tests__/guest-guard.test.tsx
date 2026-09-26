@@ -15,6 +15,7 @@ vi.mock("@/lib/auth-client", () => ({
 
 describe("GuestGuard", () => {
   beforeEach(() => {
+    window.history.replaceState(null, "", "/sign-in/");
     replace.mockClear();
     sessionState = { data: null, isPending: false };
   });
@@ -41,6 +42,32 @@ describe("GuestGuard", () => {
 
     await waitFor(() => expect(replace).toHaveBeenCalledWith("/dashboard"));
     expect(screen.queryByText("Sign in form")).not.toBeInTheDocument();
+  });
+
+  it("sends a user who just signed in to the page they came from", async () => {
+    window.history.replaceState(null, "", "/sign-in/?redirect=%2Fjoin%2F%3Ftoken%3Dabc");
+    sessionState = { data: { user: { id: "u-1" } }, isPending: false };
+
+    render(
+      <GuestGuard>
+        <p>Sign in form</p>
+      </GuestGuard>
+    );
+
+    await waitFor(() => expect(replace).toHaveBeenCalledWith("/join/?token=abc"));
+  });
+
+  it("ignores a redirect that leaves the site", async () => {
+    window.history.replaceState(null, "", "/sign-in/?redirect=%2F%2Fevil.example%2F");
+    sessionState = { data: { user: { id: "u-1" } }, isPending: false };
+
+    render(
+      <GuestGuard>
+        <p>Sign in form</p>
+      </GuestGuard>
+    );
+
+    await waitFor(() => expect(replace).toHaveBeenCalledWith("/dashboard"));
   });
 
   it("waits for a pending session rather than flashing the page", () => {

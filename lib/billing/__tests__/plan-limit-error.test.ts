@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { ApiError } from "@/lib/api/client";
-import { planLimitFromError } from "../plan-limit-error";
+import { en } from "@/lib/i18n/dictionaries/en";
+import { planLimitFromError, planLimitMessage } from "../plan-limit-error";
 
 const make402 = (context: unknown) =>
   new ApiError(402, "Your plan's group limit has been reached", null, [
@@ -38,5 +39,21 @@ describe("planLimitFromError", () => {
   it("defaults missing numeric fields to 0 rather than rendering NaN", () => {
     const error = make402({ reason: "PLAN_LIMIT" });
     expect(planLimitFromError(error)).toEqual({ reason: "PLAN_LIMIT", limit: 0, current: 0 });
+  });
+});
+
+describe("planLimitMessage", () => {
+  it("names the member limit for a full group", () => {
+    const error = make402({ reason: "PLAN_LIMIT", limit: 10, current: 10 });
+    expect(planLimitMessage(error, en)).toBe("This group is at its 10-member limit.");
+  });
+
+  it("says the group is read-only when the plan lapsed", () => {
+    const error = make402({ reason: "READ_ONLY", limit: 3, current: 5 });
+    expect(planLimitMessage(error, en)).toBe(en.billing.readOnlyGroup);
+  });
+
+  it("returns null for anything else", () => {
+    expect(planLimitMessage(new ApiError(410, "gone"), en)).toBeNull();
   });
 });

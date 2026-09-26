@@ -10,7 +10,7 @@ import { ApiError } from "@/lib/api/client";
 import { reportQueryError, shouldReport } from "@/lib/observability/report-query-error";
 
 describe("shouldReport", () => {
-  it.each([401, 403, 404, 409, 422])("drops the expected status %i", (status) => {
+  it.each([401, 403, 404, 409, 410, 422])("drops the expected status %i", (status) => {
     expect(shouldReport(new ApiError(status, "nope"))).toBe(false);
   });
 

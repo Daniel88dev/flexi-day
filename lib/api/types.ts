@@ -505,6 +505,31 @@ export type GroupInvite = {
   updatedAt: Iso;
 };
 
+export type InviteStatus = "open" | "used" | "expired" | "revoked";
+
+/** What the invite link's holder sees before joining. Public, needs no session. */
+export type InvitePreview = {
+  groupId: UUID;
+  groupName: string;
+  inviterName: string | null;
+  invitedEmail: string;
+  status: InviteStatus;
+  expiresAt: Iso;
+};
+
+export type InviteSignUpInput = {
+  token: string;
+  name: string;
+  email: string;
+  password: string;
+};
+
+/** The response also sets the session cookie. `user` is null when no session could be started. */
+export type InviteSignUpResult = {
+  user: { id: string; email: string } | null;
+  membership: GroupUser;
+};
+
 export type CreateGroupInviteInput = {
   groupId: UUID;
   email: string;

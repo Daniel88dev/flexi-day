@@ -66,10 +66,13 @@ import {
 import {
   createGroupInvite,
   joinGroupByCode,
+  joinGroupByLink,
   listGroupInvites,
   listGroupUsers,
+  previewInvite,
   removeGroupUser,
   revokeGroupInvite,
+  signUpWithInvite,
   updateGroupUsers,
 } from "./group-users";
 import {
@@ -133,6 +136,7 @@ import type {
   CreateGroupInput,
   CreateGroupInviteInput,
   CreateVacationInput,
+  InviteSignUpInput,
   SetGroupMirrorsInput,
   SetUserQuotaInput,
   UpdateGroupHolidayCountryInput,
@@ -151,6 +155,8 @@ export const qk = {
   group: (groupId: string) => ["group", groupId] as const,
   groupUsers: (groupId: string) => ["group-users", groupId] as const,
   groupInvites: (groupId: string) => ["group-invites", groupId] as const,
+  // Hashed: the token is the invite link secret, and query keys reach Sentry.
+  invitePreview: (token: string) => ["invite-preview", opaqueSearchKey(token)] as const,
   groupMirrors: (groupId: string) => ["group-mirrors", groupId] as const,
   quotas: (groupId: string, year: number, userId?: string) =>
     ["quotas", groupId, year, userId ?? "all"] as const,
@@ -239,10 +245,11 @@ export function useVacation(id: string | null | undefined) {
   });
 }
 
-export function useGroups() {
+export function useGroups(enabled = true) {
   return useQuery({
     queryKey: qk.groups(),
     queryFn: listGroups,
+    enabled,
   });
 }
 
@@ -606,20 +613,54 @@ export function useCreateGroup() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (input: CreateGroupInput) => createGroup(input),
-    onSuccess: () => qc.invalidateQueries({ queryKey: qk.groups() }),
+    onSuccess: () => invalidateAfterMembershipChange(qc),
   });
+}
+
+// A new membership, joined or created, changes what the dashboard counts and
+// scopes to, the user's balances, and what they may mirror from.
+function invalidateAfterMembershipChange(qc: ReturnType<typeof useQueryClient>) {
+  qc.invalidateQueries({ queryKey: qk.groups() });
+  qc.invalidateQueries({ queryKey: qk.dashboardSummary() });
+  qc.invalidateQueries({ queryKey: qk.reportScope() });
+  qc.invalidateQueries({ queryKey: ["my-balances"] });
+  qc.invalidateQueries({ queryKey: ["group-mirrors"] });
 }
 
 export function useJoinGroup() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (code: string) => joinGroupByCode(code),
+    onSuccess: () => invalidateAfterMembershipChange(qc),
+  });
+}
+
+export function useInvitePreview(token: string) {
+  return useQuery({
+    queryKey: qk.invitePreview(token),
+    queryFn: () => previewInvite(token),
+    enabled: token.length > 0,
+  });
+}
+
+export function useSignUpWithInvite() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: InviteSignUpInput) => signUpWithInvite(input),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: qk.groups() });
-      // A new membership changes what the dashboard counts and what the user
-      // may mirror from.
-      qc.invalidateQueries({ queryKey: qk.dashboardSummary() });
-      qc.invalidateQueries({ queryKey: ["group-mirrors"] });
+      invalidateAfterMembershipChange(qc);
+      qc.invalidateQueries({ queryKey: ["invite-preview"] });
+    },
+  });
+}
+
+export function useJoinGroupByLink() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (token: string) => joinGroupByLink(token),
+    onSuccess: () => {
+      invalidateAfterMembershipChange(qc);
+      qc.invalidateQueries({ queryKey: ["invite-preview"] });
     },
   });
 }

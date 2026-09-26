@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import Link from "next/link";
 import {
   Calendar as CalendarIcon,
   ChevronLeft,
@@ -52,7 +51,8 @@ import { CalendarLegend } from "@/components/dashboard/calendar-legend";
 import { NewRequestDialog } from "@/components/new-request-dialog";
 import { useOpenVacationDetail } from "@/lib/vacations/use-vacation-detail";
 import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { CreateGroupForm } from "@/components/groups/create-group-form";
+import { JoinGroupForm } from "@/components/groups/join-group-form";
 import { useTranslation } from "@/lib/i18n/use-translation";
 
 function todayParts() {
@@ -251,13 +251,20 @@ export default function DashboardPage() {
 
       {noGroups ? (
         <Card>
-          <CardContent className="space-y-3 py-8 text-center">
-            <p className="font-display text-lg font-semibold">{t.dashboard.noGroupsTitle}</p>
-            <p className="text-muted-foreground text-sm">{t.dashboard.noGroupsBody}</p>
-            <div className="flex justify-center gap-2 pt-2">
-              <Button asChild>
-                <Link href="/groups">{t.dashboard.manageGroups}</Link>
-              </Button>
+          <CardContent className="space-y-6 py-8">
+            <div className="space-y-1 text-center">
+              <p className="font-display text-lg font-semibold">{t.dashboard.noGroupsTitle}</p>
+              <p className="text-muted-foreground text-sm">{t.dashboard.noGroupsBody}</p>
+            </div>
+            <div className="grid gap-8 md:grid-cols-2">
+              <section className="space-y-3">
+                <h2 className="font-heading font-semibold">{t.groups.joinTitle}</h2>
+                <JoinGroupForm />
+              </section>
+              <section className="space-y-3">
+                <h2 className="font-heading font-semibold">{t.groups.createTitle}</h2>
+                <CreateGroupForm />
+              </section>
             </div>
           </CardContent>
         </Card>
