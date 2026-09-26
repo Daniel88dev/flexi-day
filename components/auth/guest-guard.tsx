@@ -3,12 +3,15 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "@/lib/auth-client";
+import { safeRedirect } from "@/lib/auth/safe-redirect";
 import { useTranslation } from "@/lib/i18n/use-translation";
 
 /**
- * Sends an already-signed-in visitor to the dashboard. The session lives in a
- * cookie the static export can only read client-side, so this runs in an
- * effect rather than as a redirect at request time.
+ * Sends an already-signed-in visitor on to their `redirect`, or the dashboard.
+ * The session lives in a cookie the static export can only read client-side,
+ * so this runs in an effect rather than as a redirect at request time. It also
+ * fires the moment a sign-in succeeds, so it must honour the same `redirect`
+ * the sign-in form does or it wins the race and drops it.
  */
 function useRedirectWhenAuthenticated() {
   const router = useRouter();
@@ -16,7 +19,7 @@ function useRedirectWhenAuthenticated() {
 
   useEffect(() => {
     if (isPending || !session) return;
-    router.replace("/dashboard");
+    router.replace(safeRedirect(new URLSearchParams(window.location.search).get("redirect")));
   }, [isPending, session, router]);
 
   return { session, isPending };

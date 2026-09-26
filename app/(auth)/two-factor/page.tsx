@@ -10,6 +10,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { AuthCard, AuthError, AuthSuccess } from "@/components/auth/auth-card";
 import { FieldInput } from "@/components/auth/field-input";
 import { useTranslation } from "@/lib/i18n/use-translation";
+import { safeRedirect } from "@/lib/auth/safe-redirect";
 import {
   defaultTwoFactorMethod,
   isChallengeDead,
@@ -35,12 +36,7 @@ function TwoFactorForm() {
   const router = useRouter();
   const params = useSearchParams();
 
-  // Same-origin paths only — this value reaches router.replace().
-  const requested = params.get("redirect");
-  const redirectTo =
-    requested && requested.startsWith("/") && !requested.startsWith("//")
-      ? requested
-      : "/dashboard";
+  const redirectTo = safeRedirect(params.get("redirect"));
   const methods = parseTwoFactorMethods(params.get("methods"));
   const otpOffered = methods.includes("otp");
 

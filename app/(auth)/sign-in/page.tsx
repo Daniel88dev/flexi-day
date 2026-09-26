@@ -18,6 +18,7 @@ import {
 import { FieldInput } from "@/components/auth/field-input";
 import { GuestGuard } from "@/components/auth/guest-guard";
 import { useTranslation } from "@/lib/i18n/use-translation";
+import { safeRedirect } from "@/lib/auth/safe-redirect";
 
 export default function SignInPage() {
   return (
@@ -33,15 +34,7 @@ function SignInForm() {
   const { t } = useTranslation();
   const router = useRouter();
   const params = useSearchParams();
-  // Same-origin paths only. The value reaches router.replace() and, since the
-  // social buttons landed, an OAuth callbackURL too — an absolute or
-  // protocol-relative value would turn this page into an open redirect off a
-  // link an attacker can send ("?redirect=https://flexi-day-login.evil.com/").
-  const requested = params.get("redirect");
-  const redirectTo =
-    requested && requested.startsWith("/") && !requested.startsWith("//")
-      ? requested
-      : "/dashboard";
+  const redirectTo = safeRedirect(params.get("redirect"));
 
   const notice = params.get("notice") === "account-ready" ? t.auth.signIn.accountReady : null;
 
