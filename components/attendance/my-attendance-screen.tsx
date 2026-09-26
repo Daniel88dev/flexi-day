@@ -25,6 +25,7 @@ import {
   weekDates,
   yearMonthOf,
 } from "@/lib/attendance/month";
+import { linkedDay } from "@/lib/attendance/linked-day";
 import { stepAnchor } from "@/lib/attendance/team";
 import {
   entryOffered,
@@ -462,11 +463,11 @@ const rangeLabel = (view: AttendanceView, anchor: string, locale: string): strin
  * between them — the rules and the figures are the backend's, so the week and
  * the month cannot disagree with what an admin reads.
  */
-export function MyAttendanceScreen() {
+export function MyAttendanceScreen({ linkedDate = null }: { linkedDate?: string | null }) {
   const { t, locale } = useTranslation();
   const stateQuery = useAttendanceState();
   const [view, setView] = useState<AttendanceView>("day");
-  const [anchored, setAnchored] = useState<string | null>(null);
+  const [anchored, setAnchored] = useState<string | null>(linkedDate);
   const [adding, setAdding] = useState<string | null>(null);
 
   const state = stateQuery.data;
@@ -474,7 +475,10 @@ export function MyAttendanceScreen() {
   // The organization's day, not the browser's; the fallback only covers the
   // first render, before the clock's read has answered.
   const today = stateQuery.data?.businessDate ?? new Date().toISOString().slice(0, 10);
-  const anchor = anchored ?? today;
+  // A linked `?date=` stays raw in state and is judged on every render: until
+  // the clock's read answers, `today` is the browser's date, which can trail
+  // the organization's by a day.
+  const anchor = view === "day" ? linkedDay(anchored, today) : (anchored ?? today);
   // Carries the break rules the entry form works its figures out by. The month
   // grid that offered the day has already read this month, so it comes from cache.
   const addingMonth = yearMonthOf(adding ?? today);
