@@ -736,7 +736,7 @@ export const cs: Dictionary = {
     joinSuccess: "Úspěšně připojeno ke skupině.",
     joinFailed: "Nepodařilo se připojit ke skupině",
     joinUnverified:
-      "Použijte tlačítko pro připojení v e-mailu s pozvánkou, nebo nejprve potvrďte svou adresu.",
+      "Použijte tlačítko pro připojení v e-mailu s pozvánkou, nebo nejprve potvrďte svou e-mailovou adresu.",
     yourGroups: "Vaše skupiny",
     none: "Zatím žádné skupiny.",
     defaultsSummary: (vacation: number, ho: number) => `Výchozí dovolená ${vacation}d · HO ${ho}d`,

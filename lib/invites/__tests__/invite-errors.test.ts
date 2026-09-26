@@ -14,7 +14,7 @@ describe("joinErrorMessage", () => {
     });
 
     expect(joinErrorMessage(err, en)).toBe(
-      "Use the Join button in your invite email, or confirm your address first."
+      "Use the Join button in your invite email, or confirm your email address first."
     );
     expect(joinErrorMessage(err, cs)).toBe(cs.groups.joinUnverified);
     expect(cs.groups.joinUnverified).not.toBe(en.groups.joinUnverified);

@@ -127,7 +127,7 @@ describe("GroupsPage", () => {
     expect(joinByCode).toHaveBeenCalledWith("ABCD-EFGH-JKLM");
     expect(
       await screen.findByText(
-        "Use the Join button in your invite email, or confirm your address first."
+        "Use the Join button in your invite email, or confirm your email address first."
       )
     ).toBeInTheDocument();
     expect(

@@ -730,7 +730,8 @@ export const en = {
     joining: "Joining…",
     joinSuccess: "Joined group successfully.",
     joinFailed: "Could not join group",
-    joinUnverified: "Use the Join button in your invite email, or confirm your address first.",
+    joinUnverified:
+      "Use the Join button in your invite email, or confirm your email address first.",
     yourGroups: "Your groups",
     none: "No groups yet.",
     defaultsSummary: (vacation: number, ho: number) => `Default vacation ${vacation}d · HO ${ho}d`,
