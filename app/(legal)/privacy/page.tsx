@@ -86,6 +86,10 @@ export default function PrivacyPage() {
           you signed in (see section 9).
         </li>
         <li>
+          <strong>Push token</strong> — the address Apple gives your iPhone for notifications,
+          stored only if you allow notifications in the iPhone app.
+        </li>
+        <li>
           <strong>Error and performance data</strong> — when something goes wrong in your browser or
           on our servers, we record the error, the page or API route it happened on, your browser
           and operating system version, and timing measurements, so we can fix it. This is tagged
@@ -113,6 +117,10 @@ export default function PrivacyPage() {
           </tr>
           <tr>
             <td>Send transactional emails (e.g. email verification, notifications)</td>
+            <td>Performance of a contract (b) / legitimate interests (f)</td>
+          </tr>
+          <tr>
+            <td>Send push notifications to the iPhone app</td>
             <td>Performance of a contract (b) / legitimate interests (f)</td>
           </tr>
           <tr>
@@ -159,6 +167,14 @@ export default function PrivacyPage() {
             <td>Functional Software, Inc. (Sentry)</td>
             <td>Error monitoring and performance diagnostics</td>
             <td>EU region (Frankfurt, Germany); the company is based in the United States</td>
+          </tr>
+          <tr>
+            <td>Apple Inc. (Apple Push Notification service)</td>
+            <td>
+              Delivers push notifications to your iPhone; sees the notification text: names, leave
+              and attendance dates
+            </td>
+            <td>United States</td>
           </tr>
           <tr>
             <td>Paddle.com Market Ltd</td>
