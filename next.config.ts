@@ -1,4 +1,4 @@
-import { withSentryConfig } from "@sentry/nextjs";
+import { withSentryConfig } from "@sentry/nextjs/config";
 import type { NextConfig } from "next";
 
 // Local dev tooling. `*.dev.tsx` files are only treated as routes when this is

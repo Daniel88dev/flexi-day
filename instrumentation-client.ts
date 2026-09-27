@@ -21,7 +21,17 @@ Sentry.init({
     Sentry.browserTracingIntegration(),
     // No `levels` filter: every console level is forwarded.
     Sentry.consoleLoggingIntegration(),
+    // v11 defaults to one session per page load and drops performance.mark/measure spans.
+    Sentry.browserSessionIntegration({ lifecycle: "route" }),
+    Sentry.userTimingIntegration(),
   ],
+
+  // v11 streams spans by default, and streamed spans never reach
+  // `beforeSendTransaction` below, so the support-URL scrubbing would stop.
+  traceLifecycle: "static",
+
+  // v11 defaults this to true, which regroups issues from non-Error captures.
+  attachStacktrace: false,
 
   // Sample 20% of transactions by default; overridable the same way the backend does.
   tracesSampleRate: Number(process.env.NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE ?? 0.2),
@@ -33,8 +43,6 @@ Sentry.init({
     "localhost",
     ...(process.env.NEXT_PUBLIC_API_URL ? [process.env.NEXT_PUBLIC_API_URL] : []),
   ],
-  // Enable logs to be sent to Sentry
-  enableLogs: true,
 
   dataCollection: {
     // To disable sending user data and HTTP bodies, uncomment the lines below. For more info visit:
