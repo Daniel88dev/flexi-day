@@ -773,6 +773,16 @@ export const en = {
     memberRemoved: "Member removed",
     removeFailed: "Could not remove member",
     noMembers: "No members yet.",
+    legend: {
+      label: "What the permissions mean",
+      view: "Sees everyone's time off in this group. Without it, a member sees only their own.",
+      admin:
+        "Manages members and permissions, quotas, invites, settings and mirroring, and can book leave for members.",
+      approver: "Approves or rejects members' leave requests.",
+      tracked: "Can book leave in this group. Turn it off for someone who only oversees the group.",
+      manager:
+        "The group manager always has admin and approver rights, whatever their Admin and Approver values show.",
+    },
     columns: {
       member: "Member",
       view: "View",

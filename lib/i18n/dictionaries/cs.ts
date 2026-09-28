@@ -778,6 +778,17 @@ export const cs: Dictionary = {
     memberRemoved: "Člen odebrán",
     removeFailed: "Člena se nepodařilo odebrat",
     noMembers: "Zatím žádní členové.",
+    legend: {
+      label: "Co znamenají oprávnění",
+      view: "Vidí volno všech členů skupiny. Bez něj člen vidí jen své vlastní.",
+      admin:
+        "Spravuje členy a oprávnění, kvóty, pozvánky, nastavení a zrcadlení a může členům zadávat volno.",
+      approver: "Schvaluje nebo zamítá žádosti členů o volno.",
+      tracked:
+        "Může v této skupině zadávat volno. Vypněte ho u člena, který na skupinu jen dohlíží.",
+      manager:
+        "Manažer skupiny má vždy práva správce i schvalovatele bez ohledu na hodnoty ve sloupcích Správce a Schvalovatel.",
+    },
     columns: {
       member: "Člen",
       view: "Zobrazení",
