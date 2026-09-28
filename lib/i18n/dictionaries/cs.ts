@@ -872,9 +872,9 @@ export const cs: Dictionary = {
     dashboardCalendar: "Kalendář na nástěnce",
     dashboardLayout: "Rozložení",
     dashboardLayoutHint:
-      "Dráhy ukazují jména přímo v kalendáři. Proužky drží měsíc přehledný: vyberte den a uvidíte, kdo je pryč. Aplikace pro iPhone používá stejnou volbu.",
-    layoutLanes: "Dráhy",
-    layoutStripes: "Proužky",
+      "Pruhy ukazují jména přímo v kalendáři. Kompaktní zobrazení drží měsíc přehledný: vyberte den a uvidíte, kdo je pryč. Aplikace pro iPhone používá stejnou volbu.",
+    layoutLanes: "Pruhy",
+    layoutStripes: "Kompaktní",
     dashboardScope: "Čí volno zobrazovat",
     dashboardScopeHint:
       "Vyberte, co se v kalendáři na nástěnce zobrazí po otevření. Pro jedno zobrazení to můžete přepnout přímo na nástěnce.",
