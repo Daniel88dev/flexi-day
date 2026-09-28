@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -134,90 +135,123 @@ export function MembersTab({ groupId, isAdmin }: { groupId: string; isAdmin: boo
       ) : members.length === 0 && !membersQuery.isLoading ? (
         <p className="text-muted-foreground text-sm">{t.groupDetail.noMembers}</p>
       ) : (
-        <div className="border-border overflow-hidden rounded-lg border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>{t.groupDetail.columns.member}</TableHead>
-                <TableHead>{t.groupDetail.columns.view}</TableHead>
-                <TableHead>{t.groupDetail.columns.admin}</TableHead>
-                <TableHead>{t.groupDetail.columns.approver}</TableHead>
-                <TableHead>{t.groupDetail.columns.tracked}</TableHead>
-                <TableHead>{t.groupDetail.columns.joined}</TableHead>
-                {isAdmin && !editing ? <TableHead className="text-right" /> : null}
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {rows.map((m) => (
-                <TableRow key={m.id}>
-                  <TableCell>
-                    <div className="flex items-center gap-2.5">
-                      <AvatarBubble
-                        initials={m.user.initials}
-                        background={m.user.avatarColor}
-                        name={m.user.name}
-                        size={26}
-                      />
-                      <div className="min-w-0">
-                        <div className="truncate text-sm font-medium">{m.user.name}</div>
-                        <div className="text-muted-foreground truncate text-xs">{m.email}</div>
+        <>
+          <div className="border-border overflow-hidden rounded-lg border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>{t.groupDetail.columns.member}</TableHead>
+                  <TableHead>{t.groupDetail.columns.view}</TableHead>
+                  <TableHead>{t.groupDetail.columns.admin}</TableHead>
+                  <TableHead>{t.groupDetail.columns.approver}</TableHead>
+                  <TableHead>{t.groupDetail.columns.tracked}</TableHead>
+                  <TableHead>{t.groupDetail.columns.joined}</TableHead>
+                  {isAdmin && !editing ? <TableHead className="text-right" /> : null}
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {rows.map((m) => (
+                  <TableRow key={m.id}>
+                    <TableCell>
+                      <div className="flex items-center gap-2.5">
+                        <AvatarBubble
+                          initials={m.user.initials}
+                          background={m.user.avatarColor}
+                          name={m.user.name}
+                          size={26}
+                        />
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-1.5">
+                            <span className="truncate text-sm font-medium">{m.user.name}</span>
+                            {managerUserId !== undefined && m.userId === managerUserId ? (
+                              <Badge
+                                className="bg-primary/10 text-primary uppercase"
+                                variant="outline"
+                              >
+                                {t.groups.manager}
+                              </Badge>
+                            ) : null}
+                          </div>
+                          <div className="text-muted-foreground truncate text-xs">{m.email}</div>
+                        </div>
                       </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <PermBadge
-                      value={m.viewAccess}
-                      editing={editing}
-                      onToggle={() => toggle(m.id, "viewAccess")}
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <PermBadge
-                      value={m.adminAccess}
-                      editing={editing}
-                      onToggle={() => toggle(m.id, "adminAccess")}
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <PermBadge
-                      value={m.approverAccess}
-                      editing={editing}
-                      onToggle={() => toggle(m.id, "approverAccess")}
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <PermBadge
-                      value={m.controlledUser}
-                      editing={editing}
-                      onToggle={() => toggle(m.id, "controlledUser")}
-                    />
-                  </TableCell>
-                  <TableCell className="text-muted-foreground text-xs">
-                    {new Date(m.createdAt).toLocaleDateString(t.common.dateLocale)}
-                  </TableCell>
-                  {isAdmin && !editing ? (
-                    <TableCell className="text-right">
-                      {/* `managerUserId` is undefined while the group query is
+                    </TableCell>
+                    <TableCell>
+                      <PermBadge
+                        value={m.viewAccess}
+                        editing={editing}
+                        onToggle={() => toggle(m.id, "viewAccess")}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <PermBadge
+                        value={m.adminAccess}
+                        editing={editing}
+                        onToggle={() => toggle(m.id, "adminAccess")}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <PermBadge
+                        value={m.approverAccess}
+                        editing={editing}
+                        onToggle={() => toggle(m.id, "approverAccess")}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <PermBadge
+                        value={m.controlledUser}
+                        editing={editing}
+                        onToggle={() => toggle(m.id, "controlledUser")}
+                      />
+                    </TableCell>
+                    <TableCell className="text-muted-foreground text-xs">
+                      {new Date(m.createdAt).toLocaleDateString(t.common.dateLocale)}
+                    </TableCell>
+                    {isAdmin && !editing ? (
+                      <TableCell className="text-right">
+                        {/* `managerUserId` is undefined while the group query is
                           in flight; rendering then would offer Remove on the
                           manager, which the backend 409s. */}
-                      {managerUserId !== undefined && m.userId !== managerUserId ? (
-                        <Button
-                          size="xs"
-                          variant="outline"
-                          className="text-destructive"
-                          disabled={removingId !== null}
-                          onClick={() => void handleRemove(m)}
-                        >
-                          {t.groupDetail.removeMember}
-                        </Button>
-                      ) : null}
-                    </TableCell>
-                  ) : null}
-                </TableRow>
+                        {managerUserId !== undefined && m.userId !== managerUserId ? (
+                          <Button
+                            size="xs"
+                            variant="outline"
+                            className="text-destructive"
+                            disabled={removingId !== null}
+                            onClick={() => void handleRemove(m)}
+                          >
+                            {t.groupDetail.removeMember}
+                          </Button>
+                        ) : null}
+                      </TableCell>
+                    ) : null}
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+          <section
+            aria-label={t.groupDetail.legend.label}
+            className="bg-muted/40 text-muted-foreground rounded-lg px-3 py-2.5 text-xs"
+          >
+            <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1">
+              {(
+                [
+                  [t.groupDetail.columns.view, t.groupDetail.legend.view],
+                  [t.groupDetail.columns.admin, t.groupDetail.legend.admin],
+                  [t.groupDetail.columns.approver, t.groupDetail.legend.approver],
+                  [t.groupDetail.columns.tracked, t.groupDetail.legend.tracked],
+                ] as const
+              ).map(([term, definition]) => (
+                <div key={term} className="contents">
+                  <dt className="text-foreground font-medium">{term}</dt>
+                  <dd>{definition}</dd>
+                </div>
               ))}
-            </TableBody>
-          </Table>
-        </div>
+            </dl>
+            <p className="mt-2">{t.groupDetail.legend.manager}</p>
+          </section>
+        </>
       )}
     </div>
   );
