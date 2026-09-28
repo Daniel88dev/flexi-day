@@ -100,6 +100,13 @@ export const cs: Dictionary = {
     openRequest: (title: string) => `Otevřít detail žádosti: ${title}`,
     createRequestDay: (day: number) => `Vytvořit žádost pro den ${day}`,
     mirroredFrom: (groupName: string) => `zrcadleno ze skupiny ${groupName}`,
+    moreOnStripeDay: (n: number) => `dalších ${n} nezobrazeno`,
+    awayOn: (date: string) => `Pryč ${date}`,
+    awayCount: (n: number) => `Pryč: ${n}`,
+    nobodyAway: "Nikdo není pryč.",
+    you: "(vy)",
+    halfDayMark: "½ dne",
+    bookDay: (date: string) => `Zadat ${date}`,
   },
 
   nav: {
@@ -863,6 +870,11 @@ export const cs: Dictionary = {
       "Žádosti o schválení, rozhodnutí o vašich žádostech a zrušení schváleného volna. Vypnutím zůstanou pouze v aplikaci — účtové e-maily, jako je potvrzení adresy, se odesílají vždy.",
     saveFailed: "Nepodařilo se uložit nastavení",
     dashboardCalendar: "Kalendář na nástěnce",
+    dashboardLayout: "Rozložení",
+    dashboardLayoutHint:
+      "Dráhy ukazují jména přímo v kalendáři. Proužky drží měsíc přehledný: vyberte den a uvidíte, kdo je pryč. Aplikace pro iPhone používá stejnou volbu.",
+    layoutLanes: "Dráhy",
+    layoutStripes: "Proužky",
     dashboardScope: "Čí volno zobrazovat",
     dashboardScopeHint:
       "Vyberte, co se v kalendáři na nástěnce zobrazí po otevření. Pro jedno zobrazení to můžete přepnout přímo na nástěnce.",
