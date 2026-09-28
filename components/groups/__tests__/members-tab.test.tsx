@@ -57,6 +57,14 @@ describe("MembersTab", () => {
     ).toBeInTheDocument();
   });
 
+  it("places the legend below the members table", () => {
+    renderWithClient(<MembersTab groupId="g-1" isAdmin={false} />);
+
+    const table = screen.getByRole("table");
+    const legend = screen.getByRole("region", { name: "What the permissions mean" });
+    expect(table.compareDocumentPosition(legend) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
   it("keeps the legend visible while an admin edits permissions", () => {
     renderWithClient(<MembersTab groupId="g-1" isAdmin />);
 

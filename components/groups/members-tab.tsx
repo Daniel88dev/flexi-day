@@ -136,27 +136,6 @@ export function MembersTab({ groupId, isAdmin }: { groupId: string; isAdmin: boo
         <p className="text-muted-foreground text-sm">{t.groupDetail.noMembers}</p>
       ) : (
         <>
-          <section
-            aria-label={t.groupDetail.legend.label}
-            className="bg-muted/40 text-muted-foreground rounded-lg px-3 py-2.5 text-xs"
-          >
-            <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1">
-              {(
-                [
-                  [t.groupDetail.columns.view, t.groupDetail.legend.view],
-                  [t.groupDetail.columns.admin, t.groupDetail.legend.admin],
-                  [t.groupDetail.columns.approver, t.groupDetail.legend.approver],
-                  [t.groupDetail.columns.tracked, t.groupDetail.legend.tracked],
-                ] as const
-              ).map(([term, definition]) => (
-                <div key={term} className="contents">
-                  <dt className="text-foreground font-medium">{term}</dt>
-                  <dd>{definition}</dd>
-                </div>
-              ))}
-            </dl>
-            <p className="mt-2">{t.groupDetail.legend.manager}</p>
-          </section>
           <div className="border-border overflow-hidden rounded-lg border">
             <Table>
               <TableHeader>
@@ -251,6 +230,27 @@ export function MembersTab({ groupId, isAdmin }: { groupId: string; isAdmin: boo
               </TableBody>
             </Table>
           </div>
+          <section
+            aria-label={t.groupDetail.legend.label}
+            className="bg-muted/40 text-muted-foreground rounded-lg px-3 py-2.5 text-xs"
+          >
+            <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1">
+              {(
+                [
+                  [t.groupDetail.columns.view, t.groupDetail.legend.view],
+                  [t.groupDetail.columns.admin, t.groupDetail.legend.admin],
+                  [t.groupDetail.columns.approver, t.groupDetail.legend.approver],
+                  [t.groupDetail.columns.tracked, t.groupDetail.legend.tracked],
+                ] as const
+              ).map(([term, definition]) => (
+                <div key={term} className="contents">
+                  <dt className="text-foreground font-medium">{term}</dt>
+                  <dd>{definition}</dd>
+                </div>
+              ))}
+            </dl>
+            <p className="mt-2">{t.groupDetail.legend.manager}</p>
+          </section>
         </>
       )}
     </div>
