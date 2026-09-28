@@ -17,7 +17,7 @@ import { ConnectedAccountsCard } from "@/components/settings/connected-accounts-
 import { TwoFactorCard } from "@/components/settings/two-factor-card";
 import { pushToast } from "@/components/toast";
 import { useMySettings, useReportScope, useUpdateMySettings } from "@/lib/api/queries";
-import type { DashboardScope } from "@/lib/api/types";
+import type { DashboardCalendarView, DashboardScope } from "@/lib/api/types";
 import { changePassword, useSession } from "@/lib/auth-client";
 import { shouldOfferPasswordChange, useLinkedAccounts } from "@/lib/auth/use-linked-accounts";
 import { cn } from "@/lib/utils";
@@ -103,8 +103,14 @@ export default function SettingsPage() {
   );
 }
 
+type DashboardCalendarDraft = {
+  dashboardCalendarView: DashboardCalendarView;
+  dashboardScope: DashboardScope;
+  dashboardGroupId: string | null;
+};
+
 /**
- * Default scope of the dashboard calendar. Only groups the caller may view in
+ * Layout and default scope of the dashboard calendar. Only groups the caller may view in
  * full are offered — the API rejects anything else, so the picker must not
  * suggest it.
  */
@@ -116,28 +122,31 @@ function DashboardCalendarCard() {
 
   const [error, setError] = useState<string | null>(null);
   // Edits are held until Save; `null` means "no edits yet, show what is stored".
-  const [draft, setDraft] = useState<{
-    dashboardScope: DashboardScope;
-    dashboardGroupId: string | null;
-  } | null>(null);
+  const [draft, setDraft] = useState<DashboardCalendarDraft | null>(null);
 
   const viewableGroups = useMemo(
     () => (scopeQuery.data?.groups ?? []).filter((g) => g.access === "all"),
     [scopeQuery.data]
   );
 
+  const storedView: DashboardCalendarView = settingsQuery.data?.dashboardCalendarView ?? "LANES";
   const storedScope: DashboardScope = settingsQuery.data?.dashboardScope ?? "MINE";
   const storedGroupId = settingsQuery.data?.dashboardGroupId ?? null;
+  const view = draft?.dashboardCalendarView ?? storedView;
   const scope = draft?.dashboardScope ?? storedScope;
   const groupId = draft ? draft.dashboardGroupId : storedGroupId;
   const busy = settingsQuery.isLoading || updateSettings.isPending;
-  const dirty = draft !== null && (scope !== storedScope || groupId !== storedGroupId);
+  const dirty =
+    draft !== null && (view !== storedView || scope !== storedScope || groupId !== storedGroupId);
 
-  function edit(
-    next: Partial<{ dashboardScope: DashboardScope; dashboardGroupId: string | null }>
-  ) {
+  function edit(next: Partial<DashboardCalendarDraft>) {
     setError(null);
-    setDraft({ dashboardScope: scope, dashboardGroupId: groupId, ...next });
+    setDraft({
+      dashboardCalendarView: view,
+      dashboardScope: scope,
+      dashboardGroupId: groupId,
+      ...next,
+    });
   }
 
   // Group scope with nothing chosen would be rejected by the API, so the first
@@ -159,6 +168,8 @@ function DashboardCalendarCard() {
       await updateSettings.mutateAsync({
         dashboardScope: scope,
         dashboardGroupId: groupId,
+        // The phone shares the layout; resending a stale one would undo a switch made there.
+        ...(view !== storedView ? { dashboardCalendarView: view } : {}),
       });
       setDraft(null);
       pushToast(t.common.saved);
@@ -175,6 +186,30 @@ function DashboardCalendarCard() {
         <CardTitle>{t.settings.dashboardCalendar}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
+        <div className="space-y-1.5">
+          <Label>{t.settings.dashboardLayout}</Label>
+          <p className="text-muted-foreground text-sm">{t.settings.dashboardLayoutHint}</p>
+          <div className="flex gap-2 pt-1">
+            {(["LANES", "STRIPES"] as const).map((value) => (
+              <button
+                key={value}
+                type="button"
+                aria-pressed={view === value}
+                disabled={busy}
+                onClick={() => edit({ dashboardCalendarView: value })}
+                className={cn(
+                  "rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50",
+                  view === value
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted text-muted-foreground hover:ring-foreground/30 hover:ring-1"
+                )}
+              >
+                {value === "LANES" ? t.settings.layoutLanes : t.settings.layoutStripes}
+              </button>
+            ))}
+          </div>
+        </div>
+
         <div className="space-y-1.5">
           <Label>{t.settings.dashboardScope}</Label>
           <p className="text-muted-foreground text-sm">{t.settings.dashboardScopeHint}</p>

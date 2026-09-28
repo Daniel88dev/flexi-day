@@ -56,10 +56,11 @@ const DEFAULT_SETTINGS: UserSettings = {
   emailNotifications: true,
   dashboardScope: "MINE",
   dashboardGroupId: null,
+  dashboardCalendarView: "LANES",
   attendanceLocationNoticeDismissed: false,
 };
 
-let settings: UserSettings = DEFAULT_SETTINGS;
+let settings: UserSettings | undefined = DEFAULT_SETTINGS;
 
 let vacations: VacationListItem[] = [day("v-1", dana, "2026-08-17")];
 
@@ -207,5 +208,36 @@ describe("DashboardPage bank holidays", () => {
     // g-1 is in the mocked useGroups list with CZ — no detail fetch, and the
     // other memberships' countries (DE) must not leak into GROUP scope.
     expect(useBankHolidaysMultiSpy).toHaveBeenLastCalledWith(now.getFullYear(), ["CZ"]);
+  });
+});
+
+describe("DashboardPage calendar view", () => {
+  beforeEach(() => {
+    settings = DEFAULT_SETTINGS;
+    vacations = [];
+  });
+
+  it("shows the lanes calendar when the stored view is Lanes", () => {
+    renderWithClient(<DashboardPage />);
+
+    expect(screen.getByRole("button", { name: "Create request for day 15" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /^\w+,? 15 \w+$/ })).not.toBeInTheDocument();
+  });
+
+  it("shows the lanes calendar while settings are still loading", () => {
+    settings = undefined;
+    renderWithClient(<DashboardPage />);
+
+    expect(screen.getByRole("button", { name: "Create request for day 15" })).toBeInTheDocument();
+  });
+
+  it("shows the stripes calendar when the stored view is Stripes", () => {
+    settings = { ...DEFAULT_SETTINGS, dashboardCalendarView: "STRIPES" };
+    renderWithClient(<DashboardPage />);
+
+    expect(
+      screen.queryByRole("button", { name: /Create request for day/ })
+    ).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^\w+,? 15 \w+$/ })).toBeInTheDocument();
   });
 });

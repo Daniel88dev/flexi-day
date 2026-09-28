@@ -98,6 +98,13 @@ export const en = {
     openRequest: (title: string) => `Open request details: ${title}`,
     createRequestDay: (day: number) => `Create request for day ${day}`,
     mirroredFrom: (groupName: string) => `mirrored from ${groupName}`,
+    moreOnStripeDay: (n: number) => `${n} more not shown`,
+    awayOn: (date: string) => `Away on ${date}`,
+    awayCount: (n: number) => `${n} away`,
+    nobodyAway: "Nobody is away.",
+    you: "(you)",
+    halfDayMark: "½ day",
+    bookDay: (date: string) => `Book ${date}`,
   },
 
   nav: {
@@ -858,6 +865,11 @@ export const en = {
       "Approval requests, decisions on your requests, and cancellations of approved time off. Turning this off keeps them in the app only — account emails such as address confirmation always send.",
     saveFailed: "Could not save settings",
     dashboardCalendar: "Dashboard calendar",
+    dashboardLayout: "Layout",
+    dashboardLayoutHint:
+      "Lanes put names on the calendar. Stripes keep the month compact: pick a day to see who is away. The iPhone app uses the same choice.",
+    layoutLanes: "Lanes",
+    layoutStripes: "Stripes",
     dashboardScope: "Whose time off to show",
     dashboardScopeHint:
       "Choose what the dashboard calendar shows when you open it. You can still switch it for a single visit from the dashboard itself.",

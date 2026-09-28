@@ -48,6 +48,8 @@ import { BalanceWidget } from "@/components/dashboard/widgets/balance-widget";
 import { DEFAULT_LEAVE_TYPES } from "@/lib/demo/leave-meta";
 import { LeaveTypeFilter } from "@/components/dashboard/leave-type-filter";
 import { CalendarLegend } from "@/components/dashboard/calendar-legend";
+import { StripeCalendar } from "@/components/dashboard/stripe-calendar";
+import { toDayRecords } from "@/lib/calendar/stripes";
 import { NewRequestDialog } from "@/components/new-request-dialog";
 import { useOpenVacationDetail } from "@/lib/vacations/use-vacation-detail";
 import { Card, CardContent } from "@/components/ui/card";
@@ -138,6 +140,12 @@ export default function DashboardPage() {
     );
   }, [scope, activeGroupCountry, groupsQuery.data]);
   const bankHolidays = useBankHolidaysMulti(year, holidayCountries);
+  const holidayRanges = useMemo(
+    () => bankHolidaysToRanges(bankHolidays, year, month),
+    [bankHolidays, year, month]
+  );
+  const dayRecords = useMemo(() => toDayRecords(vacations), [vacations]);
+  const showStripes = settingsQuery.data?.dashboardCalendarView === "STRIPES";
 
   const ranges: CalendarRange[] = useMemo(() => {
     const live = vacations
@@ -154,11 +162,8 @@ export default function DashboardPage() {
         note: v.note,
         mirroredFromGroupName: v.mirroredFromGroupName,
       }));
-    return [
-      ...groupConsecutiveByUserType(live),
-      ...bankHolidaysToRanges(bankHolidays, year, month),
-    ];
-  }, [vacations, bankHolidays, year, month]);
+    return [...groupConsecutiveByUserType(live), ...holidayRanges];
+  }, [vacations, holidayRanges]);
 
   const today = new Date();
   const todayMatches = today.getFullYear() === year && today.getMonth() + 1 === month;
@@ -382,15 +387,30 @@ export default function DashboardPage() {
               <LeaveTypeFilter value={filter} onChange={setFilter} />
             </div>
           </div>
-          <LeaveCalendar
-            monthDays={monthDays}
-            firstWeekdayMondayIdx={firstWeekdayMondayIdx}
-            todayDay={todayDay}
-            ranges={ranges}
-            filter={filter}
-            onSelect={openVacation}
-            onDayClick={openNewRequestForDay}
-          />
+          {showStripes ? (
+            <StripeCalendar
+              key={`${year}-${month}`}
+              year={year}
+              month={month}
+              todayDay={todayDay}
+              records={dayRecords}
+              holidays={holidayRanges}
+              filter={filter}
+              viewerId={session.data?.user?.id ?? null}
+              onOpenRequest={openVacation}
+              onBook={openNewRequestForDay}
+            />
+          ) : (
+            <LeaveCalendar
+              monthDays={monthDays}
+              firstWeekdayMondayIdx={firstWeekdayMondayIdx}
+              todayDay={todayDay}
+              ranges={ranges}
+              filter={filter}
+              onSelect={openVacation}
+              onDayClick={openNewRequestForDay}
+            />
+          )}
           <CalendarLegend ranges={ranges} filter={filter} />
           {vacationsQuery.error ? (
             <p className="mt-3 text-sm" style={{ color: "var(--destructive)" }}>

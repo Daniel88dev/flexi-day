@@ -479,10 +479,14 @@ export type UpdateGroupHolidayCountryInput = {
 /** Whose leave the dashboard calendar shows by default. */
 export type DashboardScope = "MINE" | "GROUP";
 
+/** How the dashboard draws its month: name-carrying lanes, or thin stripes with a day list. */
+export type DashboardCalendarView = "LANES" | "STRIPES";
+
 export type UserSettings = {
   emailNotifications: boolean;
   dashboardScope: DashboardScope;
   dashboardGroupId: UUID | null;
+  dashboardCalendarView: DashboardCalendarView;
   /** The clock's one-time location notice. Dismissed once and never shown again. */
   attendanceLocationNoticeDismissed: boolean;
 };

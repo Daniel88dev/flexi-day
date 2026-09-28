@@ -14,6 +14,7 @@ const DEFAULT_SETTINGS: UserSettings = {
   emailNotifications: true,
   dashboardScope: "MINE",
   dashboardGroupId: null,
+  dashboardCalendarView: "LANES",
   attendanceLocationNoticeDismissed: false,
 };
 
@@ -126,6 +127,29 @@ describe("SettingsPage", () => {
       dashboardScope: "GROUP",
       dashboardGroupId: "g2",
     });
+  });
+
+  it("saves the Stripes layout from the Layout row", async () => {
+    const user = userEvent.setup();
+    renderWithClient(<SettingsPage />);
+
+    expect(screen.getByRole("button", { name: "Lanes" })).toHaveAttribute("aria-pressed", "true");
+
+    await user.click(screen.getByRole("button", { name: "Stripes", pressed: false }));
+    await user.click(screen.getByRole("button", { name: "Save" }));
+
+    expect(updateMutate).toHaveBeenCalledWith({
+      dashboardScope: "MINE",
+      dashboardGroupId: null,
+      dashboardCalendarView: "STRIPES",
+    });
+  });
+
+  it("shows the stored Stripes layout as selected", () => {
+    settings = { ...DEFAULT_SETTINGS, dashboardCalendarView: "STRIPES" };
+    renderWithClient(<SettingsPage />);
+
+    expect(screen.getByRole("button", { name: "Stripes" })).toHaveAttribute("aria-pressed", "true");
   });
 
   it("keeps Save disabled until something actually changes", async () => {
