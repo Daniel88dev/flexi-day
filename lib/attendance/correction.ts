@@ -132,6 +132,65 @@ export const draftEdited = (
   });
 };
 
+/**
+ * A draft carried onto a newer answer for the same session is a three-way
+ * merge: a field the reader changed from `before` stays theirs and one they
+ * left alone follows `after`, so a partial save's refetch keeps what has not
+ * landed. The times and the breaks merge apart, since the dialog holds them in
+ * separate state.
+ */
+export const rebaseTimes = (
+  times: Omit<SessionDraft, "breaks">,
+  before: AttendanceSession,
+  after: AttendanceSession,
+  timezone: string | null
+): Omit<SessionDraft, "breaks"> => {
+  const pick = (mine: string, base: string | null, theirs: string | null) =>
+    mine === timeFieldOf(base, timezone) ? timeFieldOf(theirs, timezone) : mine;
+  return {
+    startedAt: pick(times.startedAt, before.startedAt, after.startedAt),
+    endedAt: pick(times.endedAt, before.endedAt, after.endedAt),
+  };
+};
+
+/**
+ * {@link rebaseTimes} for the break rows. A break missing from the draft that
+ * `before` had was taken off by the reader and stays off; one `before` lacked
+ * is new on the server and comes in. A draft row `after` lacks stays when it is
+ * the reader's own (new, or saved since `before`) and goes when `before` had it.
+ */
+export const rebaseBreaks = (
+  breaks: BreakDraft[],
+  before: AttendanceSession,
+  after: AttendanceSession,
+  timezone: string | null
+): BreakDraft[] => {
+  const beforeBreaks = new Map(
+    sessionDraft(before, timezone).breaks.map((entry) => [entry.id, entry])
+  );
+  const afterBreaks = sessionDraft(after, timezone).breaks;
+  const afterIds = new Set(afterBreaks.map((entry) => entry.id));
+  const drafted = new Map(breaks.map((entry) => [entry.id, entry]));
+  const pick = (mine: string, base: string, theirs: string) => (mine === base ? theirs : mine);
+
+  const onServer = afterBreaks.flatMap((theirs) => {
+    const mine = drafted.get(theirs.id);
+    const base = beforeBreaks.get(theirs.id);
+    if (!mine) return base ? [] : [theirs];
+    if (!base) return [mine];
+    return [
+      {
+        id: theirs.id,
+        startedAt: pick(mine.startedAt, base.startedAt, theirs.startedAt),
+        endedAt: pick(mine.endedAt, base.endedAt, theirs.endedAt),
+      },
+    ];
+  });
+  const pending = breaks.filter((entry) => !afterIds.has(entry.id) && !beforeBreaks.has(entry.id));
+
+  return [...onServer, ...pending];
+};
+
 export type ResolvedBreak = { id: string; startedAt: string | null; endedAt: string | null };
 
 type Resolved = {

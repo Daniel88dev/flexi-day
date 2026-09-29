@@ -48,4 +48,17 @@ describe("useBreakDrafts", () => {
       { id: "server-1", startedAt: "15:00", endedAt: "15:20" },
     ]);
   });
+
+  it("rebases the rows it holds onto whatever the caller works out from them", () => {
+    const { result } = renderHook(() =>
+      useBreakDrafts(() => [{ id: "break-1", startedAt: "12:00", endedAt: "12:30" }])
+    );
+
+    act(() => result.current.add());
+    act(() => result.current.rebase((current) => current.filter((entry) => entry.isNew)));
+
+    expect(result.current.breaks).toEqual([
+      { id: "new-1", startedAt: "", endedAt: "", isNew: true },
+    ]);
+  });
 });

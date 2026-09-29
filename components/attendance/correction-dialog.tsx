@@ -28,6 +28,8 @@ import {
 import {
   correctionErrors,
   draftEdited,
+  rebaseBreaks,
+  rebaseTimes,
   sessionDraft,
   toBreakPatch,
   toNewBreaks,
@@ -147,11 +149,7 @@ const savedBreakId = (saved: AttendanceSession, span: AttendanceBreakSpan): stri
       Date.parse(entry.endedAt) === Date.parse(span.endedAt)
   )?.id;
 
-/**
- * One session's fields, its breaks and its history. Remounted by its `key`
- * whenever the answer changes, so the draft is derived from the row rather
- * than kept in sync with it.
- */
+/** One session's fields, its breaks and its history, with the draft carried onto each newer answer. */
 function SessionCorrection({
   session,
   timezone,
@@ -180,8 +178,19 @@ function SessionCorrection({
   // The API's rule: an entered session only by whoever entered it, whatever its
   // date; a clocked one only on its own day.
   const deletable = !ownDay || (entered ? enteredByOwner : session.businessDate === ownDay.today);
-  const [times, setTimes] = useState(() => sessionDraft(session, timezone));
+  const [times, setTimes] = useState(() => {
+    const { startedAt, endedAt } = sessionDraft(session, timezone);
+    return { startedAt, endedAt };
+  });
   const rows = useBreakDrafts(() => sessionDraft(session, timezone).breaks);
+  const [base, setBase] = useState(session);
+  if (base !== session) {
+    setBase(session);
+    // Updaters rather than values, so a break a running save marks saved in
+    // between is carried over rather than overwritten.
+    setTimes((current) => rebaseTimes(current, base, session, timezone));
+    rows.rebase((current) => rebaseBreaks(current, base, session, timezone));
+  }
   const draft: SessionDraft = { ...times, breaks: rows.breaks };
   const [confirming, setConfirming] = useState(false);
   const [failure, setFailure] = useState<string | null>(null);
@@ -245,8 +254,11 @@ function SessionCorrection({
       // Last, so they are checked against the session and breaks as corrected.
       for (const { id, span } of newBreaks) {
         const saved = await addBreak.mutateAsync({ sessionId: session.id, span });
-        // A later request can still fail, and a retry must not add this one twice.
-        rows.markSaved(id, savedBreakId(saved, span) ?? id);
+        // A later request can still fail, and a retry must not add this one
+        // twice. Unmatched, the row goes and the refetch brings the server's copy.
+        const savedId = savedBreakId(saved, span);
+        if (savedId) rows.markSaved(id, savedId);
+        else rows.remove(id);
       }
       onDone();
     } catch (error) {
@@ -527,11 +539,7 @@ export function CorrectionDialog({
             ) : null}
             {editable.map((session) => (
               <SessionCorrection
-                // The draft is derived from the row, so a saved change comes
-                // back as a new component rather than as state to reconcile.
-                key={`${session.id}:${session.startedAt}:${session.endedAt ?? "open"}:${session.breaks
-                  .map((entry) => `${entry.id}${entry.startedAt}${entry.endedAt ?? ""}`)
-                  .join(",")}`}
+                key={session.id}
                 session={session}
                 timezone={timezone}
                 personName={personName}

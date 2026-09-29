@@ -232,4 +232,113 @@ describe("the correction mutations", () => {
       JSON.stringify(qk.attendanceEvents("session-1")),
     ]);
   });
+  describe("when the request fails", () => {
+    const refused = new Error("server gone");
+    const entry = {
+      organizationId: "org-1",
+      businessDate: "2026-09-08",
+      startedAt: "2026-09-08T06:10:00.000Z",
+      endedAt: "2026-09-08T14:55:00.000Z",
+    };
+    const span = { startedAt: "2026-09-09T13:00:00.000Z", endedAt: "2026-09-09T13:20:00.000Z" };
+
+    type Case = {
+      name: string;
+      hook: () => { mutateAsync: (input: never) => Promise<unknown> };
+      mock: ReturnType<typeof vi.fn>;
+      input: unknown;
+      events: readonly string[];
+    };
+
+    const cases: Case[] = [
+      {
+        name: "useCorrectSession",
+        hook: useCorrectSession,
+        mock: correctSessionMock,
+        input: { sessionId: "session-9", patch: { endedAt: null } },
+        events: qk.attendanceEvents("session-9"),
+      },
+      {
+        name: "useAddBreak",
+        hook: useAddBreak,
+        mock: addBreakMock,
+        input: { sessionId: "session-9", span },
+        events: qk.attendanceEvents("session-9"),
+      },
+      {
+        name: "useRemoveSession",
+        hook: useRemoveSession,
+        mock: removeSessionMock,
+        input: "session-9",
+        events: qk.attendanceEvents("session-9"),
+      },
+      {
+        name: "useMarkSessionChecked",
+        hook: useMarkSessionChecked,
+        mock: markCheckedMock,
+        input: "session-9",
+        events: qk.attendanceEvents("session-9"),
+      },
+      {
+        name: "useCorrectBreak",
+        hook: useCorrectBreak,
+        mock: correctBreakMock,
+        input: { breakId: "break-1", patch: { endedAt: null } },
+        events: ["attendance-events"],
+      },
+      {
+        name: "useRemoveBreak",
+        hook: useRemoveBreak,
+        mock: removeBreakMock,
+        input: "break-1",
+        events: ["attendance-events"],
+      },
+      {
+        name: "useEnterSession",
+        hook: useEnterSession,
+        mock: enterSessionMock,
+        input: entry,
+        events: ["attendance-events"],
+      },
+    ];
+
+    it.each(cases)(
+      "$name still drops every attendance read, and hands the rejection back",
+      async ({ hook, mock, input, events }) => {
+        mock.mockRejectedValue(refused);
+        const { client, wrapper } = setup();
+        const invalidate = vi.spyOn(client, "invalidateQueries");
+
+        const { result } = renderHook(() => hook(), { wrapper });
+        await expect(result.current.mutateAsync(input as never)).rejects.toBe(refused);
+
+        await waitFor(() => expect(invalidate).toHaveBeenCalledTimes(5));
+        const keys = invalidate.mock.calls.map((call) => JSON.stringify(call[0]?.queryKey));
+        expect(keys).toEqual([
+          JSON.stringify(["attendance-day"]),
+          JSON.stringify(["attendance-month"]),
+          JSON.stringify(["attendance-team"]),
+          JSON.stringify(["attendance-state"]),
+          JSON.stringify(events),
+        ]);
+      }
+    );
+
+    it("refetches a day already on the screen after a failed correction", async () => {
+      dayMock.mockReset();
+      dayMock.mockResolvedValue({ sessions: [] });
+      correctSessionMock.mockRejectedValue(refused);
+      const { wrapper } = setup();
+
+      const day = renderHook(() => useAttendanceDay(params), { wrapper });
+      await waitFor(() => expect(day.result.current.isSuccess).toBe(true));
+      const { result } = renderHook(() => useCorrectSession(), { wrapper });
+
+      await expect(
+        result.current.mutateAsync({ sessionId: "session-1", patch: { endedAt: null } })
+      ).rejects.toBe(refused);
+
+      await waitFor(() => expect(dayMock).toHaveBeenCalledTimes(2));
+    });
+  });
 });
