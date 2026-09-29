@@ -4,7 +4,7 @@
 
 import * as Sentry from "@sentry/nextjs";
 import { getSessionId } from "@/lib/observability/session";
-import { scrubSupportQuery, scrubSupportUrlsInEvent } from "@/lib/observability/scrub-support-url";
+import { scrubBreadcrumbUrls, scrubUrlsInEvent } from "@/lib/observability/scrub-support-url";
 
 // On in production only; opt in elsewhere with NEXT_PUBLIC_SENTRY_ENABLE=true.
 const enabled =
@@ -27,7 +27,7 @@ Sentry.init({
   ],
 
   // v11 streams spans by default, and streamed spans never reach
-  // `beforeSendTransaction` below, so the support-URL scrubbing would stop.
+  // `beforeSendTransaction` below, so the URL scrubbing would stop.
   traceLifecycle: "static",
 
   // v11 defaults this to true, which regroups issues from non-Error captures.
@@ -51,22 +51,10 @@ Sentry.init({
     // httpBodies: [],
   },
 
-  // The support search puts free text (customer emails) in its query string.
-  // `reportQueryError` strips its own copy, but the SDK's default telemetry —
-  // fetch/xhr breadcrumbs, tracing spans, request context — records URLs
-  // verbatim, so every surface that can carry one is scrubbed here too.
-  beforeBreadcrumb: (breadcrumb) => {
-    if (
-      (breadcrumb.category === "fetch" || breadcrumb.category === "xhr") &&
-      breadcrumb.data &&
-      typeof breadcrumb.data.url === "string"
-    ) {
-      breadcrumb.data.url = scrubSupportQuery(breadcrumb.data.url);
-    }
-    return breadcrumb;
-  },
-  beforeSend: (event) => scrubSupportUrlsInEvent(event),
-  beforeSendTransaction: (event) => scrubSupportUrlsInEvent(event),
+  // Strips page tokens (see `scrub-token-query`) and support queries from the URLs the SDK records.
+  beforeBreadcrumb: (breadcrumb) => scrubBreadcrumbUrls(breadcrumb),
+  beforeSend: (event) => scrubUrlsInEvent(event),
+  beforeSendTransaction: (event) => scrubUrlsInEvent(event),
 });
 
 // `trailingSlash: true` gives `/requests/` while the router hook gets
