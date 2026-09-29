@@ -161,6 +161,8 @@ export default function DashboardPage() {
         user: v.user,
         note: v.note,
         mirroredFromGroupName: v.mirroredFromGroupName,
+        status: vacationStatus(v),
+        halfDay: v.halfDay,
       }));
     return [...groupConsecutiveByUserType(live), ...holidayRanges];
   }, [vacations, holidayRanges]);

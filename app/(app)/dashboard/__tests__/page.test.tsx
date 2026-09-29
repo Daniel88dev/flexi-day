@@ -167,6 +167,17 @@ describe("DashboardPage scope switch", () => {
 
     expect(screen.getByTitle("Sam Ruiz · Vacation · mirrored from Team B")).toBeInTheDocument();
   });
+
+  it("keeps a pending half day apart from the approved day before it", () => {
+    vacations = [
+      day("v-1", dana, "2026-08-17"),
+      { ...day("v-2", dana, "2026-08-18"), approvedAt: null, approvedBy: null, halfDay: true },
+    ];
+    renderWithClient(<DashboardPage />);
+
+    expect(screen.getByTitle("Dana Holt · Vacation")).toBeInTheDocument();
+    expect(screen.getByTitle("Dana Holt · Vacation · Pending")).toHaveTextContent("Dana ½");
+  });
 });
 
 describe("DashboardPage bank holidays", () => {
