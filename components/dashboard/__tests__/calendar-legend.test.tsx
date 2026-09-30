@@ -21,7 +21,12 @@ describe("CalendarLegend", () => {
     render(<CalendarLegend ranges={ranges} filter={allTypes} />);
 
     const items = screen.getAllByRole("listitem");
-    expect(items.map((li) => li.textContent)).toEqual(["Vacation", "Bank Holiday", "Study Leave"]);
+    expect(items.map((li) => li.textContent)).toEqual([
+      "Vacation",
+      "Bank Holiday",
+      "Study Leave",
+      "Pending",
+    ]);
 
     const study = screen.getByText("Study Leave");
     expect(study.querySelector("[aria-hidden]")?.getAttribute("style")).toContain("--c-study");
@@ -33,6 +38,20 @@ describe("CalendarLegend", () => {
 
     expect(screen.queryByText("Study Leave")).not.toBeInTheDocument();
     expect(screen.getByText("Vacation")).toBeInTheDocument();
+  });
+
+  it("explains the pending look with a neutral dashed swatch even when nothing is pending", () => {
+    render(<CalendarLegend ranges={ranges} filter={allTypes} />);
+
+    const swatch = screen.getByText("Pending").querySelector("[aria-hidden]");
+    expect(swatch).toHaveClass("border-dashed");
+    expect(swatch?.getAttribute("style") ?? "").not.toContain("--c-");
+  });
+
+  it("renders nothing when the filter hides every type in view", () => {
+    const filter = new Set([CalendarRecordType.Sick]);
+    const { container } = render(<CalendarLegend ranges={ranges} filter={filter} />);
+    expect(container).toBeEmptyDOMElement();
   });
 
   it("renders nothing when no ranges are in view", () => {

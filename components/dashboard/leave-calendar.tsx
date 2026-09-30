@@ -4,7 +4,7 @@ import { useState } from "react";
 import { AvatarBubble } from "@/components/brand/avatar-bubble";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { leaveMetaFor } from "@/lib/demo/leave-meta";
-import { CalendarRecordType, type UserSummary } from "@/lib/api/types";
+import { CalendarRecordType, type UserSummary, type VacationStatus } from "@/lib/api/types";
 import { useTranslation } from "@/lib/i18n/use-translation";
 import { recordTypeLabel } from "@/lib/i18n/record-type-label";
 
@@ -20,6 +20,8 @@ export interface CalendarRange {
   vacationIds?: string[];
   /** Set when the record only shows here via a group mirror; names its source group. */
   mirroredFrom?: string | null;
+  pending?: boolean;
+  halfDay?: boolean;
 }
 
 interface LeaveCalendarProps {
@@ -87,10 +89,17 @@ function CalBar({
   const u = range.user;
   const everyone = t.calendar.everyone;
   const typeLabel = recordTypeLabel(t.calendarRecordTypes, range.type);
-  const displayName = u ? firstName(u.name) : everyone;
-  const title = `${u ? u.name : everyone} · ${typeLabel}${range.note ? ` · ${range.note}` : ""}${
-    range.mirroredFrom ? ` · ${t.calendar.mirroredFrom(range.mirroredFrom)}` : ""
-  }`;
+  const shortName = u ? firstName(u.name) : everyone;
+  const displayName = range.halfDay ? `${shortName} ½` : shortName;
+  const title = [
+    u ? u.name : everyone,
+    typeLabel,
+    range.pending ? t.status.pending : null,
+    range.note,
+    range.mirroredFrom ? t.calendar.mirroredFrom(range.mirroredFrom) : null,
+  ]
+    .filter(Boolean)
+    .join(" · ");
   const vacationId = range.vacationIds?.[0];
   const clickable = Boolean(onSelect && vacationId);
   return (
@@ -118,11 +127,17 @@ function CalBar({
         padding: mini ? "0 4px" : "0 7px 0 5px",
         overflow: "hidden",
         cursor: clickable ? "pointer" : "default",
-        background: `color-mix(in oklch, ${meta.cssVar} 16%, var(--surface))`,
+        background: `color-mix(in oklch, ${meta.cssVar} ${range.pending ? 8 : 16}%, var(--surface))`,
         color: `color-mix(in oklch, ${meta.cssVar} 55%, var(--text))`,
-        // A mirrored record is only projected into this group, never owned by
-        // it — the dashed edge is what tells the two apart at a glance.
-        borderLeft: range.mirroredFrom ? `3px dashed ${meta.cssVar}` : `3px solid ${meta.cssVar}`,
+        ...(range.pending
+          ? { border: `1px dashed ${meta.cssVar}` }
+          : {
+              // A mirrored record is only projected into this group, never owned by
+              // it — the dashed edge is what tells the two apart at a glance.
+              borderLeft: range.mirroredFrom
+                ? `3px dashed ${meta.cssVar}`
+                : `3px solid ${meta.cssVar}`,
+            }),
         borderRadius: `${contL ? 0 : 7}px ${contR ? 0 : 7}px ${contR ? 0 : 7}px ${contL ? 0 : 7}px`,
         fontSize: mini ? 9.5 : 12,
         fontWeight: 600,
@@ -579,6 +594,8 @@ export function groupConsecutiveByUserType<
     user?: UserSummary;
     note?: string | null;
     mirroredFromGroupName?: string | null;
+    status?: VacationStatus;
+    halfDay?: boolean;
   },
 >(items: T[]): CalendarRange[] {
   if (items.length === 0) return [];
@@ -593,9 +610,15 @@ export function groupConsecutiveByUserType<
   let lastKey: string | null = null;
   for (const item of sorted) {
     const day = Number(item.requestedDay.slice(8, 10));
-    // The source group is part of the key so a bar never spans records the
-    // viewer owns and records only mirrored in — they are labelled differently.
-    const key = `${item.userId}|${item.vacationType}|${item.mirroredFromGroupName ?? ""}`;
+    // Everything a bar is drawn or labelled by joins the key, so one bar never
+    // spans owned and mirrored, pending and approved, or half and full days.
+    const key = [
+      item.userId,
+      item.vacationType,
+      item.mirroredFromGroupName ?? "",
+      item.status ?? "",
+      item.halfDay ? "half" : "full",
+    ].join("|");
     if (current && key === lastKey && lastIsoDay && isNextDay(lastIsoDay, item.requestedDay)) {
       current.to = day;
       if (item.id) current.vacationIds?.push(item.id);
@@ -613,6 +636,8 @@ export function groupConsecutiveByUserType<
         note: item.note ?? undefined,
         vacationIds: item.id ? [item.id] : [],
         mirroredFrom: item.mirroredFromGroupName ?? null,
+        pending: item.status === "pending",
+        halfDay: item.halfDay ?? false,
       };
       ranges.push(current);
     }

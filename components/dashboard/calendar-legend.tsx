@@ -7,7 +7,8 @@ import { useTranslation } from "@/lib/i18n/use-translation";
 
 /**
  * Takes the same ranges and filter as the calendar so it explains exactly the
- * colors on screen, not the whole palette.
+ * colors on screen, not the whole palette. Pending always shows, as on the
+ * phone, and one swatch serves both the lanes and stripes views.
  */
 export function CalendarLegend({
   ranges,
@@ -39,6 +40,16 @@ export function CalendarLegend({
           {t.calendarRecordTypes[k].label}
         </li>
       ))}
+      <li
+        className="flex items-center gap-1.5 text-[12.5px] font-medium"
+        style={{ color: "var(--text-muted)" }}
+      >
+        <span
+          aria-hidden
+          className="h-[9px] w-[14px] shrink-0 rounded-[3px] border border-dashed border-[var(--text-faint)]"
+        />
+        {t.status.pending}
+      </li>
     </ul>
   );
 }

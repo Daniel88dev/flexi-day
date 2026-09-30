@@ -80,6 +80,58 @@ describe("groupConsecutiveByUserType", () => {
     expect(ranges).toHaveLength(2);
   });
 
+  it("does not merge a pending day into an approved run of the same user and type", () => {
+    const ranges = groupConsecutiveByUserType([
+      {
+        userId: "u1",
+        vacationType: CalendarRecordType.Vacation,
+        requestedDay: "2026-06-08",
+        status: "approved",
+      },
+      {
+        userId: "u1",
+        vacationType: CalendarRecordType.Vacation,
+        requestedDay: "2026-06-09",
+        status: "pending",
+      },
+      {
+        userId: "u1",
+        vacationType: CalendarRecordType.Vacation,
+        requestedDay: "2026-06-10",
+        status: "pending",
+      },
+    ]);
+
+    expect(ranges.map((r) => [r.from, r.to, r.pending])).toEqual([
+      [8, 8, false],
+      [9, 10, true],
+    ]);
+    expect(new Set(ranges.map((r) => r.id)).size).toBe(2);
+  });
+
+  it("does not merge a half day with a full day of the same user and type", () => {
+    const ranges = groupConsecutiveByUserType([
+      {
+        userId: "u1",
+        vacationType: CalendarRecordType.Vacation,
+        requestedDay: "2026-06-08",
+        halfDay: false,
+      },
+      {
+        userId: "u1",
+        vacationType: CalendarRecordType.Vacation,
+        requestedDay: "2026-06-09",
+        halfDay: true,
+      },
+    ]);
+
+    expect(ranges.map((r) => [r.from, r.to, r.halfDay])).toEqual([
+      [8, 8, false],
+      [9, 9, true],
+    ]);
+    expect(new Set(ranges.map((r) => r.id)).size).toBe(2);
+  });
+
   it("gives every range an id of its own", () => {
     const ranges = groupConsecutiveByUserType([
       { userId: "u1", vacationType: CalendarRecordType.Vacation, requestedDay: "2026-06-08" },
