@@ -43,6 +43,7 @@ export function useBreakDrafts(initial: () => BreakDraft[] = () => []) {
       setBreaks((current) => [...current, { id, startedAt: "", endedAt: "", isNew: true }]);
     },
     remove: (id: string) => setBreaks((current) => current.filter((entry) => entry.id !== id)),
+    rebase: (onto: (current: BreakDraft[]) => BreakDraft[]) => setBreaks(onto),
     markSaved: (id: string, savedId: string) =>
       setBreaks((current) =>
         current.map((entry) =>

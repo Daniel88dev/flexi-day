@@ -6,6 +6,8 @@ import {
   filledSpans,
   resolveBreaks,
   instantAt,
+  rebaseBreaks,
+  rebaseTimes,
   sessionDraft,
   timeFieldOf,
   toBreakPatch,
@@ -455,5 +457,101 @@ describe("draftEdited", () => {
         PRAGUE
       )
     ).toBe(true);
+  });
+});
+
+describe("rebaseTimes", () => {
+  it("keeps the times the reader changed and takes the rest from the newer answer", () => {
+    const after = session({ startedAt: "2026-09-09T05:50:00.000Z" });
+
+    expect(rebaseTimes({ startedAt: "08:05", endedAt: "17:45" }, session(), after, PRAGUE)).toEqual(
+      { startedAt: "07:50", endedAt: "17:45" }
+    );
+  });
+
+  it("keeps a change that has since landed rather than reading it as the server's", () => {
+    const after = session({ endedAt: "2026-09-09T15:30:00.000Z" });
+
+    expect(
+      rebaseTimes({ startedAt: "08:05", endedAt: "17:30" }, session(), after, PRAGUE).endedAt
+    ).toBe("17:30");
+  });
+});
+
+describe("rebaseBreaks", () => {
+  const breakOf = (id: string, startedAt: string, endedAt: string): AttendanceBreak => ({
+    id,
+    sessionId: "session-1",
+    startedAt,
+    endedAt,
+    autoClosed: false,
+    open: false,
+  });
+
+  it("keeps an edited break and moves an untouched one with the server", () => {
+    const before = session({
+      breaks: [
+        breakOf("break-1", "2026-09-09T10:00:00.000Z", "2026-09-09T10:30:00.000Z"),
+        breakOf("break-2", "2026-09-09T12:00:00.000Z", "2026-09-09T12:10:00.000Z"),
+      ],
+    });
+    const after = session({
+      breaks: [
+        breakOf("break-1", "2026-09-09T10:00:00.000Z", "2026-09-09T10:30:00.000Z"),
+        breakOf("break-2", "2026-09-09T12:00:00.000Z", "2026-09-09T12:20:00.000Z"),
+      ],
+    });
+    const drafted = [
+      { id: "break-1", startedAt: "12:00", endedAt: "12:45" },
+      { id: "break-2", startedAt: "14:00", endedAt: "14:10" },
+    ];
+
+    expect(rebaseBreaks(drafted, before, after, PRAGUE)).toEqual([
+      { id: "break-1", startedAt: "12:00", endedAt: "12:45" },
+      { id: "break-2", startedAt: "14:00", endedAt: "14:20" },
+    ]);
+  });
+
+  it("keeps new breaks the reader has not saved yet", () => {
+    const fresh = { id: "new-1", startedAt: "16:00", endedAt: "16:10", isNew: true };
+
+    expect(rebaseBreaks([fresh], session(), session(), PRAGUE)).toEqual([fresh]);
+  });
+
+  it("keeps a break already saved once, whether or not the answer shows it yet", () => {
+    const landed = { id: "server-1", startedAt: "15:00", endedAt: "15:20" };
+    const shown = session({
+      breaks: [breakOf("server-1", "2026-09-09T13:00:00.000Z", "2026-09-09T13:20:00.000Z")],
+    });
+
+    expect(rebaseBreaks([landed], session(), session(), PRAGUE)).toEqual([landed]);
+    expect(rebaseBreaks([landed], session(), shown, PRAGUE)).toEqual([landed]);
+  });
+
+  it("keeps a break the reader took off the form off it, though the answer still lists it", () => {
+    const listed = session({
+      breaks: [breakOf("break-1", "2026-09-09T10:00:00.000Z", "2026-09-09T10:30:00.000Z")],
+    });
+
+    expect(rebaseBreaks([], listed, listed, PRAGUE)).toEqual([]);
+  });
+
+  it("takes a break the server gained that the form never held", () => {
+    const after = session({
+      breaks: [breakOf("break-3", "2026-09-09T11:00:00.000Z", "2026-09-09T11:15:00.000Z")],
+    });
+
+    expect(rebaseBreaks([], session(), after, PRAGUE)).toEqual([
+      { id: "break-3", startedAt: "13:00", endedAt: "13:15" },
+    ]);
+  });
+
+  it("drops a break the server no longer has", () => {
+    const before = session({
+      breaks: [breakOf("break-1", "2026-09-09T10:00:00.000Z", "2026-09-09T10:30:00.000Z")],
+    });
+    const drafted = [{ id: "break-1", startedAt: "12:00", endedAt: "12:30" }];
+
+    expect(rebaseBreaks(drafted, before, session(), PRAGUE)).toEqual([]);
   });
 });

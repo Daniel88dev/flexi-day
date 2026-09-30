@@ -944,12 +944,19 @@ export function useSessionEvents(sessionId: string | null, enabled = true) {
  * day, the month, the team matrix and the clock — so all four prefixes go
  * rather than one key. Corrections are rare and the reads are cheap; a screen
  * still showing the old number is the expensive outcome.
+ *
+ * On settle rather than on success: a dropped connection or a 5xx can arrive
+ * after the write committed. A failure has no session to name its timeline,
+ * so `sessionOf` reads it off the input, and without one every timeline goes.
  */
-function useCorrection<T>(mutationFn: (input: T) => Promise<AttendanceSession>) {
+function useCorrection<T>(
+  mutationFn: (input: T) => Promise<AttendanceSession>,
+  sessionOf?: (input: T) => string
+) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn,
-    onSuccess: (session) => {
+    onSettled: (session, _error, input) => {
       for (const key of [
         "attendance-day",
         "attendance-month",
@@ -958,14 +965,19 @@ function useCorrection<T>(mutationFn: (input: T) => Promise<AttendanceSession>) 
       ]) {
         qc.invalidateQueries({ queryKey: [key] });
       }
-      qc.invalidateQueries({ queryKey: qk.attendanceEvents(session.id) });
+      const sessionId = session?.id ?? sessionOf?.(input);
+      qc.invalidateQueries({
+        queryKey: sessionId ? qk.attendanceEvents(sessionId) : ["attendance-events"],
+      });
     },
   });
 }
 
 export const useCorrectSession = () =>
-  useCorrection(({ sessionId, patch }: { sessionId: string; patch: AttendanceCorrection }) =>
-    correctSession(sessionId, patch)
+  useCorrection(
+    ({ sessionId, patch }: { sessionId: string; patch: AttendanceCorrection }) =>
+      correctSession(sessionId, patch),
+    ({ sessionId }) => sessionId
   );
 
 export const useCorrectBreak = () =>
@@ -976,17 +988,25 @@ export const useCorrectBreak = () =>
 export const useRemoveBreak = () => useCorrection((breakId: string) => removeBreak(breakId));
 
 export const useRemoveSession = () =>
-  useCorrection((sessionId: string) => removeSession(sessionId));
+  useCorrection(
+    (sessionId: string) => removeSession(sessionId),
+    (sessionId) => sessionId
+  );
 
 export const useEnterSession = () => useCorrection((entry: AttendanceEntry) => enterSession(entry));
 
 export const useAddBreak = () =>
-  useCorrection(({ sessionId, span }: { sessionId: string; span: AttendanceBreakSpan }) =>
-    addBreak(sessionId, span)
+  useCorrection(
+    ({ sessionId, span }: { sessionId: string; span: AttendanceBreakSpan }) =>
+      addBreak(sessionId, span),
+    ({ sessionId }) => sessionId
   );
 
 export const useMarkSessionChecked = () =>
-  useCorrection((sessionId: string) => markSessionChecked(sessionId));
+  useCorrection(
+    (sessionId: string) => markSessionChecked(sessionId),
+    (sessionId) => sessionId
+  );
 
 /**
  * The team dashboard, an admin surface like the roster: `enabled` is the
