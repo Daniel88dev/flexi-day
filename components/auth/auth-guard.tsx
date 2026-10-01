@@ -14,7 +14,9 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (isPending) return;
     if (!session) {
-      const redirect = encodeURIComponent(pathname || "/");
+      // The query string comes along so a direct link such as
+      // `/settings/?delete-account` survives the sign-in.
+      const redirect = encodeURIComponent((pathname || "/") + window.location.search);
       router.replace(`/sign-in?redirect=${redirect}`);
     }
   }, [isPending, session, router, pathname]);

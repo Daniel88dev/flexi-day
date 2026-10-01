@@ -75,8 +75,10 @@ export type MemberChange = {
   groupId: UUID;
   changeType: string;
   changeDetail: string;
-  /** Null when the admin who made the change has since been removed. */
+  /** Null for the year rollover, and for an admin who has since deleted their account. */
   actor: UserSummary | null;
+  /** True when the admin who made the change deleted their account; absent from an older backend. */
+  actorDeleted?: boolean;
   createdAt: Iso;
 };
 

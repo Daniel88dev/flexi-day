@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { ConnectedAccountsCard } from "@/components/settings/connected-accounts-card";
+import { DeleteAccountCard } from "@/components/settings/delete-account-card";
 import { TwoFactorCard } from "@/components/settings/two-factor-card";
 import { pushToast } from "@/components/toast";
 import { useMySettings, useReportScope, useUpdateMySettings } from "@/lib/api/queries";
@@ -99,6 +100,10 @@ export default function SettingsPage() {
       {/* Same gate as the password card: 2FA only ever challenges password
           sign-in, so a social-only account has nothing to enable. */}
       {offerPasswordChange ? <TwoFactorCard /> : null}
+
+      <Suspense fallback={null}>
+        <DeleteAccountCard layoutReady={!accountsQuery.isPending} />
+      </Suspense>
     </div>
   );
 }

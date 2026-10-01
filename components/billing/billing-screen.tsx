@@ -7,7 +7,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   useChangePlan,
   useCreateCheckout,
-  useCreatePortalSession,
   useSubscription,
   useUpdateExtraSlots,
   qk,
@@ -16,6 +15,7 @@ import type { BillingCycle, BillingOverview, PaidPlan } from "@/lib/api/billing"
 import { isPaddleConfigured, openCheckout } from "@/lib/paddle";
 import { PLAN_PRICES, TRIAL, formatEur } from "@/lib/billing/prices";
 import { pushToast } from "@/components/toast";
+import { useOpenBillingPortal } from "@/lib/billing/use-open-billing-portal";
 import { useTranslation } from "@/lib/i18n/use-translation";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -212,7 +212,7 @@ export function BillingScreen() {
   const { t } = useTranslation();
   const qc = useQueryClient();
   const overviewQuery = useSubscription();
-  const portal = useCreatePortalSession();
+  const portal = useOpenBillingPortal();
   const updateSlots = useUpdateExtraSlots();
 
   // Yearly deliberately preselected: Paddle's fixed per-transaction fee makes
@@ -246,24 +246,6 @@ export function BillingScreen() {
   function refetchSubscription() {
     setAwaitingSince(Date.now());
     void qc.invalidateQueries({ queryKey: qk.subscription() });
-  }
-
-  async function handlePortal() {
-    // Opened synchronously: awaiting first breaks the user-gesture chain and
-    // Safari blocks the popup outright. `noopener` must not go in the feature
-    // string — it makes window.open return null, which strands the blank tab
-    // and sends this one to Paddle instead. Sever the handle by hand while the
-    // new tab is still same-origin.
-    const tab = window.open("", "_blank");
-    if (tab) tab.opener = null;
-    try {
-      const { url } = await portal.mutateAsync();
-      if (tab) tab.location.href = url;
-      else window.location.href = url;
-    } catch (err) {
-      tab?.close();
-      pushToast(err instanceof Error ? err.message : t.billing.portalFailed, "danger");
-    }
   }
 
   async function handleSaveSlots(target: number) {
@@ -369,7 +351,7 @@ export function BillingScreen() {
                   variant="outline"
                   size="sm"
                   className="gap-2"
-                  onClick={handlePortal}
+                  onClick={portal.open}
                   disabled={portal.isPending}
                 >
                   <CreditCard className="h-3.5 w-3.5" />
@@ -441,7 +423,7 @@ export function BillingScreen() {
               cycle={cycle}
               isOwner={isOwner}
               onSubscribed={refetchSubscription}
-              onManageBilling={handlePortal}
+              onManageBilling={portal.open}
             />
           ))}
         </div>
