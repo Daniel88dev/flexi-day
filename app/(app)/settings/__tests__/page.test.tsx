@@ -50,6 +50,12 @@ vi.mock("@/lib/auth-client", () => ({
   },
 }));
 
+vi.mock("@/components/settings/delete-account-card", () => ({
+  DeleteAccountCard: ({ layoutReady }: { layoutReady: boolean }) => (
+    <div data-testid="delete-account-card" data-layout-ready={String(layoutReady)} />
+  ),
+}));
+
 function account(providerId: string) {
   return { id: `acc-${providerId}`, providerId, accountId: "a", userId: "u", scopes: [] };
 }
@@ -257,6 +263,16 @@ describe("SettingsPage", () => {
     // CREDENTIAL_ACCOUNT_NOT_FOUND, so the form could only ever fail.
     expect(await screen.findByText("Sign-in methods")).toBeInTheDocument();
     expect(screen.queryByLabelText("Current password")).not.toBeInTheDocument();
+  });
+
+  it("puts the delete account card last, once the cards above it have settled", async () => {
+    const { container } = renderWithClient(<SettingsPage />);
+
+    const card = screen.getByTestId("delete-account-card");
+    expect(card).toHaveAttribute("data-layout-ready", "false");
+    expect(await screen.findByLabelText("Current password")).toBeInTheDocument();
+    expect(card).toHaveAttribute("data-layout-ready", "true");
+    expect(container.firstElementChild?.lastElementChild).toBe(card);
   });
 
   it("keeps the card hidden while the sign-in methods are still unknown", () => {

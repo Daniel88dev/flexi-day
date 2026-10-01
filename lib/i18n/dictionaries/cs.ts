@@ -522,6 +522,7 @@ export const cs: Dictionary = {
       note: "Poznámka",
       by: (name: string) => `provedl(a) ${name}`,
       bySystem: "automaticky na přelomu roku",
+      byDeletedUser: "provedl(a) smazaný uživatel",
       editQuota: "Upravit nárok",
       statuses: {
         approved: "Schváleno",
@@ -978,6 +979,45 @@ export const cs: Dictionary = {
         generic: "Způsoby přihlášení se nepodařilo změnit. Zkuste to prosím znovu.",
       },
     },
+    deleteAccount: {
+      title: "Smazat účet",
+      hint: "Smazáním účtu odstraníte účet i vše, co k němu patří. Nelze to vrátit zpět.",
+      loadFailed: "Nepodařilo se ověřit, zda lze účet smazat. Zkuste stránku načíst znovu.",
+      blockedIntro: "Účet zatím nelze smazat:",
+      blockers: {
+        groupHasMembers: (group: string, others: number) =>
+          `Spravujete skupinu ${group}, ve které ${plural(others, "zůstává", "zůstávají", "zůstává")} ${others} ${plural(others, "další člen", "další členové", "dalších členů")}. Nejprve je ze skupiny odeberte. Předat skupinu někomu jinému zatím nejde.`,
+        organizationHasMembers: (organization: string, others: number) =>
+          `Vlastníte organizaci ${organization}, ve které ${plural(others, "pracuje", "pracují", "pracuje")} ${others} ${plural(others, "další člověk", "další lidé", "dalších lidí")}. Nejprve je z organizace odeberte. Předat organizaci někomu jinému zatím nejde.`,
+        subscriptionRenewing: (organization: string) =>
+          `Předplatné organizace ${organization} se obnoví. Nejprve ho zrušte ve fakturačním portálu. Zbytek zaplaceného období tím propadne.`,
+        supportAdmin: "Účty administrátorů podpory zde smazat nelze.",
+      },
+      openBillingPortal: "Otevřít fakturační portál",
+      password: "Heslo",
+      passwordHint: "Pro potvrzení zadejte své heslo.",
+      passwordInvalid: "Heslo není správné.",
+      delete: "Smazat účet",
+      reauthHint:
+        "Přihlašujete se přes Google nebo Microsoft, takže se pro potvrzení přihlaste znovu. Potom se vrátíte sem.",
+      signInAgain: "Přihlásit se znovu",
+      signingOut: "Odhlašování…",
+      signOutFailed: "Odhlášení se nepodařilo. Zkuste to znovu.",
+      confirmTitle: "Smazat účet?",
+      confirmIntro: "Natrvalo se odstraní:",
+      confirmAccount: "váš účet a jeho způsoby přihlášení",
+      confirmRecords: "vaše záznamy volna a docházky, včetně toho, co vidí váš tým a zaměstnavatel",
+      confirmAttachments: "soubory přiložené k vašim žádostem",
+      confirmSettings: "vaše nastavení",
+      confirmOrganization: (organization: string) =>
+        `organizace ${organization} s jejími skupinami a záznamem o předplatném`,
+      confirmOwnedOrganizations:
+        "každá organizace, kterou vlastníte a ve které nikdo jiný není, s jejími skupinami a záznamem o předplatném",
+      confirmIrreversible: "Tento krok nelze vrátit zpět.",
+      confirmDelete: "Smazat natrvalo",
+      deleting: "Mazání…",
+      failed: "Účet se nepodařilo smazat.",
+    },
   },
 
   dashboard: {
@@ -1075,6 +1115,7 @@ export const cs: Dictionary = {
       submitting: "Přihlašování…",
       failed: "Přihlášení selhalo",
       accountReady: "Váš účet je připravený a jste ve skupině. Pokračujte přihlášením.",
+      accountDeleted: "Váš účet byl smazán.",
     },
     signUp: {
       title: "Vytvořte si účet",

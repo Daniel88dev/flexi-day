@@ -212,6 +212,44 @@ describe("MemberReportPage", () => {
     expect(screen.getByText(/Grace Hopper/)).toBeInTheDocument();
   });
 
+  it("tells a change by a deleted user apart from the year rollover", () => {
+    mocks.result = {
+      data: {
+        ...report,
+        changes: [
+          {
+            id: "c-deleted",
+            groupId: "g1",
+            changeType: "USER_YEAR_QUOTAS",
+            changeDetail: "Quota for 2026: vacation 20 → 25",
+            actor: null,
+            actorDeleted: true,
+            createdAt: "2026-02-01T10:00:00.000Z",
+          },
+          {
+            id: "c-rollover",
+            groupId: "g1",
+            changeType: "USER_YEAR_QUOTAS",
+            changeDetail: "Quota for 2026: carried over 0 → 3",
+            actor: null,
+            actorDeleted: false,
+            createdAt: "2026-01-01T00:00:00.000Z",
+          },
+        ],
+      },
+      isPending: false,
+      isError: false,
+    };
+
+    renderWithClient(<MemberReportPage />);
+
+    const deleted = screen.getByText("Quota for 2026: vacation 20 → 25").closest("li");
+    const rollover = screen.getByText("Quota for 2026: carried over 0 → 3").closest("li");
+    expect(deleted).toHaveTextContent("by a deleted user");
+    expect(rollover).toHaveTextContent("automatically at the turn of the year");
+    expect(rollover).not.toHaveTextContent("deleted");
+  });
+
   it("offers the quota edit to an admin on the current year", () => {
     renderWithClient(<MemberReportPage />);
 

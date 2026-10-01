@@ -5,6 +5,14 @@ import TermsPage from "../terms/page";
 import SecurityPage from "../security/page";
 import ContactPage from "../contact/page";
 
+function sectionText(heading: HTMLElement): string {
+  let text = "";
+  for (let el = heading.nextElementSibling; el && el.tagName !== "H2"; el = el.nextElementSibling) {
+    text += ` ${el.textContent ?? ""}`;
+  }
+  return text.replace(/\s+/g, " ");
+}
+
 describe("Legal pages", () => {
   it("Privacy page renders its heading and controller email", () => {
     render(<PrivacyPage />);
@@ -24,7 +32,7 @@ describe("Legal pages", () => {
 
   it("Legal pages carry the current update date", () => {
     render(<PrivacyPage />);
-    expect(screen.getByText("Last updated: 26 September 2026")).toBeInTheDocument();
+    expect(screen.getByText("Last updated: 1 October 2026")).toBeInTheDocument();
   });
 
   it("Privacy page describes attendance location, its audience and its retention", () => {
@@ -39,6 +47,26 @@ describe("Legal pages", () => {
     ).toBeInTheDocument();
     expect(
       screen.getByText(/erase them twelve months after the business date/)
+    ).toBeInTheDocument();
+  });
+
+  it("Privacy page says what deleting the account removes and what stays", () => {
+    render(<PrivacyPage />);
+    const text = sectionText(screen.getByRole("heading", { name: "7. How long we keep it" }));
+    expect(text).toMatch(/removes it from our live systems at once/);
+    expect(text).toMatch(/leave and attendance records, request attachments and settings/);
+    expect(text).toMatch(/what your team or employer could see/);
+    expect(text).toMatch(/the organization goes too, with its groups/);
+    expect(text).toMatch(/remove the other members and cancel a renewing subscription/);
+    expect(text).toMatch(/backups .* within seven days/);
+    expect(text).toMatch(/stay in the audit log without your identity/);
+    expect(text).toMatch(/unless we are legally required to keep it longer/);
+  });
+
+  it("Terms page still lets the user delete their Account at any time", () => {
+    render(<TermsPage />);
+    expect(
+      screen.getByText(/You may stop using the Service and delete your Account at any time/)
     ).toBeInTheDocument();
   });
 

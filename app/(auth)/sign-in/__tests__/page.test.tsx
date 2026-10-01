@@ -39,6 +39,20 @@ async function submit(user: ReturnType<typeof userEvent.setup>) {
 }
 
 describe("SignInPage", () => {
+  it("confirms the account was deleted after a deletion lands here", () => {
+    search = new URLSearchParams({ notice: "account-deleted" });
+    render(<SignInPage />);
+
+    expect(screen.getByText("Your account was deleted.")).toBeInTheDocument();
+  });
+
+  it("ignores a notice it does not know", () => {
+    search = new URLSearchParams({ notice: "anything-else" });
+    render(<SignInPage />);
+
+    expect(screen.queryByText("Your account was deleted.")).not.toBeInTheDocument();
+  });
+
   it("says the account is ready when sign-up with invite could not sign the user in", () => {
     search = new URLSearchParams({ notice: "account-ready" });
     render(<SignInPage />);

@@ -205,11 +205,27 @@ export default function PrivacyPage() {
 
       <h2>7. How long we keep it</h2>
       <p>
-        We keep your personal data for as long as your account is active. If you delete your account
-        or ask us to erase your data, we remove it from our live systems and delete it from backups
-        within a reasonable period, unless we are legally required to keep it longer. Request
-        attachments are deleted automatically twelve months after the absence, or as soon as the
-        request is cancelled. Attendance location coordinates are erased twelve months after the
+        We keep your personal data for as long as your account is active. You can delete your
+        account yourself in Settings, or ask us to erase your data.
+      </p>
+      <p>
+        Deleting your account removes it from our live systems at once, together with everything
+        tied to it: your leave and attendance records, request attachments and settings. That
+        includes what your team or employer could see of them. If you own an organization that has
+        nobody else in it, the organization goes too, with its groups and its subscription record.
+        An owner has to remove the other members and cancel a renewing subscription before they can
+        delete their account. Paddle, as seller of record, keeps its own records of past payments
+        under its own privacy policy.
+      </p>
+      <p>
+        Our database backups age out, so deleted data is gone from them within seven days. Changes
+        you made to other people&rsquo;s allowances as an admin stay in the audit log without your
+        identity. A request to erase your data is handled the same way. Either way, we delete it
+        unless we are legally required to keep it longer.
+      </p>
+      <p>
+        Request attachments are deleted automatically twelve months after the absence, or as soon as
+        the request is cancelled. Attendance location coordinates are erased twelve months after the
         business date they belong to, leaving the attendance record itself in place. Server logs are
         retained for a limited period for security purposes.
       </p>

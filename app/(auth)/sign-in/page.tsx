@@ -36,7 +36,13 @@ function SignInForm() {
   const params = useSearchParams();
   const redirectTo = safeRedirect(params.get("redirect"));
 
-  const notice = params.get("notice") === "account-ready" ? t.auth.signIn.accountReady : null;
+  const noticeParam = params.get("notice");
+  const notice =
+    noticeParam === "account-ready"
+      ? t.auth.signIn.accountReady
+      : noticeParam === "account-deleted"
+        ? t.auth.signIn.accountDeleted
+        : null;
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");

@@ -102,6 +102,7 @@ import {
 } from "./reports";
 import type { ReportFilters } from "./report-types";
 import { getMySettings, updateMySettings } from "./settings";
+import { deleteMyAccount, getAccountDeletionStatus } from "./account-deletion";
 import {
   getSupportGroup,
   getSupportOrganization,
@@ -169,6 +170,7 @@ export const qk = {
   bankHolidayCountries: () => ["bank-holiday-countries"] as const,
   calendarSyncs: () => ["calendar-syncs"] as const,
   mySettings: () => ["my-settings"] as const,
+  accountDeletion: () => ["account-deletion"] as const,
   reportScope: () => ["report-scope"] as const,
   // Keyed on the serialised filters so every filter combination caches on its
   // own instead of thrashing a single entry.
@@ -574,6 +576,19 @@ export function useUpdateMySettings() {
   return useMutation({
     mutationFn: (input: UpdateUserSettingsInput) => updateMySettings(input),
     onSuccess: (settings) => qc.setQueryData(qk.mySettings(), settings),
+  });
+}
+
+export function useAccountDeletionStatus() {
+  return useQuery({
+    queryKey: qk.accountDeletion(),
+    queryFn: getAccountDeletionStatus,
+  });
+}
+
+export function useDeleteMyAccount() {
+  return useMutation({
+    mutationFn: (password?: string) => deleteMyAccount(password),
   });
 }
 

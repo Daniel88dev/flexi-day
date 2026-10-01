@@ -518,9 +518,10 @@ export const en = {
       month: "Month",
       note: "Note",
       by: (name: string) => `by ${name}`,
-      // Shown when the change has no actor, which only the scheduled year
-      // rollover produces — a real actor can never be lost.
+      // A change with no actor and no deleted-actor marker comes from the
+      // scheduled year rollover.
       bySystem: "automatically at the turn of the year",
+      byDeletedUser: "by a deleted user",
       editQuota: "Edit quota",
       statuses: {
         approved: "Approved",
@@ -971,6 +972,47 @@ export const en = {
         generic: "Could not change your sign-in methods. Please try again.",
       },
     },
+    deleteAccount: {
+      title: "Delete account",
+      hint: "Deleting your account removes it and everything tied to it. It can't be undone.",
+      loadFailed:
+        "Could not check whether your account can be deleted. Reload the page to try again.",
+      blockedIntro: "Your account can't be deleted yet:",
+      blockers: {
+        groupHasMembers: (group: string, others: number) =>
+          `You manage the group ${group}, which still has ${others} other ${others === 1 ? "member" : "members"}. Remove them from the group first. Handing a group over to someone else isn't available yet.`,
+        organizationHasMembers: (organization: string, others: number) =>
+          `You own the organization ${organization}, where ${others} other ${others === 1 ? "person still works" : "people still work"}. Remove them from the organization first. Handing an organization over to someone else isn't available yet.`,
+        subscriptionRenewing: (organization: string) =>
+          `The subscription for ${organization} will renew. Cancel it in the billing portal first. You give up the rest of the paid period.`,
+        supportAdmin: "Support admin accounts can't be deleted here.",
+      },
+      openBillingPortal: "Open billing portal",
+      password: "Password",
+      passwordHint: "Enter your password to confirm it's you.",
+      passwordInvalid: "That password isn't right.",
+      delete: "Delete account",
+      reauthHint:
+        "You sign in with Google or Microsoft, so sign in again to confirm it's you. You'll come back here afterwards.",
+      signInAgain: "Sign in again",
+      signingOut: "Signing out…",
+      signOutFailed: "Could not sign you out. Try again.",
+      confirmTitle: "Delete your account?",
+      confirmIntro: "This removes for good:",
+      confirmAccount: "your account and its sign-in methods",
+      confirmRecords:
+        "your leave and attendance records, including what your team and employer can see",
+      confirmAttachments: "the files attached to your requests",
+      confirmSettings: "your settings",
+      confirmOrganization: (organization: string) =>
+        `the organization ${organization}, with its groups and subscription record`,
+      confirmOwnedOrganizations:
+        "any organization you own that has nobody else in it, with its groups and subscription record",
+      confirmIrreversible: "This can't be undone.",
+      confirmDelete: "Delete for good",
+      deleting: "Deleting…",
+      failed: "Could not delete your account.",
+    },
   },
 
   dashboard: {
@@ -1068,6 +1110,7 @@ export const en = {
       submitting: "Signing in…",
       failed: "Sign-in failed",
       accountReady: "Your account is ready and you're in the group. Sign in to continue.",
+      accountDeleted: "Your account was deleted.",
     },
     signUp: {
       title: "Create your account",

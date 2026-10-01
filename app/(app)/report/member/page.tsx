@@ -280,7 +280,9 @@ export default function MemberReportPage() {
                     {" · "}
                     {change.actor
                       ? t.report.detail.by(change.actor.name)
-                      : t.report.detail.bySystem}
+                      : change.actorDeleted
+                        ? t.report.detail.byDeletedUser
+                        : t.report.detail.bySystem}
                   </p>
                 </li>
               ))}
