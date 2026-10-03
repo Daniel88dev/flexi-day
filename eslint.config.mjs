@@ -101,6 +101,8 @@ const eslintConfig = defineConfig([
     // Local tooling scratch space — holds full checkouts (with their own .next/
     // build output), which the paths above only ignore at the repo root.
     ".claude/**",
+    // CloudFront Functions runtime code, kept byte-identical to what is deployed.
+    "terraform/functions/**",
   ]),
 ]);
 

@@ -18,6 +18,9 @@ approval before starting any non-trivial implementation.
 server actions, no `next/image` optimisation, no middleware. Every request goes to `flexi-day-be`
 via `NEXT_PUBLIC_API_URL` (local: `http://localhost:8080`), in dev as well as production.
 
+The bucket, the distribution and its redirect function are Terraform in `terraform/`, applied by
+hand. See [`docs/terraform.md`](docs/terraform.md).
+
 Only the marketing landing page renders standalone, fed by `lib/demo/`. Every `app/(app)/` page
 needs a running backend and a signed-in session.
 
