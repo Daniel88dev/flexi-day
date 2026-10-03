@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { screen, waitFor } from "@testing-library/react";
+import { fireEvent, screen, waitFor } from "@testing-library/react";
 import MemberReportPage from "../page";
 import { renderWithClient } from "@/lib/test-utils";
 import { I18nProvider } from "@/lib/i18n/i18n-provider";
@@ -23,6 +23,15 @@ vi.mock("@/components/report/member-quota-chart", () => ({
       data-used={series.reduce((total, point) => total + point.used, 0)}
     />
   ),
+}));
+
+const dialog = vi.hoisted(() => ({ quota: "unset" as unknown }));
+
+vi.mock("@/components/report/quota-edit-dialog", () => ({
+  QuotaEditDialog: ({ quota }: { quota: unknown }) => {
+    dialog.quota = quota;
+    return <div role="dialog" />;
+  },
 }));
 
 const report: MemberReport = {
@@ -139,6 +148,7 @@ describe("MemberReportPage", () => {
     mocks.result = { data: report, isPending: false, isError: false };
     mocks.prior = { data: priorReport, isPending: false, isError: false };
     mocks.scope = { data: { years: [2026, 2025] }, isPending: false };
+    dialog.quota = "unset";
   });
 
   afterEach(() => {
@@ -254,6 +264,59 @@ describe("MemberReportPage", () => {
     renderWithClient(<MemberReportPage />);
 
     expect(screen.getByRole("button", { name: "Edit quota" })).toBeInTheDocument();
+  });
+
+  it("shows the group defaults for a member with no quota row", () => {
+    mocks.result = {
+      data: {
+        ...report,
+        quotas: [],
+        summary: [
+          {
+            userId: "u1",
+            groupId: "g1",
+            vacationType: CalendarRecordType.Vacation,
+            carriedOverDays: 0,
+            yearQuota: 20,
+            usedToDate: 0,
+            plannedRemaining: 0,
+            pending: 0,
+            remaining: 20,
+          },
+          {
+            userId: "u1",
+            groupId: "g1",
+            vacationType: CalendarRecordType.HomeOffice,
+            carriedOverDays: 0,
+            yearQuota: 12,
+            usedToDate: 0,
+            plannedRemaining: 0,
+            pending: 0,
+            remaining: 12,
+          },
+        ],
+      },
+      isPending: false,
+      isError: false,
+    };
+
+    renderWithClient(<MemberReportPage />);
+
+    const figure = (label: string) => screen.getByText(label).nextElementSibling?.textContent;
+    expect(figure("Carried over")).toBe("0");
+    expect(figure("Year quota")).toBe("20");
+    expect(figure("Home office days")).toBe("12");
+
+    fireEvent.click(screen.getByRole("button", { name: "Edit quota" }));
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+    expect(dialog.quota).toBeUndefined();
+  });
+
+  it("hands the stored quota row to the edit dialog", () => {
+    renderWithClient(<MemberReportPage />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Edit quota" }));
+    expect(dialog.quota).toEqual(report.quotas[0]);
   });
 
   it("hides the quota edit when the caller cannot administer the group", () => {

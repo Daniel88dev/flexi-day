@@ -127,9 +127,9 @@ export function TeamRemainingChart({ remaining, year, color }: Props) {
   // Gated on the drawn value, not the granted one: a team that has already
   // spent its carry-over has no translucent segment for the key to point at.
   const carriesOver = rows.some((row) => row.carriedOverLeft > 0);
-  // Booking against a group default rather than a personal quota row is a
-  // supported state, so leave taken with a zero allowance still has to chart —
-  // that member is overdrawn, which is exactly what someone opens this for.
+  // An admin can lower a quota below what is already booked, even to zero, so
+  // leave taken against a zero allowance still has to chart: that member is
+  // overdrawn, which is exactly what someone opens this for.
   const anything = remaining.some(
     (entry) => entry.carriedOver > 0 || entry.yearQuota > 0 || entry.used > 0 || entry.pending > 0
   );

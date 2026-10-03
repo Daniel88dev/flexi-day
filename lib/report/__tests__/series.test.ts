@@ -6,6 +6,7 @@ import {
   buildTeamMonthlySeries,
   calendarMonths,
   formatDays,
+  groupAllowance,
   monthAxisLabel,
   monthlyTargetFor,
   monthlySeriesFor,
@@ -135,6 +136,45 @@ describe("totalQuotaFor", () => {
     ];
 
     expect(totalQuotaFor(rows, "u1", CalendarRecordType.Vacation)).toBe(28);
+  });
+});
+
+describe("groupAllowance", () => {
+  const rows = [
+    summaryRow({ yearQuota: 20, carriedOverDays: 0 }),
+    summaryRow({ vacationType: CalendarRecordType.HomeOffice, yearQuota: 12, carriedOverDays: 0 }),
+    summaryRow({ groupId: "g2", yearQuota: 5, carriedOverDays: 4 }),
+  ];
+
+  it("reads one group's figures from the summary", () => {
+    expect(groupAllowance(rows, "u1", "g1")).toEqual({
+      carriedOverDays: 0,
+      vacationDays: 20,
+      homeOfficeDays: 12,
+      sickDays: null,
+    });
+  });
+
+  it("keeps groups apart", () => {
+    expect(groupAllowance(rows, "u1", "g2")).toMatchObject({ carriedOverDays: 4, vacationDays: 5 });
+  });
+
+  it("returns the sick day allowance only where the summary meters it", () => {
+    const withSick = [
+      ...rows,
+      summaryRow({ vacationType: CalendarRecordType.SickDay, yearQuota: 0, carriedOverDays: 0 }),
+    ];
+
+    expect(groupAllowance(withSick, "u1", "g1").sickDays).toBe(0);
+  });
+
+  it("returns zeros for a group the summary has no line for", () => {
+    expect(groupAllowance(rows, "u1", "g9")).toEqual({
+      carriedOverDays: 0,
+      vacationDays: 0,
+      homeOfficeDays: 0,
+      sickDays: null,
+    });
   });
 });
 
