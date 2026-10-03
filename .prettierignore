@@ -1,3 +1,5 @@
 .next
 node_modules
 public
+# Must stay byte-identical to the code CloudFront runs, or the plan shows a code change.
+terraform/functions
