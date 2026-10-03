@@ -92,7 +92,8 @@ jobs:
       - name: Sync to S3
         run: |
           aws s3 sync out/ "s3://${{ vars.AWS_S3_BUCKET }}/" --delete \
-            --exclude "*.html" --exclude "*.txt"
+            --exclude "*.html" --exclude "*.txt" \
+            --exclude ".well-known/apple-app-site-association"
           # `cp`, not `sync`: sync skips a file whose local mtime is older than
           # the object in S3, so a freshly built index.html can be left behind in
           # favour of another run's — pairing this HTML with those chunks. The
@@ -100,6 +101,12 @@ jobs:
           # nothing and cannot diverge from the assets above.
           aws s3 cp out/ "s3://${{ vars.AWS_S3_BUCKET }}/" --recursive \
             --exclude "*" --include "*.html" --include "*.txt" \
+            --cache-control "no-cache"
+          # iOS requires application/json, which sync can't infer for an
+          # extensionless file, so it is excluded above and uploaded on its own.
+          aws s3 cp out/.well-known/apple-app-site-association \
+            "s3://${{ vars.AWS_S3_BUCKET }}/.well-known/apple-app-site-association" \
+            --content-type "application/json" \
             --cache-control "no-cache"
 
       - name: Invalidate CloudFront cache

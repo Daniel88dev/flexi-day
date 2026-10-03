@@ -1,0 +1,10 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": ["S6FC47MMXJ.com.flexiday.app"],
+        "components": [{ "/": "/join/*" }]
+      }
+    ]
+  }
+}
