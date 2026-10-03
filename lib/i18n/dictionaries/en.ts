@@ -542,6 +542,9 @@ export const en = {
       currentYearOnly: "Only the current year can be edited here.",
       saved: "Quota saved.",
       failed: "Could not save the quota.",
+      defaultsHint:
+        "No quota saved for this year yet. These are the group defaults until you save.",
+      defaultsFailed: "Could not load the group's defaults.",
     },
     empty: {
       title: "Nothing to report yet",

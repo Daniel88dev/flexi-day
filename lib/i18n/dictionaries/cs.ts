@@ -543,6 +543,9 @@ export const cs: Dictionary = {
       currentYearOnly: "Zde lze upravit pouze aktuální rok.",
       saved: "Nárok uložen.",
       failed: "Nárok se nepodařilo uložit.",
+      defaultsHint:
+        "Pro tento rok zatím není nárok uložen. Do uložení jsou zde výchozí hodnoty skupiny.",
+      defaultsFailed: "Výchozí hodnoty skupiny se nepodařilo načíst.",
     },
     empty: {
       title: "Zatím není co reportovat",
