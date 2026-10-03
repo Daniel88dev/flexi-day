@@ -123,6 +123,39 @@ export function totalQuotaFor(
     .reduce((total, row) => total + row.yearQuota + row.carriedOverDays, 0);
 }
 
+export type GroupAllowance = {
+  carriedOverDays: number;
+  vacationDays: number;
+  homeOfficeDays: number;
+  /** Null where the group does not meter sick days. */
+  sickDays: number | null;
+};
+
+/**
+ * One member's allowance in one group, read from the summary rather than the
+ * stored quota rows: a member with no row is allowed the group defaults, and
+ * only the summary applies that.
+ */
+export function groupAllowance(
+  summary: ReportSummaryRow[],
+  userId: string,
+  groupId: string
+): GroupAllowance {
+  const line = (recordType: CalendarRecordType) =>
+    summary.find(
+      (row) => row.userId === userId && row.groupId === groupId && row.vacationType === recordType
+    );
+  const vacation = line(CalendarRecordType.Vacation);
+  const sickDay = line(CalendarRecordType.SickDay);
+
+  return {
+    carriedOverDays: vacation?.carriedOverDays ?? 0,
+    vacationDays: vacation?.yearQuota ?? 0,
+    homeOfficeDays: line(CalendarRecordType.HomeOffice)?.yearQuota ?? 0,
+    sickDays: sickDay ? sickDay.yearQuota : null,
+  };
+}
+
 /**
  * Leave types worth charting for the current filters, in first-seen summary
  * order, with a fallback so an empty summary still yields one chart/card per

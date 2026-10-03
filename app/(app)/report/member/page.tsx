@@ -22,6 +22,7 @@ import { useMemberReport, useReportScope } from "@/lib/api/queries";
 import {
   calendarMonths,
   formatDays,
+  groupAllowance,
   monthlySeriesFor,
   totalQuotaFor,
   trailingMonths,
@@ -170,28 +171,28 @@ export default function MemberReportPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             {report.groups.map((group) => {
-              const groupQuota = report.quotas.find((row) => row.groupId === group.groupId);
+              const allowance = groupAllowance(report.summary, report.member.id, group.groupId);
               return (
                 <div key={group.groupId} className="space-y-2">
                   <span className="block text-sm font-medium">{group.groupName}</span>
                   <dl className="text-muted-foreground grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
                     <dt>{t.report.table.carriedOver}</dt>
                     <dd className="text-foreground text-right tabular-nums">
-                      {formatDays(groupQuota?.carriedOverDays ?? 0)}
+                      {formatDays(allowance.carriedOverDays)}
                     </dd>
                     <dt>{t.report.table.yearQuota}</dt>
                     <dd className="text-foreground text-right tabular-nums">
-                      {formatDays(groupQuota?.vacationDays ?? 0)}
+                      {formatDays(allowance.vacationDays)}
                     </dd>
                     <dt>{t.report.quotaDialog.homeOfficeDays}</dt>
                     <dd className="text-foreground text-right tabular-nums">
-                      {formatDays(groupQuota?.homeOfficeDays ?? 0)}
+                      {formatDays(allowance.homeOfficeDays)}
                     </dd>
-                    {(groupQuota?.sickDays ?? 0) > 0 ? (
+                    {allowance.sickDays !== null ? (
                       <>
                         <dt>{t.report.quotaDialog.sickDays}</dt>
                         <dd className="text-foreground text-right tabular-nums">
-                          {formatDays(groupQuota?.sickDays ?? 0)}
+                          {formatDays(allowance.sickDays)}
                         </dd>
                       </>
                     ) : null}
