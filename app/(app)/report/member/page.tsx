@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+import { Pencil } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -171,15 +172,8 @@ export default function MemberReportPage() {
             {report.groups.map((group) => {
               const groupQuota = report.quotas.find((row) => row.groupId === group.groupId);
               return (
-                <div key={group.groupId} className="space-y-1.5">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-sm font-medium">{group.groupName}</span>
-                    {group.canEditQuotas && isCurrentYear ? (
-                      <Button variant="ghost" size="xs" onClick={() => setEditing(group)}>
-                        {t.report.detail.editQuota}
-                      </Button>
-                    ) : null}
-                  </div>
+                <div key={group.groupId} className="space-y-2">
+                  <span className="block text-sm font-medium">{group.groupName}</span>
                   <dl className="text-muted-foreground grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
                     <dt>{t.report.table.carriedOver}</dt>
                     <dd className="text-foreground text-right tabular-nums">
@@ -202,6 +196,17 @@ export default function MemberReportPage() {
                       </>
                     ) : null}
                   </dl>
+                  {group.canEditQuotas && isCurrentYear ? (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full"
+                      onClick={() => setEditing(group)}
+                    >
+                      <Pencil data-icon="inline-start" />
+                      {t.report.detail.editQuota}
+                    </Button>
+                  ) : null}
                 </div>
               );
             })}
