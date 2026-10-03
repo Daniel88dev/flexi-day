@@ -7,7 +7,8 @@ management product. Next.js 16 App Router, React 19, TypeScript, Tailwind v4, sh
 ## Working style
 
 Solo developer and owner, expert with this stack — skip explanations of standard conventions and
-framework basics. Be terse: show results rather than narrating the work. When several
+framework basics. Be terse: lead with results, and while working say a line when you start a new
+phase or hit something unexpected. When several
 implementation approaches are open, state which you chose and why. Propose a plan and wait for
 approval before starting any non-trivial implementation.
 
