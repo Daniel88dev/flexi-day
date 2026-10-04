@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Check, TriangleAlert } from "lucide-react";
 
 export type ToastKind = "ok" | "danger" | "warm";
@@ -45,22 +45,15 @@ export async function copyText(text: string) {
 export function ToastHost() {
   const [items, setItems] = useState<Toast[]>([]);
   useEffect(() => {
-    const timers = new Set<ReturnType<typeof setTimeout>>();
-    const fn = (t: Toast) => {
-      setItems((prev) => [...prev, t]);
-      // Long enough to be noticed away from the pointer — a save confirmation
-      // is the whole reason the toast exists.
-      const timer = setTimeout(() => {
-        timers.delete(timer);
-        setItems((prev) => prev.filter((x) => x.id !== t.id));
-      }, 4000);
-      timers.add(timer);
-    };
+    const fn = (t: Toast) => setItems((prev) => [...prev, t]);
     listeners.add(fn);
     return () => {
       listeners.delete(fn);
-      for (const timer of timers) clearTimeout(timer);
     };
+  }, []);
+
+  const dismiss = useCallback((id: number) => {
+    setItems((prev) => prev.filter((x) => x.id !== id));
   }, []);
 
   return (
@@ -68,30 +61,40 @@ export function ToastHost() {
       className="pointer-events-none fixed right-6 bottom-6 z-[200] flex flex-col items-end gap-2.5 max-[520px]:right-4 max-[520px]:left-4 max-[520px]:items-stretch"
       aria-live="polite"
     >
-      {items.map((t) => {
-        const c =
-          t.kind === "danger" ? "var(--danger)" : t.kind === "warm" ? "var(--warm)" : "var(--ok)";
-        return (
-          <div
-            key={t.id}
-            className="flex items-center gap-2.5 rounded-full px-4 py-2.5 text-sm font-semibold"
-            style={{
-              background: "var(--surface)",
-              border: "1px solid var(--border)",
-              boxShadow: "var(--shadow-lg)",
-              animation: "fx-toast .3s ease",
-            }}
-          >
-            <span
-              className="grid h-5 w-5 place-items-center rounded-full"
-              style={{ color: c, background: `color-mix(in oklch, ${c} 16%, transparent)` }}
-            >
-              {t.kind === "danger" ? <TriangleAlert size={13} /> : <Check size={13} />}
-            </span>
-            {t.msg}
-          </div>
-        );
-      })}
+      {items.map((t) => (
+        <ToastItem key={t.id} toast={t} onExpire={dismiss} />
+      ))}
+    </div>
+  );
+}
+
+function ToastItem({ toast, onExpire }: { toast: Toast; onExpire: (id: number) => void }) {
+  useEffect(() => {
+    // Long enough to be noticed away from the pointer — a save confirmation
+    // is the whole reason the toast exists.
+    const timer = setTimeout(() => onExpire(toast.id), 4000);
+    return () => clearTimeout(timer);
+  }, [toast.id, onExpire]);
+
+  const c =
+    toast.kind === "danger" ? "var(--danger)" : toast.kind === "warm" ? "var(--warm)" : "var(--ok)";
+  return (
+    <div
+      className="flex items-center gap-2.5 rounded-full px-4 py-2.5 text-sm font-semibold"
+      style={{
+        background: "var(--surface)",
+        border: "1px solid var(--border)",
+        boxShadow: "var(--shadow-lg)",
+        animation: "fx-toast .3s ease",
+      }}
+    >
+      <span
+        className="grid h-5 w-5 place-items-center rounded-full"
+        style={{ color: c, background: `color-mix(in oklch, ${c} 16%, transparent)` }}
+      >
+        {toast.kind === "danger" ? <TriangleAlert size={13} /> : <Check size={13} />}
+      </span>
+      {toast.msg}
     </div>
   );
 }
