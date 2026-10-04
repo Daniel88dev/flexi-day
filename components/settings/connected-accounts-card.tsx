@@ -6,7 +6,8 @@ import { KeyRound } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { GoogleIcon, MicrosoftIcon } from "@/components/auth/provider-icons";
+import type { Provider } from "@/components/auth/auth-card";
+import { AppleIcon, GoogleIcon, MicrosoftIcon } from "@/components/auth/provider-icons";
 import { pushToast } from "@/components/toast";
 import { authClient } from "@/lib/auth-client";
 import {
@@ -16,15 +17,14 @@ import {
 } from "@/lib/auth/use-linked-accounts";
 import { useTranslation } from "@/lib/i18n/use-translation";
 
-type Provider = "google" | "microsoft";
-
 const PROVIDERS: { id: Provider; name: string; icon: React.ReactNode }[] = [
+  { id: "apple", name: "Apple", icon: <AppleIcon size={20} /> },
   { id: "google", name: "Google", icon: <GoogleIcon size={20} /> },
   { id: "microsoft", name: "Microsoft", icon: <MicrosoftIcon size={20} /> },
 ];
 
 /**
- * Lets a signed-in user attach Google or Microsoft to the account they already
+ * Lets a signed-in user attach Google, Microsoft or Apple to the account they already
  * have. Social sign-in cannot do this on its own: the account's address is
  * proven by our own confirmation email, never by a provider's claim, so
  * better-auth is configured to refuse the automatic linking it would otherwise
@@ -53,11 +53,13 @@ export function ConnectedAccountsCard() {
   // is ignored: it reaches a success-styled toast, so a crafted link must not
   // be able to put its own words there.
   const linked = PROVIDERS.find((p) => p.id === params.get("linked")) ?? null;
+  const providerParam = params.get("provider");
+  const failedProvider = isProvider(providerParam) ? providerParam : null;
   // The `error` param is deliberately never stripped from the URL, so it has
   // to be dismissed explicitly — otherwise a refused link's message sits under
   // the success toast of every action taken afterwards.
   const linkError = dismissedLinkError ? null : params.get("error");
-  const error = actionError ?? (linkError ? linkErrorMessage(linkError, t) : null);
+  const error = actionError ?? (linkError ? linkErrorMessage(linkError, failedProvider, t) : null);
 
   function startAction() {
     setActionError(null);
@@ -119,20 +121,23 @@ export function ConnectedAccountsCard() {
     try {
       // Relative URLs resolve against the BACKEND origin inside better-auth, so
       // both are absolutized onto this origin — the same reason the sign-in
-      // buttons do it. `linked` is ours; `error` is appended by better-auth.
+      // buttons do it. `linked` and `provider` are ours; `error` is appended by
+      // better-auth, which does not say which provider refused.
       // The rest of the query survives the round trip, so an open request
       // detail (`?vacationId=`) is still there on the way back.
       const here = window.location.origin + window.location.pathname;
       const keep = new URLSearchParams(window.location.search);
       keep.delete("linked");
+      keep.delete("provider");
       keep.delete("error");
       keep.delete("error_description");
-      const errorQuery = keep.toString();
+      const errorParams = new URLSearchParams(keep);
+      errorParams.set("provider", provider);
       keep.set("linked", provider);
       const { error } = await authClient.linkSocial({
         provider,
         callbackURL: `${here}?${keep.toString()}`,
-        errorCallbackURL: here + (errorQuery ? `?${errorQuery}` : ""),
+        errorCallbackURL: `${here}?${errorParams.toString()}`,
       });
       // Reached only when no redirect happened; otherwise the page is gone.
       if (error) {
@@ -287,11 +292,17 @@ class UnlinkError extends Error {
 type Dictionary = ReturnType<typeof useTranslation>["t"];
 
 /** Codes better-auth appends to `errorCallbackURL` when a link is refused. */
-function linkErrorMessage(code: string, t: Dictionary) {
+function isProvider(value: string | null): value is Provider {
+  return PROVIDERS.some((p) => p.id === value);
+}
+
+function linkErrorMessage(code: string, provider: Provider | null, t: Dictionary) {
   const errors = t.settings.connectedAccounts.errors;
   switch (code) {
+    // Apple sends a relay address when the user chose Hide My Email, so the
+    // fix is on Apple's side, not a different account.
     case "email_doesn't_match":
-      return errors.emailMismatch;
+      return provider === "apple" ? errors.emailMismatchApple : errors.emailMismatch;
     case "account_already_linked_to_different_user":
       return errors.alreadyLinked;
     case "access_denied":

@@ -339,7 +339,21 @@ describe("JoinPage", () => {
       expect(await screen.findByText("This invite has been used")).toBeInTheDocument();
     });
 
-    it.each(["Google", "Microsoft"])(
+    it("offers Apple first, then Google, then Microsoft", async () => {
+      renderWithClient(<JoinPage />);
+      await screen.findByRole("button", { name: "Continue with Apple" });
+
+      const names = screen
+        .getAllByRole("button", { name: /^Continue with / })
+        .map((button) => button.textContent);
+      expect(names).toEqual([
+        "Continue with Apple",
+        "Continue with Google",
+        "Continue with Microsoft",
+      ]);
+    });
+
+    it.each(["Apple", "Google", "Microsoft"])(
       "returns a %s sign-up to this page with the token",
       async (provider) => {
         const user = userEvent.setup();

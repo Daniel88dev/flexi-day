@@ -4,6 +4,7 @@ import userEvent from "@testing-library/user-event";
 import SignUpPage from "../page";
 
 const signUpEmail = vi.fn().mockResolvedValue({ error: null });
+const signInSocial = vi.fn().mockResolvedValue({ data: {}, error: null });
 
 // GuestGuard calls useRouter to bounce an already-signed-in visitor.
 vi.mock("next/navigation", () => ({
@@ -14,13 +15,43 @@ vi.mock("next/navigation", () => ({
 }));
 
 vi.mock("@/lib/auth-client", () => ({
-  authClient: { signUp: { email: (...args: unknown[]) => signUpEmail(...args) } },
+  authClient: {
+    signUp: { email: (...args: unknown[]) => signUpEmail(...args) },
+    signIn: { social: (...args: unknown[]) => signInSocial(...args) },
+  },
   useSession: () => ({ data: null, isPending: false }),
 }));
 
 describe("SignUpPage", () => {
   beforeEach(() => {
     signUpEmail.mockClear();
+    signInSocial.mockClear();
+  });
+
+  it("offers Apple first, then Google, then Microsoft", () => {
+    render(<SignUpPage />);
+
+    const names = screen
+      .getAllByRole("button", { name: /^Continue with / })
+      .map((button) => button.textContent);
+    expect(names).toEqual([
+      "Continue with Apple",
+      "Continue with Google",
+      "Continue with Microsoft",
+    ]);
+  });
+
+  it("sends an Apple sign-up to the dashboard", async () => {
+    const user = userEvent.setup();
+    render(<SignUpPage />);
+    await user.click(screen.getByRole("button", { name: "Continue with Apple" }));
+
+    expect(signInSocial).toHaveBeenCalledWith(
+      expect.objectContaining({
+        provider: "apple",
+        callbackURL: `${window.location.origin}/dashboard`,
+      })
+    );
   });
 
   it("shows a confirm-password field", () => {

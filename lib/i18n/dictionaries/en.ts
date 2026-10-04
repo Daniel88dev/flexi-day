@@ -950,7 +950,7 @@ export const en = {
     changePasswordFailed: "Could not change password.",
     connectedAccounts: {
       title: "Sign-in methods",
-      hint: "Connect Google or Microsoft to sign in with either one instead of your password. The provider account has to use this account's email address.",
+      hint: "Connect Google, Microsoft or Apple to sign in with any of them instead of your password. The provider account has to use this account's email address.",
       password: "Password",
       inUse: "In use",
       connected: "Connected",
@@ -968,6 +968,8 @@ export const en = {
       errors: {
         emailMismatch:
           "That account uses a different email address. Connect the one that matches this account.",
+        emailMismatchApple:
+          "Apple hid your email, so the address it sent does not match this account. In your Apple Account settings, under Sign in with Apple, remove Flexi Day, then connect again and choose Share My Email.",
         alreadyLinked: "That account is already connected to a different Flexi Day user.",
         cancelled: "Connecting was cancelled.",
         notFresh: "For your security, sign out and back in before changing sign-in methods.",
@@ -1091,6 +1093,7 @@ export const en = {
   auth: {
     loading: "Loading…",
     orWithEmail: "or with email",
+    continueWithApple: "Continue with Apple",
     continueWithGoogle: "Continue with Google",
     continueWithMicrosoft: "Continue with Microsoft",
     socialError: {

@@ -1,9 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { render } from "@testing-library/react";
-import { GoogleIcon, MicrosoftIcon } from "../provider-icons";
+import { AppleIcon, GoogleIcon, MicrosoftIcon } from "../provider-icons";
 
 describe("provider icons", () => {
   it.each([
+    ["Apple", AppleIcon],
     ["Google", GoogleIcon],
     ["Microsoft", MicrosoftIcon],
   ] as const)("renders %s at the requested size", (_name, Icon) => {
@@ -18,10 +19,16 @@ describe("provider icons", () => {
   });
 
   it.each([
+    ["Apple", AppleIcon],
     ["Google", GoogleIcon],
     ["Microsoft", MicrosoftIcon],
   ] as const)("defaults %s to the inline size used beside button text", (_name, Icon) => {
     const { container } = render(<Icon />);
     expect(container.querySelector("svg")).toHaveAttribute("width", "18");
+  });
+
+  it("draws the Apple mark in the button's text colour", () => {
+    const { container } = render(<AppleIcon />);
+    expect(container.querySelector("svg")).toHaveAttribute("fill", "currentColor");
   });
 });

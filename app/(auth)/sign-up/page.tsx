@@ -6,6 +6,7 @@ import { ArrowRight, Lock, Mail, User as UserIcon } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
 import {
+  AppleButton,
   AuthCard,
   AuthDivider,
   AuthError,
@@ -108,6 +109,7 @@ function SignUpForm() {
       <div className="space-y-2.5">
         <OAuthErrorAlert />
         <AuthError message={socialError} />
+        <AppleButton label={t.auth.continueWithApple} onError={setSocialError} />
         <GoogleButton label={t.auth.continueWithGoogle} onError={setSocialError} />
         <MicrosoftButton label={t.auth.continueWithMicrosoft} onError={setSocialError} />
       </div>
