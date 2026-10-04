@@ -13,6 +13,18 @@ describe("ToastHost", () => {
     expect(await screen.findByText("Feed URL copied")).toBeInTheDocument();
   });
 
+  it("dismisses a toast after four seconds", () => {
+    vi.useFakeTimers();
+    render(<ToastHost />);
+
+    act(() => pushToast("Feed URL copied"));
+    act(() => vi.advanceTimersByTime(3999));
+    expect(screen.getByText("Feed URL copied")).toBeInTheDocument();
+
+    act(() => vi.advanceTimersByTime(1));
+    expect(screen.queryByText("Feed URL copied")).not.toBeInTheDocument();
+  });
+
   it("clears a pending dismiss timer when the host unmounts", () => {
     vi.useFakeTimers();
     const { unmount } = render(<ToastHost />);
