@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { authClient } from "@/lib/auth-client";
-import { GoogleIcon, MicrosoftIcon } from "@/components/auth/provider-icons";
+import { AppleIcon, GoogleIcon, MicrosoftIcon } from "@/components/auth/provider-icons";
 import { useTranslation } from "@/lib/i18n/use-translation";
 
 interface AuthCardProps {
@@ -85,6 +85,28 @@ export function OAuthErrorAlert() {
   return <AuthError message={message} />;
 }
 
+export type Provider = "apple" | "google" | "microsoft";
+
+type ButtonLook = { className?: string; style?: React.CSSProperties };
+
+const OUTLINED_LOOK: ButtonLook = {
+  style: {
+    borderColor: "var(--border-strong)",
+    background: "var(--surface)",
+    color: "var(--text)",
+  },
+};
+
+const BUTTON_LOOK: Record<Provider, ButtonLook> = {
+  // Apple's sign-in guidelines allow only a black or white button, never the outlined neutral one.
+  apple: {
+    className:
+      "border-black bg-black text-white dark:border-[var(--border-strong)] dark:bg-white dark:text-black",
+  },
+  google: OUTLINED_LOOK,
+  microsoft: OUTLINED_LOOK,
+};
+
 function SocialButton({
   provider,
   label,
@@ -92,7 +114,7 @@ function SocialButton({
   callbackURL = "/dashboard",
   onError,
 }: {
-  provider: "google" | "microsoft";
+  provider: Provider;
   label: string;
   icon: React.ReactNode;
   callbackURL?: string;
@@ -100,6 +122,7 @@ function SocialButton({
 }) {
   const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
+  const look = BUTTON_LOOK[provider];
 
   async function handleClick() {
     setLoading(true);
@@ -151,16 +174,35 @@ function SocialButton({
       onClick={handleClick}
       disabled={loading}
       aria-busy={loading}
-      className="flex w-full items-center justify-center gap-2.5 rounded-full border px-4 py-3 text-[15px] font-semibold transition-colors disabled:opacity-60"
-      style={{
-        borderColor: "var(--border-strong)",
-        background: "var(--surface)",
-        color: "var(--text)",
-      }}
+      className={cn(
+        "flex w-full items-center justify-center gap-2.5 rounded-full border px-4 py-3 text-[15px] font-semibold transition-colors disabled:opacity-60",
+        look.className
+      )}
+      style={look.style}
     >
       {icon}
       {label}
     </button>
+  );
+}
+
+export function AppleButton({
+  label,
+  callbackURL,
+  onError,
+}: {
+  label: string;
+  callbackURL?: string;
+  onError?: (message: string) => void;
+}) {
+  return (
+    <SocialButton
+      provider="apple"
+      label={label}
+      callbackURL={callbackURL}
+      onError={onError}
+      icon={<AppleIcon />}
+    />
   );
 }
 

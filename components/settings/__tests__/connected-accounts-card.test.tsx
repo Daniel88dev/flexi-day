@@ -47,10 +47,11 @@ beforeEach(() => {
 });
 
 describe("ConnectedAccountsCard", () => {
-  it("shows the password method and both providers as not connected", async () => {
+  it("shows the password method and every provider as not connected", async () => {
     renderWithClient(<ConnectedAccountsCard />);
 
     await screen.findByText("Password");
+    expect(within(row("Apple")).getByText("Not connected")).toBeInTheDocument();
     expect(within(row("Google")).getByText("Not connected")).toBeInTheDocument();
     expect(within(row("Microsoft")).getByText("Not connected")).toBeInTheDocument();
   });
@@ -75,8 +76,66 @@ describe("ConnectedAccountsCard", () => {
     expect(linkSocial).toHaveBeenCalledWith({
       provider: "microsoft",
       callbackURL: `${here}?linked=microsoft`,
-      errorCallbackURL: here,
+      errorCallbackURL: `${here}?provider=microsoft`,
     });
+  });
+
+  it("lists Apple first, then Google, then Microsoft", async () => {
+    renderWithClient(<ConnectedAccountsCard />);
+    await screen.findByText("Password");
+
+    const names = screen
+      .getAllByRole("button", { name: /^Connect / })
+      .map((button) => button.textContent);
+    expect(names).toEqual(["Connect Apple", "Connect Google", "Connect Microsoft"]);
+  });
+
+  it("names Apple in the hint", async () => {
+    renderWithClient(<ConnectedAccountsCard />);
+
+    expect(await screen.findByText(/Google, Microsoft or Apple/)).toBeInTheDocument();
+  });
+
+  it("connects Apple and tells the error callback it was Apple", async () => {
+    renderWithClient(<ConnectedAccountsCard />);
+    await userEvent.click(await screen.findByRole("button", { name: "Connect Apple" }));
+
+    const here = `${window.location.origin}/settings/`;
+    expect(linkSocial).toHaveBeenCalledWith({
+      provider: "apple",
+      callbackURL: `${here}?linked=apple`,
+      errorCallbackURL: `${here}?provider=apple`,
+    });
+  });
+
+  it("replaces the provider a previous failure left in the URL", async () => {
+    window.history.replaceState(null, "", "/settings/?error=email_doesn't_match&provider=apple");
+    renderWithClient(<ConnectedAccountsCard />);
+    await userEvent.click(await screen.findByRole("button", { name: "Connect Google" }));
+
+    const call = linkSocial.mock.calls[0]?.[0] as { callbackURL: string; errorCallbackURL: string };
+    // URLSearchParams.get returns the first match, so a stale `provider=apple`
+    // ahead of the new one would blame Apple for Google's failure.
+    expect(new URL(call.errorCallbackURL).searchParams.getAll("provider")).toEqual(["google"]);
+    expect(call.callbackURL).not.toContain("provider=");
+  });
+
+  it("explains Apple's hidden email when Apple's address does not match", async () => {
+    searchParams = new URLSearchParams("error=email_doesn't_match&provider=apple");
+    renderWithClient(<ConnectedAccountsCard />);
+
+    const alert = await screen.findByRole("alert");
+    expect(alert).toHaveTextContent(/Apple hid your email/);
+    expect(alert).toHaveTextContent(/Share My Email/);
+  });
+
+  it("keeps the generic mismatch message for any other provider", async () => {
+    searchParams = new URLSearchParams("error=email_doesn't_match&provider=google");
+    renderWithClient(<ConnectedAccountsCard />);
+
+    const alert = await screen.findByRole("alert");
+    expect(alert).toHaveTextContent(/different email address/i);
+    expect(alert).not.toHaveTextContent(/Apple/);
   });
 
   it("unlinks a provider by its id", async () => {

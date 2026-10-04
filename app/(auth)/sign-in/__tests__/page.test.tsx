@@ -126,6 +126,32 @@ describe("SignInPage", () => {
     expect(replaceMock).not.toHaveBeenCalled();
   });
 
+  it("offers Apple first, then Google, then Microsoft", () => {
+    render(<SignInPage />);
+
+    const names = screen
+      .getAllByRole("button", { name: /^Continue with / })
+      .map((button) => button.textContent);
+    expect(names).toEqual([
+      "Continue with Apple",
+      "Continue with Google",
+      "Continue with Microsoft",
+    ]);
+  });
+
+  it("sends an Apple sign-in to the dashboard by default", async () => {
+    const user = userEvent.setup();
+    render(<SignInPage />);
+    await user.click(screen.getByRole("button", { name: "Continue with Apple" }));
+
+    expect(signInSocialMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        provider: "apple",
+        callbackURL: `${window.location.origin}/dashboard`,
+      })
+    );
+  });
+
   describe("from an invite link", () => {
     const JOIN = "/join/?token=s3cr3t-token_abc";
 
@@ -141,7 +167,7 @@ describe("SignInPage", () => {
       expect(replaceMock).toHaveBeenCalledWith(JOIN);
     });
 
-    it.each(["Google", "Microsoft"])(
+    it.each(["Apple", "Google", "Microsoft"])(
       "returns a %s sign-in to the join page with the token",
       async (provider) => {
         const user = userEvent.setup();

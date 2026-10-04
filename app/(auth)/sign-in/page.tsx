@@ -7,6 +7,7 @@ import { ArrowRight, Lock, Mail } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
 import {
+  AppleButton,
   AuthCard,
   AuthDivider,
   AuthError,
@@ -105,6 +106,11 @@ function SignInForm() {
         <AuthError message={socialError} />
         {/* Same destination as the password form, so a deep link survives
             being bounced through the provider. */}
+        <AppleButton
+          label={t.auth.continueWithApple}
+          callbackURL={redirectTo}
+          onError={setSocialError}
+        />
         <GoogleButton
           label={t.auth.continueWithGoogle}
           callbackURL={redirectTo}

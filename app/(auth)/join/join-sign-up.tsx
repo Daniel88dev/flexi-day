@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { ArrowRight, Lock, Mail, User as UserIcon } from "lucide-react";
 import {
+  AppleButton,
   AuthDivider,
   AuthError,
   GoogleButton,
@@ -79,6 +80,11 @@ export function JoinSignUp({
         <AuthError message={socialError} />
         {/* A provider account comes back here unverified; pressing Join then
             verifies it through the link. */}
+        <AppleButton
+          label={t.auth.continueWithApple}
+          callbackURL={joinPath}
+          onError={setSocialError}
+        />
         <GoogleButton
           label={t.auth.continueWithGoogle}
           callbackURL={joinPath}

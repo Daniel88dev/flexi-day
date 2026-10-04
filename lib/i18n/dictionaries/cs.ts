@@ -956,7 +956,7 @@ export const cs: Dictionary = {
     changePasswordFailed: "Nepodařilo se změnit heslo.",
     connectedAccounts: {
       title: "Způsoby přihlášení",
-      hint: "Připojte Google nebo Microsoft a přihlašujte se jimi místo heslem. Účet u poskytovatele musí používat stejnou e-mailovou adresu jako tento účet.",
+      hint: "Připojte Google, Microsoft nebo Apple a přihlašujte se jimi místo heslem. Účet u poskytovatele musí používat stejnou e-mailovou adresu jako tento účet.",
       password: "Heslo",
       inUse: "Používá se",
       connected: "Připojeno",
@@ -974,6 +974,8 @@ export const cs: Dictionary = {
       errors: {
         emailMismatch:
           "Tento účet používá jinou e-mailovou adresu. Připojte ten se stejnou adresou, jakou má tento účet.",
+        emailMismatchApple:
+          "Apple váš e-mail skrylo, takže zaslaná adresa neodpovídá tomuto účtu. V nastavení Apple účtu v části Přihlášení přes Apple odeberte Flexi Day, poté účet připojte znovu a zvolte Sdílet e-mail.",
         alreadyLinked: "Tento účet je už připojený k jinému uživateli Flexi Day.",
         cancelled: "Připojení bylo zrušeno.",
         notFresh:
@@ -1096,6 +1098,7 @@ export const cs: Dictionary = {
   auth: {
     loading: "Načítání…",
     orWithEmail: "nebo e-mailem",
+    continueWithApple: "Pokračovat přes Apple",
     continueWithGoogle: "Pokračovat přes Google",
     continueWithMicrosoft: "Pokračovat přes Microsoft",
     socialError: {
