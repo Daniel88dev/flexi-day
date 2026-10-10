@@ -47,7 +47,7 @@ import { BalanceWidget } from "@/components/dashboard/widgets/balance-widget";
 import { DEFAULT_LEAVE_TYPES } from "@/lib/demo/leave-meta";
 import { LeaveTypeFilter } from "@/components/dashboard/leave-type-filter";
 import { CalendarLegend } from "@/components/dashboard/calendar-legend";
-import { AdjacentDaysPrototype } from "@/components/dashboard/prototype-adjacent-days";
+import { DragRangePrototype } from "@/components/dashboard/prototype-drag-range";
 import { NewRequestDialog } from "@/components/new-request-dialog";
 import { useOpenVacationDetail } from "@/lib/vacations/use-vacation-detail";
 import { Card, CardContent } from "@/components/ui/card";
@@ -77,6 +77,7 @@ export default function DashboardPage() {
   const [month, setMonth] = useState(initial.month);
   const [filter, setFilter] = useState<Set<CalendarRecordType>>(() => new Set(DEFAULT_LEAVE_TYPES));
   const [presetDate, setPresetDate] = useState<string | null>(null);
+  const [presetEnd, setPresetEnd] = useState<string | null>(null);
   const [newRequestOpen, setNewRequestOpen] = useState(false);
   // Session-only overrides of the stored preference — a look at the team
   // without committing to it in settings.
@@ -386,9 +387,9 @@ export default function DashboardPage() {
               <LeaveTypeFilter value={filter} onChange={setFilter} />
             </div>
           </div>
-          {/* PROTOTYPE (T-265): the adjacent-days variants replace both grids on this branch. */}
+          {/* PROTOTYPE (T-266): the drag-range variants replace both grids on this branch. */}
           <Suspense fallback={null}>
-            <AdjacentDaysPrototype
+            <DragRangePrototype
               year={year}
               month={month}
               groupId={activeGroupId}
@@ -400,6 +401,12 @@ export default function DashboardPage() {
               onOpenRequest={openVacation}
               onBook={(iso) => {
                 setPresetDate(iso);
+                setPresetEnd(null);
+                setNewRequestOpen(true);
+              }}
+              onBookRange={(fromIso, toIso) => {
+                setPresetDate(fromIso);
+                setPresetEnd(toIso);
                 setNewRequestOpen(true);
               }}
             />
@@ -422,10 +429,11 @@ export default function DashboardPage() {
       </div>
 
       <NewRequestDialog
-        key={presetDate ?? "new"}
+        key={`${presetDate ?? "new"}-${presetEnd ?? ""}`}
         open={newRequestOpen}
         onOpenChange={setNewRequestOpen}
         initialDate={presetDate ?? undefined}
+        initialEndDate={presetEnd ?? undefined}
       />
     </div>
   );
