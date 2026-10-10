@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { Suspense, useMemo, useState } from "react";
 import {
   Calendar as CalendarIcon,
   ChevronLeft,
@@ -39,7 +39,6 @@ import { StatCard } from "@/components/dashboard/stat-card";
 import { MobileStatStrip, type MobileStat } from "@/components/dashboard/mobile-stat-strip";
 import {
   groupConsecutiveByUserType,
-  LeaveCalendar,
   type CalendarRange,
 } from "@/components/dashboard/leave-calendar";
 import { ApprovalsWidget } from "@/components/dashboard/widgets/approvals-widget";
@@ -48,8 +47,7 @@ import { BalanceWidget } from "@/components/dashboard/widgets/balance-widget";
 import { DEFAULT_LEAVE_TYPES } from "@/lib/demo/leave-meta";
 import { LeaveTypeFilter } from "@/components/dashboard/leave-type-filter";
 import { CalendarLegend } from "@/components/dashboard/calendar-legend";
-import { StripeCalendar } from "@/components/dashboard/stripe-calendar";
-import { toDayRecords } from "@/lib/calendar/stripes";
+import { AdjacentDaysPrototype } from "@/components/dashboard/prototype-adjacent-days";
 import { NewRequestDialog } from "@/components/new-request-dialog";
 import { useOpenVacationDetail } from "@/lib/vacations/use-vacation-detail";
 import { Card, CardContent } from "@/components/ui/card";
@@ -144,7 +142,6 @@ export default function DashboardPage() {
     () => bankHolidaysToRanges(bankHolidays, year, month),
     [bankHolidays, year, month]
   );
-  const dayRecords = useMemo(() => toDayRecords(vacations), [vacations]);
   const showStripes = settingsQuery.data?.dashboardCalendarView === "STRIPES";
 
   const ranges: CalendarRange[] = useMemo(() => {
@@ -389,30 +386,24 @@ export default function DashboardPage() {
               <LeaveTypeFilter value={filter} onChange={setFilter} />
             </div>
           </div>
-          {showStripes ? (
-            <StripeCalendar
-              key={`${year}-${month}`}
+          {/* PROTOTYPE (T-265): the adjacent-days variants replace both grids on this branch. */}
+          <Suspense fallback={null}>
+            <AdjacentDaysPrototype
               year={year}
               month={month}
-              todayDay={todayDay}
-              records={dayRecords}
-              holidays={holidayRanges}
+              groupId={activeGroupId}
+              holidayCountries={holidayCountries}
               filter={filter}
               viewerId={session.data?.user?.id ?? null}
+              viewerName={session.data?.user?.name ?? "You"}
+              storedView={showStripes ? "stripes" : "lanes"}
               onOpenRequest={openVacation}
-              onBook={openNewRequestForDay}
+              onBook={(iso) => {
+                setPresetDate(iso);
+                setNewRequestOpen(true);
+              }}
             />
-          ) : (
-            <LeaveCalendar
-              monthDays={monthDays}
-              firstWeekdayMondayIdx={firstWeekdayMondayIdx}
-              todayDay={todayDay}
-              ranges={ranges}
-              filter={filter}
-              onSelect={openVacation}
-              onDayClick={openNewRequestForDay}
-            />
-          )}
+          </Suspense>
           <CalendarLegend ranges={ranges} filter={filter} />
           {vacationsQuery.error ? (
             <p className="mt-3 text-sm" style={{ color: "var(--destructive)" }}>
