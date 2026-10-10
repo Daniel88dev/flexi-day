@@ -10,7 +10,7 @@ const anna: DayRecord = {
   userId: "anna",
   user: { id: "anna", name: "Anna Adams", initials: "AA", avatarColor: "hsl(0 0% 40%)" },
   type: CalendarRecordType.Vacation,
-  day: 9,
+  date: "2026-09-09",
   halfDay: false,
   pending: false,
   mirroredFrom: null,

@@ -3,22 +3,27 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { LeaveCalendar, MAX_LANES, type CalendarRange } from "../leave-calendar";
 import { CalendarRecordType } from "@/lib/api/types";
+import { isoDate } from "@/lib/calendar/month-grid";
 
-// July 2026 starts on a Wednesday → Monday-indexed offset of 2.
-const baseProps = {
-  monthDays: 31,
-  firstWeekdayMondayIdx: 2,
-} as const;
-
+// July 2026 starts on a Wednesday, so its first week opens with two padding days.
+const baseProps = { year: 2026, month: 7 } as const;
 describe("LeaveCalendar day clicks", () => {
-  it("calls onDayClick with the day-of-month when an empty cell is clicked", async () => {
+  it("calls onDayClick with the cell's date when an empty cell is clicked", async () => {
     const onDayClick = vi.fn();
     const user = userEvent.setup();
     render(<LeaveCalendar {...baseProps} ranges={[]} onDayClick={onDayClick} />);
 
     await user.click(screen.getByRole("button", { name: "Create request for day 15" }));
 
-    expect(onDayClick).toHaveBeenCalledWith(15);
+    expect(onDayClick).toHaveBeenCalledWith("2026-07-15");
+  });
+
+  it("leaves the padding days outside the month empty and not clickable", () => {
+    render(<LeaveCalendar {...baseProps} ranges={[]} onDayClick={vi.fn()} />);
+
+    expect(screen.getAllByRole("button", { name: /Create request for day/ })).toHaveLength(31);
+    expect(screen.queryByText("30")).toBeInTheDocument();
+    expect(screen.getAllByText("1")).toHaveLength(1);
   });
 
   it("does not make day cells interactive when onDayClick is absent", () => {
@@ -37,8 +42,8 @@ describe("LeaveCalendar day clicks", () => {
         who: "u1",
         user: { id: "u1", name: "Dana Holt", initials: "DH", avatarColor: "hsl(270 60% 60%)" },
         type: CalendarRecordType.Vacation,
-        from: 10,
-        to: 10,
+        from: isoDate(2026, 7, 10),
+        to: isoDate(2026, 7, 10),
         vacationIds: ["v-10"],
       },
     ];
@@ -59,8 +64,8 @@ describe("LeaveCalendar bank holiday lanes", () => {
     id: `bh-${day}`,
     who: "all",
     type: CalendarRecordType.BankHoliday,
-    from: day,
-    to: day,
+    from: isoDate(2026, 7, day),
+    to: isoDate(2026, 7, day),
     note: name,
     vacationIds: [],
   });
@@ -76,8 +81,8 @@ describe("LeaveCalendar bank holiday lanes", () => {
         who: "u1",
         user: { id: "u1", name: "Dana Holt", initials: "DH", avatarColor: "hsl(270 60% 60%)" },
         type: CalendarRecordType.Vacation,
-        from: 8,
-        to: 8,
+        from: isoDate(2026, 7, 8),
+        to: isoDate(2026, 7, 8),
         vacationIds: ["v-8"],
       },
     ];
@@ -88,6 +93,13 @@ describe("LeaveCalendar bank holiday lanes", () => {
     expect(screen.getByText("🎉 Second Holiday")).toBeInTheDocument();
     expect(screen.getByTitle("Dana Holt · Vacation")).toBeInTheDocument();
     expect(screen.queryByText(/^\+\d/)).toBeNull();
+  });
+
+  it("places a holiday pill in its date's column", () => {
+    // 9 July 2026 is a Thursday.
+    render(<LeaveCalendar {...baseProps} ranges={[bankDay(9, "Some Holiday")]} />);
+
+    expect(screen.getByTitle("Some Holiday").parentElement).toHaveStyle({ gridColumn: "4 / 5" });
   });
 
   it("opens a popover with every full holiday name on click", async () => {
@@ -121,8 +133,8 @@ function sameDayRanges(count: number, day: number): CalendarRange[] {
       avatarColor: "hsl(270 60% 60%)",
     },
     type: CalendarRecordType.Vacation,
-    from: day,
-    to: day,
+    from: isoDate(2026, 7, day),
+    to: isoDate(2026, 7, day),
     vacationIds: [`v-${i}`],
   }));
 }

@@ -50,6 +50,7 @@ import { LeaveTypeFilter } from "@/components/dashboard/leave-type-filter";
 import { CalendarLegend } from "@/components/dashboard/calendar-legend";
 import { StripeCalendar } from "@/components/dashboard/stripe-calendar";
 import { toDayRecords } from "@/lib/calendar/stripes";
+import { isoDate } from "@/lib/calendar/month-grid";
 import { NewRequestDialog } from "@/components/new-request-dialog";
 import { useOpenVacationDetail } from "@/lib/vacations/use-vacation-detail";
 import { Card, CardContent } from "@/components/ui/card";
@@ -170,10 +171,7 @@ export default function DashboardPage() {
   const today = new Date();
   const todayMatches = today.getFullYear() === year && today.getMonth() + 1 === month;
   const todayDay = todayMatches ? today.getDate() : null;
-
-  const monthDays = new Date(year, month, 0).getDate();
-  const firstDayJs = new Date(year, month - 1, 1).getDay();
-  const firstWeekdayMondayIdx = (firstDayJs + 6) % 7;
+  const todayDate = isoDate(today.getFullYear(), today.getMonth() + 1, today.getDate());
 
   function shiftMonth(delta: number) {
     let nm = month + delta;
@@ -190,9 +188,8 @@ export default function DashboardPage() {
     setYear(ny);
   }
 
-  function openNewRequestForDay(day: number) {
-    const iso = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-    setPresetDate(iso);
+  function openNewRequestForDate(date: string) {
+    setPresetDate(date);
     setNewRequestOpen(true);
   }
 
@@ -394,23 +391,23 @@ export default function DashboardPage() {
               key={`${year}-${month}`}
               year={year}
               month={month}
-              todayDay={todayDay}
+              today={todayDate}
               records={dayRecords}
               holidays={holidayRanges}
               filter={filter}
               viewerId={session.data?.user?.id ?? null}
               onOpenRequest={openVacation}
-              onBook={openNewRequestForDay}
+              onBook={openNewRequestForDate}
             />
           ) : (
             <LeaveCalendar
-              monthDays={monthDays}
-              firstWeekdayMondayIdx={firstWeekdayMondayIdx}
-              todayDay={todayDay}
+              year={year}
+              month={month}
+              today={todayDate}
               ranges={ranges}
               filter={filter}
               onSelect={openVacation}
-              onDayClick={openNewRequestForDay}
+              onDayClick={openNewRequestForDate}
             />
           )}
           <CalendarLegend ranges={ranges} filter={filter} />

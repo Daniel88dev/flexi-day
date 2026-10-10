@@ -6,6 +6,7 @@ import type { CalendarRange } from "../leave-calendar";
 import { CalendarRecordType } from "@/lib/api/types";
 import type { DayRecord } from "@/lib/calendar/stripes";
 import { DEFAULT_LEAVE_TYPES } from "@/lib/demo/leave-meta";
+import { isoDate } from "@/lib/calendar/month-grid";
 
 const VIEWER = "u-viewer";
 const people = {
@@ -21,7 +22,7 @@ function rec(userId: keyof typeof people, day: number, extra: Partial<DayRecord>
     userId,
     user: people[userId],
     type: CalendarRecordType.Vacation,
-    day,
+    date: isoDate(2026, 9, day),
     halfDay: false,
     pending: false,
     mirroredFrom: null,
@@ -33,8 +34,8 @@ const holiday: CalendarRange = {
   id: "bh-2026-09-28",
   who: "all",
   type: CalendarRecordType.BankHoliday,
-  from: 28,
-  to: 28,
+  from: "2026-09-28",
+  to: "2026-09-28",
   note: "St. Wenceslas Day",
   vacationIds: [],
 };
@@ -49,7 +50,7 @@ function renderCalendar(
     <StripeCalendar
       year={2026}
       month={9}
-      todayDay={null}
+      today={null}
       records={records}
       holidays={[holiday]}
       filter={new Set(DEFAULT_LEAVE_TYPES)}
@@ -69,6 +70,21 @@ describe("StripeCalendar", () => {
     const stripes = screen.getAllByTestId("stripe");
     expect(stripes).toHaveLength(2);
     expect(stripes.filter((s) => s.dataset.pending)).toHaveLength(1);
+  });
+
+  it("places a stripe that crosses a week boundary by its dates", () => {
+    renderCalendar([4, 5, 6, 7, 8].map((d) => rec("anna", d)));
+
+    const stripes = screen.getAllByTestId("stripe");
+    expect(stripes.map((s) => s.style.gridColumn)).toEqual(["5 / 8", "1 / 3"]);
+  });
+
+  it("keeps the padding days outside the month empty and inert", () => {
+    renderCalendar([]);
+
+    expect(screen.getAllByRole("button", { name: /September/ })).toHaveLength(30);
+    expect(screen.queryByRole("button", { name: /August|October/ })).toBeNull();
+    expect(screen.queryByText("31")).toBeNull();
   });
 
   it("shows +N on a day whose bookings do not fit three stripes", () => {
@@ -106,7 +122,7 @@ describe("StripeCalendar", () => {
 
     await user.click(screen.getByRole("button", { name: /^Wednesday,? 9 September/ }));
     await user.click(screen.getByRole("button", { name: /^Book Wed,? 9 Sept?/ }));
-    expect(onBook).toHaveBeenCalledWith(9);
+    expect(onBook).toHaveBeenCalledWith("2026-09-09");
   });
 
   it("opens the day list with Enter on a focused cell", async () => {

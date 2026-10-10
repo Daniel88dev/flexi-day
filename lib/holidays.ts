@@ -24,16 +24,13 @@ export function bankHolidaysToRanges(
 
   return Array.from(namesByDate.entries())
     .sort(([a], [b]) => a.localeCompare(b))
-    .map(([date, names]) => {
-      const day = Number(date.slice(8, 10));
-      return {
-        id: `bh-${date}`,
-        who: "all",
-        type: CalendarRecordType.BankHoliday,
-        from: day,
-        to: day,
-        note: names.join(" · "),
-        vacationIds: [],
-      };
-    });
+    .map(([date, names]) => ({
+      id: `bh-${date}`,
+      who: "all",
+      type: CalendarRecordType.BankHoliday,
+      from: date,
+      to: date,
+      note: names.join(" · "),
+      vacationIds: [],
+    }));
 }

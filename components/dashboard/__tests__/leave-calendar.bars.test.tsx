@@ -2,21 +2,17 @@ import { describe, expect, it } from "vitest";
 import { render, screen, within } from "@testing-library/react";
 import { LeaveCalendar, type CalendarRange } from "../leave-calendar";
 import { CalendarRecordType } from "@/lib/api/types";
+import { isoDate } from "@/lib/calendar/month-grid";
 
-// July 2026 starts on a Wednesday → Monday-indexed offset of 2.
-const baseProps = {
-  monthDays: 31,
-  firstWeekdayMondayIdx: 2,
-} as const;
-
+const baseProps = { year: 2026, month: 7 } as const;
 function danaBar(overrides: Partial<CalendarRange>): CalendarRange {
   return {
     id: "r0",
     who: "u1",
     user: { id: "u1", name: "Dana Holt", initials: "DH", avatarColor: "hsl(270 60% 60%)" },
     type: CalendarRecordType.Vacation,
-    from: 8,
-    to: 8,
+    from: isoDate(2026, 7, 8),
+    to: isoDate(2026, 7, 8),
     vacationIds: ["v-8"],
     ...overrides,
   };
@@ -28,8 +24,13 @@ describe("LeaveCalendar bar look", () => {
       <LeaveCalendar
         {...baseProps}
         ranges={[
-          danaBar({ id: "approved", from: 8, to: 8 }),
-          danaBar({ id: "pending", from: 15, to: 15, pending: true }),
+          danaBar({ id: "approved", from: isoDate(2026, 7, 8), to: isoDate(2026, 7, 8) }),
+          danaBar({
+            id: "pending",
+            from: isoDate(2026, 7, 15),
+            to: isoDate(2026, 7, 15),
+            pending: true,
+          }),
         ]}
       />
     );
@@ -79,6 +80,19 @@ describe("LeaveCalendar bar look", () => {
     render(<LeaveCalendar {...baseProps} ranges={[danaBar({ halfDay: true })]} mini />);
 
     expect(within(screen.getByTitle("Dana Holt · Vacation")).getByText("Dana ½")).toBeVisible();
+  });
+
+  it("places a bar by its dates and splits it where it crosses into the next week", () => {
+    // 3 July 2026 is a Friday, so the bar runs Friday to Sunday, then Monday to Tuesday.
+    render(
+      <LeaveCalendar
+        {...baseProps}
+        ranges={[danaBar({ from: isoDate(2026, 7, 3), to: isoDate(2026, 7, 7) })]}
+      />
+    );
+
+    const pieces = screen.getAllByTitle("Dana Holt · Vacation");
+    expect(pieces.map((p) => p.parentElement?.style.gridColumn)).toEqual(["5 / 8", "1 / 3"]);
   });
 
   it("leaves a full-day bar's name bare", () => {

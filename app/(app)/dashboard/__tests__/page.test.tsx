@@ -3,6 +3,7 @@ import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import DashboardPage from "../page";
 import { renderWithClient } from "@/lib/test-utils";
+import { isoDate } from "@/lib/calendar/month-grid";
 import {
   CalendarRecordType,
   type BankHoliday,
@@ -17,6 +18,11 @@ let bankHolidayRows: BankHoliday[] = [];
 
 const dana = { id: "u-dana", name: "Dana Holt", initials: "DH", avatarColor: "hsl(0 0% 50%)" };
 const sam = { id: "u-sam", name: "Sam Ruiz", initials: "SR", avatarColor: "hsl(0 0% 40%)" };
+
+// The calendar places records by date, so they must fall in the month it opens on.
+const now = new Date();
+const inVisibleMonth = (dayOfMonth: number) =>
+  isoDate(now.getFullYear(), now.getMonth() + 1, dayOfMonth);
 
 function day(
   id: string,
@@ -62,7 +68,7 @@ const DEFAULT_SETTINGS: UserSettings = {
 
 let settings: UserSettings | undefined = DEFAULT_SETTINGS;
 
-let vacations: VacationListItem[] = [day("v-1", dana, "2026-08-17")];
+let vacations: VacationListItem[] = [day("v-1", dana, inVisibleMonth(17))];
 
 vi.mock("next/navigation", () => ({
   usePathname: () => "/dashboard/",
@@ -125,7 +131,7 @@ vi.mock("@/lib/api/queries", () => ({
 describe("DashboardPage scope switch", () => {
   beforeEach(() => {
     settings = { ...DEFAULT_SETTINGS, dashboardScope: "MINE", dashboardGroupId: null };
-    vacations = [day("v-1", dana, "2026-08-17")];
+    vacations = [day("v-1", dana, inVisibleMonth(17))];
     useVacationsSpy.mockClear();
   });
 
@@ -162,7 +168,7 @@ describe("DashboardPage scope switch", () => {
 
   it("labels a mirrored teammate's leave with its source group", () => {
     settings = { ...DEFAULT_SETTINGS, dashboardScope: "GROUP", dashboardGroupId: "g-1" };
-    vacations = [day("v-2", sam, "2026-08-18", "Team B")];
+    vacations = [day("v-2", sam, inVisibleMonth(18), "Team B")];
     renderWithClient(<DashboardPage />);
 
     expect(screen.getByTitle("Sam Ruiz · Vacation · mirrored from Team B")).toBeInTheDocument();
@@ -170,8 +176,13 @@ describe("DashboardPage scope switch", () => {
 
   it("keeps a pending half day apart from the approved day before it", () => {
     vacations = [
-      day("v-1", dana, "2026-08-17"),
-      { ...day("v-2", dana, "2026-08-18"), approvedAt: null, approvedBy: null, halfDay: true },
+      day("v-1", dana, inVisibleMonth(17)),
+      {
+        ...day("v-2", dana, inVisibleMonth(18)),
+        approvedAt: null,
+        approvedBy: null,
+        halfDay: true,
+      },
     ];
     renderWithClient(<DashboardPage />);
 
@@ -181,8 +192,7 @@ describe("DashboardPage scope switch", () => {
 });
 
 describe("DashboardPage bank holidays", () => {
-  const now = new Date();
-  const visibleMonthDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-15`;
+  const visibleMonthDate = inVisibleMonth(15);
 
   beforeEach(() => {
     settings = { ...DEFAULT_SETTINGS, dashboardScope: "MINE", dashboardGroupId: null };

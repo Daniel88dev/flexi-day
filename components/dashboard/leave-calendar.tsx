@@ -4,7 +4,14 @@ import { useState } from "react";
 import { AvatarBubble } from "@/components/brand/avatar-bubble";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { leaveMetaFor } from "@/lib/demo/leave-meta";
-import { CalendarRecordType, type UserSummary, type VacationStatus } from "@/lib/api/types";
+import {
+  CalendarRecordType,
+  type IsoDate,
+  type UserSummary,
+  type VacationStatus,
+} from "@/lib/api/types";
+import { addDays } from "@/lib/attendance/month";
+import { monthWeeks, weekSpan } from "@/lib/calendar/month-grid";
 import { useTranslation } from "@/lib/i18n/use-translation";
 import { recordTypeLabel } from "@/lib/i18n/record-type-label";
 
@@ -13,8 +20,8 @@ export interface CalendarRange {
   who: string; // person id, or 'all' for bank holidays
   user?: UserSummary; // present when row represents a real user
   type: CalendarRecordType;
-  from: number; // day-of-month, inclusive
-  to: number;
+  from: IsoDate; // inclusive
+  to: IsoDate;
   note?: string;
   /** Ids of the vacation rows this bar collapses, in day order. */
   vacationIds?: string[];
@@ -25,16 +32,17 @@ export interface CalendarRange {
 }
 
 interface LeaveCalendarProps {
-  monthDays: number;
-  firstWeekdayMondayIdx: number; // 0..6 (Monday=0)
-  todayDay?: number | null;
+  year: number;
+  /** 1-12. */
+  month: number;
+  today?: IsoDate | null;
   ranges: CalendarRange[];
   filter?: Set<CalendarRecordType>;
   mini?: boolean;
   /** Makes bars clickable; receives the first vacation id of the range. */
   onSelect?: (vacationId: string) => void;
-  /** Makes empty day cells clickable; receives the day-of-month clicked. */
-  onDayClick?: (day: number) => void;
+  /** Makes empty day cells clickable; receives the date clicked. */
+  onDayClick?: (date: IsoDate) => void;
 }
 
 /** Bars a week shows before the rest collapse behind the "+N more" toggle. */
@@ -46,16 +54,6 @@ export function visibleRanges(
   filter?: Set<CalendarRecordType>
 ): CalendarRange[] {
   return filter ? ranges.filter((r) => filter.has(r.type)) : ranges;
-}
-
-function buildWeeks(monthDays: number, firstIdxMon: number) {
-  const cells: Array<number | null> = [];
-  for (let i = 0; i < firstIdxMon; i++) cells.push(null);
-  for (let d = 1; d <= monthDays; d++) cells.push(d);
-  while (cells.length % 7) cells.push(null);
-  const weeks: Array<Array<number | null>> = [];
-  for (let i = 0; i < cells.length; i += 7) weeks.push(cells.slice(i, i + 7));
-  return weeks;
 }
 
 interface PlacedBar {
@@ -301,9 +299,9 @@ function BankHolidayPill({
 }
 
 export function LeaveCalendar({
-  monthDays,
-  firstWeekdayMondayIdx,
-  todayDay = null,
+  year,
+  month,
+  today = null,
   ranges,
   filter,
   mini = false,
@@ -312,7 +310,7 @@ export function LeaveCalendar({
 }: LeaveCalendarProps) {
   const { t } = useTranslation();
   const WEEKDAYS = t.calendar.weekdaysShort;
-  const weeks = buildWeeks(monthDays, firstWeekdayMondayIdx);
+  const weeks = monthWeeks(year, month);
   const active = visibleRanges(ranges, filter);
   const barsTop = mini ? 22 : 38;
   // Every week is the same height, whatever the headcount — the overflow opens
@@ -355,32 +353,26 @@ export function LeaveCalendar({
       </div>
 
       {weeks.map((week, wi) => {
-        const weekDayNums = week.filter((d): d is number => d !== null);
-        if (weekDayNums.length === 0) return null;
-        const weekStart = weekDayNums[0];
-        const weekEnd = weekDayNums[weekDayNums.length - 1];
-
-        const bank = active.filter(
-          (e) => e.type === CalendarRecordType.BankHoliday && e.from <= weekEnd && e.to >= weekStart
-        );
+        const bank = active.flatMap((e) => {
+          if (e.type !== CalendarRecordType.BankHoliday) return [];
+          const span = weekSpan(week, e.from, e.to);
+          return span ? [{ range: e, span }] : [];
+        });
         const barsRaw: PlacedBar[] = active
-          .filter(
-            (e) =>
-              e.type !== CalendarRecordType.BankHoliday && e.from <= weekEnd && e.to >= weekStart
-          )
-          .map((e) => {
-            const cf = Math.max(e.from, weekStart);
-            const ct = Math.min(e.to, weekEnd);
-            const sc = week.indexOf(cf) + 1;
-            const ec = week.indexOf(ct) + 2;
-            return {
-              range: e,
-              sc,
-              ec,
-              contL: e.from < weekStart,
-              contR: e.to > weekEnd,
-              lane: 0,
-            };
+          .flatMap((e) => {
+            if (e.type === CalendarRecordType.BankHoliday) return [];
+            const span = weekSpan(week, e.from, e.to);
+            if (!span) return [];
+            return [
+              {
+                range: e,
+                sc: span.startCol + 1,
+                ec: span.endCol + 1,
+                contL: span.continuesLeft,
+                contR: span.continuesRight,
+                lane: 0,
+              },
+            ];
           })
           .sort((a, b) => a.sc - b.sc || b.ec - b.sc - (a.ec - a.sc));
 
@@ -422,7 +414,7 @@ export function LeaveCalendar({
 
         return (
           <div
-            key={weekStart}
+            key={week[0].date}
             style={{
               position: "relative",
               borderBottom: wi < weeks.length - 1 ? "1px solid var(--border)" : "none",
@@ -430,8 +422,9 @@ export function LeaveCalendar({
             }}
           >
             <div className="grid grid-cols-7" style={{ minHeight: rowH }}>
-              {week.map((d, di) => {
-                const isToday = d !== null && d === todayDay;
+              {week.map((cell, di) => {
+                const d = cell.inMonth ? cell.day : null;
+                const isToday = d !== null && cell.date === today;
                 const isWeekend = di >= 5;
                 const dayClickable = d !== null && Boolean(onDayClick);
                 return (
@@ -443,13 +436,13 @@ export function LeaveCalendar({
                     role={dayClickable ? "button" : undefined}
                     tabIndex={dayClickable ? 0 : undefined}
                     aria-label={dayClickable ? t.calendar.createRequestDay(d as number) : undefined}
-                    onClick={dayClickable ? () => onDayClick?.(d as number) : undefined}
+                    onClick={dayClickable ? () => onDayClick?.(cell.date) : undefined}
                     onKeyDown={
                       dayClickable
                         ? (e) => {
                             if (e.key === "Enter" || e.key === " ") {
                               e.preventDefault();
-                              onDayClick?.(d as number);
+                              onDayClick?.(cell.date);
                             }
                           }
                         : undefined
@@ -506,14 +499,12 @@ export function LeaveCalendar({
                 pointerEvents: "none",
               }}
             >
-              {bank.map((e) => {
-                const cf = Math.max(e.from, weekStart);
-                const ct = Math.min(e.to, weekEnd);
+              {bank.map(({ range: e, span }) => {
                 return (
                   <div
                     key={e.id}
                     style={{
-                      gridColumn: `${week.indexOf(cf) + 1} / ${week.indexOf(ct) + 2}`,
+                      gridColumn: `${span.startCol + 1} / ${span.endCol + 1}`,
                       gridRow: 1,
                       pointerEvents: "auto",
                       minWidth: 0,
@@ -572,7 +563,7 @@ export function LeaveCalendar({
                     key={col}
                     style={{ gridColumn: `${col} / ${col + 1}`, pointerEvents: "auto" }}
                   >
-                    <MoreChip hidden={hidden} day={week[col - 1] as number} onSelect={onSelect} />
+                    <MoreChip hidden={hidden} day={week[col - 1].day} onSelect={onSelect} />
                   </div>
                 ))}
               </div>
@@ -609,7 +600,7 @@ export function groupConsecutiveByUserType<
   let lastIsoDay: string | null = null;
   let lastKey: string | null = null;
   for (const item of sorted) {
-    const day = Number(item.requestedDay.slice(8, 10));
+    const day = item.requestedDay;
     // Everything a bar is drawn or labelled by joins the key, so one bar never
     // spans owned and mirrored, pending and approved, or half and full days.
     const key = [
@@ -619,7 +610,7 @@ export function groupConsecutiveByUserType<
       item.status ?? "",
       item.halfDay ? "half" : "full",
     ].join("|");
-    if (current && key === lastKey && lastIsoDay && isNextDay(lastIsoDay, item.requestedDay)) {
+    if (current && key === lastKey && lastIsoDay && addDays(lastIsoDay, 1) === day) {
       current.to = day;
       if (item.id) current.vacationIds?.push(item.id);
     } else {
@@ -645,10 +636,4 @@ export function groupConsecutiveByUserType<
     lastKey = key;
   }
   return ranges;
-}
-
-function isNextDay(a: string, b: string) {
-  const da = new Date(a);
-  const db = new Date(b);
-  return db.getTime() - da.getTime() === 24 * 60 * 60 * 1000;
 }
