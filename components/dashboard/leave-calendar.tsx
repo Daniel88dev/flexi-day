@@ -11,7 +11,14 @@ import {
   type VacationStatus,
 } from "@/lib/api/types";
 import { addDays } from "@/lib/attendance/month";
-import { monthWeeks, weekSpan } from "@/lib/calendar/month-grid";
+import {
+  formatIsoDate,
+  monthLabelDates,
+  monthWeeks,
+  seamColumn,
+  weekSpan,
+} from "@/lib/calendar/month-grid";
+import { DayHeading, MonthSeam, dayNumberColor, dayTint } from "@/components/dashboard/month-seam";
 import { useTranslation } from "@/lib/i18n/use-translation";
 import { recordTypeLabel } from "@/lib/i18n/record-type-label";
 
@@ -43,6 +50,8 @@ interface LeaveCalendarProps {
   onSelect?: (vacationId: string) => void;
   /** Makes empty day cells clickable; receives the date clicked. */
   onDayClick?: (date: IsoDate) => void;
+  /** Numbers the neighbouring months' days and marks the seam; off, they stay empty and inert. */
+  showAdjacentDays?: boolean;
 }
 
 /** Bars a week shows before the rest collapse behind the "+N more" toggle. */
@@ -172,21 +181,22 @@ function CalBar({
  */
 function MoreChip({
   hidden,
-  day,
+  date,
   onSelect,
 }: {
   hidden: CalendarRange[];
-  day: number;
+  date: IsoDate;
   onSelect?: (vacationId: string) => void;
 }) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
+  const dayLabel = formatIsoDate(date, t.common.dateLocale, { day: "numeric", month: "long" });
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger
         className="overflow-hidden rounded-full border border-[var(--border-strong)] bg-[var(--surface-2)] px-2 py-[3px] text-[11px] font-semibold whitespace-nowrap text-[var(--text-muted)] transition-colors hover:text-[var(--text)]"
-        aria-label={t.calendar.moreOnDay(hidden.length, day)}
+        aria-label={t.calendar.moreOnDay(hidden.length, dayLabel)}
       >
         {t.calendar.moreCount(hidden.length)}
       </PopoverTrigger>
@@ -195,7 +205,7 @@ function MoreChip({
           className="px-1.5 pt-0.5 text-[11px] font-semibold"
           style={{ color: "var(--text-faint)" }}
         >
-          {t.calendar.moreOnDay(hidden.length, day)}
+          {t.calendar.moreOnDay(hidden.length, dayLabel)}
         </p>
         {hidden.map((range) => {
           const meta = leaveMetaFor(range.type);
@@ -307,10 +317,12 @@ export function LeaveCalendar({
   mini = false,
   onSelect,
   onDayClick,
+  showAdjacentDays = true,
 }: LeaveCalendarProps) {
   const { t } = useTranslation();
   const WEEKDAYS = t.calendar.weekdaysShort;
   const weeks = monthWeeks(year, month);
+  const labelled = monthLabelDates(weeks);
   const active = visibleRanges(ranges, filter);
   const barsTop = mini ? 22 : 38;
   // Every week is the same height, whatever the headcount — the overflow opens
@@ -397,6 +409,7 @@ export function LeaveCalendar({
         // Bank holidays share the first row (each pill spans only its own
         // days), so however many there are, they cost the budget one lane.
         const bankRows = bank.length > 0 ? 1 : 0;
+        const seam = showAdjacentDays ? seamColumn(week) : null;
         const shownLanes = Math.max(0, MAX_LANES - bankRows);
 
         // The bars each weekday hides. Keyed per column rather than per week so
@@ -423,19 +436,30 @@ export function LeaveCalendar({
           >
             <div className="grid grid-cols-7" style={{ minHeight: rowH }}>
               {week.map((cell, di) => {
-                const d = cell.inMonth ? cell.day : null;
-                const isToday = d !== null && cell.date === today;
+                const shown = cell.inMonth || showAdjacentDays;
+                const isToday = shown && cell.date === today;
                 const isWeekend = di >= 5;
-                const dayClickable = d !== null && Boolean(onDayClick);
+                const dayClickable = shown && Boolean(onDayClick);
                 return (
                   <div
                     // Seven fixed columns that never reorder: the column is the cell.
                     // eslint-disable-next-line @eslint-react/no-array-index-key
                     key={di}
-                    className={d ? "transition-colors hover:bg-[var(--surface-2)]" : ""}
+                    className={
+                      shown ? "@container transition-colors hover:bg-[var(--surface-2)]" : ""
+                    }
                     role={dayClickable ? "button" : undefined}
                     tabIndex={dayClickable ? 0 : undefined}
-                    aria-label={dayClickable ? t.calendar.createRequestDay(d as number) : undefined}
+                    aria-label={
+                      dayClickable
+                        ? t.calendar.createRequestDay(
+                            formatIsoDate(cell.date, t.common.dateLocale, {
+                              day: "numeric",
+                              month: "long",
+                            })
+                          )
+                        : undefined
+                    }
                     onClick={dayClickable ? () => onDayClick?.(cell.date) : undefined}
                     onKeyDown={
                       dayClickable
@@ -451,38 +475,33 @@ export function LeaveCalendar({
                       borderRight: di < 6 ? "1px solid var(--border)" : "none",
                       padding: mini ? "4px 5px" : "8px 10px",
                       cursor: dayClickable ? "pointer" : undefined,
-                      background:
-                        d === null
-                          ? "color-mix(in oklch, var(--surface-2) 50%, transparent)"
-                          : isWeekend
-                            ? "color-mix(in oklch, var(--surface-2) 45%, transparent)"
-                            : "transparent",
+                      background: dayTint({ inMonth: cell.inMonth, isWeekend }) ?? "transparent",
                     }}
                   >
-                    {d ? (
-                      <span
-                        className="tnum inline-grid place-items-center rounded-full"
-                        style={{
-                          minWidth: cellLabelSize,
-                          height: cellLabelSize,
-                          padding: "0 4px",
-                          fontSize: cellFs,
-                          fontWeight: isToday ? 700 : 500,
-                          background: isToday ? "var(--primary)" : "transparent",
-                          color: isToday
-                            ? "var(--primary-fg)"
-                            : isWeekend
-                              ? "var(--text-faint)"
-                              : "var(--text-muted)",
-                        }}
-                      >
-                        {d}
-                      </span>
+                    {shown ? (
+                      <DayHeading labelDate={labelled.has(cell.date) ? cell.date : null}>
+                        <span
+                          className="tnum inline-grid place-items-center rounded-full"
+                          style={{
+                            minWidth: cellLabelSize,
+                            height: cellLabelSize,
+                            padding: "0 4px",
+                            fontSize: cellFs,
+                            fontWeight: isToday ? 700 : 500,
+                            background: isToday ? "var(--primary)" : "transparent",
+                            color: dayNumberColor({ isToday, inMonth: cell.inMonth, isWeekend }),
+                          }}
+                        >
+                          {cell.day}
+                        </span>
+                      </DayHeading>
                     ) : null}
                   </div>
                 );
               })}
             </div>
+
+            {seam !== null ? <MonthSeam col={seam} /> : null}
 
             <div
               style={{
@@ -563,7 +582,7 @@ export function LeaveCalendar({
                     key={col}
                     style={{ gridColumn: `${col} / ${col + 1}`, pointerEvents: "auto" }}
                   >
-                    <MoreChip hidden={hidden} day={week[col - 1].day} onSelect={onSelect} />
+                    <MoreChip hidden={hidden} date={week[col - 1].date} onSelect={onSelect} />
                   </div>
                 ))}
               </div>

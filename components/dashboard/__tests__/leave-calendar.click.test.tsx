@@ -13,17 +13,91 @@ describe("LeaveCalendar day clicks", () => {
     const user = userEvent.setup();
     render(<LeaveCalendar {...baseProps} ranges={[]} onDayClick={onDayClick} />);
 
-    await user.click(screen.getByRole("button", { name: "Create request for day 15" }));
+    await user.click(screen.getByRole("button", { name: "Create request for 15 July" }));
 
     expect(onDayClick).toHaveBeenCalledWith("2026-07-15");
   });
 
-  it("leaves the padding days outside the month empty and not clickable", () => {
+  it("makes the adjacent-month days clickable, booking their own date", async () => {
+    const onDayClick = vi.fn();
+    const user = userEvent.setup();
+    render(<LeaveCalendar {...baseProps} ranges={[]} onDayClick={onDayClick} />);
+
+    // 29-30 June lead the grid; 1-2 August close it.
+    expect(screen.getAllByRole("button", { name: /Create request for/ })).toHaveLength(35);
+    await user.click(screen.getByRole("button", { name: "Create request for 29 June" }));
+    await user.click(screen.getByRole("button", { name: "Create request for 2 August" }));
+
+    expect(onDayClick.mock.calls).toEqual([["2026-06-29"], ["2026-08-02"]]);
+  });
+
+  it("numbers the adjacent-month days and labels the first one on each side", () => {
     render(<LeaveCalendar {...baseProps} ranges={[]} onDayClick={vi.fn()} />);
 
-    expect(screen.getAllByRole("button", { name: /Create request for day/ })).toHaveLength(31);
-    expect(screen.queryByText("30")).toBeInTheDocument();
+    const june29 = screen.getByRole("button", { name: "Create request for 29 June" });
+    const june30 = screen.getByRole("button", { name: "Create request for 30 June" });
+    const august1 = screen.getByRole("button", { name: "Create request for 1 August" });
+    const august2 = screen.getByRole("button", { name: "Create request for 2 August" });
+    expect(june29).toHaveTextContent("29Jun");
+    expect(june30).toHaveTextContent(/^30$/);
+    expect(august1).toHaveTextContent("1Aug");
+    expect(august2).toHaveTextContent(/^2$/);
+    expect(screen.getByRole("button", { name: "Create request for 1 July" })).toHaveTextContent(
+      /^1$/
+    );
+  });
+
+  it("draws a seam where the month changes mid-week", () => {
+    render(<LeaveCalendar {...baseProps} ranges={[]} />);
+
+    // 1 July is a Wednesday and 1 August a Saturday.
+    expect(screen.getAllByTestId("month-seam").map((s) => s.dataset.col)).toEqual(["2", "5"]);
+  });
+
+  it("draws a booking that crosses the month boundary as one full-strength bar", () => {
+    const ranges: CalendarRange[] = [
+      {
+        id: "r0",
+        who: "u1",
+        user: { id: "u1", name: "Dana Holt", initials: "DH", avatarColor: "hsl(270 60% 60%)" },
+        type: CalendarRecordType.Vacation,
+        from: "2026-06-29",
+        to: "2026-07-02",
+        vacationIds: ["v-1"],
+        pending: true,
+      },
+    ];
+    render(<LeaveCalendar {...baseProps} ranges={ranges} />);
+
+    const bar = screen.getByTitle("Dana Holt · Vacation · Pending");
+    expect(bar.parentElement).toHaveStyle({ gridColumn: "1 / 5" });
+    expect(bar.parentElement?.style.opacity).toBe("");
+    expect(bar.style.opacity).toBe("");
+  });
+
+  it("offers the overflow chip on an adjacent-month day, named by its date", () => {
+    const ranges = sameDayRanges(TOTAL, 1).map((r) => ({
+      ...r,
+      from: "2026-08-01",
+      to: "2026-08-01",
+    }));
+    render(<LeaveCalendar {...baseProps} ranges={ranges} onSelect={vi.fn()} />);
+
+    expect(
+      screen.getByRole("button", { name: `${HIDDEN} more requests on 1 August` })
+    ).toBeInTheDocument();
+  });
+
+  it("keeps the padding days empty and inert without showAdjacentDays", () => {
+    render(
+      <LeaveCalendar {...baseProps} ranges={[]} onDayClick={vi.fn()} showAdjacentDays={false} />
+    );
+
+    expect(screen.getAllByRole("button", { name: /Create request for/ })).toHaveLength(31);
+    expect(screen.queryByRole("button", { name: "Create request for 29 June" })).toBeNull();
     expect(screen.getAllByText("1")).toHaveLength(1);
+    expect(screen.queryByText("Jun")).toBeNull();
+    expect(screen.queryByTestId("month-seam")).toBeNull();
   });
 
   it("does not make day cells interactive when onDayClick is absent", () => {
@@ -143,8 +217,8 @@ function sameDayRanges(count: number, day: number): CalendarRange[] {
 const TOTAL = MAX_LANES + 2;
 const HIDDEN = TOTAL - MAX_LANES;
 // The chip is labelled for screen readers with the day it belongs to.
-const chipLabel = (day: number) => new RegExp(`${HIDDEN} more requests? on day ${day}`);
-const anyChip = /more requests? on day/;
+const chipLabel = (day: number) => new RegExp(`${HIDDEN} more requests? on ${day} July`);
+const anyChip = /more requests? on/;
 
 describe("LeaveCalendar overflow", () => {
   it(`shows only the first ${MAX_LANES} bar(s) of a week and counts the rest`, () => {

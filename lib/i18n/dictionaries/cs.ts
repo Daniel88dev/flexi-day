@@ -95,10 +95,10 @@ export const cs: Dictionary = {
     everyone: "Všichni",
     bankHoliday: "Státní svátek",
     moreCount: (n: number) => `+${n} dalších`,
-    moreOnDay: (n: number, day: number) =>
-      `${n} ${n === 1 ? "další žádost" : n < 5 ? "další žádosti" : "dalších žádostí"} v den ${day}`,
+    moreOnDay: (n: number, date: string) =>
+      `${n} ${n === 1 ? "další žádost" : n < 5 ? "další žádosti" : "dalších žádostí"} dne ${date}`,
     openRequest: (title: string) => `Otevřít detail žádosti: ${title}`,
-    createRequestDay: (day: number) => `Vytvořit žádost pro den ${day}`,
+    createRequestDay: (date: string) => `Vytvořit žádost na ${date}`,
     mirroredFrom: (groupName: string) => `zrcadleno ze skupiny ${groupName}`,
     moreOnStripeDay: (n: number) => `dalších ${n} nezobrazeno`,
     awayOn: (date: string) => `Pryč ${date}`,

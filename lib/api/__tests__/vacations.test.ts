@@ -7,6 +7,7 @@ import {
   cancelVacations,
   createVacation,
   getVacation,
+  listVacationCalendar,
   listVacations,
   rejectVacation,
   approveVacations,
@@ -33,6 +34,21 @@ describe("vacations api", () => {
   it("listVacations omits a null groupId so the caller's own records come back", async () => {
     await listVacations({ year: 2026, month: 8, groupId: null });
     expect(apiMock).toHaveBeenCalledWith("/api/vacation?year=2026&month=8");
+  });
+
+  it("listVacationCalendar asks the dashboard calendar route for one month", async () => {
+    await listVacationCalendar({ year: 2026, month: 12 });
+    expect(apiMock).toHaveBeenCalledWith("/api/vacation/calendar?year=2026&month=12");
+  });
+
+  it("listVacationCalendar scopes to a group when a groupId is given", async () => {
+    await listVacationCalendar({ year: 2027, month: 1, groupId: "g-1" });
+    expect(apiMock).toHaveBeenCalledWith("/api/vacation/calendar?year=2027&month=1&groupId=g-1");
+  });
+
+  it("listVacationCalendar omits a null groupId", async () => {
+    await listVacationCalendar({ year: 2027, month: 1, groupId: null });
+    expect(apiMock).toHaveBeenCalledWith("/api/vacation/calendar?year=2027&month=1");
   });
 
   it("getVacation GETs a single request", async () => {

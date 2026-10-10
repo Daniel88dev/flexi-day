@@ -16,6 +16,7 @@ import {
   useGroups,
   useMySettings,
   useReportScope,
+  useVacationCalendar,
   useVacations,
 } from "@/lib/api/queries";
 import { bankHolidaysToRanges } from "@/lib/holidays";
@@ -50,7 +51,7 @@ import { LeaveTypeFilter } from "@/components/dashboard/leave-type-filter";
 import { CalendarLegend } from "@/components/dashboard/calendar-legend";
 import { StripeCalendar } from "@/components/dashboard/stripe-calendar";
 import { toDayRecords } from "@/lib/calendar/stripes";
-import { isoDate } from "@/lib/calendar/month-grid";
+import { gridRange, gridYears, isoDate } from "@/lib/calendar/month-grid";
 import { NewRequestDialog } from "@/components/new-request-dialog";
 import { useOpenVacationDetail } from "@/lib/vacations/use-vacation-detail";
 import { Card, CardContent } from "@/components/ui/card";
@@ -110,7 +111,8 @@ export default function DashboardPage() {
       : "MINE";
   const activeGroupId = scope === "GROUP" ? selectedGroupId : null;
 
-  const vacationsQuery = useVacations({ year, month, groupId: activeGroupId });
+  const calendarQuery = useVacationCalendar({ year, month, groupId: activeGroupId });
+  const outTodayQuery = useVacations({ year, month, groupId: activeGroupId });
   // The membership list already carries `holidayCountry`; the detail fetch is
   // only for groups the caller sees without a membership (org admins). Report
   // scope can also grant GROUP view to a manager the detail endpoint refuses,
@@ -126,7 +128,7 @@ export default function DashboardPage() {
 
   // `?? []` builds a new array on every render while the query is empty, which
   // would change the `ranges` dependency each time and defeat the memo below.
-  const vacations = useMemo(() => vacationsQuery.data ?? [], [vacationsQuery.data]);
+  const calendarVacations = useMemo(() => calendarQuery.data ?? [], [calendarQuery.data]);
   const groups = groupsQuery.data ?? [];
   const summary = summaryQuery.data;
 
@@ -140,16 +142,16 @@ export default function DashboardPage() {
       new Set((groupsQuery.data ?? []).map((g) => g.holidayCountry).filter((c): c is string => !!c))
     );
   }, [scope, activeGroupCountry, groupsQuery.data]);
-  const bankHolidays = useBankHolidaysMulti(year, holidayCountries);
-  const holidayRanges = useMemo(
-    () => bankHolidaysToRanges(bankHolidays, year, month),
-    [bankHolidays, year, month]
-  );
-  const dayRecords = useMemo(() => toDayRecords(vacations), [vacations]);
+  const bankHolidays = useBankHolidaysMulti(gridYears(year, month), holidayCountries);
+  const holidayRanges = useMemo(() => {
+    const { from, to } = gridRange(year, month);
+    return bankHolidaysToRanges(bankHolidays, from, to);
+  }, [bankHolidays, year, month]);
+  const dayRecords = useMemo(() => toDayRecords(calendarVacations), [calendarVacations]);
   const showStripes = settingsQuery.data?.dashboardCalendarView === "STRIPES";
 
   const ranges: CalendarRange[] = useMemo(() => {
-    const live = vacations
+    const live = calendarVacations
       .filter((v) => vacationStatus(v) !== "rejected")
       // A newer backend can serve types this build doesn't know; hide the bar
       // rather than crash the calendar on its missing meta.
@@ -166,7 +168,7 @@ export default function DashboardPage() {
         halfDay: v.halfDay,
       }));
     return [...groupConsecutiveByUserType(live), ...holidayRanges];
-  }, [vacations, holidayRanges]);
+  }, [calendarVacations, holidayRanges]);
 
   const today = new Date();
   const todayMatches = today.getFullYear() === year && today.getMonth() + 1 === month;
@@ -333,9 +335,9 @@ export default function DashboardPage() {
                 className="text-xs"
                 style={{
                   color: "var(--text-faint)",
-                  visibility: vacationsQuery.isLoading ? "visible" : "hidden",
+                  visibility: calendarQuery.isLoading ? "visible" : "hidden",
                 }}
-                aria-hidden={!vacationsQuery.isLoading}
+                aria-hidden={!calendarQuery.isLoading}
               >
                 {t.common.loading}
               </span>
@@ -411,18 +413,18 @@ export default function DashboardPage() {
             />
           )}
           <CalendarLegend ranges={ranges} filter={filter} />
-          {vacationsQuery.error ? (
+          {calendarQuery.error ? (
             <p className="mt-3 text-sm" style={{ color: "var(--destructive)" }}>
-              {vacationsQuery.error instanceof ApiError && vacationsQuery.error.status === 403
+              {calendarQuery.error instanceof ApiError && calendarQuery.error.status === 403
                 ? t.dashboard.scope.forbidden
-                : vacationsQuery.error.message}
+                : calendarQuery.error.message}
             </p>
           ) : null}
         </section>
 
         <aside className="flex flex-col gap-4">
           <ApprovalsWidget />
-          <OutTodayWidget vacations={vacations} todayDay={todayDay} />
+          <OutTodayWidget vacations={outTodayQuery.data ?? []} todayDay={todayDay} />
           <BalanceWidget year={year} />
         </aside>
       </div>

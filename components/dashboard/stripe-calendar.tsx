@@ -6,7 +6,8 @@ import type { CalendarRange } from "@/components/dashboard/leave-calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { CalendarRecordType, type IsoDate } from "@/lib/api/types";
 import { addDays } from "@/lib/attendance/month";
-import { monthWeeks } from "@/lib/calendar/month-grid";
+import { formatIsoDate, monthLabelDates, monthWeeks, seamColumn } from "@/lib/calendar/month-grid";
+import { DayHeading, MonthSeam, dayNumberColor, dayTint } from "@/components/dashboard/month-seam";
 import {
   MAX_STRIPES,
   dayEntries,
@@ -16,6 +17,7 @@ import {
 } from "@/lib/calendar/stripes";
 import { leaveMetaFor } from "@/lib/demo/leave-meta";
 import { useTranslation } from "@/lib/i18n/use-translation";
+import { cn } from "@/lib/utils";
 
 interface StripeCalendarProps {
   year: number;
@@ -47,6 +49,7 @@ export function StripeCalendar({
   const [openDate, setOpenDate] = useState<IsoDate | null>(null);
 
   const weeks = useMemo(() => monthWeeks(year, month), [year, month]);
+  const labelled = useMemo(() => monthLabelDates(weeks), [weeks]);
   const visible = useMemo(() => records.filter((r) => filter.has(r.type)), [records, filter]);
   const bookings = useMemo(() => stripeBookings(visible), [visible]);
   const holidayByDate = useMemo(() => {
@@ -60,12 +63,10 @@ export function StripeCalendar({
     return byDate;
   }, [holidays, filter, t]);
 
-  const formatDate = (date: IsoDate, options: Intl.DateTimeFormatOptions) =>
-    new Date(`${date}T00:00:00`).toLocaleDateString(t.common.dateLocale, options);
   const longDate = (date: IsoDate) =>
-    formatDate(date, { weekday: "long", day: "numeric", month: "long" });
+    formatIsoDate(date, t.common.dateLocale, { weekday: "long", day: "numeric", month: "long" });
   const shortDate = (date: IsoDate) =>
-    formatDate(date, { weekday: "short", day: "numeric", month: "short" });
+    formatIsoDate(date, t.common.dateLocale, { weekday: "short", day: "numeric", month: "short" });
 
   return (
     <div
@@ -94,6 +95,7 @@ export function StripeCalendar({
 
       {weeks.map((week, wi) => {
         const { stripes, more } = placeStripeWeek(week, bookings, viewerId);
+        const seam = seamColumn(week);
 
         return (
           <div
@@ -104,19 +106,6 @@ export function StripeCalendar({
             <div className="grid min-h-[68px] grid-cols-7 sm:min-h-[92px]">
               {week.map((cell, di) => {
                 const border = di < 6 ? "1px solid var(--border)" : "none";
-                if (!cell.inMonth) {
-                  return (
-                    <div
-                      // Seven fixed columns that never reorder: the column is the cell.
-                      // eslint-disable-next-line @eslint-react/no-array-index-key
-                      key={di}
-                      style={{
-                        borderRight: border,
-                        background: "color-mix(in oklch, var(--surface-2) 50%, transparent)",
-                      }}
-                    />
-                  );
-                }
                 const date = cell.date;
                 const isToday = date === today;
                 const isSelected = date === selectedDate;
@@ -148,41 +137,46 @@ export function StripeCalendar({
                         type="button"
                         aria-label={label}
                         aria-pressed={isSelected}
-                        className="relative min-w-0 cursor-pointer px-1.5 pt-1.5 pb-1 text-left align-top transition-colors outline-none hover:bg-[var(--surface-2)] focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-inset sm:px-2.5 sm:pt-2"
+                        className="@container relative min-w-0 cursor-pointer px-1.5 pt-1.5 pb-1 text-left align-top transition-colors outline-none hover:bg-[var(--surface-2)] focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-inset sm:px-2.5 sm:pt-2"
                         style={{
                           borderRight: border,
                           background: holiday
                             ? "color-mix(in oklch, var(--c-bank) 13%, transparent)"
                             : isSelected
                               ? "color-mix(in oklch, var(--primary) 7%, transparent)"
-                              : isWeekend
-                                ? "color-mix(in oklch, var(--surface-2) 45%, transparent)"
-                                : undefined,
+                              : dayTint({ inMonth: cell.inMonth, isWeekend }),
                           boxShadow: isSelected
                             ? "inset 0 0 0 1.5px color-mix(in oklch, var(--primary) 45%, transparent)"
                             : undefined,
                         }}
                       >
-                        <span
-                          className="tnum absolute top-1.5 left-1.5 inline-grid h-[22px] min-w-[22px] place-items-center rounded-full px-1 text-[12px] sm:top-2 sm:left-2.5 sm:h-6 sm:min-w-6 sm:text-[13px]"
-                          style={{
-                            fontWeight: isToday || isSelected ? 700 : 500,
-                            background: isToday
-                              ? "var(--primary)"
-                              : isSelected
-                                ? "var(--text)"
-                                : "transparent",
-                            color: isToday
-                              ? "var(--primary-fg)"
-                              : isSelected
-                                ? "var(--surface)"
-                                : isWeekend
-                                  ? "var(--text-faint)"
-                                  : "var(--text-muted)",
-                          }}
+                        <DayHeading
+                          labelDate={labelled.has(date) ? date : null}
+                          className={cn(
+                            "absolute left-1.5 sm:left-2.5",
+                            labelled.has(date) ? "top-0.5 @min-[60px]:top-2" : "top-1.5 sm:top-2"
+                          )}
                         >
-                          {cell.day}
-                        </span>
+                          <span
+                            className="tnum inline-grid h-[22px] min-w-[22px] place-items-center rounded-full px-1 text-[12px] sm:h-6 sm:min-w-6 sm:text-[13px]"
+                            style={{
+                              fontWeight: isToday || isSelected ? 700 : 500,
+                              background: isToday
+                                ? "var(--primary)"
+                                : isSelected
+                                  ? "var(--text)"
+                                  : "transparent",
+                              color: dayNumberColor({
+                                isToday,
+                                isSelected,
+                                inMonth: cell.inMonth,
+                                isWeekend,
+                              }),
+                            }}
+                          >
+                            {cell.day}
+                          </span>
+                        </DayHeading>
 
                         {holiday ? (
                           <span
@@ -229,6 +223,8 @@ export function StripeCalendar({
                 );
               })}
             </div>
+
+            {seam !== null ? <MonthSeam col={seam} /> : null}
 
             <div
               aria-hidden

@@ -93,10 +93,10 @@ export const en = {
     everyone: "Everyone",
     bankHoliday: "Bank Holiday",
     moreCount: (n: number) => `+${n} more`,
-    moreOnDay: (n: number, day: number) =>
-      `${n} more ${n === 1 ? "request" : "requests"} on day ${day}`,
+    moreOnDay: (n: number, date: string) =>
+      `${n} more ${n === 1 ? "request" : "requests"} on ${date}`,
     openRequest: (title: string) => `Open request details: ${title}`,
-    createRequestDay: (day: number) => `Create request for day ${day}`,
+    createRequestDay: (date: string) => `Create request for ${date}`,
     mirroredFrom: (groupName: string) => `mirrored from ${groupName}`,
     moreOnStripeDay: (n: number) => `${n} more not shown`,
     awayOn: (date: string) => `Away on ${date}`,
