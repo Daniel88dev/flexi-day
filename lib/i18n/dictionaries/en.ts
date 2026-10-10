@@ -1,5 +1,8 @@
 import { CalendarRecordType } from "@/lib/api/types";
 
+const daySpan = (range: string, days: number) =>
+  `${range} · ${days} ${days === 1 ? "day" : "days"}`;
+
 /**
  * English is the source of truth: its inferred shape becomes the `Dictionary`
  * type every other locale must satisfy. Plain strings for static copy;
@@ -1077,10 +1080,14 @@ export const en = {
       title: "Pending approvals",
       toReview: (n: number) => `${n} to review`,
       allCaughtUp: "All caught up — nothing waiting.",
-      meta: (type: string, range: string, days: number) =>
-        `${type} · ${range} · ${days} ${days === 1 ? "day" : "days"}`,
+      meta: (type: string, range: string, days: number) => `${type} · ${daySpan(range, days)}`,
       approve: "Approve",
       decline: "Decline",
+      waitingOnYou: "Waiting on you",
+      yourRequests: "Your requests",
+      noPendingRequests: "None of your requests is waiting on approval.",
+      span: daySpan,
+      waitingIn: (group: string) => `Waiting on approval in ${group}`,
     },
     outToday: {
       title: "Out today",

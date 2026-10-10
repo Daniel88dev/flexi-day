@@ -86,6 +86,10 @@ vi.mock("@/lib/auth-client", () => ({
   useSession: () => ({ data: { user: { id: "u-dana", name: "Dana Holt" } } }),
 }));
 
+vi.mock("@/lib/viewer/use-viewer-roles", () => ({
+  useViewerRoles: () => ({ isLoading: false, isApprover: false }),
+}));
+
 vi.mock("@/lib/api/queries", () => ({
   useVacations: (params: unknown) => {
     useVacationsSpy(params);
@@ -128,6 +132,7 @@ vi.mock("@/lib/api/queries", () => ({
     error: null,
   }),
   useMyApprovals: () => ({ data: [], isLoading: false, error: null }),
+  useMyPendingRequests: () => ({ data: [], isLoading: false, error: null }),
   useMyBalances: () => ({ data: undefined, isLoading: false, error: null }),
   useVacation: () => ({ data: undefined, isLoading: false, error: null }),
   useApproveVacation: () => ({ mutate: vi.fn(), isPending: false }),

@@ -111,7 +111,7 @@ import {
   opaqueSearchKey,
   searchSupportOrganizations,
 } from "./support";
-import { listMyApprovals } from "./approvals";
+import { listMyApprovals, listMyPendingRequests } from "./approvals";
 import { getDashboardSummary } from "./dashboard";
 import { getMyBalances } from "./balances";
 import {
@@ -167,6 +167,7 @@ export const qk = {
   quotas: (groupId: string, year: number, userId?: string) =>
     ["quotas", groupId, year, userId ?? "all"] as const,
   myApprovals: () => ["my-approvals"] as const,
+  myPendingRequests: () => ["my-pending-requests"] as const,
   dashboardSummary: () => ["dashboard-summary"] as const,
   myBalances: (year: number) => ["my-balances", year] as const,
   notifications: (unreadOnly: boolean) => ["notifications", unreadOnly] as const,
@@ -223,6 +224,7 @@ function invalidateVacationDependants(qc: ReturnType<typeof useQueryClient>) {
   // cancellation has just changed.
   qc.invalidateQueries({ queryKey: ["vacation"] });
   qc.invalidateQueries({ queryKey: qk.myApprovals() });
+  qc.invalidateQueries({ queryKey: qk.myPendingRequests() });
   qc.invalidateQueries({ queryKey: qk.dashboardSummary() });
   qc.invalidateQueries({ queryKey: ["my-balances"] });
 }
@@ -303,6 +305,13 @@ export function useMyApprovals() {
   return useQuery({
     queryKey: qk.myApprovals(),
     queryFn: listMyApprovals,
+  });
+}
+
+export function useMyPendingRequests() {
+  return useQuery({
+    queryKey: qk.myPendingRequests(),
+    queryFn: listMyPendingRequests,
   });
 }
 

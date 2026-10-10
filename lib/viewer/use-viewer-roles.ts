@@ -36,6 +36,8 @@ export type ViewerRoles = {
   organization: OrganizationSummary | null;
   isGroupAdmin: boolean;
   administeredGroups: AdministeredGroup[];
+  /** Decides leave in at least one group, by the same rules the backend's approval check uses. */
+  isApprover: boolean;
   /** `active` is what the backend's group badge calls active: paid and still writable. Null while loading. */
   plan: { name: PlanName; active: boolean } | null;
   /**
@@ -53,6 +55,7 @@ const LOADING: ViewerRoles = {
   organization: null,
   isGroupAdmin: false,
   administeredGroups: [],
+  isApprover: false,
   plan: null,
   attendanceActive: false,
 };
@@ -101,6 +104,14 @@ export function useViewerRoles(): ViewerRoles {
     }
   }
 
+  const isApprover = (groupsQuery.data ?? []).some(
+    (group) =>
+      group.membership?.approverAccess === true ||
+      group.managerUserId === viewerId ||
+      group.mainApprovalUser === viewerId ||
+      group.tempApprovalUser === viewerId
+  );
+
   const entitlements = subscriptionQuery.data?.entitlements;
   return {
     isLoading: false,
@@ -109,6 +120,7 @@ export function useViewerRoles(): ViewerRoles {
     organization: administered,
     isGroupAdmin: administeredGroups.length > 0,
     administeredGroups,
+    isApprover,
     plan: entitlements
       ? { name: entitlements.plan, active: entitlements.plan !== "FREE" && entitlements.writable }
       : null,

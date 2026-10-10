@@ -12,6 +12,9 @@ function plural(n: number, one: string, few: string, many: string): string {
   return many;
 }
 
+const daySpan = (range: string, days: number) =>
+  `${range} · ${days} ${plural(days, "den", "dny", "dní")}`;
+
 export const cs: Dictionary = {
   common: {
     dateLocale: "cs-CZ",
@@ -1082,10 +1085,14 @@ export const cs: Dictionary = {
       title: "Čekající schválení",
       toReview: (n: number) => `${n} ke kontrole`,
       allCaughtUp: "Vše hotovo — nic nečeká.",
-      meta: (type: string, range: string, days: number) =>
-        `${type} · ${range} · ${days} ${plural(days, "den", "dny", "dní")}`,
+      meta: (type: string, range: string, days: number) => `${type} · ${daySpan(range, days)}`,
       approve: "Schválit",
       decline: "Zamítnout",
+      waitingOnYou: "Čeká na vás",
+      yourRequests: "Vaše žádosti",
+      noPendingRequests: "Žádná z vašich žádostí nečeká na schválení.",
+      span: daySpan,
+      waitingIn: (group: string) => `Čeká na schválení ve skupině ${group}`,
     },
     outToday: {
       title: "Dnes mimo",
