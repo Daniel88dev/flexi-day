@@ -11,7 +11,7 @@ export type GridDay = {
 /** Seven days, Monday first. */
 export type GridWeek = GridDay[];
 
-function toUtc(date: IsoDate): number {
+export function toUtc(date: IsoDate): number {
   return Date.UTC(
     Number(date.slice(0, 4)),
     Number(date.slice(5, 7)) - 1,

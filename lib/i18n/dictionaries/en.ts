@@ -105,6 +105,8 @@ export const en = {
     you: "(you)",
     halfDayMark: "½ day",
     bookDay: (date: string) => `Book ${date}`,
+    dragRangeDays: (n: number) => `${n} ${n === 1 ? "day" : "days"}`,
+    dragRangeBooked: (n: number) => `${n} already booked`,
   },
 
   nav: {

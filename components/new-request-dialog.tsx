@@ -79,14 +79,22 @@ interface NewRequestDialogProps {
   onOpenChange?: (open: boolean) => void;
   /** ISO (YYYY-MM-DD) day to preselect for From/To instead of today. */
   initialDate?: string;
+  /** ISO day to preselect for To, for a range picked on the calendar. Ignored before From. */
+  initialEndDate?: string;
 }
 
-export function NewRequestDialog({ open, onOpenChange, initialDate }: NewRequestDialogProps = {}) {
+export function NewRequestDialog({
+  open,
+  onOpenChange,
+  initialDate,
+  initialEndDate,
+}: NewRequestDialogProps = {}) {
   const { t } = useTranslation();
   const groupsQuery = useGroups();
   const createVacation = useCreateVacation();
 
   const baseDate = initialDate ?? todayIso();
+  const baseEndDate = initialEndDate && initialEndDate > baseDate ? initialEndDate : baseDate;
   const controlled = open !== undefined;
   const [internalOpen, setInternalOpen] = useState(false);
   const dialogOpen = controlled ? open : internalOpen;
@@ -97,7 +105,7 @@ export function NewRequestDialog({ open, onOpenChange, initialDate }: NewRequest
 
   const [groupId, setGroupId] = useState("");
   const [from, setFrom] = useState(baseDate);
-  const [to, setTo] = useState(baseDate);
+  const [to, setTo] = useState(baseEndDate);
   // Null while the Others group is open with no type picked yet.
   const [vacationType, setVacationType] = useState<CalendarRecordType | null>(
     CalendarRecordType.Vacation
@@ -169,7 +177,7 @@ export function NewRequestDialog({ open, onOpenChange, initialDate }: NewRequest
   function resetForm() {
     setGroupId("");
     setFrom(baseDate);
-    setTo(baseDate);
+    setTo(baseEndDate);
     setVacationType(CalendarRecordType.Vacation);
     setStartTime("");
     setEndTime("");

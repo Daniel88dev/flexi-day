@@ -81,6 +81,7 @@ export default function DashboardPage() {
   const [month, setMonth] = useState(initial.month);
   const [filter, setFilter] = useState<Set<CalendarRecordType>>(() => new Set(DEFAULT_LEAVE_TYPES));
   const [presetDate, setPresetDate] = useState<string | null>(null);
+  const [presetEndDate, setPresetEndDate] = useState<string | null>(null);
   const [newRequestOpen, setNewRequestOpen] = useState(false);
   // Session-only overrides of the stored preference — a look at the team
   // without committing to it in settings.
@@ -190,8 +191,9 @@ export default function DashboardPage() {
     setYear(ny);
   }
 
-  function openNewRequestForDate(date: string) {
+  function openNewRequestForDate(date: string, endDate: string | null = null) {
     setPresetDate(date);
+    setPresetEndDate(endDate);
     setNewRequestOpen(true);
   }
 
@@ -410,6 +412,8 @@ export default function DashboardPage() {
               filter={filter}
               onSelect={openVacation}
               onDayClick={openNewRequestForDate}
+              onRangeSelect={({ from, to }) => openNewRequestForDate(from, to)}
+              viewerId={session.data?.user?.id ?? null}
             />
           )}
           <CalendarLegend ranges={ranges} filter={filter} />
@@ -430,10 +434,11 @@ export default function DashboardPage() {
       </div>
 
       <NewRequestDialog
-        key={presetDate ?? "new"}
+        key={`${presetDate ?? "new"}-${presetEndDate ?? ""}`}
         open={newRequestOpen}
         onOpenChange={setNewRequestOpen}
         initialDate={presetDate ?? undefined}
+        initialEndDate={presetEndDate ?? undefined}
       />
     </div>
   );

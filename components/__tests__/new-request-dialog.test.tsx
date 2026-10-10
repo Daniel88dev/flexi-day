@@ -143,6 +143,57 @@ describe("NewRequestDialog", () => {
     expect(screen.getByLabelText("To")).toHaveValue("2026-07-15");
   });
 
+  it("seeds To with initialEndDate when opened with a preset range", () => {
+    renderWithClient(
+      <NewRequestDialog
+        open
+        initialDate="2026-07-15"
+        initialEndDate="2026-07-21"
+        onOpenChange={() => {}}
+      />
+    );
+
+    expect(screen.getByLabelText("From")).toHaveValue("2026-07-15");
+    expect(screen.getByLabelText("To")).toHaveValue("2026-07-21");
+    expect(screen.queryByRole("checkbox", { name: "Half day" })).toBeNull();
+  });
+
+  it("submits a preset range with the group and type a single-day click would get", async () => {
+    renderWithClient(
+      <NewRequestDialog
+        open
+        initialDate="2026-07-15"
+        initialEndDate="2026-07-21"
+        onOpenChange={() => {}}
+      />
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Submit Request" }));
+
+    await waitFor(() => expect(createMutate).toHaveBeenCalled());
+    expect(createMutate.mock.calls[0][0]).toMatchObject({
+      groupId: "g-1",
+      from: "2026-07-15",
+      to: "2026-07-21",
+      vacationType: "VACATION",
+      halfDay: false,
+      note: null,
+    });
+  });
+
+  it("falls back to a single day when initialEndDate is before initialDate", () => {
+    renderWithClient(
+      <NewRequestDialog
+        open
+        initialDate="2026-07-15"
+        initialEndDate="2026-07-10"
+        onOpenChange={() => {}}
+      />
+    );
+
+    expect(screen.getByLabelText("To")).toHaveValue("2026-07-15");
+  });
+
   it("hides the built-in trigger button when controlled", () => {
     renderWithClient(<NewRequestDialog open initialDate="2026-07-15" onOpenChange={() => {}} />);
 

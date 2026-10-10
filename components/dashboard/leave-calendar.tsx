@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { AvatarBubble } from "@/components/brand/avatar-bubble";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { leaveMetaFor } from "@/lib/demo/leave-meta";
@@ -19,8 +19,12 @@ import {
   weekSpan,
 } from "@/lib/calendar/month-grid";
 import { DayHeading, MonthSeam, dayNumberColor, dayTint } from "@/components/dashboard/month-seam";
+import { DragRangeLabel } from "@/components/dashboard/drag-range-label";
+import { datesCovered, rangeCellFill, type DateRange } from "@/lib/calendar/drag-range";
+import { useDragRange } from "@/hooks/use-drag-range";
 import { useTranslation } from "@/lib/i18n/use-translation";
 import { recordTypeLabel } from "@/lib/i18n/record-type-label";
+import { cn } from "@/lib/utils";
 
 export interface CalendarRange {
   id: string;
@@ -52,6 +56,10 @@ interface LeaveCalendarProps {
   onDayClick?: (date: IsoDate) => void;
   /** Numbers the neighbouring months' days and marks the seam; off, they stay empty and inert. */
   showAdjacentDays?: boolean;
+  /** Lets a mouse on the desktop layout drag across days; receives the range on release. */
+  onRangeSelect?: (range: DateRange) => void;
+  /** Whose records a drag marks as already booked. */
+  viewerId?: string | null;
 }
 
 /** Bars a week shows before the rest collapse behind the "+N more" toggle. */
@@ -318,8 +326,26 @@ export function LeaveCalendar({
   onSelect,
   onDayClick,
   showAdjacentDays = true,
+  onRangeSelect,
+  viewerId = null,
 }: LeaveCalendarProps) {
   const { t } = useTranslation();
+  const drag = useDragRange((range) => onRangeSelect?.(range));
+  const draggable = Boolean(onRangeSelect);
+  const dragging = drag.range !== null;
+  const holidayDates = useMemo(
+    () => datesCovered(ranges.filter((r) => r.type === CalendarRecordType.BankHoliday)),
+    [ranges]
+  );
+  const bookedDates = useMemo(
+    () =>
+      datesCovered(
+        viewerId
+          ? ranges.filter((r) => r.who === viewerId && r.type !== CalendarRecordType.BankHoliday)
+          : []
+      ),
+    [ranges, viewerId]
+  );
   const WEEKDAYS = t.calendar.weekdaysShort;
   const weeks = monthWeeks(year, month);
   const labelled = monthLabelDates(weeks);
@@ -333,11 +359,13 @@ export function LeaveCalendar({
 
   return (
     <div
+      data-testid="leave-calendar"
       className="overflow-hidden"
       style={{
         borderRadius: mini ? 12 : "var(--radius)",
         border: "1px solid var(--border)",
         background: "var(--surface)",
+        userSelect: dragging ? "none" : undefined,
       }}
     >
       <div
@@ -440,13 +468,20 @@ export function LeaveCalendar({
                 const isToday = shown && cell.date === today;
                 const isWeekend = di >= 5;
                 const dayClickable = shown && Boolean(onDayClick);
+                const dayDraggable = dayClickable && draggable;
                 return (
                   <div
                     // Seven fixed columns that never reorder: the column is the cell.
                     // eslint-disable-next-line @eslint-react/no-array-index-key
                     key={di}
+                    {...(dayDraggable ? drag.cellProps(cell.date) : {})}
                     className={
-                      shown ? "@container transition-colors hover:bg-[var(--surface-2)]" : ""
+                      shown
+                        ? cn(
+                            "@container hover:bg-[var(--surface-2)]",
+                            !dragging && "transition-colors"
+                          )
+                        : ""
                     }
                     role={dayClickable ? "button" : undefined}
                     tabIndex={dayClickable ? 0 : undefined}
@@ -460,7 +495,13 @@ export function LeaveCalendar({
                           )
                         : undefined
                     }
-                    onClick={dayClickable ? () => onDayClick?.(cell.date) : undefined}
+                    onClick={
+                      dayClickable
+                        ? () => {
+                            if (!drag.isClickSuppressed()) onDayClick?.(cell.date);
+                          }
+                        : undefined
+                    }
                     onKeyDown={
                       dayClickable
                         ? (e) => {
@@ -474,8 +515,16 @@ export function LeaveCalendar({
                     style={{
                       borderRight: di < 6 ? "1px solid var(--border)" : "none",
                       padding: mini ? "4px 5px" : "8px 10px",
-                      cursor: dayClickable ? "pointer" : undefined,
-                      background: dayTint({ inMonth: cell.inMonth, isWeekend }) ?? "transparent",
+                      cursor:
+                        dayDraggable && drag.canDrag
+                          ? "cell"
+                          : dayClickable
+                            ? "pointer"
+                            : undefined,
+                      background:
+                        (shown ? rangeCellFill(cell.date, drag.range, bookedDates) : undefined) ??
+                        dayTint({ inMonth: cell.inMonth, isWeekend }) ??
+                        "transparent",
                     }}
                   >
                     {shown ? (
@@ -525,7 +574,7 @@ export function LeaveCalendar({
                     style={{
                       gridColumn: `${span.startCol + 1} / ${span.endCol + 1}`,
                       gridRow: 1,
-                      pointerEvents: "auto",
+                      pointerEvents: dragging ? "none" : "auto",
                       minWidth: 0,
                     }}
                   >
@@ -550,7 +599,7 @@ export function LeaveCalendar({
                     style={{
                       gridColumn: `${b.sc} / ${b.ec}`,
                       gridRow: bankRows + b.lane + 1,
-                      pointerEvents: "auto",
+                      pointerEvents: dragging ? "none" : "auto",
                     }}
                   >
                     <CalBar
@@ -580,7 +629,10 @@ export function LeaveCalendar({
                 {[...hiddenPerColumn.entries()].map(([col, hidden]) => (
                   <div
                     key={col}
-                    style={{ gridColumn: `${col} / ${col + 1}`, pointerEvents: "auto" }}
+                    style={{
+                      gridColumn: `${col} / ${col + 1}`,
+                      pointerEvents: dragging ? "none" : "auto",
+                    }}
                   >
                     <MoreChip hidden={hidden} date={week[col - 1].date} onSelect={onSelect} />
                   </div>
@@ -590,6 +642,14 @@ export function LeaveCalendar({
           </div>
         );
       })}
+      {drag.range && drag.pointer ? (
+        <DragRangeLabel
+          range={drag.range}
+          pointer={drag.pointer}
+          holidays={holidayDates}
+          booked={bookedDates}
+        />
+      ) : null}
     </div>
   );
 }
