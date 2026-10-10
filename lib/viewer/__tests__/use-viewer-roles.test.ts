@@ -59,7 +59,13 @@ const group = (
   id: string,
   groupName: string,
   organizationId: string,
-  role: { manager?: boolean; adminAccess?: boolean } = {}
+  role: {
+    manager?: boolean;
+    adminAccess?: boolean;
+    approverAccess?: boolean;
+    mainApprover?: boolean;
+    tempApprover?: boolean;
+  } = {}
 ): GroupListItem => ({
   id,
   organizationId,
@@ -70,12 +76,15 @@ const group = (
   workingDays: [1, 2, 3, 4, 5],
   holidayCountry: null,
   managerUserId: role.manager ? "me" : "someone-else",
-  mainApprovalUser: null,
-  tempApprovalUser: null,
+  mainApprovalUser: role.mainApprover ? "me" : null,
+  tempApprovalUser: role.tempApprover ? "me" : null,
   deletedAt: null,
   createdAt: "2026-01-01T00:00:00.000Z",
   updatedAt: "2026-01-01T00:00:00.000Z",
-  membership: { adminAccess: role.adminAccess ?? false, approverAccess: false },
+  membership: {
+    adminAccess: role.adminAccess ?? false,
+    approverAccess: role.approverAccess ?? false,
+  },
 });
 
 const detail = (
@@ -145,6 +154,7 @@ describe("useViewerRoles", () => {
       organization: null,
       isGroupAdmin: false,
       administeredGroups: [],
+      isApprover: false,
       plan: null,
       attendanceActive: false,
     });
@@ -186,6 +196,7 @@ describe("useViewerRoles", () => {
       organization: null,
       isGroupAdmin: false,
       administeredGroups: [],
+      isApprover: false,
       plan: { name: "FREE", active: false },
       attendanceActive: false,
     });
@@ -217,6 +228,7 @@ describe("useViewerRoles", () => {
         { id: "g-1", groupName: "Sales", viaOrgAdmin: false },
         { id: "g-2", groupName: "Support", viaOrgAdmin: true },
       ],
+      isApprover: true,
       plan: { name: "PRO", active: true },
       attendanceActive: false,
     });
@@ -242,6 +254,7 @@ describe("useViewerRoles", () => {
       organization: { id: "org-1", name: "Acme", isOwner: false },
       isGroupAdmin: true,
       administeredGroups: [{ id: "g-2", groupName: "Support", viaOrgAdmin: true }],
+      isApprover: false,
       plan: { name: "PRO", active: true },
       attendanceActive: false,
     });
@@ -264,6 +277,7 @@ describe("useViewerRoles", () => {
       organization: null,
       isGroupAdmin: true,
       administeredGroups: [{ id: "g-1", groupName: "Sales", viaOrgAdmin: false }],
+      isApprover: true,
       plan: { name: "FREE", active: false },
       attendanceActive: false,
     });
@@ -295,6 +309,40 @@ describe("useViewerRoles", () => {
     expect(result.current.administeredGroups).toEqual([
       { id: "g-7", groupName: "Side project", viaOrgAdmin: false },
     ]);
+  });
+
+  describe("isApprover", () => {
+    beforeEach(() => {
+      state.organizations = loaded([]);
+      state.subscription = loaded(overview(null));
+    });
+
+    const isApprover = () => renderHook(() => useViewerRoles()).result.current.isApprover;
+
+    it("returns true for a member with approver access", () => {
+      state.groups = loaded([group("g-1", "Sales", "org-1", { approverAccess: true })]);
+      expect(isApprover()).toBe(true);
+    });
+
+    it("returns true for a group's manager without the approver flag", () => {
+      state.groups = loaded([group("g-1", "Sales", "org-1", { manager: true })]);
+      expect(isApprover()).toBe(true);
+    });
+
+    it("returns true for a group's main approver without the approver flag", () => {
+      state.groups = loaded([group("g-1", "Sales", "org-1", { mainApprover: true })]);
+      expect(isApprover()).toBe(true);
+    });
+
+    it("returns true for a group's temporary approver without the approver flag", () => {
+      state.groups = loaded([group("g-1", "Sales", "org-1", { tempApprover: true })]);
+      expect(isApprover()).toBe(true);
+    });
+
+    it("returns false for a plain member", () => {
+      state.groups = loaded([group("g-1", "Sales", "org-1", { adminAccess: true })]);
+      expect(isApprover()).toBe(false);
+    });
   });
 
   it("reports attendance active from the settings payload", () => {

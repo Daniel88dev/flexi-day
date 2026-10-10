@@ -7,6 +7,7 @@ const member: ViewerRoles = {
   organization: null,
   isGroupAdmin: false,
   administeredGroups: [],
+  isApprover: false,
   plan: null,
   attendanceActive: false,
 };

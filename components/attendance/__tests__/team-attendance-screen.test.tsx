@@ -62,6 +62,7 @@ const orgAdmin: ViewerRoles = {
   organization: { id: "org-1", name: "Studio Modrá", isOwner: true },
   isGroupAdmin: true,
   administeredGroups: [],
+  isApprover: false,
   plan: { name: "PRO", active: true },
   attendanceActive: true,
 };
