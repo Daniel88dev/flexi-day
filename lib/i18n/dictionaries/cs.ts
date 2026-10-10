@@ -110,6 +110,8 @@ export const cs: Dictionary = {
     you: "(vy)",
     halfDayMark: "½ dne",
     bookDay: (date: string) => `Zadat ${date}`,
+    dragRangeDays: (n: number) => `${n} ${plural(n, "den", "dny", "dní")}`,
+    dragRangeBooked: (n: number) => `Už zadáno: ${n} ${plural(n, "den", "dny", "dní")}`,
   },
 
   nav: {
