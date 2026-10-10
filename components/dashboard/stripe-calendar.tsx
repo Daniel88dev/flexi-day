@@ -4,11 +4,12 @@ import { useMemo, useState } from "react";
 import { DayList } from "@/components/dashboard/day-list";
 import type { CalendarRange } from "@/components/dashboard/leave-calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarRecordType } from "@/lib/api/types";
+import { CalendarRecordType, type IsoDate } from "@/lib/api/types";
+import { addDays } from "@/lib/attendance/month";
+import { monthWeeks } from "@/lib/calendar/month-grid";
 import {
   MAX_STRIPES,
   dayEntries,
-  monthWeeks,
   placeStripeWeek,
   stripeBookings,
   type DayRecord,
@@ -20,20 +21,20 @@ interface StripeCalendarProps {
   year: number;
   /** 1-12. */
   month: number;
-  todayDay: number | null;
+  today: IsoDate | null;
   records: DayRecord[];
   /** Bank holiday ranges; each one's `note` carries the holiday names. */
   holidays: CalendarRange[];
   filter: Set<CalendarRecordType>;
   viewerId: string | null;
   onOpenRequest: (vacationId: string) => void;
-  onBook: (day: number) => void;
+  onBook: (date: IsoDate) => void;
 }
 
 export function StripeCalendar({
   year,
   month,
-  todayDay,
+  today,
   records,
   holidays,
   filter,
@@ -42,29 +43,29 @@ export function StripeCalendar({
   onBook,
 }: StripeCalendarProps) {
   const { t } = useTranslation();
-  const [selectedDay, setSelectedDay] = useState<number | null>(null);
-  const [openDay, setOpenDay] = useState<number | null>(null);
+  const [selectedDate, setSelectedDate] = useState<IsoDate | null>(null);
+  const [openDate, setOpenDate] = useState<IsoDate | null>(null);
 
   const weeks = useMemo(() => monthWeeks(year, month), [year, month]);
   const visible = useMemo(() => records.filter((r) => filter.has(r.type)), [records, filter]);
   const bookings = useMemo(() => stripeBookings(visible), [visible]);
-  const holidayByDay = useMemo(() => {
-    const byDay = new Map<number, string>();
-    if (!filter.has(CalendarRecordType.BankHoliday)) return byDay;
+  const holidayByDate = useMemo(() => {
+    const byDate = new Map<IsoDate, string>();
+    if (!filter.has(CalendarRecordType.BankHoliday)) return byDate;
     for (const range of holidays) {
-      for (let d = range.from; d <= range.to; d++) {
-        byDay.set(d, range.note ?? t.calendar.bankHoliday);
+      for (let date = range.from; date <= range.to; date = addDays(date, 1)) {
+        byDate.set(date, range.note ?? t.calendar.bankHoliday);
       }
     }
-    return byDay;
+    return byDate;
   }, [holidays, filter, t]);
 
-  const formatDate = (day: number, options: Intl.DateTimeFormatOptions) =>
-    new Date(year, month - 1, day).toLocaleDateString(t.common.dateLocale, options);
-  const longDate = (day: number) =>
-    formatDate(day, { weekday: "long", day: "numeric", month: "long" });
-  const shortDate = (day: number) =>
-    formatDate(day, { weekday: "short", day: "numeric", month: "short" });
+  const formatDate = (date: IsoDate, options: Intl.DateTimeFormatOptions) =>
+    new Date(`${date}T00:00:00`).toLocaleDateString(t.common.dateLocale, options);
+  const longDate = (date: IsoDate) =>
+    formatDate(date, { weekday: "long", day: "numeric", month: "long" });
+  const shortDate = (date: IsoDate) =>
+    formatDate(date, { weekday: "short", day: "numeric", month: "short" });
 
   return (
     <div
@@ -92,19 +93,18 @@ export function StripeCalendar({
       </div>
 
       {weeks.map((week, wi) => {
-        const days = week.filter((d): d is number => d !== null);
         const { stripes, more } = placeStripeWeek(week, bookings, viewerId);
 
         return (
           <div
-            key={days[0]}
+            key={week[0].date}
             className="relative"
             style={{ borderBottom: wi < weeks.length - 1 ? "1px solid var(--border)" : "none" }}
           >
             <div className="grid min-h-[68px] grid-cols-7 sm:min-h-[92px]">
-              {week.map((d, di) => {
+              {week.map((cell, di) => {
                 const border = di < 6 ? "1px solid var(--border)" : "none";
-                if (d === null) {
+                if (!cell.inMonth) {
                   return (
                     <div
                       // Seven fixed columns that never reorder: the column is the cell.
@@ -117,14 +117,19 @@ export function StripeCalendar({
                     />
                   );
                 }
-                const isToday = d === todayDay;
-                const isSelected = d === selectedDay;
+                const date = cell.date;
+                const isToday = date === today;
+                const isSelected = date === selectedDate;
                 const isWeekend = di >= 5;
-                const holiday = holidayByDay.get(d);
+                const holiday = holidayByDate.get(date);
                 const hidden = more.get(di) ?? 0;
-                const entries = dayEntries(visible, d, viewerId);
+                const entries = dayEntries(visible, date, viewerId);
                 const away = new Set(entries.map((e) => e.userId)).size;
-                const label = [longDate(d), holiday, away > 0 ? t.calendar.awayCount(away) : null]
+                const label = [
+                  longDate(date),
+                  holiday,
+                  away > 0 ? t.calendar.awayCount(away) : null,
+                ]
                   .filter(Boolean)
                   .join(", ");
 
@@ -132,10 +137,10 @@ export function StripeCalendar({
                   <Popover
                     // eslint-disable-next-line @eslint-react/no-array-index-key
                     key={di}
-                    open={openDay === d}
+                    open={openDate === date}
                     onOpenChange={(open) => {
-                      if (open) setSelectedDay(d);
-                      setOpenDay(open ? d : null);
+                      if (open) setSelectedDate(date);
+                      setOpenDate(open ? date : null);
                     }}
                   >
                     <PopoverTrigger asChild>
@@ -176,7 +181,7 @@ export function StripeCalendar({
                                   : "var(--text-muted)",
                           }}
                         >
-                          {d}
+                          {cell.day}
                         </span>
 
                         {holiday ? (
@@ -205,18 +210,18 @@ export function StripeCalendar({
                       className="w-[min(340px,calc(100vw-2rem))] gap-0 p-0"
                     >
                       <DayList
-                        title={longDate(d)}
-                        shortDate={shortDate(d)}
+                        title={longDate(date)}
+                        shortDate={shortDate(date)}
                         entries={entries}
                         holiday={holiday}
                         viewerId={viewerId}
                         onOpenRequest={(id) => {
-                          setOpenDay(null);
+                          setOpenDate(null);
                           onOpenRequest(id);
                         }}
                         onBook={() => {
-                          setOpenDay(null);
-                          onBook(d);
+                          setOpenDate(null);
+                          onBook(date);
                         }}
                       />
                     </PopoverContent>

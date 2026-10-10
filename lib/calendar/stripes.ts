@@ -2,21 +2,21 @@ import {
   CalendarRecordType,
   isKnownCalendarRecordType,
   vacationStatus,
+  type IsoDate,
   type UserSummary,
   type VacationListItem,
 } from "@/lib/api/types";
+import { addDays } from "@/lib/attendance/month";
+import { weekSpan, type GridWeek } from "@/lib/calendar/month-grid";
 
 export const MAX_STRIPES = 3;
-
-/** Seven day-of-month cells, Monday first; `null` pads the days outside the month. */
-export type Week = Array<number | null>;
 
 export type DayRecord = {
   id: string;
   userId: string;
   user?: UserSummary;
   type: CalendarRecordType;
-  day: number;
+  date: IsoDate;
   halfDay: boolean;
   pending: boolean;
   mirroredFrom: string | null;
@@ -27,8 +27,8 @@ export type StripeBooking = {
   id: string;
   userId: string;
   type: CalendarRecordType;
-  from: number;
-  to: number;
+  from: IsoDate;
+  to: IsoDate;
   pending: boolean;
 };
 
@@ -43,18 +43,6 @@ export type PlacedStripe = {
   lane: number;
 };
 
-export function monthWeeks(year: number, month: number): Week[] {
-  const days = new Date(year, month, 0).getDate();
-  const offset = (new Date(year, month - 1, 1).getDay() + 6) % 7;
-  const cells: Week = [];
-  for (let i = 0; i < offset; i++) cells.push(null);
-  for (let d = 1; d <= days; d++) cells.push(d);
-  while (cells.length % 7) cells.push(null);
-  const weeks: Week[] = [];
-  for (let i = 0; i < cells.length; i += 7) weeks.push(cells.slice(i, i + 7));
-  return weeks;
-}
-
 export function toDayRecords(vacations: readonly VacationListItem[]): DayRecord[] {
   return vacations
     .filter((v) => vacationStatus(v) !== "rejected")
@@ -64,7 +52,7 @@ export function toDayRecords(vacations: readonly VacationListItem[]): DayRecord[
       userId: v.userId,
       user: v.user,
       type: v.vacationType,
-      day: Number(v.requestedDay.slice(8, 10)),
+      date: v.requestedDay,
       halfDay: v.halfDay,
       pending: vacationStatus(v) === "pending",
       mirroredFrom: v.mirroredFromGroupName ?? null,
@@ -73,27 +61,29 @@ export function toDayRecords(vacations: readonly VacationListItem[]): DayRecord[
 
 export function stripeBookings(records: readonly DayRecord[]): StripeBooking[] {
   const key = (r: DayRecord) => `${r.userId}|${r.type}|${r.pending}|${r.mirroredFrom ?? ""}`;
-  const sorted = [...records].sort((a, b) => key(a).localeCompare(key(b)) || a.day - b.day);
+  const sorted = [...records].sort(
+    (a, b) => key(a).localeCompare(key(b)) || a.date.localeCompare(b.date)
+  );
   const bookings: StripeBooking[] = [];
   let current: StripeBooking | null = null;
   let currentKey: string | null = null;
   for (const r of sorted) {
-    if (current && key(r) === currentKey && r.day === current.to + 1) {
-      current.to = r.day;
+    if (current && key(r) === currentKey && r.date === addDays(current.to, 1)) {
+      current.to = r.date;
       continue;
     }
     current = {
       id: r.id,
       userId: r.userId,
       type: r.type,
-      from: r.day,
-      to: r.day,
+      from: r.date,
+      to: r.date,
       pending: r.pending,
     };
     currentKey = key(r);
     bookings.push(current);
   }
-  return bookings.sort((a, b) => a.from - b.from);
+  return bookings.sort((a, b) => a.from.localeCompare(b.from));
 }
 
 /**
@@ -102,27 +92,18 @@ export function stripeBookings(records: readonly DayRecord[]): StripeBooking[] {
  * never take a stripe; they tint their cells instead.
  */
 export function placeStripeWeek(
-  week: Week,
+  week: GridWeek,
   bookings: readonly StripeBooking[],
   viewerId: string | null
 ): { stripes: PlacedStripe[]; more: Map<number, number> } {
-  const days = week.filter((d): d is number => d !== null);
   const more = new Map<number, number>();
-  if (days.length === 0) return { stripes: [], more };
-  const start = days[0];
-  const end = days[days.length - 1];
-
   const isViewer = (p: PlacedStripe) => Number(p.booking.userId === viewerId);
   const candidates: PlacedStripe[] = bookings
-    .filter((b) => b.type !== CalendarRecordType.BankHoliday && b.from <= end && b.to >= start)
-    .map((b) => ({
-      booking: b,
-      startCol: week.indexOf(Math.max(b.from, start)),
-      endCol: week.indexOf(Math.min(b.to, end)) + 1,
-      continuesLeft: b.from < start,
-      continuesRight: b.to > end,
-      lane: -1,
-    }))
+    .filter((b) => b.type !== CalendarRecordType.BankHoliday)
+    .flatMap((b) => {
+      const span = weekSpan(week, b.from, b.to);
+      return span ? [{ booking: b, ...span, lane: -1 }] : [];
+    })
     .sort(
       (a, b) =>
         isViewer(b) - isViewer(a) ||
@@ -147,14 +128,14 @@ export function placeStripeWeek(
   return { stripes: candidates.filter((p) => p.lane < MAX_STRIPES), more };
 }
 
-/** Everyone away on `day`, the viewer first, then by name. */
+/** Everyone away on `date`, the viewer first, then by name. */
 export function dayEntries(
   records: readonly DayRecord[],
-  day: number,
+  date: IsoDate,
   viewerId: string | null
 ): DayRecord[] {
   const rank = (r: DayRecord) => (r.userId === viewerId ? 0 : 1);
   return records
-    .filter((r) => r.day === day)
+    .filter((r) => r.date === date)
     .sort((a, b) => rank(a) - rank(b) || (a.user?.name ?? "").localeCompare(b.user?.name ?? ""));
 }

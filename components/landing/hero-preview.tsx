@@ -2,11 +2,14 @@
 
 import { LeaveCalendar, type CalendarRange } from "@/components/dashboard/leave-calendar";
 import { DEFAULT_LEAVE_TYPES, leaveMetaFor } from "@/lib/demo/leave-meta";
+import { isoDate } from "@/lib/calendar/month-grid";
 import { DEMO_LEAVE, DEMO_MONTH, demoById } from "@/lib/demo/team";
 import { useTranslation } from "@/lib/i18n/use-translation";
 
 export function HeroPreview() {
   const { t } = useTranslation();
+  const month = DEMO_MONTH.monthIdx + 1;
+  const date = (day: number) => isoDate(DEMO_MONTH.year, month, day);
   const ranges: CalendarRange[] = DEMO_LEAVE.map((l) => {
     const p = l.who === "all" ? undefined : demoById(l.who);
     return {
@@ -14,8 +17,8 @@ export function HeroPreview() {
       who: l.who,
       user: p ? { id: p.id, name: p.name, initials: p.initials, avatarColor: p.av } : undefined,
       type: l.type,
-      from: l.from,
-      to: l.to,
+      from: date(l.from),
+      to: date(l.to),
       note: l.note,
     };
   });
@@ -54,9 +57,9 @@ export function HeroPreview() {
           </div>
         </div>
         <LeaveCalendar
-          monthDays={30}
-          firstWeekdayMondayIdx={0}
-          todayDay={DEMO_MONTH.today}
+          year={DEMO_MONTH.year}
+          month={month}
+          today={date(DEMO_MONTH.today)}
           ranges={ranges}
           mini
         />

@@ -3,13 +3,13 @@ import { CalendarRecordType, type VacationListItem } from "@/lib/api/types";
 import {
   MAX_STRIPES,
   dayEntries,
-  monthWeeks,
   placeStripeWeek,
   stripeBookings,
   toDayRecords,
   type DayRecord,
   type StripeBooking,
 } from "../stripes";
+import { isoDate, monthWeeks } from "../month-grid";
 
 const VIEWER = "viewer";
 
@@ -23,8 +23,8 @@ function booking(
     id,
     userId: `u-${id}`,
     type: CalendarRecordType.Vacation,
-    from,
-    to,
+    from: isoDate(2026, 9, from),
+    to: isoDate(2026, 9, to),
     pending: false,
     ...extra,
   };
@@ -35,7 +35,7 @@ function record(day: number, extra: Partial<DayRecord> = {}): DayRecord {
     id: `v-${extra.userId ?? "u1"}-${day}`,
     userId: "u1",
     type: CalendarRecordType.Vacation,
-    day,
+    date: isoDate(2026, 9, day),
     halfDay: false,
     pending: false,
     mirroredFrom: null,
@@ -43,20 +43,8 @@ function record(day: number, extra: Partial<DayRecord> = {}): DayRecord {
   };
 }
 
-// September 2026 starts on a Tuesday: the first week is [null, 1, 2, 3, 4, 5, 6].
-const SEP_WEEK_1 = [null, 1, 2, 3, 4, 5, 6];
-const SEP_WEEK_2 = [7, 8, 9, 10, 11, 12, 13];
-
-describe("monthWeeks", () => {
-  it("returns Monday-first weeks padded with nulls", () => {
-    const weeks = monthWeeks(2026, 9);
-
-    expect(weeks[0]).toEqual(SEP_WEEK_1);
-    expect(weeks[1]).toEqual(SEP_WEEK_2);
-    expect(weeks.at(-1)).toEqual([28, 29, 30, null, null, null, null]);
-    expect(weeks.every((w) => w.length === 7)).toBe(true);
-  });
-});
+// September 2026 starts on a Tuesday: the first week runs Monday 31 August to Sunday 6 September.
+const [SEP_WEEK_1, SEP_WEEK_2] = monthWeeks(2026, 9);
 
 describe("placeStripeWeek", () => {
   it("returns a stripe spanning the booking's columns within the week", () => {
@@ -147,8 +135,8 @@ describe("stripeBookings", () => {
     const bookings = stripeBookings([record(9), record(7), record(8), record(11)]);
 
     expect(bookings.map((b) => [b.from, b.to])).toEqual([
-      [7, 9],
-      [11, 11],
+      [isoDate(2026, 9, 7), isoDate(2026, 9, 9)],
+      [isoDate(2026, 9, 11), isoDate(2026, 9, 11)],
     ]);
   });
 
@@ -156,9 +144,18 @@ describe("stripeBookings", () => {
     const bookings = stripeBookings([record(7), record(8, { pending: true })]);
 
     expect(bookings.map((b) => [b.from, b.to, b.pending])).toEqual([
-      [7, 7, false],
-      [8, 8, true],
+      [isoDate(2026, 9, 7), isoDate(2026, 9, 7), false],
+      [isoDate(2026, 9, 8), isoDate(2026, 9, 8), true],
     ]);
+  });
+
+  it("joins consecutive days across a month boundary by their dates", () => {
+    const bookings = stripeBookings([
+      record(30),
+      { ...record(30), id: "v-oct-1", date: "2026-10-01" },
+    ]);
+
+    expect(bookings.map((b) => [b.from, b.to])).toEqual([[isoDate(2026, 9, 30), "2026-10-01"]]);
   });
 
   it("keeps different people and types apart", () => {
@@ -187,7 +184,7 @@ describe("dayEntries", () => {
         record(8, { userId: "anna", user: people.anna }),
         record(9, { userId: "anna", user: people.anna }),
       ],
-      8,
+      isoDate(2026, 9, 8),
       VIEWER
     );
 
@@ -231,8 +228,8 @@ describe("toDayRecords", () => {
     ]);
 
     expect(records).toMatchObject([
-      { id: "v1", day: 8, halfDay: true, pending: false },
-      { id: "v2", day: 9, halfDay: false, pending: true },
+      { id: "v1", date: "2026-09-08", halfDay: true, pending: false },
+      { id: "v2", date: "2026-09-09", halfDay: false, pending: true },
     ]);
   });
 

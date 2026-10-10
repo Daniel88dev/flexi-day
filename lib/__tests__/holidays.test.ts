@@ -21,8 +21,8 @@ describe("bankHolidaysToRanges", () => {
         id: "bh-2026-08-15",
         who: "all",
         type: CalendarRecordType.BankHoliday,
-        from: 15,
-        to: 15,
+        from: "2026-08-15",
+        to: "2026-08-15",
         note: "Assumption Day",
         vacationIds: [],
       },
@@ -73,6 +73,6 @@ describe("bankHolidaysToRanges", () => {
       12
     );
 
-    expect(ranges.map((r) => r.from)).toEqual([24, 26]);
+    expect(ranges.map((r) => r.from)).toEqual(["2026-12-24", "2026-12-26"]);
   });
 });

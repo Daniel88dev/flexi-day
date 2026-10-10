@@ -17,8 +17,8 @@ describe("groupConsecutiveByUserType", () => {
     expect(ranges[0]).toMatchObject({
       who: "u1",
       type: CalendarRecordType.Vacation,
-      from: 8,
-      to: 10,
+      from: "2026-06-08",
+      to: "2026-06-10",
     });
   });
 
@@ -28,10 +28,10 @@ describe("groupConsecutiveByUserType", () => {
       { userId: "u1", vacationType: CalendarRecordType.Vacation, requestedDay: "2026-06-10" },
     ]);
     expect(ranges).toHaveLength(2);
-    expect(ranges[0].from).toBe(8);
-    expect(ranges[0].to).toBe(8);
-    expect(ranges[1].from).toBe(10);
-    expect(ranges[1].to).toBe(10);
+    expect(ranges[0].from).toBe("2026-06-08");
+    expect(ranges[0].to).toBe("2026-06-08");
+    expect(ranges[1].from).toBe("2026-06-10");
+    expect(ranges[1].to).toBe("2026-06-10");
   });
 
   it("does not merge consecutive days when leave types differ", () => {
@@ -103,8 +103,8 @@ describe("groupConsecutiveByUserType", () => {
     ]);
 
     expect(ranges.map((r) => [r.from, r.to, r.pending])).toEqual([
-      [8, 8, false],
-      [9, 10, true],
+      ["2026-06-08", "2026-06-08", false],
+      ["2026-06-09", "2026-06-10", true],
     ]);
     expect(new Set(ranges.map((r) => r.id)).size).toBe(2);
   });
@@ -126,8 +126,8 @@ describe("groupConsecutiveByUserType", () => {
     ]);
 
     expect(ranges.map((r) => [r.from, r.to, r.halfDay])).toEqual([
-      [8, 8, false],
-      [9, 9, true],
+      ["2026-06-08", "2026-06-08", false],
+      ["2026-06-09", "2026-06-09", true],
     ]);
     expect(new Set(ranges.map((r) => r.id)).size).toBe(2);
   });
@@ -163,6 +163,15 @@ describe("groupConsecutiveByUserType", () => {
       { userId: "u1", vacationType: CalendarRecordType.Vacation, requestedDay: "2026-06-09" },
     ]);
     expect(ranges).toHaveLength(1);
-    expect(ranges[0]).toMatchObject({ from: 8, to: 10 });
+    expect(ranges[0]).toMatchObject({ from: "2026-06-08", to: "2026-06-10" });
+  });
+
+  it("joins consecutive days across a month boundary into one range", () => {
+    const ranges = groupConsecutiveByUserType([
+      { userId: "u1", vacationType: CalendarRecordType.Vacation, requestedDay: "2026-06-30" },
+      { userId: "u1", vacationType: CalendarRecordType.Vacation, requestedDay: "2026-07-01" },
+    ]);
+    expect(ranges).toHaveLength(1);
+    expect(ranges[0]).toMatchObject({ from: "2026-06-30", to: "2026-07-01" });
   });
 });

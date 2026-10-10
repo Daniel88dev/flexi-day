@@ -5,7 +5,7 @@ import type { CalendarRange } from "../leave-calendar";
 import { CalendarRecordType } from "@/lib/api/types";
 
 function range(type: CalendarRecordType, id: string): CalendarRange {
-  return { id, who: "u-1", type, from: 3, to: 4 };
+  return { id, who: "u-1", type, from: "2026-06-03", to: "2026-06-04" };
 }
 
 const ranges = [
