@@ -26,6 +26,22 @@ export function listVacations(params: ListVacationsParams = {}): Promise<Vacatio
   return api<VacationListItem[]>(`/api/vacation${qs ? `?${qs}` : ""}`);
 }
 
+export type ListVacationCalendarParams = {
+  year: number;
+  /** 1-12. */
+  month: number;
+  groupId?: string | null;
+};
+
+/** The dashboard calendar's live rows: the month plus 6 days either side. */
+export function listVacationCalendar(
+  params: ListVacationCalendarParams
+): Promise<VacationListItem[]> {
+  const q = new URLSearchParams({ year: String(params.year), month: String(params.month) });
+  if (params.groupId) q.set("groupId", params.groupId);
+  return api<VacationListItem[]>(`/api/vacation/calendar?${q.toString()}`);
+}
+
 /** One request with its history and the caller's permissions on it. */
 export function getVacation(id: string): Promise<VacationDetail> {
   return api<VacationDetail>(`/api/vacation/${id}`);

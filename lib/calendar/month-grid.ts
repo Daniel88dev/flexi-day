@@ -78,3 +78,37 @@ export function weekSpan(week: GridWeek, from: IsoDate, to: IsoDate): WeekSpan |
     continuesRight: to > weekEnd,
   };
 }
+
+/** The first and last date `monthWeeks` shows, padding included. */
+export function gridRange(year: number, month: number): { from: IsoDate; to: IsoDate } {
+  const weeks = weeksCovering(isoDate(year, month, 1), isoDate(year, month + 1, 0));
+  return { from: weeks[0][0], to: weeks[weeks.length - 1][6] };
+}
+
+export function gridYears(year: number, month: number): number[] {
+  const { from, to } = gridRange(year, month);
+  return Array.from(new Set([Number(from.slice(0, 4)), Number(to.slice(0, 4))]));
+}
+
+export function seamColumn(week: GridWeek): number | null {
+  const col = week.findIndex((d) => d.day === 1);
+  return col > 0 ? col : null;
+}
+
+/** The first adjacent-month cell on each side: the grid's first cell and the next month's 1st. */
+export function monthLabelDates(weeks: GridWeek[]): Set<IsoDate> {
+  const labelled = new Set<IsoDate>();
+  const first = weeks[0][0];
+  if (!first.inMonth) labelled.add(first.date);
+  const nextFirst = weeks[weeks.length - 1].find((d) => !d.inMonth && d.day === 1);
+  if (nextFirst) labelled.add(nextFirst.date);
+  return labelled;
+}
+
+export function formatIsoDate(
+  date: IsoDate,
+  locale: string,
+  options: Intl.DateTimeFormatOptions
+): string {
+  return new Date(toUtc(date)).toLocaleDateString(locale, { ...options, timeZone: "UTC" });
+}

@@ -9,10 +9,12 @@ import {
   commentVacation,
   createVacation,
   getVacation,
+  listVacationCalendar,
   listVacations,
   rejectVacation,
   rejectVacations,
   updateVacation,
+  type ListVacationCalendarParams,
   type ListVacationsParams,
 } from "./vacations";
 import {
@@ -151,6 +153,9 @@ import type {
 export const qk = {
   vacations: (year: number, month: number, groupId?: string | null, includeCancelled?: boolean) =>
     ["vacations", year, month, groupId ?? "mine", includeCancelled ?? false] as const,
+  // Under the "vacations" prefix so every vacation invalidation refreshes it too.
+  vacationCalendar: (year: number, month: number, groupId?: string | null) =>
+    ["vacations", "calendar", year, month, groupId ?? "mine"] as const,
   vacation: (id: string) => ["vacation", id] as const,
   groups: () => ["groups"] as const,
   group: (groupId: string) => ["group", groupId] as const,
@@ -231,6 +236,13 @@ export function useVacations(
   return useQuery({
     queryKey: qk.vacations(params.year, params.month, params.groupId, params.includeCancelled),
     queryFn: () => listVacations(params),
+  });
+}
+
+export function useVacationCalendar(params: ListVacationCalendarParams) {
+  return useQuery({
+    queryKey: qk.vacationCalendar(params.year, params.month, params.groupId),
+    queryFn: () => listVacationCalendar(params),
   });
 }
 
@@ -335,14 +347,16 @@ export function useBankHolidayCountries() {
   });
 }
 
-/** Bank holidays for several countries at once, merged into one flat list. */
-export function useBankHolidaysMulti(year: number, countries: string[]) {
+/** Bank holidays for several years and countries at once, merged into one flat list. */
+export function useBankHolidaysMulti(years: number[], countries: string[]) {
   const unique = Array.from(new Set(countries)).sort();
   return useQueries({
-    queries: unique.map((country) => ({
-      queryKey: qk.bankHolidays(year, country),
-      queryFn: () => listBankHolidays({ year, country }),
-    })),
+    queries: Array.from(new Set(years)).flatMap((year) =>
+      unique.map((country) => ({
+        queryKey: qk.bankHolidays(year, country),
+        queryFn: () => listBankHolidays({ year, country }),
+      }))
+    ),
     combine: (results) => results.flatMap((r) => r.data ?? []),
   });
 }

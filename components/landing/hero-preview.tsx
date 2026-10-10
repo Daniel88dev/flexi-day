@@ -62,6 +62,7 @@ export function HeroPreview() {
           today={date(DEMO_MONTH.today)}
           ranges={ranges}
           mini
+          showAdjacentDays={false}
         />
       </div>
     </div>

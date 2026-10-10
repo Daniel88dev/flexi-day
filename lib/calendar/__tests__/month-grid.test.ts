@@ -1,5 +1,15 @@
 import { describe, expect, it } from "vitest";
-import { isoDate, monthWeeks, weekSpan, weeksCovering } from "../month-grid";
+import {
+  formatIsoDate,
+  gridRange,
+  gridYears,
+  isoDate,
+  monthLabelDates,
+  monthWeeks,
+  seamColumn,
+  weekSpan,
+  weeksCovering,
+} from "../month-grid";
 
 const dates = (week: { date: string }[]) => week.map((d) => d.date);
 
@@ -179,5 +189,86 @@ describe("weeksCovering", () => {
         "2026-11-08",
       ],
     ]);
+  });
+});
+
+describe("gridRange", () => {
+  it("returns the first and last date the month grid shows", () => {
+    // November 2026 opens on a Sunday and closes on a Monday.
+    expect(gridRange(2026, 11)).toEqual({ from: "2026-10-26", to: "2026-12-06" });
+  });
+
+  it("returns the month itself when it fills whole weeks", () => {
+    // February 2027 runs Monday 1 to Sunday 28.
+    expect(gridRange(2027, 2)).toEqual({ from: "2027-02-01", to: "2027-02-28" });
+  });
+});
+
+describe("gridYears", () => {
+  it("returns only the month's year when the grid stays inside it", () => {
+    expect(gridYears(2026, 7)).toEqual([2026]);
+  });
+
+  it("adds the previous year when January's grid opens in December", () => {
+    // 1 January 2027 is a Friday, so the grid starts on 28 December 2026.
+    expect(gridYears(2027, 1)).toEqual([2026, 2027]);
+  });
+
+  it("adds the next year when December's grid closes in January", () => {
+    // 31 December 2026 is a Thursday, so the grid runs to 3 January 2027.
+    expect(gridYears(2026, 12)).toEqual([2026, 2027]);
+  });
+
+  it("stays in one year when January opens on a Monday", () => {
+    // 1 January 2029 is a Monday.
+    expect(gridYears(2029, 1)).toEqual([2029]);
+  });
+});
+
+describe("seamColumn", () => {
+  it("returns the column of the cell that opens a month mid-week", () => {
+    // 1 October 2026 is a Thursday.
+    expect(seamColumn(monthWeeks(2026, 10)[0])).toBe(3);
+  });
+
+  it("returns the column where the next month opens in the last week", () => {
+    // 1 December 2026 is a Tuesday, in November's last week.
+    const weeks = monthWeeks(2026, 11);
+    expect(seamColumn(weeks[weeks.length - 1])).toBe(1);
+  });
+
+  it("returns null when the month changes on a Monday", () => {
+    // June 2026 opens on a Monday; July opens on a Wednesday in June's last week.
+    expect(seamColumn(monthWeeks(2026, 6)[0])).toBeNull();
+  });
+
+  it("returns null for a week inside the month", () => {
+    expect(seamColumn(monthWeeks(2026, 10)[2])).toBeNull();
+  });
+});
+
+describe("monthLabelDates", () => {
+  it("labels the grid's first cell and the first day of the next month", () => {
+    expect([...monthLabelDates(monthWeeks(2026, 11))].sort()).toEqual(["2026-10-26", "2026-12-01"]);
+  });
+
+  it("labels nothing on the leading side when the month opens on a Monday", () => {
+    // June 2026: Monday 1 June, last week runs into Sunday 5 July.
+    expect([...monthLabelDates(monthWeeks(2026, 6))]).toEqual(["2026-07-01"]);
+  });
+
+  it("labels nothing when the month fills whole weeks", () => {
+    expect(monthLabelDates(monthWeeks(2027, 2)).size).toBe(0);
+  });
+});
+
+describe("formatIsoDate", () => {
+  it("formats the calendar date in the given locale, whatever the time zone", () => {
+    expect(formatIsoDate("2026-09-28", "en-GB", { day: "numeric", month: "long" })).toBe(
+      "28 September"
+    );
+    expect(formatIsoDate("2026-12-01", "cs-CZ", { day: "numeric", month: "long" })).toBe(
+      "1. prosince"
+    );
   });
 });

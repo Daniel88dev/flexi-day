@@ -79,12 +79,55 @@ describe("StripeCalendar", () => {
     expect(stripes.map((s) => s.style.gridColumn)).toEqual(["5 / 8", "1 / 3"]);
   });
 
-  it("keeps the padding days outside the month empty and inert", () => {
+  it("numbers the adjacent-month days and labels the first one on each side", () => {
     renderCalendar([]);
 
-    expect(screen.getAllByRole("button", { name: /September/ })).toHaveLength(30);
-    expect(screen.queryByRole("button", { name: /August|October/ })).toBeNull();
-    expect(screen.queryByText("31")).toBeNull();
+    // 31 August leads the grid; 1-4 October close it.
+    expect(screen.getAllByRole("button", { name: /August|September|October/ })).toHaveLength(35);
+    expect(screen.getByRole("button", { name: /^Monday,? 31 August/ })).toHaveTextContent("31Aug");
+    expect(screen.getByRole("button", { name: /^Thursday,? 1 October/ })).toHaveTextContent("1Oct");
+    expect(screen.getByRole("button", { name: /^Friday,? 2 October/ })).toHaveTextContent(/^2$/);
+  });
+
+  it("draws a seam where the month changes mid-week", () => {
+    renderCalendar([]);
+
+    // 1 September is a Tuesday and 1 October a Thursday.
+    expect(screen.getAllByTestId("month-seam").map((s) => s.dataset.col)).toEqual(["1", "3"]);
+  });
+
+  it("draws a booking that crosses the month boundary as one stripe", () => {
+    renderCalendar([
+      { ...rec("anna", 1), id: "v-aug", date: "2026-08-31" },
+      rec("anna", 1),
+      rec("anna", 2),
+    ]);
+
+    const stripes = screen.getAllByTestId("stripe");
+    expect(stripes.map((s) => s.style.gridColumn)).toEqual(["1 / 4"]);
+    expect(stripes[0].style.opacity).toBe("1");
+  });
+
+  it("books an adjacent-month day from its popover without leaving the month", async () => {
+    const user = userEvent.setup();
+    const { onBook } = renderCalendar([{ ...rec("anna", 1), id: "v-oct", date: "2026-10-02" }]);
+
+    await user.click(screen.getByRole("button", { name: /^Friday,? 2 October/ }));
+    const list = screen.getByRole("region", { name: /Away on Friday,? 2 October/ });
+    expect(within(list).getByText(/Anna Adams/)).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /^Book Fri,? 2 Oct/ }));
+    expect(onBook).toHaveBeenCalledWith("2026-10-02");
+  });
+
+  it("tints a bank holiday on an adjacent-month day", () => {
+    renderCalendar([], {
+      holidays: [{ ...holiday, id: "bh-2026-10-01", from: "2026-10-01", to: "2026-10-01" }],
+    });
+
+    expect(
+      screen.getByRole("button", { name: /1 October, St. Wenceslas Day/ })
+    ).toBeInTheDocument();
   });
 
   it("shows +N on a day whose bookings do not fit three stripes", () => {

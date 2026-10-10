@@ -10,11 +10,15 @@ const holiday = (date: string, name: string, country = "CZ"): BankHoliday => ({
 
 describe("bankHolidaysToRanges", () => {
   it("returns an empty list for no holidays", () => {
-    expect(bankHolidaysToRanges([], 2026, 8)).toEqual([]);
+    expect(bankHolidaysToRanges([], "2026-07-27", "2026-09-06")).toEqual([]);
   });
 
   it("maps a holiday in the visible month to a single-day bank range", () => {
-    const ranges = bankHolidaysToRanges([holiday("2026-08-15", "Assumption Day")], 2026, 8);
+    const ranges = bankHolidaysToRanges(
+      [holiday("2026-08-15", "Assumption Day")],
+      "2026-07-27",
+      "2026-09-06"
+    );
 
     expect(ranges).toEqual([
       {
@@ -29,14 +33,30 @@ describe("bankHolidaysToRanges", () => {
     ]);
   });
 
-  it("drops holidays outside the visible month and year", () => {
+  it("drops holidays outside the visible range", () => {
     const ranges = bankHolidaysToRanges(
       [holiday("2026-07-06", "Jan Hus Day"), holiday("2025-08-15", "Assumption Day")],
-      2026,
-      8
+      "2026-07-27",
+      "2026-09-06"
     );
 
     expect(ranges).toEqual([]);
+  });
+
+  it("keeps holidays on the adjacent-month days, across a year boundary", () => {
+    // January 2027's grid opens on Monday 28 December 2026.
+    const ranges = bankHolidaysToRanges(
+      [
+        holiday("2026-12-26", "St. Stephen's Day"),
+        holiday("2026-12-31", "New Year's Eve"),
+        holiday("2027-01-01", "New Year's Day"),
+        holiday("2027-02-01", "Not shown"),
+      ],
+      "2026-12-28",
+      "2027-01-31"
+    );
+
+    expect(ranges.map((r) => r.from)).toEqual(["2026-12-31", "2027-01-01"]);
   });
 
   it("merges same-day holidays from different countries into one range", () => {
@@ -45,8 +65,8 @@ describe("bankHolidaysToRanges", () => {
         holiday("2026-12-25", "Christmas Day", "CZ"),
         holiday("2026-12-25", "1. Weihnachtstag", "DE"),
       ],
-      2026,
-      12
+      "2026-11-30",
+      "2027-01-03"
     );
 
     expect(ranges).toHaveLength(1);
@@ -59,8 +79,8 @@ describe("bankHolidaysToRanges", () => {
         holiday("2026-01-01", "New Year's Day", "DE"),
         holiday("2026-01-01", "New Year's Day", "AT"),
       ],
-      2026,
-      1
+      "2025-12-29",
+      "2026-02-01"
     );
 
     expect(ranges[0]?.note).toBe("New Year's Day");
@@ -69,8 +89,8 @@ describe("bankHolidaysToRanges", () => {
   it("sorts the ranges by day", () => {
     const ranges = bankHolidaysToRanges(
       [holiday("2026-12-26", "St. Stephen's Day"), holiday("2026-12-24", "Christmas Eve")],
-      2026,
-      12
+      "2026-11-30",
+      "2027-01-03"
     );
 
     expect(ranges.map((r) => r.from)).toEqual(["2026-12-24", "2026-12-26"]);
