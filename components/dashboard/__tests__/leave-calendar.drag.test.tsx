@@ -4,6 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { LeaveCalendar, type CalendarRange } from "../leave-calendar";
 import { CalendarRecordType } from "@/lib/api/types";
 import { BOOKED_FILL, RANGE_FILL } from "@/lib/calendar/drag-range";
+import { mouse, stubViewport } from "./drag-test-setup";
 
 // October 2026 opens on a Thursday: the grid runs 28 September to 1 November.
 const baseProps = { year: 2026, month: 10 } as const;
@@ -39,21 +40,7 @@ const ranges: CalendarRange[] = [
   },
 ];
 
-function stubViewport({ width, mouse = true }: { width: number; mouse?: boolean }) {
-  vi.spyOn(window, "matchMedia").mockImplementation((query: string) => {
-    const wide = width >= 768;
-    const matches = query.includes("pointer: fine") ? wide && mouse : wide;
-    return {
-      matches,
-      media: query,
-      addEventListener: () => {},
-      removeEventListener: () => {},
-    } as unknown as MediaQueryList;
-  });
-}
-
 const day = (label: string) => screen.getByRole("button", { name: `Create request for ${label}` });
-const mouse = { pointerType: "mouse", button: 0, clientX: 100, clientY: 100 };
 
 function renderCalendar() {
   const onRangeSelect = vi.fn();
