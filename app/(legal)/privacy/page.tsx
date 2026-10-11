@@ -74,6 +74,17 @@ export default function PrivacyPage() {
           attachment exists. We delete an attachment twelve months after the absence it belongs to,
           or sooner if the request is cancelled.
         </li>
+        <li>
+          <strong>Sign-in with Google, Microsoft or Apple</strong>: if you sign in with one of these
+          accounts, the provider sends us your name, email address and, where you have one, your
+          profile picture. We use them only to create your account and sign you in.
+        </li>
+        <li>
+          <strong>Calendar connection</strong>: if you connect your Google or Microsoft calendar to
+          a personal calendar, we store the access tokens the provider issues (encrypted), the
+          permission you granted, the time zone you chose, and the ids of the events we created.
+          Section 6 has the details.
+        </li>
       </ul>
       <h3>Data we collect automatically</h3>
       <ul>
@@ -83,7 +94,7 @@ export default function PrivacyPage() {
         </li>
         <li>
           <strong>Session data</strong> — an authentication cookie / local-storage token that keeps
-          you signed in (see section 9).
+          you signed in (see section 10).
         </li>
         <li>
           <strong>Push token</strong> — the address Apple gives your iPhone for notifications,
@@ -113,6 +124,13 @@ export default function PrivacyPage() {
           </tr>
           <tr>
             <td>Provide the time-off calendar, requests and approvals to your team</td>
+            <td>Performance of a contract (b)</td>
+          </tr>
+          <tr>
+            <td>
+              Write your own approved absences into your Google or Microsoft calendar, when you
+              connect one
+            </td>
             <td>Performance of a contract (b)</td>
           </tr>
           <tr>
@@ -196,14 +214,67 @@ export default function PrivacyPage() {
         rights, safety and security of our users.
       </p>
 
-      <h2>6. International transfers</h2>
+      <h2>6. Calendar connections and Google user data</h2>
+      <p>
+        On a personal calendar you can connect your own Google or Microsoft calendar. flexiday then
+        writes your approved absences into that account&rsquo;s primary calendar and keeps them up
+        to date as your requests change. Only your own records are written there, never a
+        teammate&rsquo;s.
+      </p>
+      <h3>What we access</h3>
+      <p>
+        From Google we ask for one permission, <code>calendar.events.owned</code>, which lets us
+        create, change and delete events on calendars you own. We use it only on events we created
+        ourselves. We do not read your other events, your list of calendars, or anyone else&rsquo;s
+        calendar. From Microsoft we ask for <code>Calendars.ReadWrite</code> and{" "}
+        <code>offline_access</code>, which keeps the sync running while you are signed out, and use
+        them the same way.
+      </p>
+      <h3>What we write and store</h3>
+      <p>
+        Each event carries the absence type (for example &ldquo;Vacation&rdquo;), its dates or
+        times, your time zone, and the note you added to the request, if any. People who can see
+        your calendar, such as colleagues your organisation shares it with, can see these events. On
+        our side we store the access tokens the provider issued to us, encrypted, plus the
+        permission you granted and the id of each event we created, so we can update or remove it
+        later.
+      </p>
+      <h3>How we use it, and what we never do</h3>
+      <p>
+        We use the access you grant only to keep your calendar in step with your approved absences.
+        We do not sell this data, Google user data included, use it for advertising, use it to train
+        AI or machine learning models, or transfer it to anyone else. Nobody at flexiday reads it,
+        except where you ask us to for support, where security requires it, or where the law
+        requires it.
+      </p>
+      <p>
+        {LEGAL.product}&rsquo;s use and transfer to any other app of information received from
+        Google APIs will adhere to the{" "}
+        <a href="https://developers.google.com/terms/api-services-user-data-policy">
+          Google API Services User Data Policy
+        </a>
+        , including the Limited Use requirements.
+      </p>
+      <h3>Disconnecting and deletion</h3>
+      <p>
+        When you disconnect a calendar, we delete the events we created from it, revoke our access
+        at Google, and delete the tokens we held. Microsoft offers no revocation from our side; you
+        can remove flexiday under your Microsoft account&rsquo;s app permissions. You can also
+        withdraw Google access at any time at{" "}
+        <a href="https://myaccount.google.com/permissions">myaccount.google.com/permissions</a>; we
+        then stop syncing. If you delete your flexiday account without disconnecting first, we
+        delete the tokens and our records of the events, but the events already written stay in your
+        calendar for you to remove.
+      </p>
+
+      <h2>7. International transfers</h2>
       <p>
         Your data is hosted within the European Union ({LEGAL.hosting}). Where any transfer outside
         the European Economic Area occurs, we rely on appropriate safeguards such as the European
         Commission&rsquo;s Standard Contractual Clauses.
       </p>
 
-      <h2>7. How long we keep it</h2>
+      <h2>8. How long we keep it</h2>
       <p>
         We keep your personal data for as long as your account is active. You can delete your
         account yourself in Settings, or ask us to erase your data.
@@ -230,7 +301,7 @@ export default function PrivacyPage() {
         retained for a limited period for security purposes.
       </p>
 
-      <h2>8. Your rights</h2>
+      <h2>9. Your rights</h2>
       <p>Under the GDPR you have the right to:</p>
       <ul>
         <li>access the personal data we hold about you;</li>
@@ -246,7 +317,7 @@ export default function PrivacyPage() {
         {LEGAL.authority.address} (<a href={LEGAL.authority.url}>{LEGAL.authority.url}</a>).
       </p>
 
-      <h2>9. Cookies and local storage</h2>
+      <h2>10. Cookies and local storage</h2>
       <p>
         We store only what the Service needs to work, which is why you see no cookie banner. Nothing
         we store identifies you across visits, and there is no analytics, advertising or cross-site
@@ -272,26 +343,26 @@ export default function PrivacyPage() {
         </li>
       </ul>
 
-      <h2>10. Children</h2>
+      <h2>11. Children</h2>
       <p>
         The Service is not directed at children. We do not knowingly collect personal data from
         anyone under 16. If you believe a child has provided us data, please contact us so we can
         remove it.
       </p>
 
-      <h2>11. Security</h2>
+      <h2>12. Security</h2>
       <p>
         We take appropriate technical and organisational measures to protect your data. For details,
         see our <a href="/security">Security</a> page.
       </p>
 
-      <h2>12. Changes to this policy</h2>
+      <h2>13. Changes to this policy</h2>
       <p>
         We may update this policy from time to time. We will change the &ldquo;last updated&rdquo;
         date above and, for material changes, provide a more prominent notice.
       </p>
 
-      <h2>13. Contact</h2>
+      <h2>14. Contact</h2>
       <p>
         {LEGAL.entity}
         <br />

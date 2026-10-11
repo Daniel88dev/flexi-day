@@ -32,7 +32,7 @@ describe("Legal pages", () => {
 
   it("Legal pages carry the current update date", () => {
     render(<PrivacyPage />);
-    expect(screen.getByText("Last updated: 1 October 2026")).toBeInTheDocument();
+    expect(screen.getByText("Last updated: 11 October 2026")).toBeInTheDocument();
   });
 
   it("Privacy page describes attendance location, its audience and its retention", () => {
@@ -52,7 +52,7 @@ describe("Legal pages", () => {
 
   it("Privacy page says what deleting the account removes and what stays", () => {
     render(<PrivacyPage />);
-    const text = sectionText(screen.getByRole("heading", { name: "7. How long we keep it" }));
+    const text = sectionText(screen.getByRole("heading", { name: "8. How long we keep it" }));
     expect(text).toMatch(/removes it from our live systems at once/);
     expect(text).toMatch(/leave and attendance records, request attachments and settings/);
     expect(text).toMatch(/what your team or employer could see/);
@@ -61,6 +61,23 @@ describe("Legal pages", () => {
     expect(text).toMatch(/backups .* within seven days/);
     expect(text).toMatch(/stay in the audit log without your identity/);
     expect(text).toMatch(/unless we are legally required to keep it longer/);
+  });
+
+  it("Privacy page discloses the Google calendar scope, its limits and Limited Use", () => {
+    render(<PrivacyPage />);
+    const text = sectionText(
+      screen.getByRole("heading", { name: "6. Calendar connections and Google user data" })
+    );
+    expect(text).toMatch(/calendar\.events\.owned/);
+    expect(text).toMatch(/We do not read your other events/);
+    expect(text).toMatch(/train AI or machine learning models/);
+    expect(text).toMatch(
+      /use and transfer to any other app of information received from Google APIs will adhere to the Google API Services User Data Policy, including the Limited Use requirements/
+    );
+    expect(
+      screen.getByRole("link", { name: "Google API Services User Data Policy" })
+    ).toHaveAttribute("href", "https://developers.google.com/terms/api-services-user-data-policy");
+    expect(text).toMatch(/revoke our access at Google/);
   });
 
   it("Terms page still lets the user delete their Account at any time", () => {
