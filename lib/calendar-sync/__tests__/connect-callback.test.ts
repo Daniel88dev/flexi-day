@@ -1,5 +1,9 @@
-import { describe, expect, it } from "vitest";
-import { parseConnectCallback } from "../connect-callback";
+import { beforeEach, describe, expect, it } from "vitest";
+import {
+  parseConnectCallback,
+  rememberConnectProvider,
+  takeConnectProvider,
+} from "../connect-callback";
 
 const parse = (query: string) => parseConnectCallback(new URLSearchParams(query));
 
@@ -77,5 +81,24 @@ describe("parseConnectCallback", () => {
       error: "unknown",
       configId: "cfg-1",
     });
+  });
+});
+
+describe("takeConnectProvider", () => {
+  beforeEach(() => window.sessionStorage.clear());
+
+  it("returns the provider rememberConnectProvider stored, once", () => {
+    rememberConnectProvider("microsoft");
+    expect(takeConnectProvider()).toBe("microsoft");
+    expect(takeConnectProvider()).toBeNull();
+  });
+
+  it("returns null when nothing was stored", () => {
+    expect(takeConnectProvider()).toBeNull();
+  });
+
+  it("returns null for a value that is not a provider", () => {
+    window.sessionStorage.setItem("flexi-day.calendar-connect-provider", "apple");
+    expect(takeConnectProvider()).toBeNull();
   });
 });

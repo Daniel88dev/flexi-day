@@ -53,3 +53,27 @@ export function parseConnectCallback(params: {
   if (error !== null) return { status: "error", error: callbackError(error), configId };
   return null;
 }
+
+const PENDING_PROVIDER_KEY = "flexi-day.calendar-connect-provider";
+
+/**
+ * The error redirect names no provider, so the page remembers which one it sent the
+ * user to. Session storage, because the consent round leaves and reloads the app.
+ */
+export function rememberConnectProvider(provider: CalendarProviderSlug): void {
+  try {
+    window.sessionStorage.setItem(PENDING_PROVIDER_KEY, provider);
+  } catch {
+    // Storage blocked: the error toast falls back to the provider-neutral wording.
+  }
+}
+
+export function takeConnectProvider(): CalendarProviderSlug | null {
+  try {
+    const stored = window.sessionStorage.getItem(PENDING_PROVIDER_KEY);
+    window.sessionStorage.removeItem(PENDING_PROVIDER_KEY);
+    return stored !== null && isOneOf(CALENDAR_PROVIDER_SLUGS, stored) ? stored : null;
+  } catch {
+    return null;
+  }
+}

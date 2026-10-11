@@ -1,10 +1,16 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { Plus } from "lucide-react";
 import { getCalendarSync, type CalendarSyncConfig } from "@/lib/api/calendar-sync";
+import { calendarConnectionError, providerSlug } from "@/lib/api/calendar-connections";
 import {
+  useCalendarConnections,
   useCalendarSyncs,
+  useDisconnectCalendar,
+  useSetCalendarTarget,
+  useStartCalendarConnection,
+  useSyncCalendarNow,
   useCreateCalendarSync,
   useDeleteCalendarSync,
   useGroups,
@@ -13,12 +19,14 @@ import {
   useVacations,
 } from "@/lib/api/queries";
 import { useSession } from "@/lib/auth-client";
+import { rememberConnectProvider } from "@/lib/calendar-sync/connect-callback";
 import { configToBuilder, newBuilderConfig, type BuilderConfig } from "@/lib/calendar-sync/meta";
 import { useTranslation } from "@/lib/i18n/use-translation";
 import { CalBuilder, type MonthContext } from "./cal-builder";
 import { CalCard } from "./cal-card";
 import { ConfirmDialog, type ConfirmKind } from "./confirm-dialog";
-import { DirectSyncSection } from "./direct-sync-section";
+import { ConnectCallbackNotice, connectionErrorMessage } from "./connect-callback-notice";
+import { providerName, type ConnectHandlers } from "./connect-section";
 import { EmptyState } from "./empty-state";
 import { pushToast } from "@/components/toast";
 
@@ -54,6 +62,21 @@ export function CalendarSyncScreen() {
   const updateM = useUpdateCalendarSync();
   const deleteM = useDeleteCalendarSync();
   const regenM = useRegenerateCalendarSyncToken();
+  const connectionsQ = useCalendarConnections();
+  const startM = useStartCalendarConnection();
+  const disconnectM = useDisconnectCalendar();
+  const setTargetM = useSetCalendarTarget();
+  const syncNowM = useSyncCalendarNow();
+  // `isPending` drops before the consent page loads, so a second click could start a second round.
+  const [leaving, setLeaving] = useState(false);
+  useEffect(() => {
+    // Back from the consent page can restore this page from the bfcache with `leaving` still set.
+    const restore = (e: PageTransitionEvent) => {
+      if (e.persisted) setLeaving(false);
+    };
+    window.addEventListener("pageshow", restore);
+    return () => window.removeEventListener("pageshow", restore);
+  }, []);
 
   const [modal, setModal] = useState<{ initial: BuilderConfig; isNew: boolean } | null>(null);
   const [confirm, setConfirm] = useState<{ kind: ConfirmKind; config: CalendarSyncConfig } | null>(
@@ -87,10 +110,47 @@ export function CalendarSyncScreen() {
     return updateM.mutateAsync({ id: modal.initial.id, input });
   };
 
+  const failToast = (e: unknown) =>
+    pushToast(connectionErrorMessage(calendarConnectionError(e), t), "danger");
+
+  const connect: ConnectHandlers = {
+    providers: connectionsQ.data?.providers ?? { google: false, microsoft: false },
+    connectDisabled: startM.isPending || leaving,
+    onConnect: (config, provider) => {
+      rememberConnectProvider(provider);
+      startM.mutate(
+        { provider, configId: config.id },
+        { onSuccess: () => setLeaving(true), onError: failToast }
+      );
+    },
+    onSyncNow: (config) =>
+      syncNowM.mutate(config.id, {
+        onSuccess: () => pushToast(t.calSync.connect.toasts.syncStarted),
+        onError: failToast,
+      }),
+    onDisconnect: (config) => setConfirm({ kind: "disconnect", config }),
+    onTimeZoneChange: (config, timeZone) =>
+      setTargetM.mutateAsync({ configId: config.id, timeZone }).then(
+        () => pushToast(t.calSync.connect.toasts.timeZoneSaved),
+        () => pushToast(t.calSync.connect.toasts.timeZoneFailed, "danger")
+      ),
+  };
+
+  const confirmName = (c: { kind: ConfirmKind; config: CalendarSyncConfig }) =>
+    c.kind === "disconnect" && c.config.target
+      ? providerName(c.config.target.provider)
+      : c.config.name;
+
   const doConfirm = async () => {
     if (!confirm) return;
     try {
-      if (confirm.kind === "delete") {
+      if (confirm.kind === "disconnect") {
+        const target = confirm.config.target;
+        if (target) {
+          await disconnectM.mutateAsync(providerSlug(target.provider));
+          pushToast(t.calSync.connect.toasts.disconnected(providerName(target.provider)));
+        }
+      } else if (confirm.kind === "delete") {
         await deleteM.mutateAsync(confirm.config.id);
         pushToast(t.calSync.toasts.deleted, "danger");
       } else {
@@ -158,12 +218,15 @@ export function CalendarSyncScreen() {
               onDelete={(cf) => setConfirm({ kind: "delete", config: cf })}
               onRegen={(cf) => setConfirm({ kind: "regen", config: cf })}
               resolveFeedUrl={resolveFeedUrl}
+              connect={connect}
             />
           ))}
         </div>
       )}
 
-      <DirectSyncSection />
+      <Suspense fallback={null}>
+        <ConnectCallbackNotice />
+      </Suspense>
 
       {modal ? (
         <CalBuilder
@@ -181,8 +244,11 @@ export function CalendarSyncScreen() {
       {confirm ? (
         <ConfirmDialog
           kind={confirm.kind}
-          name={confirm.config.name}
-          busy={deleteM.isPending || regenM.isPending}
+          name={confirmName(confirm)}
+          syncedCount={
+            configs.filter((c) => c.target?.provider === confirm.config.target?.provider).length
+          }
+          busy={deleteM.isPending || regenM.isPending || disconnectM.isPending}
           onClose={() => setConfirm(null)}
           onConfirm={doConfirm}
         />
