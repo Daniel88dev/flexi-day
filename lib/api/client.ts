@@ -37,6 +37,13 @@ export class ApiError extends Error {
   }
 }
 
+/** The backend's `errors[0].context.code`, when the error came from the API and carries one. */
+export const errorCode = (error: unknown): string | undefined => {
+  if (!(error instanceof ApiError)) return undefined;
+  const code = error.context<{ code?: unknown }>()?.code;
+  return typeof code === "string" ? code : undefined;
+};
+
 type ApiInit = Omit<RequestInit, "body"> & { body?: unknown };
 
 function pickErrors(parsed: unknown): ApiErrorEntry[] {

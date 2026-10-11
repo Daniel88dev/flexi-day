@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { ApiError, api } from "../client";
+import { ApiError, api, errorCode } from "../client";
 
 function mockFetchOnce(status: number, body: unknown) {
   const text = typeof body === "string" ? body : JSON.stringify(body);
@@ -56,5 +56,25 @@ describe("api client error parsing", () => {
   it("falls back to status text when body is empty", async () => {
     mockFetchOnce(500, "");
     await expect(api("/x")).rejects.toMatchObject({ status: 500 });
+  });
+});
+
+describe("errorCode", () => {
+  it("returns the code from the first error's context", () => {
+    const error = new ApiError(409, "Taken", undefined, [
+      { message: "Taken", context: { code: "INVITE_USED" } },
+    ]);
+    expect(errorCode(error)).toBe("INVITE_USED");
+  });
+
+  it("returns undefined when the context carries no string code", () => {
+    expect(errorCode(new ApiError(404, "Not found"))).toBeUndefined();
+    expect(
+      errorCode(new ApiError(400, "Bad", undefined, [{ message: "Bad", context: { code: 7 } }]))
+    ).toBeUndefined();
+  });
+
+  it("returns undefined for an error that is not from the API", () => {
+    expect(errorCode(new TypeError("Failed to fetch"))).toBeUndefined();
   });
 });
