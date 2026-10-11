@@ -1748,13 +1748,79 @@ export const en = {
       delete: "Delete",
       regenerate: "Regenerate",
     },
-    direct: {
-      title: "Direct sync",
-      comingSoon: "Coming soon",
-      body: 'Connect your account and we\'ll write events straight into a dedicated "Flexi-Day — Team Vacations" calendar, with near real-time updates. No links to manage.',
-      connect: (label: string) => `Connect ${label}`,
-      tooltip: "Direct two-way sync is coming soon. For now, use a subscription link above.",
-      emailNotice: "We'll email you when direct sync is available on your plan.",
+    connect: {
+      label: "Direct sync",
+      intro: {
+        both: "Push your approved days off into your own Google or Microsoft calendar. Only your records are synced; teammates never are.",
+        google:
+          "Push your approved days off into your own Google calendar. Only your records are synced; teammates never are.",
+        microsoft:
+          "Push your approved days off into your own Microsoft calendar. Only your records are synced; teammates never are.",
+      },
+      connectProvider: (name: string) => `Connect ${name}`,
+      whyPrimary:
+        "Events go to your primary calendar. It is the only calendar your organisation's sharing uses to show colleagues when you are away.",
+      teamNote:
+        "Team calendars cannot connect to a provider. Teammates' days are never written to a personal calendar. Use the subscription link instead.",
+      checking: "Checking what your account supports…",
+      notes: {
+        googleStatus:
+          "Full days show as a location chip with the absence type. Timed absences show as Out of office. Home office sets your working location to Home.",
+        googlePlain:
+          "Your Google account shows absences as Busy events. Out of office status and working location need Google Workspace Business Standard or higher. Home office is not synced.",
+        microsoft:
+          "Absences show as Out of office. Home office is not synced to Microsoft calendars.",
+      },
+      chips: {
+        synced: "Synced",
+        syncing: "Syncing…",
+        needsReconnect: "Needs reconnecting",
+        failed: "Sync failed",
+        paused: "Paused",
+      },
+      primaryCalendar: "Primary calendar",
+      lastSynced: (rel: string) => `Last synced ${rel}`,
+      timeZone: "Time zone",
+      actions: "Sync actions",
+      syncNow: "Sync now",
+      disconnect: "Disconnect",
+      reconnect: "Reconnect",
+      reconnectBody:
+        "Your calendar connection has expired. Reconnect to resume syncing. Events already in your calendar stay.",
+      pausedBody:
+        "Direct sync needs a paid plan. Your calendar keeps the events already written; syncing resumes when a plan is active.",
+      failedBody: "The last sync did not go through. Use Sync now to try again.",
+      disconnectTitle: (name: string) => `Disconnect from ${name}?`,
+      disconnectBody:
+        "Every event Flexi Day wrote to this calendar will be removed. Nothing else in your calendar is touched.",
+      disconnectBodyMany: (count: number, name: string) =>
+        `Every event Flexi Day wrote to the ${count} calendars synced through this ${name} account will be removed. Nothing else in your calendars is touched.`,
+      toasts: {
+        connected: (name: string) => `Connected to ${name}. Your days off are syncing now.`,
+        disconnected: (name: string) => `Disconnected from ${name}`,
+        syncStarted: "Sync started",
+        timeZoneSaved: "Time zone saved",
+        timeZoneFailed: "Couldn't save the time zone",
+        notEntitled: "Direct sync needs a paid plan.",
+        needsReconnect: "Reconnect your calendar to sync again.",
+        consentDeniedMicrosoft:
+          "Microsoft did not grant access. If it asked for admin approval, an IT admin needs to approve Flexi Day once; then connect again.",
+        callback: {
+          state_invalid: "The connection request expired. Please connect again.",
+          provider_disabled: "This calendar provider is not available right now.",
+          consent_denied: "Access was not granted, so nothing was connected.",
+          provider_error: "The calendar provider reported an error. Please try again.",
+          config_not_found: "That calendar no longer exists.",
+          team_config: "Team calendars cannot connect to a provider.",
+          target_exists:
+            "This calendar already syncs to another provider. Disconnect that one first.",
+          scope_denied:
+            "Calendar access was not granted. Allow access to your calendar when you connect again.",
+          exchange_failed: "Couldn't finish connecting. Please try again.",
+          server_error: "Something went wrong while connecting. Please try again.",
+          unknown: "Couldn't connect your calendar. Please try again.",
+        },
+      },
     },
     preview: {
       untitled: "Untitled calendar",

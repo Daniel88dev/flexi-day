@@ -1757,13 +1757,79 @@ export const cs: Dictionary = {
       delete: "Smazat",
       regenerate: "Vygenerovat znovu",
     },
-    direct: {
-      title: "Přímá synchronizace",
-      comingSoon: "Již brzy",
-      body: "Připojte svůj účet a my budeme zapisovat události přímo do vyhrazeného kalendáře „Flexi-Day — Týmové dovolené“, s téměř okamžitými aktualizacemi. Žádné odkazy ke správě.",
-      connect: (label: string) => `Připojit ${label}`,
-      tooltip: "Přímá obousměrná synchronizace bude brzy. Zatím použijte odkaz k odběru výše.",
-      emailNotice: "Až bude přímá synchronizace dostupná ve vašem tarifu, dáme vám vědět e-mailem.",
+    connect: {
+      label: "Přímá synchronizace",
+      intro: {
+        both: "Přenášejte schválené volno do vlastního kalendáře Google nebo Microsoft. Synchronizují se jen vaše záznamy, nikdy záznamy kolegů.",
+        google:
+          "Přenášejte schválené volno do vlastního kalendáře Google. Synchronizují se jen vaše záznamy, nikdy záznamy kolegů.",
+        microsoft:
+          "Přenášejte schválené volno do vlastního kalendáře Microsoft. Synchronizují se jen vaše záznamy, nikdy záznamy kolegů.",
+      },
+      connectProvider: (name: string) => `Připojit ${name}`,
+      whyPrimary:
+        "Události se zapisují do vašeho hlavního kalendáře. Jen podle něj sdílení ve vaší organizaci ukazuje kolegům, kdy jste pryč.",
+      teamNote:
+        "Týmové kalendáře nelze připojit k poskytovateli. Dny kolegů se nikdy nezapisují do osobního kalendáře. Použijte místo toho odkaz k odběru.",
+      checking: "Zjišťujeme, co váš účet podporuje…",
+      notes: {
+        googleStatus:
+          "Celodenní absence se zobrazí jako štítek místa s typem absence. Absence na část dne se zobrazí jako Mimo kancelář. Home office nastaví vaše pracovní místo na Domov.",
+        googlePlain:
+          "Váš účet Google zobrazuje absence jako události Zaneprázdněn. Stav Mimo kancelář a pracovní místo vyžadují Google Workspace Business Standard nebo vyšší. Home office se nesynchronizuje.",
+        microsoft:
+          "Absence se zobrazí jako Mimo kancelář. Home office se do kalendářů Microsoft nesynchronizuje.",
+      },
+      chips: {
+        synced: "Synchronizováno",
+        syncing: "Synchronizuje se…",
+        needsReconnect: "Nutné znovu připojit",
+        failed: "Synchronizace selhala",
+        paused: "Pozastaveno",
+      },
+      primaryCalendar: "Hlavní kalendář",
+      lastSynced: (rel: string) => `Naposledy synchronizováno ${rel}`,
+      timeZone: "Časové pásmo",
+      actions: "Akce synchronizace",
+      syncNow: "Synchronizovat nyní",
+      disconnect: "Odpojit",
+      reconnect: "Znovu připojit",
+      reconnectBody:
+        "Platnost připojení kalendáře vypršela. Připojte ho znovu a synchronizace bude pokračovat. Události, které už v kalendáři jsou, zůstanou.",
+      pausedBody:
+        "Přímá synchronizace vyžaduje placený tarif. Události, které už v kalendáři jsou, zůstanou; synchronizace bude pokračovat, jakmile bude tarif aktivní.",
+      failedBody: "Poslední synchronizace neproběhla. Zkuste to znovu přes Synchronizovat nyní.",
+      disconnectTitle: (name: string) => `Odpojit ${name}?`,
+      disconnectBody:
+        "Všechny události, které Flexi Day do tohoto kalendáře zapsal, budou odstraněny. Nic jiného ve vašem kalendáři se nezmění.",
+      disconnectBodyMany: (count: number, name: string) =>
+        `Všechny události, které Flexi Day zapsal do ${count} kalendářů synchronizovaných přes tento účet ${name}, budou odstraněny. Nic jiného ve vašich kalendářích se nezmění.`,
+      toasts: {
+        connected: (name: string) => `${name} připojen. Vaše volno se právě synchronizuje.`,
+        disconnected: (name: string) => `${name} odpojen`,
+        syncStarted: "Synchronizace spuštěna",
+        timeZoneSaved: "Časové pásmo uloženo",
+        timeZoneFailed: "Časové pásmo se nepodařilo uložit",
+        notEntitled: "Přímá synchronizace vyžaduje placený tarif.",
+        needsReconnect: "Pro další synchronizaci kalendář znovu připojte.",
+        consentDeniedMicrosoft:
+          "Microsoft přístup neudělil. Pokud žádal o schválení správcem, musí IT správce vaší organizace Flexi Day jednou schválit; pak se připojte znovu.",
+        callback: {
+          state_invalid: "Platnost žádosti o připojení vypršela. Připojte se prosím znovu.",
+          provider_disabled: "Tento poskytovatel kalendáře teď není k dispozici.",
+          consent_denied: "Přístup nebyl udělen, nic se nepřipojilo.",
+          provider_error: "Poskytovatel kalendáře nahlásil chybu. Zkuste to prosím znovu.",
+          config_not_found: "Tento kalendář už neexistuje.",
+          team_config: "Týmové kalendáře nelze připojit k poskytovateli.",
+          target_exists:
+            "Tento kalendář se už synchronizuje s jiným poskytovatelem. Nejdřív ho odpojte.",
+          scope_denied:
+            "Přístup ke kalendáři nebyl udělen. Při dalším připojení přístup ke kalendáři povolte.",
+          exchange_failed: "Připojení se nepodařilo dokončit. Zkuste to prosím znovu.",
+          server_error: "Při připojování se něco pokazilo. Zkuste to prosím znovu.",
+          unknown: "Kalendář se nepodařilo připojit. Zkuste to prosím znovu.",
+        },
+      },
     },
     preview: {
       untitled: "Nepojmenovaný kalendář",

@@ -4,7 +4,6 @@ import { CalendarRecordType } from "@/lib/api/types";
 import { TypeBadge } from "../type-badge";
 import { EmptyState } from "../empty-state";
 import { ConfirmDialog } from "../confirm-dialog";
-import { DirectSyncSection } from "../direct-sync-section";
 import { SwatchPicker } from "../swatch-picker";
 
 describe("TypeBadge", () => {
@@ -33,17 +32,41 @@ describe("ConfirmDialog", () => {
     expect(onConfirm).toHaveBeenCalledOnce();
   });
 
+  it("shows the disconnect copy for the provider", () => {
+    const onConfirm = vi.fn();
+    render(
+      <ConfirmDialog kind="disconnect" name="Google" onClose={vi.fn()} onConfirm={onConfirm} />
+    );
+    expect(screen.getByText("Disconnect from Google?")).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Every event Flexi Day wrote to this calendar will be removed. Nothing else in your calendar is touched."
+      )
+    ).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Disconnect" }));
+    expect(onConfirm).toHaveBeenCalledOnce();
+  });
+
+  it("names how many calendars a disconnect empties when the provider syncs several", () => {
+    render(
+      <ConfirmDialog
+        kind="disconnect"
+        name="Google"
+        syncedCount={2}
+        onClose={vi.fn()}
+        onConfirm={vi.fn()}
+      />
+    );
+    expect(
+      screen.getByText(
+        "Every event Flexi Day wrote to the 2 calendars synced through this Google account will be removed. Nothing else in your calendars is touched."
+      )
+    ).toBeInTheDocument();
+  });
+
   it("shows the regenerate copy", () => {
     render(<ConfirmDialog kind="regen" name="My feed" onClose={vi.fn()} onConfirm={vi.fn()} />);
     expect(screen.getByText("Regenerate the token?")).toBeInTheDocument();
-  });
-});
-
-describe("DirectSyncSection", () => {
-  it("renders the coming-soon section", () => {
-    render(<DirectSyncSection />);
-    expect(screen.getByText("Direct sync")).toBeInTheDocument();
-    expect(screen.getByText("Coming soon")).toBeInTheDocument();
   });
 });
 
