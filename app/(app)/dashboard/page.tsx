@@ -52,6 +52,7 @@ import { CalendarLegend } from "@/components/dashboard/calendar-legend";
 import { StripeCalendar } from "@/components/dashboard/stripe-calendar";
 import { toDayRecords } from "@/lib/calendar/stripes";
 import { gridRange, gridYears, isoDate } from "@/lib/calendar/month-grid";
+import type { DateRange } from "@/lib/calendar/drag-range";
 import { NewRequestDialog } from "@/components/new-request-dialog";
 import { useOpenVacationDetail } from "@/lib/vacations/use-vacation-detail";
 import { Card, CardContent } from "@/components/ui/card";
@@ -195,6 +196,10 @@ export default function DashboardPage() {
     setPresetDate(date);
     setPresetEndDate(endDate);
     setNewRequestOpen(true);
+  }
+
+  function openNewRequestForRange({ from, to }: DateRange) {
+    openNewRequestForDate(from, to);
   }
 
   const noGroups = groups.length === 0 && !groupsQuery.isLoading;
@@ -402,6 +407,7 @@ export default function DashboardPage() {
               viewerId={session.data?.user?.id ?? null}
               onOpenRequest={openVacation}
               onBook={openNewRequestForDate}
+              onRangeSelect={openNewRequestForRange}
             />
           ) : (
             <LeaveCalendar
@@ -412,7 +418,7 @@ export default function DashboardPage() {
               filter={filter}
               onSelect={openVacation}
               onDayClick={openNewRequestForDate}
-              onRangeSelect={({ from, to }) => openNewRequestForDate(from, to)}
+              onRangeSelect={openNewRequestForRange}
               viewerId={session.data?.user?.id ?? null}
             />
           )}

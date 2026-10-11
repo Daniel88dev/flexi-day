@@ -8,6 +8,9 @@ import { CalendarRecordType, type IsoDate } from "@/lib/api/types";
 import { addDays } from "@/lib/attendance/month";
 import { formatIsoDate, monthLabelDates, monthWeeks, seamColumn } from "@/lib/calendar/month-grid";
 import { DayHeading, MonthSeam, dayNumberColor, dayTint } from "@/components/dashboard/month-seam";
+import { DragRangeLabel } from "@/components/dashboard/drag-range-label";
+import { datesCovered, rangeCellFill, type DateRange } from "@/lib/calendar/drag-range";
+import { useDragRange } from "@/hooks/use-drag-range";
 import {
   MAX_STRIPES,
   dayEntries,
@@ -31,6 +34,8 @@ interface StripeCalendarProps {
   viewerId: string | null;
   onOpenRequest: (vacationId: string) => void;
   onBook: (date: IsoDate) => void;
+  /** Lets a mouse on the desktop layout drag across days; receives the range on release. */
+  onRangeSelect?: (range: DateRange) => void;
 }
 
 export function StripeCalendar({
@@ -43,10 +48,18 @@ export function StripeCalendar({
   viewerId,
   onOpenRequest,
   onBook,
+  onRangeSelect,
 }: StripeCalendarProps) {
   const { t } = useTranslation();
   const [selectedDate, setSelectedDate] = useState<IsoDate | null>(null);
   const [openDate, setOpenDate] = useState<IsoDate | null>(null);
+  const drag = useDragRange((range) => {
+    setOpenDate(null);
+    onRangeSelect?.(range);
+  });
+  const draggable = Boolean(onRangeSelect);
+  const dragging = drag.range !== null;
+  if (dragging && openDate !== null) setOpenDate(null);
 
   const weeks = useMemo(() => monthWeeks(year, month), [year, month]);
   const labelled = useMemo(() => monthLabelDates(weeks), [weeks]);
@@ -62,6 +75,11 @@ export function StripeCalendar({
     }
     return byDate;
   }, [holidays, filter, t]);
+  const holidayDates = useMemo(() => datesCovered(holidays), [holidays]);
+  const bookedDates = useMemo(
+    () => new Set(viewerId ? records.filter((r) => r.userId === viewerId).map((r) => r.date) : []),
+    [records, viewerId]
+  );
 
   const longDate = (date: IsoDate) =>
     formatIsoDate(date, t.common.dateLocale, { weekday: "long", day: "numeric", month: "long" });
@@ -70,11 +88,13 @@ export function StripeCalendar({
 
   return (
     <div
+      data-testid="stripe-calendar"
       className="overflow-hidden"
       style={{
         borderRadius: "var(--radius)",
         border: "1px solid var(--border)",
         background: "var(--surface)",
+        userSelect: dragging ? "none" : undefined,
       }}
     >
       <div
@@ -128,6 +148,7 @@ export function StripeCalendar({
                     key={di}
                     open={openDate === date}
                     onOpenChange={(open) => {
+                      if (open && drag.isClickSuppressed()) return;
                       if (open) setSelectedDate(date);
                       setOpenDate(open ? date : null);
                     }}
@@ -135,16 +156,23 @@ export function StripeCalendar({
                     <PopoverTrigger asChild>
                       <button
                         type="button"
+                        {...(draggable ? drag.cellProps(date) : {})}
                         aria-label={label}
                         aria-pressed={isSelected}
-                        className="@container relative min-w-0 cursor-pointer px-1.5 pt-1.5 pb-1 text-left align-top transition-colors outline-none hover:bg-[var(--surface-2)] focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-inset sm:px-2.5 sm:pt-2"
+                        className={cn(
+                          "@container relative min-w-0 cursor-pointer px-1.5 pt-1.5 pb-1 text-left align-top outline-none hover:bg-[var(--surface-2)] focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-inset sm:px-2.5 sm:pt-2",
+                          !dragging && "transition-colors"
+                        )}
                         style={{
                           borderRight: border,
-                          background: holiday
-                            ? "color-mix(in oklch, var(--c-bank) 13%, transparent)"
-                            : isSelected
-                              ? "color-mix(in oklch, var(--primary) 7%, transparent)"
-                              : dayTint({ inMonth: cell.inMonth, isWeekend }),
+                          cursor: draggable && drag.canDrag ? "cell" : undefined,
+                          background:
+                            rangeCellFill(date, drag.range, bookedDates) ??
+                            (holiday
+                              ? "color-mix(in oklch, var(--c-bank) 13%, transparent)"
+                              : isSelected
+                                ? "color-mix(in oklch, var(--primary) 7%, transparent)"
+                                : dayTint({ inMonth: cell.inMonth, isWeekend })),
                           boxShadow: isSelected
                             ? "inset 0 0 0 1.5px color-mix(in oklch, var(--primary) 45%, transparent)"
                             : undefined,
@@ -255,6 +283,14 @@ export function StripeCalendar({
           </div>
         );
       })}
+      {drag.range && drag.pointer ? (
+        <DragRangeLabel
+          range={drag.range}
+          pointer={drag.pointer}
+          holidays={holidayDates}
+          booked={bookedDates}
+        />
+      ) : null}
     </div>
   );
 }
