@@ -3,6 +3,24 @@ import type { Iso, UUID, CalendarRecordType } from "./types";
 
 export type CalendarSyncScope = "ME" | "TEAM";
 
+export type CalendarProvider = "GOOGLE" | "MICROSOFT";
+
+/** Whether the connected account accepts Google's status event types. */
+export type CalendarCapability = "UNKNOWN" | "STATUS" | "PLAIN";
+
+/** `PAUSED` while no organization covering the owner is on a paid plan. */
+export type CalendarTargetStatus = "ACTIVE" | "NEEDS_RECONNECT" | "PAUSED";
+
+export type CalendarTarget = {
+  provider: CalendarProvider;
+  status: CalendarTargetStatus;
+  capability: CalendarCapability;
+  timeZone: string;
+  lastSyncedAt: Iso | null;
+  lastError: string | null;
+  syncing: boolean;
+};
+
 /** One included leave type with its display color(s), as returned by the API. */
 export type CalendarSyncTypeEntry = {
   type: CalendarRecordType;
@@ -22,6 +40,7 @@ export type CalendarSyncConfig = {
   feedUrl: string; // full URL on create/get/update/regenerate, masked on list
   tokenMasked: boolean;
   lastFetchedAt: Iso | null;
+  target: CalendarTarget | null;
   createdAt: Iso;
   updatedAt: Iso;
 };

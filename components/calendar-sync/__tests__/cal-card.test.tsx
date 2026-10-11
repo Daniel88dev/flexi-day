@@ -17,6 +17,7 @@ const config: CalendarSyncConfig = {
   feedUrl: "https://api.flexiday.app/calendars/flx_live_0•••••.ics",
   tokenMasked: true,
   lastFetchedAt: null,
+  target: null,
   createdAt: "2026-07-01T00:00:00.000Z",
   updatedAt: "2026-07-01T00:00:00.000Z",
 };

@@ -135,6 +135,16 @@ import {
   updateCalendarSync,
   type CalendarSyncInput,
 } from "./calendar-sync";
+import {
+  disconnectCalendar,
+  listConnections,
+  removeCalendarTarget,
+  setCalendarTarget,
+  startConnection,
+  syncCalendarNow,
+  type CalendarProviderSlug,
+} from "./calendar-connections";
+import { browserTimezone } from "@/lib/attendance/timezones";
 import type {
   CreateGroupInput,
   CreateGroupInviteInput,
@@ -148,6 +158,7 @@ import type {
   UpdateGroupWorkingDaysInput,
   UpdateUserSettingsInput,
   UpdateVacationInput,
+  UUID,
 } from "./types";
 
 export const qk = {
@@ -175,6 +186,7 @@ export const qk = {
     ["bank-holidays", year, country, region ?? "*"] as const,
   bankHolidayCountries: () => ["bank-holiday-countries"] as const,
   calendarSyncs: () => ["calendar-syncs"] as const,
+  calendarConnections: () => ["calendar-connections"] as const,
   mySettings: () => ["my-settings"] as const,
   accountDeletion: () => ["account-deletion"] as const,
   reportScope: () => ["report-scope"] as const,
@@ -756,10 +768,16 @@ export function useUpdateGroupUsers() {
   });
 }
 
+export const CALENDAR_SYNCING_REFETCH_MS = 3000;
+
 export function useCalendarSyncs() {
   return useQuery({
     queryKey: qk.calendarSyncs(),
     queryFn: listCalendarSyncs,
+    refetchInterval: (query) =>
+      query.state.data?.some((config) => config.target?.syncing === true)
+        ? CALENDAR_SYNCING_REFETCH_MS
+        : false,
   });
 }
 
@@ -793,6 +811,69 @@ export function useRegenerateCalendarSyncToken() {
   return useMutation({
     mutationFn: (id: string) => regenerateCalendarSyncToken(id),
     onSuccess: () => qc.invalidateQueries({ queryKey: qk.calendarSyncs() }),
+  });
+}
+
+// Each config's `target` mirrors its connection's state, so both lists move together.
+function invalidateCalendarSyncDependants(qc: ReturnType<typeof useQueryClient>) {
+  return Promise.all([
+    qc.invalidateQueries({ queryKey: qk.calendarSyncs() }),
+    qc.invalidateQueries({ queryKey: qk.calendarConnections() }),
+  ]);
+}
+
+export function useCalendarConnections() {
+  return useQuery({
+    queryKey: qk.calendarConnections(),
+    queryFn: listConnections,
+  });
+}
+
+/** Sends the browser to the provider's consent screen for one `ME` config. */
+export function useStartCalendarConnection() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (vars: { provider: CalendarProviderSlug; configId: UUID }) =>
+      startConnection(vars.provider, {
+        configId: vars.configId,
+        timeZone: browserTimezone() ?? "UTC",
+      }),
+    onSuccess: ({ url }) => window.location.assign(url),
+    // A refusal means the page is stale: a provider switched off, a target set elsewhere.
+    onError: () => invalidateCalendarSyncDependants(qc),
+  });
+}
+
+export function useDisconnectCalendar() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (provider: CalendarProviderSlug) => disconnectCalendar(provider),
+    onSettled: () => invalidateCalendarSyncDependants(qc),
+  });
+}
+
+export function useSetCalendarTarget() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (vars: { configId: UUID; timeZone: string }) =>
+      setCalendarTarget(vars.configId, { timeZone: vars.timeZone }),
+    onSettled: () => invalidateCalendarSyncDependants(qc),
+  });
+}
+
+export function useRemoveCalendarTarget() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (configId: UUID) => removeCalendarTarget(configId),
+    onSettled: () => invalidateCalendarSyncDependants(qc),
+  });
+}
+
+export function useSyncCalendarNow() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (configId: UUID) => syncCalendarNow(configId),
+    onSettled: () => invalidateCalendarSyncDependants(qc),
   });
 }
 

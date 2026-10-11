@@ -142,6 +142,7 @@ describe("configToBuilder", () => {
       feedUrl: "https://api.flexiday.app/calendars/abc.ics",
       tokenMasked: false,
       lastFetchedAt: null,
+      target: null,
       createdAt: "2026-01-01T00:00:00.000Z",
       updatedAt: "2026-01-01T00:00:00.000Z",
     };
@@ -168,6 +169,7 @@ describe("configToBuilder", () => {
       feedUrl: "https://api.flexiday.app/calendars/abc123456••••.ics",
       tokenMasked: true,
       lastFetchedAt: null,
+      target: null,
       createdAt: "2026-01-01T00:00:00.000Z",
       updatedAt: "2026-01-01T00:00:00.000Z",
     } satisfies CalendarSyncConfig;
