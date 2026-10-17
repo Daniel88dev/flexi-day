@@ -112,6 +112,7 @@ import {
   type MyBirthday,
 } from "./birthday";
 import { listBirthdays, type ListBirthdaysParams } from "./birthdays";
+import { listGroupEventGroups, listGroupEvents, type ListGroupEventsParams } from "./group-events";
 import { deleteMyAccount, getAccountDeletionStatus } from "./account-deletion";
 import {
   getSupportGroup,
@@ -199,6 +200,9 @@ export const qk = {
   myBirthday: () => ["my-birthday"] as const,
   birthdays: (year: number, month: number, groupId?: string | null) =>
     ["birthdays", year, month, groupId ?? "mine"] as const,
+  groupEvents: (year: number, month: number, groupId?: string | null) =>
+    ["group-events", year, month, groupId ?? "mine"] as const,
+  groupEventGroups: () => ["group-events", "groups"] as const,
   accountDeletion: () => ["account-deletion"] as const,
   reportScope: () => ["report-scope"] as const,
   // Keyed on the serialised filters so every filter combination caches on its
@@ -276,6 +280,22 @@ export function useBirthdays(params: ListBirthdaysParams) {
     queryKey: qk.birthdays(params.year, params.month, params.groupId),
     queryFn: () => listBirthdays(params),
   });
+}
+
+export function useGroupEvents(params: ListGroupEventsParams) {
+  return useQuery({
+    queryKey: qk.groupEvents(params.year, params.month, params.groupId),
+    queryFn: () => listGroupEvents(params),
+  });
+}
+
+export function useGroupEventGroups() {
+  return useQuery({ queryKey: qk.groupEventGroups(), queryFn: listGroupEventGroups });
+}
+
+/** Every group event write ends here: each month's calendar and the create rights refetch. */
+export function invalidateGroupEventDependants(qc: ReturnType<typeof useQueryClient>) {
+  return qc.invalidateQueries({ queryKey: ["group-events"] });
 }
 
 export function useVacation(id: string | null | undefined) {

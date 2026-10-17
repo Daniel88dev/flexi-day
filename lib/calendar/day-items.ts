@@ -1,12 +1,29 @@
-import type { IsoDate } from "@/lib/api/types";
+import type { IsoDate, UserSummary } from "@/lib/api/types";
 
 /** What sits on a calendar day besides bookings. Neither kind takes a lane. */
 export type DayItemKind = "groupEvent" | "birthday";
 
 export interface DayItemAction {
   label: string;
-  onSelect: () => void;
+  /** Without a handler the button shows, disabled. */
+  onSelect?: () => void;
   destructive?: boolean;
+}
+
+/** A group event's card in the day's list, every line already labelled. */
+export interface DayItemCard {
+  /** Dates and times, e.g. "Wed 21 Oct – Fri 23 Oct · All day". */
+  when: string;
+  repeat?: string;
+  changedOnce?: string;
+  note?: string;
+  addedBy: string;
+  /** The creator, for the avatar; absent once their account is gone. */
+  creator?: UserSummary;
+  /** The group's name, shown in Mine scope where several groups mix. */
+  group?: string;
+  /** Replaces the actions for a viewer who may not change it. */
+  locked?: string;
 }
 
 /** One row in a day's chip popover and in the Stripes day list, already labelled. */
@@ -23,6 +40,10 @@ export interface DayItem {
   /** Turns the whole row into a link. */
   href?: string;
   actions?: DayItemAction[];
+  /** Renders the item as a card rather than a single row. */
+  card?: DayItemCard;
+  /** Part of a group event that covers more than one day: Lanes draws a ribbon on the day. */
+  spansDays?: boolean;
 }
 
 const KIND_ORDER: Record<DayItemKind, number> = { groupEvent: 0, birthday: 1 };

@@ -1,6 +1,6 @@
 "use client";
 
-import { CalendarPlus, PartyPopper } from "lucide-react";
+import { CalendarClock, CalendarPlus, PartyPopper } from "lucide-react";
 import { AvatarBubble } from "@/components/brand/avatar-bubble";
 import { LeaveTag } from "@/components/dashboard/leave-tag";
 import { Button } from "@/components/ui/button";
@@ -23,6 +23,8 @@ interface DayListProps {
   viewerId: string | null;
   onOpenRequest: (vacationId: string) => void;
   onBook: () => void;
+  /** Offers "New group event on <date>" under the day's items; leave it out to hide the entry. */
+  onNewGroupEvent?: () => void;
 }
 
 export function DayList({
@@ -34,6 +36,7 @@ export function DayList({
   viewerId,
   onOpenRequest,
   onBook,
+  onNewGroupEvent,
 }: DayListProps) {
   const { t } = useTranslation();
   const people = new Set(entries.map((e) => e.userId)).size;
@@ -68,15 +71,23 @@ export function DayList({
         </div>
       ) : null}
 
-      {items.length > 0 ? (
-        <div className="mb-3">
-          <DayItemRows
-            items={items}
-            label={t.calendar.dayItems.onDay(
-              t.calendar.dayItems.summary(counts.events, counts.birthdays),
-              title
-            )}
-          />
+      {items.length > 0 || onNewGroupEvent ? (
+        <div className="mb-3 grid gap-2">
+          {items.length > 0 ? (
+            <DayItemRows
+              items={items}
+              label={t.calendar.dayItems.onDay(
+                t.calendar.dayItems.summary(counts.events, counts.birthdays),
+                title
+              )}
+            />
+          ) : null}
+          {onNewGroupEvent ? (
+            <Button variant="outline" size="sm" className="w-full" onClick={onNewGroupEvent}>
+              <CalendarClock className="size-4" />
+              {t.calendar.groupEvent.newOn(shortDate)}
+            </Button>
+          ) : null}
         </div>
       ) : null}
 

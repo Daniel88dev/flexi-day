@@ -40,6 +40,8 @@ interface StripeCalendarProps {
   onRangeSelect?: (range: DateRange) => void;
   /** Group events and birthdays per day: corner marks, and rows in the day popover. */
   dayItems?: ReadonlyMap<IsoDate, DayItem[]>;
+  /** Puts "New group event on <date>" in the day popover; leave it out where nobody may create. */
+  onNewGroupEvent?: (date: IsoDate) => void;
 }
 
 export function StripeCalendar({
@@ -54,6 +56,7 @@ export function StripeCalendar({
   onBook,
   onRangeSelect,
   dayItems,
+  onNewGroupEvent,
 }: StripeCalendarProps) {
   const { t } = useTranslation();
   const [selectedDate, setSelectedDate] = useState<IsoDate | null>(null);
@@ -258,6 +261,14 @@ export function StripeCalendar({
                           setOpenDate(null);
                           onBook(date);
                         }}
+                        onNewGroupEvent={
+                          onNewGroupEvent
+                            ? () => {
+                                setOpenDate(null);
+                                onNewGroupEvent(date);
+                              }
+                            : undefined
+                        }
                       />
                     </PopoverContent>
                   </Popover>

@@ -12,6 +12,10 @@ function plural(n: number, one: string, few: string, many: string): string {
   return many;
 }
 
+/** "Každý den", "Každé 3 dny", "Každých 5 dní". */
+const every = (n: number, once: string, few: string, many: string) =>
+  n === 1 ? once : `${plural(n, "Každý", "Každé", "Každých")} ${n} ${plural(n, "", few, many)}`;
+
 const daySpan = (range: string, days: number) =>
   `${range} · ${days} ${plural(days, "den", "dny", "dní")}`;
 
@@ -130,6 +134,32 @@ export const cs: Dictionary = {
           .filter(Boolean)
           .join(", "),
       onDay: (summary: string, date: string) => `${date}: ${summary}`,
+    },
+    groupEvent: {
+      allDay: "Celý den",
+      changedOnce: "Změněno jen pro tento den",
+      addedBy: (name: string) => `Autor: ${name}`,
+      addedByYou: "Autor: vy",
+      addedByFormerMember: "Autor: bývalý člen skupiny",
+      lockedTo: (name: string) => `Změnit ji může jen ${name} nebo správce skupiny`,
+      lockedToAdmins: "Změnit ji může jen správce skupiny",
+      edit: "Upravit",
+      delete: "Smazat",
+      newOn: (date: string) => `Nová skupinová událost: ${date}`,
+      repeat: {
+        daily: (n: number) => every(n, "Každý den", "dny", "dní"),
+        weekly: (n: number, days: string) =>
+          `${every(n, "Každý týden", "týdny", "týdnů")}: ${days}`,
+        everyWeekday: "Každý pracovní den",
+        monthlyOnDay: (n: number, day: number) =>
+          `${every(n, "Každý měsíc", "měsíce", "měsíců")}, ${day}. den`,
+        monthlyOnWeekday: (n: number, nth: number, weekday: string) =>
+          `${every(n, "Každý měsíc", "měsíce", "měsíců")}, ${nth}. ${weekday}`,
+        monthlyOnLastWeekday: (n: number, weekday: string) =>
+          `${every(n, "Každý měsíc", "měsíce", "měsíců")}, poslední ${weekday}`,
+        yearly: (n: number, date: string) => `${every(n, "Každý rok", "roky", "let")}, ${date}`,
+        until: (summary: string, date: string) => `${summary}, do ${date}`,
+      },
     },
   },
 

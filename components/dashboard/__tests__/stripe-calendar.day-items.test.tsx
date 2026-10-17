@@ -30,7 +30,15 @@ const birthdays: DayItem[] = [
   },
 ];
 
-function renderCalendar() {
+const standup: DayItem = {
+  key: "ge:standup",
+  kind: "groupEvent",
+  date: "2026-09-09",
+  title: "Standup",
+  card: { when: "Wed 9 Sep · 09:30–09:45", addedBy: "Added by Bob Dvorak", locked: "Only Bob" },
+};
+
+function renderCalendar(extra: Partial<Parameters<typeof StripeCalendar>[0]> = {}) {
   render(
     <StripeCalendar
       year={2026}
@@ -43,6 +51,7 @@ function renderCalendar() {
       onOpenRequest={vi.fn()}
       onBook={vi.fn()}
       dayItems={dayItemsByDate(birthdays)}
+      {...extra}
     />
   );
 }
@@ -71,5 +80,43 @@ describe("StripeCalendar day items", () => {
     const annaRow = within(day).getByText("Anna Adams");
     expect(own).toHaveAttribute("href", "/settings");
     expect(petra.compareDocumentPosition(annaRow) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it("marks group events with dots and lists them first, above the people away", async () => {
+    const user = userEvent.setup();
+    renderCalendar({ dayItems: dayItemsByDate([...birthdays, standup]) });
+
+    const cell = screen.getByRole("button", { name: /^Wednesday,? 9 September/ });
+    expect(cell).toHaveAccessibleName(expect.stringContaining("1 group event, 2 birthdays"));
+    expect(cell.querySelectorAll("[data-mark='groupEvent']")).toHaveLength(1);
+    await user.click(cell);
+
+    const day = screen.getByRole("region", { name: /Away on Wednesday,? 9 September/ });
+    const event = within(day).getByText("Standup");
+    const petra = within(day).getByText("Petra turns 34");
+    const annaRow = within(day).getByText("Anna Adams");
+    expect(event.compareDocumentPosition(petra) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(petra.compareDocumentPosition(annaRow) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it("offers a new group event on the day only when a handler is passed", async () => {
+    const user = userEvent.setup();
+    const onNewGroupEvent = vi.fn();
+    renderCalendar({ onNewGroupEvent });
+
+    await user.click(screen.getByRole("button", { name: /^Thursday,? 10 September/ }));
+    await user.click(screen.getByRole("button", { name: "New group event on Thu 10 Sept" }));
+
+    expect(onNewGroupEvent).toHaveBeenCalledWith("2026-09-10");
+    expect(screen.queryByRole("region", { name: /Away on/ })).not.toBeInTheDocument();
+  });
+
+  it("offers no new group event without a handler", async () => {
+    const user = userEvent.setup();
+    renderCalendar();
+
+    await user.click(screen.getByRole("button", { name: /^Thursday,? 10 September/ }));
+
+    expect(screen.queryByRole("button", { name: /New group event/ })).not.toBeInTheDocument();
   });
 });

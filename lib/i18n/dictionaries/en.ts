@@ -127,6 +127,33 @@ export const en = {
           .join(", "),
       onDay: (summary: string, date: string) => `${summary} on ${date}`,
     },
+    groupEvent: {
+      allDay: "All day",
+      changedOnce: "Changed for this date only",
+      addedBy: (name: string) => `Added by ${name}`,
+      addedByYou: "Added by you",
+      addedByFormerMember: "Added by a former member",
+      lockedTo: (name: string) => `Only ${name} or a group admin can change this`,
+      lockedToAdmins: "Only a group admin can change this",
+      edit: "Edit",
+      delete: "Delete",
+      newOn: (date: string) => `New group event on ${date}`,
+      repeat: {
+        daily: (n: number) => (n === 1 ? "Every day" : `Every ${n} days`),
+        weekly: (n: number, days: string) =>
+          `${n === 1 ? "Every week" : `Every ${n} weeks`} on ${days}`,
+        everyWeekday: "Every weekday",
+        monthlyOnDay: (n: number, day: number) =>
+          `${n === 1 ? "Every month" : `Every ${n} months`} on day ${day}`,
+        monthlyOnWeekday: (n: number, nth: number, weekday: string) =>
+          `${n === 1 ? "Every month" : `Every ${n} months`} on the ${["1st", "2nd", "3rd", "4th"][nth - 1]} ${weekday}`,
+        monthlyOnLastWeekday: (n: number, weekday: string) =>
+          `${n === 1 ? "Every month" : `Every ${n} months`} on the last ${weekday}`,
+        yearly: (n: number, date: string) =>
+          `${n === 1 ? "Every year" : `Every ${n} years`} on ${date}`,
+        until: (summary: string, date: string) => `${summary}, until ${date}`,
+      },
+    },
   },
 
   nav: {

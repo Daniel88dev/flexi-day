@@ -11,11 +11,13 @@ import {
   type VacationListItem,
 } from "@/lib/api/types";
 import type { BirthdayCalendarRow } from "@/lib/api/birthdays";
+import type { GroupEventRow } from "@/lib/api/group-events";
 
 const useVacationsSpy = vi.fn();
 const useVacationCalendarSpy = vi.fn();
 const useBankHolidaysMultiSpy = vi.fn();
 const useBirthdaysSpy = vi.fn();
+const useGroupEventsSpy = vi.fn();
 
 let bankHolidayRows: BankHoliday[] = [];
 
@@ -81,6 +83,8 @@ let vacations: VacationListItem[] = [day("v-1", dana, inVisibleMonth(17))];
 
 let birthdayRows: BirthdayCalendarRow[] = [];
 
+let groupEventRows: GroupEventRow[] = [];
+
 vi.mock("next/navigation", () => ({
   usePathname: () => "/dashboard/",
   useRouter: () => ({ replace: vi.fn(), push: vi.fn() }),
@@ -106,6 +110,10 @@ vi.mock("@/lib/api/queries", () => ({
   useBirthdays: (params: unknown) => {
     useBirthdaysSpy(params);
     return { data: birthdayRows, isLoading: false, error: null };
+  },
+  useGroupEvents: (params: unknown) => {
+    useGroupEventsSpy(params);
+    return { data: groupEventRows, isLoading: false, error: null };
   },
   useGroups: () => ({
     data: [
@@ -382,5 +390,64 @@ describe("DashboardPage birthdays", () => {
       "href",
       "/settings"
     );
+  });
+});
+
+describe("DashboardPage group events", () => {
+  const dayLabel = (d: number) =>
+    formatIsoDate(inVisibleMonth(d), "en-GB", { day: "numeric", month: "long" });
+
+  const retro: GroupEventRow = {
+    id: "ge-1",
+    groupId: "g-1",
+    groupName: "Platform",
+    title: "Retro",
+    note: null,
+    startDate: inVisibleMonth(14),
+    endDate: inVisibleMonth(14),
+    startTime: "14:00",
+    endTime: "15:00",
+    repeat: null,
+    skippedDates: [],
+    recurringEventId: null,
+    originalDate: null,
+    createdBy: sam,
+    canEdit: false,
+    createdAt: "2026-08-01T09:00:00.000Z",
+    updatedAt: "2026-08-01T09:00:00.000Z",
+  };
+
+  beforeEach(() => {
+    settings = { ...DEFAULT_SETTINGS, dashboardScope: "MINE", dashboardGroupId: null };
+    vacations = [];
+    birthdayRows = [];
+    groupEventRows = [retro];
+    useGroupEventsSpy.mockClear();
+  });
+
+  it("asks for every group's events in Mine scope and names each card's group", async () => {
+    const user = userEvent.setup();
+    renderWithClient(<DashboardPage />);
+
+    expect(useGroupEventsSpy).toHaveBeenLastCalledWith({
+      year: now.getFullYear(),
+      month: now.getMonth() + 1,
+      groupId: null,
+    });
+    await user.click(screen.getByRole("button", { name: `1 group event on ${dayLabel(14)}` }));
+    expect(screen.getByText("Platform")).toBeVisible();
+    expect(screen.getByText("Only Sam or a group admin can change this")).toBeVisible();
+  });
+
+  it("asks for the group's events in Group scope, without naming the group on cards", async () => {
+    const user = userEvent.setup();
+    renderWithClient(<DashboardPage />);
+
+    await user.click(screen.getByRole("button", { name: "Group", pressed: false }));
+    expect(useGroupEventsSpy).toHaveBeenLastCalledWith(expect.objectContaining({ groupId: "g-1" }));
+
+    await user.click(screen.getByRole("button", { name: `1 group event on ${dayLabel(14)}` }));
+    expect(screen.getByText("Added by Sam Ruiz")).toBeVisible();
+    expect(screen.queryByText("Platform", { selector: "span" })).not.toBeInTheDocument();
   });
 });
