@@ -16,7 +16,7 @@ import { useTranslation } from "@/lib/i18n/use-translation";
 import { pushToast } from "@/components/toast";
 import { PROVIDER_NAMES } from "./connect-section";
 
-const CALLBACK_PARAMS = ["connected", "error", "config"];
+const CALLBACK_PARAMS = ["connected", "error", "provider", "config"];
 
 export function callbackErrorMessage(
   error: ConnectCallbackError,
@@ -69,7 +69,7 @@ export function ConnectCallbackNotice() {
       pushToast(t.calSync.connect.toasts.connected(PROVIDER_NAMES[result.provider]));
     } else {
       pushToast(
-        callbackErrorMessage(result.error, started, t),
+        callbackErrorMessage(result.error, result.provider ?? started, t),
         result.error === "consent_denied" ? "warm" : "danger"
       );
     }

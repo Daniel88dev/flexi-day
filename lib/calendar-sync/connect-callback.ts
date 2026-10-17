@@ -24,7 +24,12 @@ const RENAMED_BACKEND_CODES: Record<string, ConnectCallbackError> = {
 
 export type ConnectCallbackResult =
   | { status: "connected"; provider: CalendarProviderSlug; configId: string | null }
-  | { status: "error"; error: ConnectCallbackError; configId: string | null };
+  | {
+      status: "error";
+      error: ConnectCallbackError;
+      provider: CalendarProviderSlug | null;
+      configId: string | null;
+    };
 
 const isOneOf = <T extends string>(list: readonly T[], value: string): value is T =>
   (list as readonly string[]).includes(value);
@@ -36,7 +41,8 @@ function callbackError(code: string): ConnectCallbackError {
 
 /**
  * Reads the query the backend redirects to after consent:
- * `?connected=<provider>&config=<id>` or `?error=<code>&config=<id>`. Null when neither is there.
+ * `?connected=<provider>&config=<id>` or `?error=<code>&provider=<provider>&config=<id>`.
+ * Null when neither is there.
  */
 export function parseConnectCallback(params: {
   get(name: string): string | null;
@@ -44,21 +50,24 @@ export function parseConnectCallback(params: {
   const connected = params.get("connected");
   const error = params.get("error");
   const configId = params.get("config") || null;
+  const named = params.get("provider");
+  const provider = named !== null && isOneOf(CALENDAR_PROVIDER_SLUGS, named) ? named : null;
 
   if (connected !== null) {
     return isOneOf(CALENDAR_PROVIDER_SLUGS, connected)
       ? { status: "connected", provider: connected, configId }
-      : { status: "error", error: "unknown", configId };
+      : { status: "error", error: "unknown", provider: null, configId };
   }
-  if (error !== null) return { status: "error", error: callbackError(error), configId };
+  if (error !== null) return { status: "error", error: callbackError(error), provider, configId };
   return null;
 }
 
 const PENDING_PROVIDER_KEY = "flexi-day.calendar-connect-provider";
 
 /**
- * The error redirect names no provider, so the page remembers which one it sent the
- * user to. Session storage, because the consent round leaves and reloads the app.
+ * Fallback for an error redirect that names no provider (a backend that predates it): the
+ * page remembers which one it sent the user to. Session storage, because the consent round
+ * leaves and reloads the app.
  */
 export function rememberConnectProvider(provider: CalendarProviderSlug): void {
   try {
