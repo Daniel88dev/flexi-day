@@ -1,4 +1,5 @@
 import { AppShell } from "@/components/shell/app-shell";
+import { LanguageSync } from "@/components/shell/language-sync";
 import { AuthGuard } from "@/components/auth/auth-guard";
 import { ToastHost } from "@/components/toast";
 import { VacationDetailHost } from "@/components/vacation-detail-host";
@@ -13,6 +14,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           mount effect (the connected-accounts card, after an OAuth redirect
           lands back here) would find no listener and its toast would vanish. */}
       <ToastHost />
+      <LanguageSync />
       <AppShell>{children}</AppShell>
       {/* `?vacationId=` opens the request detail on any page. */}
       <VacationDetailHost />

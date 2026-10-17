@@ -1,3 +1,5 @@
+import type { Locale } from "@/lib/i18n/config";
+
 export type Iso = string;
 export type IsoDate = string;
 export type IsoTime = string;
@@ -489,6 +491,8 @@ export type UserSettings = {
   dashboardCalendarView: DashboardCalendarView;
   /** The clock's one-time location notice. Dismissed once and never shown again. */
   attendanceLocationNoticeDismissed: boolean;
+  /** The app language the web last wrote; null means English. Absent from an older backend. */
+  language?: Locale | null;
 };
 
 /** The settings screen saves one card at a time; the API merges the patch. */
