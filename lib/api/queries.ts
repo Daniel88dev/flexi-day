@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ApiError } from "./client";
+import { ApiError, errorCode } from "./client";
 import {
   approveVacation,
   approveVacations,
@@ -104,6 +104,13 @@ import {
 } from "./reports";
 import type { ReportFilters } from "./report-types";
 import { getMySettings, updateMySettings } from "./settings";
+import {
+  BIRTHDAY_SHARE_PLAN_REQUIRED,
+  deleteMyBirthday,
+  getMyBirthday,
+  putMyBirthday,
+  type MyBirthday,
+} from "./birthday";
 import { deleteMyAccount, getAccountDeletionStatus } from "./account-deletion";
 import {
   getSupportGroup,
@@ -188,6 +195,7 @@ export const qk = {
   calendarSyncs: () => ["calendar-syncs"] as const,
   calendarConnections: () => ["calendar-connections"] as const,
   mySettings: () => ["my-settings"] as const,
+  myBirthday: () => ["my-birthday"] as const,
   accountDeletion: () => ["account-deletion"] as const,
   reportScope: () => ["report-scope"] as const,
   // Keyed on the serialised filters so every filter combination caches on its
@@ -611,6 +619,43 @@ export function useUpdateMySettings() {
   return useMutation({
     mutationFn: (input: UpdateUserSettingsInput) => updateMySettings(input),
     onSuccess: (settings) => qc.setQueryData(qk.mySettings(), settings),
+  });
+}
+
+export function useMyBirthday() {
+  return useQuery({
+    queryKey: qk.myBirthday(),
+    queryFn: getMyBirthday,
+  });
+}
+
+// The dashboard's birthday reads all sit under the "birthdays" prefix.
+const BIRTHDAYS_PREFIX = ["birthdays"] as const;
+
+export function useSaveMyBirthday() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: MyBirthday) => putMyBirthday(input),
+    onSuccess: (settings) => {
+      qc.setQueryData(qk.myBirthday(), settings);
+      void qc.invalidateQueries({ queryKey: BIRTHDAYS_PREFIX });
+    },
+    onError: (error) => {
+      if (errorCode(error) === BIRTHDAY_SHARE_PLAN_REQUIRED) {
+        void qc.invalidateQueries({ queryKey: qk.myBirthday() });
+      }
+    },
+  });
+}
+
+export function useRemoveMyBirthday() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => deleteMyBirthday(),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: qk.myBirthday() });
+      void qc.invalidateQueries({ queryKey: BIRTHDAYS_PREFIX });
+    },
   });
 }
 

@@ -201,6 +201,12 @@ function PlanCard({
               {t.billing.featureAttachments}
             </li>
           ) : null}
+          {plan !== "FREE" ? (
+            <li className="flex items-center gap-2">
+              <Check className="text-primary h-4 w-4 shrink-0" />
+              {t.billing.featureBirthdays}
+            </li>
+          ) : null}
         </ul>
         {action}
       </CardContent>
