@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { AvatarBubble } from "@/components/brand/avatar-bubble";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { leaveMetaFor } from "@/lib/demo/leave-meta";
@@ -60,6 +60,19 @@ interface LeaveCalendarProps {
   onRangeSelect?: (range: DateRange) => void;
   /** Whose records a drag marks as already booked. */
   viewerId?: string | null;
+  /** PROTOTYPE (T-340): bars packed into lanes ahead of bookings. */
+  pinned?: PinnedBar[];
+  /** PROTOTYPE (T-340): extra content inside a day cell, positioned by the caller. */
+  dayAddon?: (date: IsoDate) => ReactNode;
+}
+
+export interface PinnedBar {
+  id: string;
+  from: IsoDate;
+  to: IsoDate;
+  render: (edges: { contL: boolean; contR: boolean }) => ReactNode;
+  /** The row it gets in the "+N more" popover when the week has no lane left for it. */
+  renderRow: () => ReactNode;
 }
 
 /** Bars a week shows before the rest collapse behind the "+N more" toggle. */
@@ -189,32 +202,38 @@ function CalBar({
  */
 function MoreChip({
   hidden,
+  hiddenPinned = [],
   date,
   onSelect,
 }: {
   hidden: CalendarRange[];
+  hiddenPinned?: PinnedBar[];
   date: IsoDate;
   onSelect?: (vacationId: string) => void;
 }) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const dayLabel = formatIsoDate(date, t.common.dateLocale, { day: "numeric", month: "long" });
+  const count = hidden.length + hiddenPinned.length;
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger
         className="overflow-hidden rounded-full border border-[var(--border-strong)] bg-[var(--surface-2)] px-2 py-[3px] text-[11px] font-semibold whitespace-nowrap text-[var(--text-muted)] transition-colors hover:text-[var(--text)]"
-        aria-label={t.calendar.moreOnDay(hidden.length, dayLabel)}
+        aria-label={t.calendar.moreOnDay(count, dayLabel)}
       >
-        {t.calendar.moreCount(hidden.length)}
+        {t.calendar.moreCount(count)}
       </PopoverTrigger>
       <PopoverContent align="start" className="w-64 gap-2 p-2">
         <p
           className="px-1.5 pt-0.5 text-[11px] font-semibold"
           style={{ color: "var(--text-faint)" }}
         >
-          {t.calendar.moreOnDay(hidden.length, dayLabel)}
+          {t.calendar.moreOnDay(count, dayLabel)}
         </p>
+        {hiddenPinned.map((p) => (
+          <div key={p.id}>{p.renderRow()}</div>
+        ))}
         {hidden.map((range) => {
           const meta = leaveMetaFor(range.type);
           const vacationId = range.vacationIds?.[0];
@@ -328,6 +347,8 @@ export function LeaveCalendar({
   showAdjacentDays = true,
   onRangeSelect,
   viewerId = null,
+  pinned = [],
+  dayAddon,
 }: LeaveCalendarProps) {
   const { t } = useTranslation();
   const drag = useDragRange((range) => onRangeSelect?.(range));
@@ -438,7 +459,42 @@ export function LeaveCalendar({
         // days), so however many there are, they cost the budget one lane.
         const bankRows = bank.length > 0 ? 1 : 0;
         const seam = showAdjacentDays ? seamColumn(week) : null;
-        const shownLanes = Math.max(0, MAX_LANES - bankRows);
+
+        const pinnedRaw = pinned
+          .flatMap((p) => {
+            const span = weekSpan(week, p.from, p.to);
+            return span
+              ? [
+                  {
+                    p,
+                    sc: span.startCol + 1,
+                    ec: span.endCol + 1,
+                    contL: span.continuesLeft,
+                    contR: span.continuesRight,
+                    lane: 0,
+                  },
+                ]
+              : [];
+          })
+          .sort((a, b) => a.sc - b.sc || b.ec - b.sc - (a.ec - a.sc));
+        const pinnedLanes: (typeof pinnedRaw)[] = [];
+        for (const b of pinnedRaw) {
+          const li = pinnedLanes.findIndex((lane) =>
+            lane.every((x) => b.sc >= x.ec || b.ec <= x.sc)
+          );
+          b.lane = li === -1 ? pinnedLanes.length : li;
+          if (li === -1) pinnedLanes.push([b]);
+          else pinnedLanes[li].push(b);
+        }
+        const pinnedBudget = Math.max(0, MAX_LANES - bankRows);
+        const pinnedRows = Math.min(pinnedLanes.length, pinnedBudget);
+        const shownLanes = Math.max(0, MAX_LANES - bankRows - pinnedRows);
+        const hiddenPinnedPerColumn = new Map<number, PinnedBar[]>();
+        for (const b of pinnedRaw) {
+          if (b.lane < pinnedBudget) continue;
+          for (let col = b.sc; col < b.ec; col++)
+            hiddenPinnedPerColumn.set(col, [...(hiddenPinnedPerColumn.get(col) ?? []), b.p]);
+        }
 
         // The bars each weekday hides. Keyed per column rather than per week so
         // the "+N" sits in the cell the reader is looking at, and so the
@@ -513,6 +569,7 @@ export function LeaveCalendar({
                         : undefined
                     }
                     style={{
+                      position: "relative",
                       borderRight: di < 6 ? "1px solid var(--border)" : "none",
                       padding: mini ? "4px 5px" : "8px 10px",
                       cursor:
@@ -545,6 +602,7 @@ export function LeaveCalendar({
                         </span>
                       </DayHeading>
                     ) : null}
+                    {shown && dayAddon ? dayAddon(cell.date) : null}
                   </div>
                 );
               })}
@@ -590,6 +648,22 @@ export function LeaveCalendar({
                   </div>
                 );
               })}
+              {pinnedRaw
+                .filter((b) => b.lane < pinnedBudget)
+                .map((b) => (
+                  <div
+                    key={b.p.id}
+                    className="@container"
+                    style={{
+                      gridColumn: `${b.sc} / ${b.ec}`,
+                      gridRow: bankRows + b.lane + 1,
+                      pointerEvents: dragging ? "none" : "auto",
+                      minWidth: 0,
+                    }}
+                  >
+                    {b.p.render({ contL: b.contL, contR: b.contR })}
+                  </div>
+                ))}
               {barsRaw
                 .filter((b) => b.lane < shownLanes)
                 .map((b) => (
@@ -598,7 +672,7 @@ export function LeaveCalendar({
                     className="@container"
                     style={{
                       gridColumn: `${b.sc} / ${b.ec}`,
-                      gridRow: bankRows + b.lane + 1,
+                      gridRow: bankRows + pinnedRows + b.lane + 1,
                       pointerEvents: dragging ? "none" : "auto",
                     }}
                   >
@@ -613,7 +687,7 @@ export function LeaveCalendar({
                 ))}
             </div>
 
-            {!mini && hiddenPerColumn.size > 0 ? (
+            {!mini && (hiddenPerColumn.size > 0 || hiddenPinnedPerColumn.size > 0) ? (
               <div
                 style={{
                   position: "absolute",
@@ -626,17 +700,24 @@ export function LeaveCalendar({
                   pointerEvents: "none",
                 }}
               >
-                {[...hiddenPerColumn.entries()].map(([col, hidden]) => (
-                  <div
-                    key={col}
-                    style={{
-                      gridColumn: `${col} / ${col + 1}`,
-                      pointerEvents: dragging ? "none" : "auto",
-                    }}
-                  >
-                    <MoreChip hidden={hidden} date={week[col - 1].date} onSelect={onSelect} />
-                  </div>
-                ))}
+                {[...new Set([...hiddenPerColumn.keys(), ...hiddenPinnedPerColumn.keys()])].map(
+                  (col) => (
+                    <div
+                      key={col}
+                      style={{
+                        gridColumn: `${col} / ${col + 1}`,
+                        pointerEvents: dragging ? "none" : "auto",
+                      }}
+                    >
+                      <MoreChip
+                        hidden={hiddenPerColumn.get(col) ?? []}
+                        hiddenPinned={hiddenPinnedPerColumn.get(col)}
+                        date={week[col - 1].date}
+                        onSelect={onSelect}
+                      />
+                    </div>
+                  )
+                )}
               </div>
             ) : null}
           </div>

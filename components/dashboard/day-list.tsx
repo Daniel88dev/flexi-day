@@ -1,5 +1,6 @@
 "use client";
 
+import type * as React from "react";
 import { CalendarPlus, PartyPopper } from "lucide-react";
 import { AvatarBubble } from "@/components/brand/avatar-bubble";
 import { LeaveTag } from "@/components/dashboard/leave-tag";
@@ -14,6 +15,8 @@ interface DayListProps {
   shortDate: string;
   entries: DayRecord[];
   holiday?: string;
+  /** PROTOTYPE (T-340): group events and birthdays on the day. */
+  extra?: React.ReactNode;
   viewerId: string | null;
   onOpenRequest: (vacationId: string) => void;
   onBook: () => void;
@@ -24,6 +27,7 @@ export function DayList({
   shortDate,
   entries,
   holiday,
+  extra,
   viewerId,
   onOpenRequest,
   onBook,
@@ -59,6 +63,8 @@ export function DayList({
           <span className="truncate">{holiday}</span>
         </div>
       ) : null}
+
+      {extra}
 
       {entries.length === 0 ? (
         <p className="py-1 text-[14px]" style={{ color: "var(--text-muted)" }}>

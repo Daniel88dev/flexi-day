@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { DayList } from "@/components/dashboard/day-list";
 import type { CalendarRange } from "@/components/dashboard/leave-calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -36,6 +36,10 @@ interface StripeCalendarProps {
   onBook: (date: IsoDate) => void;
   /** Lets a mouse on the desktop layout drag across days; receives the range on release. */
   onRangeSelect?: (range: DateRange) => void;
+  /** PROTOTYPE (T-340): non-interactive markers inside a day cell. */
+  dayAddon?: (date: IsoDate) => ReactNode;
+  /** PROTOTYPE (T-340): a section the day popover shows above the people away. */
+  dayListExtra?: (date: IsoDate) => ReactNode;
 }
 
 export function StripeCalendar({
@@ -49,6 +53,8 @@ export function StripeCalendar({
   onOpenRequest,
   onBook,
   onRangeSelect,
+  dayAddon,
+  dayListExtra,
 }: StripeCalendarProps) {
   const { t } = useTranslation();
   const [selectedDate, setSelectedDate] = useState<IsoDate | null>(null);
@@ -215,6 +221,8 @@ export function StripeCalendar({
                           </span>
                         ) : null}
 
+                        {dayAddon ? dayAddon(date) : null}
+
                         {hidden > 0 ? (
                           <span
                             className="tnum absolute right-1 bottom-0.5 text-[10px] font-semibold sm:right-2 sm:bottom-1 sm:text-[11px]"
@@ -236,6 +244,7 @@ export function StripeCalendar({
                         shortDate={shortDate(date)}
                         entries={entries}
                         holiday={holiday}
+                        extra={dayListExtra?.(date)}
                         viewerId={viewerId}
                         onOpenRequest={(id) => {
                           setOpenDate(null);

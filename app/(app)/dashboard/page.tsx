@@ -59,6 +59,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { CreateGroupForm } from "@/components/groups/create-group-form";
 import { JoinGroupForm } from "@/components/groups/join-group-form";
 import { useTranslation } from "@/lib/i18n/use-translation";
+import { useGroupEventsPrototype } from "@/components/dashboard/prototype-group-events/use-group-events-prototype";
 
 function todayParts() {
   const d = new Date();
@@ -150,7 +151,20 @@ export default function DashboardPage() {
     return bankHolidaysToRanges(bankHolidays, from, to);
   }, [bankHolidays, year, month]);
   const dayRecords = useMemo(() => toDayRecords(calendarVacations), [calendarVacations]);
-  const showStripes = settingsQuery.data?.dashboardCalendarView === "STRIPES";
+
+  // PROTOTYPE (T-340)
+  const proto = useGroupEventsPrototype({
+    year,
+    month,
+    scope,
+    activeGroupName:
+      viewableGroups.find((g) => g.groupId === selectedGroupId)?.groupName ?? null,
+    groupNames: (groupsQuery.data ?? []).map((g) => g.groupName),
+    today: isoDate(new Date().getFullYear(), new Date().getMonth() + 1, new Date().getDate()),
+    onRequestTimeOff: (date) => openNewRequestForDate(date),
+  });
+  const showStripes =
+    proto.viewOverride ?? settingsQuery.data?.dashboardCalendarView === "STRIPES";
 
   const ranges: CalendarRange[] = useMemo(() => {
     const live = calendarVacations
@@ -255,11 +269,14 @@ export default function DashboardPage() {
           </h1>
           <p style={{ color: "var(--text-muted)", fontSize: 16 }}>{t.dashboard.subtitle}</p>
         </div>
-        {summary ? (
-          <span className="text-[13.5px]" style={{ color: "var(--text-muted)" }}>
-            {t.dashboard.teammates(summary.teamSize)}
-          </span>
-        ) : null}
+        <div className="flex items-center gap-4">
+          {summary ? (
+            <span className="text-[13.5px]" style={{ color: "var(--text-muted)" }}>
+              {t.dashboard.teammates(summary.teamSize)}
+            </span>
+          ) : null}
+          {proto.pageAction}
+        </div>
       </div>
 
       {noGroups ? (
@@ -338,6 +355,7 @@ export default function DashboardPage() {
                   <ChevronRight className="h-4 w-4" />
                 </button>
               </div>
+              {proto.headerAction}
               <span
                 className="text-xs"
                 style={{
@@ -395,7 +413,7 @@ export default function DashboardPage() {
               <LeaveTypeFilter value={filter} onChange={setFilter} />
             </div>
           </div>
-          {showStripes ? (
+          {proto.wrapCalendar(showStripes ? (
             <StripeCalendar
               key={`${year}-${month}`}
               year={year}
@@ -408,6 +426,7 @@ export default function DashboardPage() {
               onOpenRequest={openVacation}
               onBook={openNewRequestForDate}
               onRangeSelect={openNewRequestForRange}
+              {...proto.stripesProps}
             />
           ) : (
             <LeaveCalendar
@@ -420,8 +439,9 @@ export default function DashboardPage() {
               onDayClick={openNewRequestForDate}
               onRangeSelect={openNewRequestForRange}
               viewerId={session.data?.user?.id ?? null}
+              {...proto.lanesProps}
             />
-          )}
+          ))}
           <CalendarLegend ranges={ranges} filter={filter} />
           {calendarQuery.error ? (
             <p className="mt-3 text-sm" style={{ color: "var(--destructive)" }}>
@@ -433,6 +453,7 @@ export default function DashboardPage() {
         </section>
 
         <aside className="flex flex-col gap-4">
+          {proto.sidebar}
           <ApprovalsWidget />
           <OutTodayWidget vacations={outTodayQuery.data ?? []} todayDay={todayDay} />
           <BalanceWidget year={year} />
@@ -446,6 +467,7 @@ export default function DashboardPage() {
         initialDate={presetDate ?? undefined}
         initialEndDate={presetEndDate ?? undefined}
       />
+      {proto.overlays}
     </div>
   );
 }
