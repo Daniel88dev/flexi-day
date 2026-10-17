@@ -47,4 +47,16 @@ describe("LandingPage", () => {
 
     expect(screen.getByText("Narozeniny v kalendáři skupiny")).toBeInTheDocument();
   });
+
+  it("lists group events on the shared calendar under the Pro plan in English", () => {
+    renderIn("en");
+
+    expect(screen.getByText("Group events on the shared calendar")).toBeInTheDocument();
+  });
+
+  it("lists group events on the shared calendar under the Pro plan in Czech", () => {
+    renderIn("cs");
+
+    expect(screen.getByText("Skupinové události ve sdíleném kalendáři")).toBeInTheDocument();
+  });
 });

@@ -4,6 +4,8 @@ import type { IsoDate, UserSummary } from "@/lib/api/types";
 export type DayItemKind = "groupEvent" | "birthday";
 
 export interface DayItemAction {
+  /** Lets the day's right-click menu offer the same action. */
+  kind?: "edit" | "delete";
   label: string;
   /** Without a handler the button shows, disabled. */
   onSelect?: () => void;

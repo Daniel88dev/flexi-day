@@ -60,3 +60,88 @@ export function listGroupEvents(params: ListGroupEventsParams): Promise<GroupEve
 export function listGroupEventGroups(): Promise<GroupEventGroup[]> {
   return api<GroupEventGroup[]>("/api/group-events/groups");
 }
+
+/** Body of `POST /api/group-events`. `endDate` defaults to `startDate`; times both or neither. */
+export type CreateGroupEventInput = {
+  groupId: string;
+  title: string;
+  note?: string | null;
+  startDate: IsoDate;
+  endDate?: IsoDate;
+  startTime?: string | null;
+  endTime?: string | null;
+  repeat?: RepeatRule | null;
+};
+
+export type GroupEventScope = "this" | "following" | "all";
+
+/** What an edit changes. A missing field keeps its value; `null` clears it (`repeat: null` stops repeating). */
+export type GroupEventChanges = Partial<{
+  title: string;
+  note: string | null;
+  startDate: IsoDate;
+  endDate: IsoDate;
+  startTime: string | null;
+  endTime: string | null;
+  repeat: RepeatRule | null;
+}>;
+
+/** `scope` is required on a recurring group event and ignored on a one-off. */
+export type GroupEventEditRequest = {
+  scope?: GroupEventScope;
+  occurrenceDate?: IsoDate;
+  changes: GroupEventChanges;
+};
+
+export type GroupEventDeleteRequest = { scope?: GroupEventScope; occurrenceDate?: IsoDate };
+
+/** What an edit or delete wrote: the live rows and the ids it removed. */
+export type GroupEventWriteResult = {
+  droppedOneOffs: number;
+  events: GroupEventRow[];
+  deletedIds: string[];
+};
+
+export function createGroupEvent(input: CreateGroupEventInput): Promise<GroupEventRow> {
+  return api<GroupEventRow>("/api/group-events", { method: "POST", body: input });
+}
+
+export function updateGroupEvent(
+  id: string,
+  request: GroupEventEditRequest
+): Promise<GroupEventWriteResult> {
+  return api<GroupEventWriteResult>(`/api/group-events/${encodeURIComponent(id)}`, {
+    method: "PATCH",
+    body: request,
+  });
+}
+
+function scopeQuery(request: GroupEventDeleteRequest): URLSearchParams {
+  const q = new URLSearchParams();
+  if (request.scope) q.set("scope", request.scope);
+  if (request.occurrenceDate) q.set("occurrenceDate", request.occurrenceDate);
+  return q;
+}
+
+/** A dry run of the edit: how many one-off changes it would drop. */
+export function groupEventImpact(
+  id: string,
+  request: GroupEventEditRequest
+): Promise<{ droppedOneOffs: number }> {
+  const q = scopeQuery(request);
+  q.set("changes", JSON.stringify(request.changes));
+  return api<{ droppedOneOffs: number }>(
+    `/api/group-events/${encodeURIComponent(id)}/impact?${q.toString()}`
+  );
+}
+
+export function deleteGroupEvent(
+  id: string,
+  request: GroupEventDeleteRequest
+): Promise<GroupEventWriteResult> {
+  const q = scopeQuery(request).toString();
+  return api<GroupEventWriteResult>(
+    `/api/group-events/${encodeURIComponent(id)}${q ? `?${q}` : ""}`,
+    { method: "DELETE" }
+  );
+}

@@ -170,6 +170,7 @@ export function StripeCalendar({
                       <button
                         type="button"
                         {...(draggable ? drag.cellProps(date) : {})}
+                        data-date={date}
                         aria-label={label}
                         aria-pressed={isSelected}
                         className={cn(
@@ -261,6 +262,7 @@ export function StripeCalendar({
                           setOpenDate(null);
                           onBook(date);
                         }}
+                        onItemAction={() => setOpenDate(null)}
                         onNewGroupEvent={
                           onNewGroupEvent
                             ? () => {

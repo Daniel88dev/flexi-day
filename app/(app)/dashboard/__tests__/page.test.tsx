@@ -1,5 +1,5 @@
-import { describe, expect, it, vi, beforeEach } from "vitest";
-import { screen } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi, beforeEach } from "vitest";
+import { act, fireEvent, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import DashboardPage from "../page";
 import { renderWithClient } from "@/lib/test-utils";
@@ -11,7 +11,8 @@ import {
   type VacationListItem,
 } from "@/lib/api/types";
 import type { BirthdayCalendarRow } from "@/lib/api/birthdays";
-import type { GroupEventRow } from "@/lib/api/group-events";
+import type { GroupEventGroup, GroupEventRow } from "@/lib/api/group-events";
+import { closeGroupEventSheet, groupEventSheetState } from "@/lib/group-events/sheet-store";
 
 const useVacationsSpy = vi.fn();
 const useVacationCalendarSpy = vi.fn();
@@ -85,6 +86,8 @@ let birthdayRows: BirthdayCalendarRow[] = [];
 
 let groupEventRows: GroupEventRow[] = [];
 
+let groupEventGroups: GroupEventGroup[] = [];
+
 vi.mock("next/navigation", () => ({
   usePathname: () => "/dashboard/",
   useRouter: () => ({ replace: vi.fn(), push: vi.fn() }),
@@ -115,6 +118,7 @@ vi.mock("@/lib/api/queries", () => ({
     useGroupEventsSpy(params);
     return { data: groupEventRows, isLoading: false, error: null };
   },
+  useGroupEventGroups: () => ({ data: groupEventGroups, isLoading: false, error: null }),
   useGroups: () => ({
     data: [
       { id: "g-1", groupName: "Platform", holidayCountry: "CZ" },
@@ -449,5 +453,141 @@ describe("DashboardPage group events", () => {
     await user.click(screen.getByRole("button", { name: `1 group event on ${dayLabel(14)}` }));
     expect(screen.getByText("Added by Sam Ruiz")).toBeVisible();
     expect(screen.queryByText("Platform", { selector: "span" })).not.toBeInTheDocument();
+  });
+});
+
+describe("DashboardPage group event entries", () => {
+  const dayLabel = (d: number) =>
+    formatIsoDate(inVisibleMonth(d), "en-GB", { day: "numeric", month: "long" });
+  const original = document.elementsFromPoint;
+
+  const retro: GroupEventRow = {
+    id: "ge-1",
+    groupId: "g-1",
+    groupName: "Platform",
+    title: "Retro",
+    note: null,
+    startDate: inVisibleMonth(14),
+    endDate: inVisibleMonth(14),
+    startTime: "14:00",
+    endTime: "15:00",
+    repeat: null,
+    skippedDates: [],
+    recurringEventId: null,
+    originalDate: null,
+    createdBy: dana,
+    canEdit: true,
+    createdAt: "2026-08-01T09:00:00.000Z",
+    updatedAt: "2026-08-01T09:00:00.000Z",
+  };
+
+  const stripes = () => {
+    settings = { ...DEFAULT_SETTINGS, dashboardCalendarView: "STRIPES" };
+  };
+  const stripesDay = (d: number) =>
+    screen.getByRole("button", { name: new RegExp(`^\\w+,? ${dayLabel(d)}(,|$)`) });
+
+  async function rightClickMenu(d: number) {
+    const cell = document.querySelector(`[data-date="${inVisibleMonth(d)}"]`)!;
+    document.elementsFromPoint = vi.fn(() => [cell]);
+    fireEvent.contextMenu(cell, { clientX: 10, clientY: 10 });
+    return screen.findByRole("menu");
+  }
+
+  beforeEach(() => {
+    settings = { ...DEFAULT_SETTINGS, dashboardScope: "MINE", dashboardGroupId: null };
+    vacations = [];
+    birthdayRows = [];
+    groupEventRows = [];
+    groupEventGroups = [];
+  });
+
+  afterEach(() => {
+    document.elementsFromPoint = original;
+    act(() => closeGroupEventSheet());
+  });
+
+  it("offers no create entry while no group can create", async () => {
+    const user = userEvent.setup();
+    groupEventGroups = [{ groupId: "g-1", groupName: "Platform", canCreate: false }];
+    stripes();
+    renderWithClient(<DashboardPage />);
+
+    await user.click(stripesDay(14));
+    expect(screen.queryByRole("button", { name: /^New group event on/ })).toBeNull();
+    await user.keyboard("{Escape}");
+
+    const menu = await rightClickMenu(14);
+    expect(within(menu).getByRole("menuitem", { name: "Request time off" })).toBeInTheDocument();
+    expect(within(menu).queryByRole("menuitem", { name: "New group event" })).toBeNull();
+  });
+
+  it("offers create in Mine scope while any group can, opening the sheet on the day", async () => {
+    const user = userEvent.setup();
+    groupEventGroups = [
+      { groupId: "g-1", groupName: "Platform", canCreate: false },
+      { groupId: "g-2", groupName: "Ops", canCreate: true },
+    ];
+    stripes();
+    renderWithClient(<DashboardPage />);
+
+    await user.click(stripesDay(14));
+    await user.click(screen.getByRole("button", { name: /^New group event on/ }));
+
+    expect(groupEventSheetState()).toMatchObject({
+      kind: "create",
+      date: inVisibleMonth(14),
+      groupId: null,
+    });
+  });
+
+  it("follows the selected group's create right in Group scope", async () => {
+    const user = userEvent.setup();
+    groupEventGroups = [
+      { groupId: "g-1", groupName: "Platform", canCreate: false },
+      { groupId: "g-2", groupName: "Ops", canCreate: true },
+    ];
+    renderWithClient(<DashboardPage />);
+
+    await user.click(screen.getByRole("button", { name: "Group", pressed: false }));
+
+    const menu = await rightClickMenu(14);
+    expect(within(menu).queryByRole("menuitem", { name: "New group event" })).toBeNull();
+  });
+
+  it("opens the sheet on the day and the selected group from the right-click menu", async () => {
+    const user = userEvent.setup();
+    groupEventGroups = [{ groupId: "g-1", groupName: "Platform", canCreate: true }];
+    renderWithClient(<DashboardPage />);
+    await user.click(screen.getByRole("button", { name: "Group", pressed: false }));
+
+    const menu = await rightClickMenu(9);
+    await user.click(within(menu).getByRole("menuitem", { name: "New group event" }));
+
+    expect(groupEventSheetState()).toMatchObject({
+      kind: "create",
+      date: inVisibleMonth(9),
+      groupId: "g-1",
+    });
+  });
+
+  it("keeps Edit and Delete working on a lapsed group", async () => {
+    const user = userEvent.setup();
+    groupEventRows = [retro];
+    groupEventGroups = [{ groupId: "g-1", groupName: "Platform", canCreate: false }];
+    renderWithClient(<DashboardPage />);
+
+    await user.click(screen.getByRole("button", { name: `1 group event on ${dayLabel(14)}` }));
+    await user.click(screen.getByRole("button", { name: "Edit" }));
+    expect(groupEventSheetState()).toMatchObject({
+      kind: "edit",
+      target: { event: retro, occurrenceDate: inVisibleMonth(14) },
+    });
+    // The card's popover steps aside for the sheet.
+    expect(screen.queryByRole("button", { name: "Edit" })).toBeNull();
+
+    await user.click(screen.getByRole("button", { name: `1 group event on ${dayLabel(14)}` }));
+    await user.click(screen.getByRole("button", { name: "Delete" }));
+    expect(groupEventSheetState()).toMatchObject({ kind: "delete" });
   });
 });

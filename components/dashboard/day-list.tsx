@@ -25,6 +25,8 @@ interface DayListProps {
   onBook: () => void;
   /** Offers "New group event on <date>" under the day's items; leave it out to hide the entry. */
   onNewGroupEvent?: () => void;
+  /** Runs before a group event card's Edit or Delete. */
+  onItemAction?: () => void;
 }
 
 export function DayList({
@@ -37,6 +39,7 @@ export function DayList({
   onOpenRequest,
   onBook,
   onNewGroupEvent,
+  onItemAction,
 }: DayListProps) {
   const { t } = useTranslation();
   const people = new Set(entries.map((e) => e.userId)).size;
@@ -76,6 +79,7 @@ export function DayList({
           {items.length > 0 ? (
             <DayItemRows
               items={items}
+              onAction={onItemAction}
               label={t.calendar.dayItems.onDay(
                 t.calendar.dayItems.summary(counts.events, counts.birthdays),
                 title

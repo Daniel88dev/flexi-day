@@ -3,6 +3,7 @@ import { LanguageSync } from "@/components/shell/language-sync";
 import { AuthGuard } from "@/components/auth/auth-guard";
 import { ToastHost } from "@/components/toast";
 import { VacationDetailHost } from "@/components/vacation-detail-host";
+import { GroupEventSheetHost } from "@/components/group-events/group-event-sheet-host";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -18,6 +19,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <AppShell>{children}</AppShell>
       {/* `?vacationId=` opens the request detail on any page. */}
       <VacationDetailHost />
+      {/* `openGroupEventSheet` and friends open the group event sheet on any page. */}
+      <GroupEventSheetHost />
     </AuthGuard>
   );
 }

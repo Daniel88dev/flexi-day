@@ -42,8 +42,9 @@ function actionsFor(
 ): DayItemAction[] {
   const { onEdit, onDelete } = handlers ?? {};
   return [
-    { label: t.calendar.groupEvent.edit, onSelect: onEdit && (() => onEdit(target)) },
+    { kind: "edit", label: t.calendar.groupEvent.edit, onSelect: onEdit && (() => onEdit(target)) },
     {
+      kind: "delete",
       label: t.calendar.groupEvent.delete,
       destructive: true,
       onSelect: onDelete && (() => onDelete(target)),

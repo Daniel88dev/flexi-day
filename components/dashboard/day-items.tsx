@@ -1,6 +1,6 @@
 "use client";
 
-import type { SyntheticEvent } from "react";
+import { useState, type SyntheticEvent } from "react";
 import Link from "next/link";
 import { Cake, CalendarClock, Lock, Repeat, Users } from "lucide-react";
 import { AvatarBubble } from "@/components/brand/avatar-bubble";
@@ -64,14 +64,17 @@ function ItemText({ item }: { item: DayItem }) {
   );
 }
 
-function ItemActions({ item }: { item: DayItem }) {
+function ItemActions({ item, onAction }: { item: DayItem; onAction?: () => void }) {
   return item.actions?.map((action) => (
     <Button
       key={action.label}
       size="sm"
       variant={action.destructive ? "destructive" : "outline"}
       disabled={!action.onSelect}
-      onClick={action.onSelect}
+      onClick={() => {
+        onAction?.();
+        action.onSelect?.();
+      }}
     >
       {action.label}
     </Button>
@@ -80,7 +83,15 @@ function ItemActions({ item }: { item: DayItem }) {
 
 const muted = { color: "var(--text-muted)" };
 
-function GroupEventCard({ item, card }: { item: DayItem; card: DayItemCard }) {
+function GroupEventCard({
+  item,
+  card,
+  onAction,
+}: {
+  item: DayItem;
+  card: DayItemCard;
+  onAction?: () => void;
+}) {
   return (
     <li className="grid gap-2 rounded-xl border p-3" style={{ borderColor: "var(--border)" }}>
       <div className="flex items-start gap-2.5">
@@ -141,20 +152,31 @@ function GroupEventCard({ item, card }: { item: DayItem; card: DayItemCard }) {
         </p>
       ) : item.actions?.length ? (
         <div className="flex gap-2">
-          <ItemActions item={item} />
+          <ItemActions item={item} onAction={onAction} />
         </div>
       ) : null}
     </li>
   );
 }
 
-/** A day's group events as cards, then its birthdays, one row each. */
-export function DayItemRows({ items, label }: { items: readonly DayItem[]; label: string }) {
+/**
+ * A day's group events as cards, then its birthdays, one row each. `onAction` runs before any
+ * card action, so the popover holding the rows can close as a sheet or dialog takes over.
+ */
+export function DayItemRows({
+  items,
+  label,
+  onAction,
+}: {
+  items: readonly DayItem[];
+  label: string;
+  onAction?: () => void;
+}) {
   return (
     <ul aria-label={label} className="grid gap-1.5">
       {items.map((item) =>
         item.card ? (
-          <GroupEventCard key={item.key} item={item} card={item.card} />
+          <GroupEventCard key={item.key} item={item} card={item.card} onAction={onAction} />
         ) : (
           <li key={item.key} className="flex items-center gap-2">
             {item.href ? (
@@ -171,7 +193,7 @@ export function DayItemRows({ items, label }: { items: readonly DayItem[]; label
                 <ItemText item={item} />
               </span>
             )}
-            <ItemActions item={item} />
+            <ItemActions item={item} onAction={onAction} />
           </li>
         )
       )}
@@ -186,6 +208,7 @@ export function DayItemRows({ items, label }: { items: readonly DayItem[]; label
  */
 export function DayItemsChip({ date, items }: { date: IsoDate; items: readonly DayItem[] }) {
   const { t } = useTranslation();
+  const [open, setOpen] = useState(false);
   if (items.length === 0) return null;
   const { events, birthdays } = countDayItems(items);
   const firstEvent = items.find((i) => i.kind === "groupEvent");
@@ -201,7 +224,7 @@ export function DayItemsChip({ date, items }: { date: IsoDate; items: readonly D
           style={{ background: EVENT_INK, opacity: 0.85 }}
         />
       ) : null}
-      <Popover>
+      <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger
           onPointerDown={stop}
           onClick={stop}
@@ -241,7 +264,7 @@ export function DayItemsChip({ date, items }: { date: IsoDate; items: readonly D
             {dayLabel}
           </p>
           <div className="max-h-[60dvh] overflow-y-auto p-2">
-            <DayItemRows items={items} label={dayLabel} />
+            <DayItemRows items={items} label={dayLabel} onAction={() => setOpen(false)} />
           </div>
         </PopoverContent>
       </Popover>

@@ -119,4 +119,21 @@ describe("StripeCalendar day items", () => {
 
     expect(screen.queryByRole("button", { name: /New group event/ })).not.toBeInTheDocument();
   });
+
+  it("closes the day popover when a group event card's Edit runs", async () => {
+    const user = userEvent.setup();
+    const onEdit = vi.fn();
+    const editable: DayItem = {
+      ...standup,
+      card: { ...standup.card!, locked: undefined },
+      actions: [{ kind: "edit", label: "Edit", onSelect: onEdit }],
+    };
+    renderCalendar({ dayItems: dayItemsByDate([editable]) });
+
+    await user.click(screen.getByRole("button", { name: /^Wednesday,? 9 September/ }));
+    await user.click(screen.getByRole("button", { name: "Edit" }));
+
+    expect(onEdit).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole("region", { name: /Away on/ })).toBeNull();
+  });
 });
