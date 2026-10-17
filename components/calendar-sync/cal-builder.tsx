@@ -28,6 +28,16 @@ import { PreviewPanel, type PreviewMode } from "./preview-panel";
 import { SubscribePanel } from "./subscribe-panel";
 import { SwatchPicker } from "./swatch-picker";
 import { pushToast } from "@/components/toast";
+import { useSearchParams } from "next/navigation";
+import { PrototypeSwitcher } from "@/components/dev/prototype-switcher";
+import {
+  ExtraCheckRow,
+  extraPreviewEntries,
+  ExtrasSection,
+  GroupHeading,
+  initialExtras,
+  type Extras,
+} from "./sync-extras.prototype";
 
 export type MonthContext = {
   year: number;
@@ -159,6 +169,8 @@ export function CalBuilder({
   const [step, setStep] = useState<"form" | "loading" | "done">("form");
   const [previewMode, setPreviewMode] = useState<PreviewMode>("month");
   const [touched, setTouched] = useState(false);
+  const variant = useSearchParams().get("variant") ?? "A";
+  const [extras, setExtras] = useState<Extras>(initialExtras);
 
   const patch = (p: Partial<BuilderConfig>) => setConfig((c) => ({ ...c, ...p }));
   const nameError = touched && !config.name.trim();
@@ -179,8 +191,11 @@ export function CalBuilder({
   const allTeams = groups.length > 0 && groups.every((g) => config.teamIds.includes(g.id));
 
   const previewEntries = useMemo(
-    () => buildPreviewEntries(config, vacations, currentUserId, monthCtx.year, monthCtx.month),
-    [config, vacations, currentUserId, monthCtx.year, monthCtx.month]
+    () => [
+      ...buildPreviewEntries(config, vacations, currentUserId, monthCtx.year, monthCtx.month),
+      ...extraPreviewEntries(config, extras),
+    ],
+    [config, vacations, currentUserId, monthCtx.year, monthCtx.month, extras]
   );
 
   const submit = async () => {
@@ -458,6 +473,7 @@ export function CalBuilder({
                   </span>
                 </div>
                 <div className="flex flex-col gap-2">
+                  {variant === "C" ? <GroupHeading>Time off</GroupHeading> : null}
                   {TYPE_ORDER.map((id) => (
                     <TypeRow
                       key={id}
@@ -467,6 +483,18 @@ export function CalBuilder({
                       onColor={setColor}
                     />
                   ))}
+                  {variant === "C" ? <GroupHeading>From the group calendar</GroupHeading> : null}
+                  {variant !== "B"
+                    ? (["events", "birthdays"] as const).map((k) => (
+                        <ExtraCheckRow
+                          key={k}
+                          k={k}
+                          config={config}
+                          extras={extras}
+                          setExtras={setExtras}
+                        />
+                      ))
+                    : null}
                 </div>
                 {config.scope === "TEAM" ? (
                   <div
@@ -511,6 +539,10 @@ export function CalBuilder({
                   </div>
                 ) : null}
               </div>
+
+              {variant === "B" ? (
+                <ExtrasSection config={config} extras={extras} setExtras={setExtras} />
+              ) : null}
             </div>
 
             {/* RIGHT: preview */}
@@ -561,6 +593,15 @@ export function CalBuilder({
             </div>
           </div>
         ) : null}
+      </div>
+      <div onMouseDown={(e) => e.stopPropagation()}>
+        <PrototypeSwitcher
+          variants={[
+            { key: "A", name: "Same list" },
+            { key: "B", name: "Own section" },
+            { key: "C", name: "Grouped list" },
+          ]}
+        />
       </div>
       <style>{`@media (max-width: 860px){ .cs-cb-grid{ grid-template-columns: 1fr !important; grid-auto-rows: min-content; } .cs-cb-preview{ min-height: 380px; border-top: 1px solid var(--border); } }`}</style>
     </div>

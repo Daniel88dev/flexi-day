@@ -13,6 +13,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { BirthdayCardPrototype } from "@/components/settings/birthday-card.prototype";
 import { ConnectedAccountsCard } from "@/components/settings/connected-accounts-card";
 import { DeleteAccountCard } from "@/components/settings/delete-account-card";
 import { TwoFactorCard } from "@/components/settings/two-factor-card";
@@ -83,6 +84,10 @@ export default function SettingsPage() {
           {error ? <p className="text-destructive text-sm">{error}</p> : null}
         </CardContent>
       </Card>
+
+      <Suspense fallback={null}>
+        <BirthdayCardPrototype />
+      </Suspense>
 
       <DashboardCalendarCard />
 
