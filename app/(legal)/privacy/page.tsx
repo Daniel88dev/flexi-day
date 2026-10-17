@@ -262,9 +262,9 @@ export default function PrivacyPage() {
         can remove flexiday under your Microsoft account&rsquo;s app permissions. You can also
         withdraw Google access at any time at{" "}
         <a href="https://myaccount.google.com/permissions">myaccount.google.com/permissions</a>; we
-        then stop syncing. If you delete your flexiday account without disconnecting first, we
-        delete the tokens and our records of the events, but the events already written stay in your
-        calendar for you to remove.
+        then stop syncing. When you delete your flexiday account, we do the same for every connected
+        calendar first: we delete the events we created, revoke our access at Google, and delete the
+        tokens. An event we cannot remove at that point stays in your calendar for you to remove.
       </p>
 
       <h2>7. International transfers</h2>
