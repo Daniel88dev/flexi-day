@@ -11,17 +11,25 @@ import { useTranslation } from "@/lib/i18n/use-translation";
  */
 export function LanguageSync() {
   const { locale, localeReady } = useTranslation();
-  const { data: settings } = useMySettings();
+  const { data: settings, dataUpdatedAt } = useMySettings();
   const { mutate } = useUpdateMySettings();
   const sentRef = useRef<string | null>(null);
 
   const next = localeReady && settings ? languageToStore(settings.language, locale) : null;
 
+  // dataUpdatedAt reruns the effect on each settings fetch, which retries a failed write once.
   useEffect(() => {
     if (!next || sentRef.current === next) return;
     sentRef.current = next;
-    mutate({ language: next });
-  }, [next, mutate]);
+    mutate(
+      { language: next },
+      {
+        onError: () => {
+          if (sentRef.current === next) sentRef.current = null;
+        },
+      }
+    );
+  }, [next, dataUpdatedAt, mutate]);
 
   return null;
 }

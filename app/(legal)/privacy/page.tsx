@@ -264,7 +264,8 @@ export default function PrivacyPage() {
         <a href="https://myaccount.google.com/permissions">myaccount.google.com/permissions</a>; we
         then stop syncing. When you delete your flexiday account, we do the same for every connected
         calendar first: we delete the events we created, revoke our access at Google, and delete the
-        tokens. An event we cannot remove at that point stays in your calendar for you to remove.
+        tokens. Anything we cannot remove or revoke at that point stays; you can delete a leftover
+        event yourself and remove flexiday&rsquo;s access in your Google account permissions.
       </p>
 
       <h2>7. International transfers</h2>

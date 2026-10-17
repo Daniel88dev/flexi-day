@@ -88,7 +88,8 @@ describe("Legal pages", () => {
     expect(text).toMatch(
       /When you delete your flexiday account, we do the same for every connected calendar first/
     );
-    expect(text).toMatch(/An event we cannot remove at that point stays in your calendar/);
+    expect(text).toMatch(/Anything we cannot remove or revoke at that point stays/);
+    expect(text).toMatch(/remove flexiday’s access in your Google account permissions/);
     expect(text).not.toMatch(/without disconnecting first/);
   });
 
