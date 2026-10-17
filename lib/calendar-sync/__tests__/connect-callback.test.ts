@@ -39,6 +39,25 @@ describe("parseConnectCallback", () => {
     expect(parse(`error=${code}&config=cfg-1`)).toEqual({
       status: "error",
       error: code,
+      provider: null,
+      configId: "cfg-1",
+    });
+  });
+
+  it.each(["google", "microsoft"])("returns the %s provider the error redirect names", (slug) => {
+    expect(parse(`error=consent_denied&provider=${slug}&config=cfg-1`)).toEqual({
+      status: "error",
+      error: "consent_denied",
+      provider: slug,
+      configId: "cfg-1",
+    });
+  });
+
+  it("returns a null provider for one it does not know", () => {
+    expect(parse("error=consent_denied&provider=apple&config=cfg-1")).toEqual({
+      status: "error",
+      error: "consent_denied",
+      provider: null,
       configId: "cfg-1",
     });
   });
@@ -50,6 +69,7 @@ describe("parseConnectCallback", () => {
     expect(parse(`error=${code}&config=cfg-1`)).toEqual({
       status: "error",
       error: name,
+      provider: null,
       configId: "cfg-1",
     });
   });
@@ -58,6 +78,7 @@ describe("parseConnectCallback", () => {
     expect(parse("error=state_invalid")).toEqual({
       status: "error",
       error: "state_invalid",
+      provider: null,
       configId: null,
     });
   });
@@ -66,11 +87,13 @@ describe("parseConnectCallback", () => {
     expect(parse("error=something_new&config=cfg-1")).toEqual({
       status: "error",
       error: "unknown",
+      provider: null,
       configId: "cfg-1",
     });
     expect(parse("error=toString")).toEqual({
       status: "error",
       error: "unknown",
+      provider: null,
       configId: null,
     });
   });
@@ -79,6 +102,7 @@ describe("parseConnectCallback", () => {
     expect(parse("connected=apple&config=cfg-1")).toEqual({
       status: "error",
       error: "unknown",
+      provider: null,
       configId: "cfg-1",
     });
   });

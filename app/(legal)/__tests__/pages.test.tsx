@@ -32,7 +32,7 @@ describe("Legal pages", () => {
 
   it("Legal pages carry the current update date", () => {
     render(<PrivacyPage />);
-    expect(screen.getByText("Last updated: 11 October 2026")).toBeInTheDocument();
+    expect(screen.getByText("Last updated: 17 October 2026")).toBeInTheDocument();
   });
 
   it("Privacy page describes attendance location, its audience and its retention", () => {
@@ -78,6 +78,19 @@ describe("Legal pages", () => {
       screen.getByRole("link", { name: "Google API Services User Data Policy" })
     ).toHaveAttribute("href", "https://developers.google.com/terms/api-services-user-data-policy");
     expect(text).toMatch(/revoke our access at Google/);
+  });
+
+  it("Privacy page says deleting the account clears the connected calendars first", () => {
+    render(<PrivacyPage />);
+    const text = sectionText(
+      screen.getByRole("heading", { name: "6. Calendar connections and Google user data" })
+    );
+    expect(text).toMatch(
+      /When you delete your flexiday account, we do the same for every connected calendar first/
+    );
+    expect(text).toMatch(/Anything we cannot remove or revoke at that point stays/);
+    expect(text).toMatch(/remove flexiday’s access in your Google account permissions/);
+    expect(text).not.toMatch(/without disconnecting first/);
   });
 
   it("Terms page still lets the user delete their Account at any time", () => {

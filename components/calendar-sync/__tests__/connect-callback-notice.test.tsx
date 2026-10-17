@@ -71,6 +71,29 @@ describe("ConnectCallbackNotice", () => {
     ).toBeInTheDocument();
   });
 
+  it("names Microsoft from the redirect when consent finished in another tab", async () => {
+    renderAt("error=consent_denied&provider=microsoft&config=cfg-1");
+
+    expect(
+      await screen.findByText(/an IT admin needs to approve Flexi Day once/)
+    ).toBeInTheDocument();
+  });
+
+  it("prefers the redirect's provider over the stored one", async () => {
+    rememberConnectProvider("microsoft");
+    renderAt("error=consent_denied&provider=google&config=cfg-1");
+
+    expect(
+      await screen.findByText("Access was not granted, so nothing was connected.")
+    ).toBeInTheDocument();
+    expect(window.sessionStorage.getItem("flexi-day.calendar-connect-provider")).toBeNull();
+  });
+
+  it("strips the provider from the query", () => {
+    renderAt("error=consent_denied&provider=google&config=cfg-1&tab=feeds");
+    expect(replace).toHaveBeenCalledWith("/calendar-sync/?tab=feeds", { scroll: false });
+  });
+
   it("keeps the general wording for a declined Google consent", async () => {
     rememberConnectProvider("google");
     renderAt("error=consent_denied&config=cfg-1");
