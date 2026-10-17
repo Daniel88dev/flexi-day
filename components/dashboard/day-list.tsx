@@ -4,8 +4,12 @@ import { CalendarPlus, PartyPopper } from "lucide-react";
 import { AvatarBubble } from "@/components/brand/avatar-bubble";
 import { LeaveTag } from "@/components/dashboard/leave-tag";
 import { Button } from "@/components/ui/button";
+import { DayItemRows } from "@/components/dashboard/day-items";
+import { countDayItems, type DayItem } from "@/lib/calendar/day-items";
 import type { DayRecord } from "@/lib/calendar/stripes";
 import { useTranslation } from "@/lib/i18n/use-translation";
+
+const NO_ITEMS: readonly DayItem[] = [];
 
 interface DayListProps {
   /** The full date, e.g. "Thursday, 24 September". */
@@ -14,6 +18,8 @@ interface DayListProps {
   shortDate: string;
   entries: DayRecord[];
   holiday?: string;
+  /** The day's group events and birthdays, listed above the people away. */
+  items?: readonly DayItem[];
   viewerId: string | null;
   onOpenRequest: (vacationId: string) => void;
   onBook: () => void;
@@ -24,12 +30,14 @@ export function DayList({
   shortDate,
   entries,
   holiday,
+  items = NO_ITEMS,
   viewerId,
   onOpenRequest,
   onBook,
 }: DayListProps) {
   const { t } = useTranslation();
   const people = new Set(entries.map((e) => e.userId)).size;
+  const counts = countDayItems(items);
 
   return (
     <section aria-label={t.calendar.awayOn(title)} className="p-5">
@@ -57,6 +65,18 @@ export function DayList({
         >
           <PartyPopper className="h-4 w-4 shrink-0" />
           <span className="truncate">{holiday}</span>
+        </div>
+      ) : null}
+
+      {items.length > 0 ? (
+        <div className="mb-3">
+          <DayItemRows
+            items={items}
+            label={t.calendar.dayItems.onDay(
+              t.calendar.dayItems.summary(counts.events, counts.birthdays),
+              title
+            )}
+          />
         </div>
       ) : null}
 

@@ -111,6 +111,7 @@ import {
   putMyBirthday,
   type MyBirthday,
 } from "./birthday";
+import { listBirthdays, type ListBirthdaysParams } from "./birthdays";
 import { deleteMyAccount, getAccountDeletionStatus } from "./account-deletion";
 import {
   getSupportGroup,
@@ -196,6 +197,8 @@ export const qk = {
   calendarConnections: () => ["calendar-connections"] as const,
   mySettings: () => ["my-settings"] as const,
   myBirthday: () => ["my-birthday"] as const,
+  birthdays: (year: number, month: number, groupId?: string | null) =>
+    ["birthdays", year, month, groupId ?? "mine"] as const,
   accountDeletion: () => ["account-deletion"] as const,
   reportScope: () => ["report-scope"] as const,
   // Keyed on the serialised filters so every filter combination caches on its
@@ -265,6 +268,13 @@ export function useVacationCalendar(params: ListVacationCalendarParams) {
   return useQuery({
     queryKey: qk.vacationCalendar(params.year, params.month, params.groupId),
     queryFn: () => listVacationCalendar(params),
+  });
+}
+
+export function useBirthdays(params: ListBirthdaysParams) {
+  return useQuery({
+    queryKey: qk.birthdays(params.year, params.month, params.groupId),
+    queryFn: () => listBirthdays(params),
   });
 }
 

@@ -110,6 +110,23 @@ export const en = {
     bookDay: (date: string) => `Book ${date}`,
     dragRangeDays: (n: number) => `${n} ${n === 1 ? "day" : "days"}`,
     dragRangeBooked: (n: number) => `${n} already booked`,
+    birthday: {
+      yours: "Your birthday",
+      yoursWithAge: (age: number) => `Your birthday · ${age}`,
+      nameTurns: (name: string, age: number) => `${name} turns ${age}`,
+      namesBirthday: (name: string) => `${name}'s birthday`,
+      changeInSettings: "Change in Settings",
+    },
+    dayItems: {
+      summary: (events: number, birthdays: number) =>
+        [
+          events > 0 ? `${events} ${events === 1 ? "group event" : "group events"}` : null,
+          birthdays > 0 ? `${birthdays} ${birthdays === 1 ? "birthday" : "birthdays"}` : null,
+        ]
+          .filter(Boolean)
+          .join(", "),
+      onDay: (summary: string, date: string) => `${summary} on ${date}`,
+    },
   },
 
   nav: {

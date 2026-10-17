@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import {
   useBankHolidaysMulti,
+  useBirthdays,
   useDashboardSummary,
   useGroup,
   useGroups,
@@ -51,6 +52,8 @@ import { LeaveTypeFilter } from "@/components/dashboard/leave-type-filter";
 import { CalendarLegend } from "@/components/dashboard/calendar-legend";
 import { StripeCalendar } from "@/components/dashboard/stripe-calendar";
 import { toDayRecords } from "@/lib/calendar/stripes";
+import { dayItemsByDate } from "@/lib/calendar/day-items";
+import { birthdayDayItems } from "@/lib/birthdays/calendar";
 import { gridRange, gridYears, isoDate } from "@/lib/calendar/month-grid";
 import type { DateRange } from "@/lib/calendar/drag-range";
 import { NewRequestDialog } from "@/components/new-request-dialog";
@@ -115,6 +118,8 @@ export default function DashboardPage() {
 
   const calendarQuery = useVacationCalendar({ year, month, groupId: activeGroupId });
   const outTodayQuery = useVacations({ year, month, groupId: activeGroupId });
+  // Mine scope asks without a group, which answers the viewer's own birthday only.
+  const birthdaysQuery = useBirthdays({ year, month, groupId: activeGroupId });
   // The membership list already carries `holidayCountry`; the detail fetch is
   // only for groups the caller sees without a membership (org admins). Report
   // scope can also grant GROUP view to a manager the detail endpoint refuses,
@@ -127,6 +132,7 @@ export default function DashboardPage() {
   );
 
   const firstName = session.data?.user?.name?.split(" ")[0] ?? t.dashboard.fallbackName;
+  const viewerId = session.data?.user?.id ?? null;
 
   // `?? []` builds a new array on every render while the query is empty, which
   // would change the `ranges` dependency each time and defeat the memo below.
@@ -151,6 +157,11 @@ export default function DashboardPage() {
   }, [bankHolidays, year, month]);
   const dayRecords = useMemo(() => toDayRecords(calendarVacations), [calendarVacations]);
   const showStripes = settingsQuery.data?.dashboardCalendarView === "STRIPES";
+  const birthdayLabels = t.calendar.birthday;
+  const dayItems = useMemo(
+    () => dayItemsByDate(birthdayDayItems(birthdaysQuery.data ?? [], viewerId, birthdayLabels)),
+    [birthdaysQuery.data, viewerId, birthdayLabels]
+  );
 
   const ranges: CalendarRange[] = useMemo(() => {
     const live = calendarVacations
@@ -404,10 +415,11 @@ export default function DashboardPage() {
               records={dayRecords}
               holidays={holidayRanges}
               filter={filter}
-              viewerId={session.data?.user?.id ?? null}
+              viewerId={viewerId}
               onOpenRequest={openVacation}
               onBook={openNewRequestForDate}
               onRangeSelect={openNewRequestForRange}
+              dayItems={dayItems}
             />
           ) : (
             <LeaveCalendar
@@ -419,7 +431,8 @@ export default function DashboardPage() {
               onSelect={openVacation}
               onDayClick={openNewRequestForDate}
               onRangeSelect={openNewRequestForRange}
-              viewerId={session.data?.user?.id ?? null}
+              viewerId={viewerId}
+              dayItems={dayItems}
             />
           )}
           <CalendarLegend ranges={ranges} filter={filter} />

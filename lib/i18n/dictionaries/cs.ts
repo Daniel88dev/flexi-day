@@ -112,6 +112,25 @@ export const cs: Dictionary = {
     bookDay: (date: string) => `Zadat ${date}`,
     dragRangeDays: (n: number) => `${n} ${plural(n, "den", "dny", "dní")}`,
     dragRangeBooked: (n: number) => `Už zadáno: ${n} ${plural(n, "den", "dny", "dní")}`,
+    birthday: {
+      yours: "Vaše narozeniny",
+      yoursWithAge: (age: number) => `Vaše narozeniny · ${age}`,
+      nameTurns: (name: string, age: number) => `${name} slaví ${age}`,
+      namesBirthday: (name: string) => `${name} má narozeniny`,
+      changeInSettings: "Změnit v Nastavení",
+    },
+    dayItems: {
+      summary: (events: number, birthdays: number) =>
+        [
+          events > 0
+            ? `${events} ${plural(events, "skupinová událost", "skupinové události", "skupinových událostí")}`
+            : null,
+          birthdays > 0 ? `narozeniny: ${birthdays}` : null,
+        ]
+          .filter(Boolean)
+          .join(", "),
+      onDay: (summary: string, date: string) => `${date}: ${summary}`,
+    },
   },
 
   nav: {

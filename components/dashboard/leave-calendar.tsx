@@ -20,6 +20,8 @@ import {
 } from "@/lib/calendar/month-grid";
 import { DayHeading, MonthSeam, dayNumberColor, dayTint } from "@/components/dashboard/month-seam";
 import { DragRangeLabel } from "@/components/dashboard/drag-range-label";
+import { DayItemsChip } from "@/components/dashboard/day-items";
+import type { DayItem } from "@/lib/calendar/day-items";
 import { datesCovered, rangeCellFill, type DateRange } from "@/lib/calendar/drag-range";
 import { useDragRange } from "@/hooks/use-drag-range";
 import { useTranslation } from "@/lib/i18n/use-translation";
@@ -60,6 +62,8 @@ interface LeaveCalendarProps {
   onRangeSelect?: (range: DateRange) => void;
   /** Whose records a drag marks as already booked. */
   viewerId?: string | null;
+  /** Group events and birthdays per day, shown as a chip in the day's header row. */
+  dayItems?: ReadonlyMap<IsoDate, DayItem[]>;
 }
 
 /** Bars a week shows before the rest collapse behind the "+N more" toggle. */
@@ -328,6 +332,7 @@ export function LeaveCalendar({
   showAdjacentDays = true,
   onRangeSelect,
   viewerId = null,
+  dayItems,
 }: LeaveCalendarProps) {
   const { t } = useTranslation();
   const drag = useDragRange((range) => onRangeSelect?.(range));
@@ -513,6 +518,7 @@ export function LeaveCalendar({
                         : undefined
                     }
                     style={{
+                      position: "relative",
                       borderRight: di < 6 ? "1px solid var(--border)" : "none",
                       padding: mini ? "4px 5px" : "8px 10px",
                       cursor:
@@ -544,6 +550,9 @@ export function LeaveCalendar({
                           {cell.day}
                         </span>
                       </DayHeading>
+                    ) : null}
+                    {shown && !mini && dayItems?.has(cell.date) ? (
+                      <DayItemsChip date={cell.date} items={dayItems.get(cell.date) ?? []} />
                     ) : null}
                   </div>
                 );

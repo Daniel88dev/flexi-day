@@ -9,6 +9,8 @@ import { addDays } from "@/lib/attendance/month";
 import { formatIsoDate, monthLabelDates, monthWeeks, seamColumn } from "@/lib/calendar/month-grid";
 import { DayHeading, MonthSeam, dayNumberColor, dayTint } from "@/components/dashboard/month-seam";
 import { DragRangeLabel } from "@/components/dashboard/drag-range-label";
+import { DayItemMarks } from "@/components/dashboard/day-items";
+import { countDayItems, type DayItem } from "@/lib/calendar/day-items";
 import { datesCovered, rangeCellFill, type DateRange } from "@/lib/calendar/drag-range";
 import { useDragRange } from "@/hooks/use-drag-range";
 import {
@@ -36,6 +38,8 @@ interface StripeCalendarProps {
   onBook: (date: IsoDate) => void;
   /** Lets a mouse on the desktop layout drag across days; receives the range on release. */
   onRangeSelect?: (range: DateRange) => void;
+  /** Group events and birthdays per day: corner marks, and rows in the day popover. */
+  dayItems?: ReadonlyMap<IsoDate, DayItem[]>;
 }
 
 export function StripeCalendar({
@@ -49,6 +53,7 @@ export function StripeCalendar({
   onOpenRequest,
   onBook,
   onRangeSelect,
+  dayItems,
 }: StripeCalendarProps) {
   const { t } = useTranslation();
   const [selectedDate, setSelectedDate] = useState<IsoDate | null>(null);
@@ -134,9 +139,14 @@ export function StripeCalendar({
                 const hidden = more.get(di) ?? 0;
                 const entries = dayEntries(visible, date, viewerId);
                 const away = new Set(entries.map((e) => e.userId)).size;
+                const items = dayItems?.get(date) ?? [];
+                const counts = countDayItems(items);
                 const label = [
                   longDate(date),
                   holiday,
+                  items.length > 0
+                    ? t.calendar.dayItems.summary(counts.events, counts.birthdays)
+                    : null,
                   away > 0 ? t.calendar.awayCount(away) : null,
                 ]
                   .filter(Boolean)
@@ -215,6 +225,8 @@ export function StripeCalendar({
                           </span>
                         ) : null}
 
+                        <DayItemMarks items={items} />
+
                         {hidden > 0 ? (
                           <span
                             className="tnum absolute right-1 bottom-0.5 text-[10px] font-semibold sm:right-2 sm:bottom-1 sm:text-[11px]"
@@ -236,6 +248,7 @@ export function StripeCalendar({
                         shortDate={shortDate(date)}
                         entries={entries}
                         holiday={holiday}
+                        items={items}
                         viewerId={viewerId}
                         onOpenRequest={(id) => {
                           setOpenDate(null);
