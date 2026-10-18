@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "@/lib/auth-client";
 import { safeRedirect } from "@/lib/auth/safe-redirect";
@@ -36,8 +36,13 @@ function useRedirectWhenAuthenticated() {
 export function GuestGuard({ children }: { children: React.ReactNode }) {
   const { t } = useTranslation();
   const { session, isPending } = useRedirectWhenAuthenticated();
+  // better-auth marks a signed-out session pending again on every refetch (after sign-up, on
+  // window focus). Once the page has shown, only a session may hide it, or it remounts blank.
+  const [hasShown, setHasShown] = useState(false);
+  const hidden = Boolean(session) || (isPending && !hasShown);
+  if (!hidden && !hasShown) setHasShown(true);
 
-  if (isPending || session) {
+  if (hidden) {
     return (
       <div className="text-muted-foreground flex min-h-[40vh] items-center justify-center text-sm">
         <span className="bg-primary mr-2 inline-block size-2 animate-pulse rounded-full" />

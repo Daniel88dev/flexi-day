@@ -1,5 +1,6 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { GuestGuard, GuestRedirect } from "../guest-guard";
 
 const replace = vi.fn();
@@ -81,6 +82,44 @@ describe("GuestGuard", () => {
 
     expect(screen.queryByText("Sign in form")).not.toBeInTheDocument();
     expect(replace).not.toHaveBeenCalled();
+  });
+
+  it("keeps the rendered page and its state through a later session refetch", async () => {
+    const user = userEvent.setup();
+    const page = () => (
+      <GuestGuard>
+        <input aria-label="Email" />
+      </GuestGuard>
+    );
+    const { rerender } = render(page());
+    await user.type(screen.getByLabelText("Email"), "dana@northwind.co");
+
+    sessionState = { data: null, isPending: true };
+    rerender(page());
+    expect(screen.getByLabelText("Email")).toHaveValue("dana@northwind.co");
+
+    sessionState = { data: null, isPending: false };
+    rerender(page());
+    expect(screen.getByLabelText("Email")).toHaveValue("dana@northwind.co");
+    expect(replace).not.toHaveBeenCalled();
+  });
+
+  it("hides the rendered page and redirects once a session appears", async () => {
+    const page = () => (
+      <GuestGuard>
+        <p>Sign in form</p>
+      </GuestGuard>
+    );
+    const { rerender } = render(page());
+    expect(screen.getByText("Sign in form")).toBeInTheDocument();
+
+    sessionState = { data: null, isPending: true };
+    rerender(page());
+    sessionState = { data: { user: { id: "u-1" } }, isPending: false };
+    rerender(page());
+
+    expect(screen.queryByText("Sign in form")).not.toBeInTheDocument();
+    await waitFor(() => expect(replace).toHaveBeenCalledWith("/dashboard"));
   });
 });
 
