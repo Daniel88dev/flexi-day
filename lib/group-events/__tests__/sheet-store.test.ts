@@ -5,6 +5,8 @@ import {
   groupEventSheetState,
   openGroupEventEditor,
   openGroupEventSheet,
+  setShownGroupEventGroup,
+  shownGroupEventGroup,
   subscribeGroupEventSheet,
 } from "../sheet-store";
 import type { GroupEventTarget } from "../day-items";
@@ -54,5 +56,13 @@ describe("group event sheet store", () => {
     const first = groupEventSheetState()!.id;
     openGroupEventSheet({ date: "2026-10-21" });
     expect(groupEventSheetState()!.id).not.toBe(first);
+  });
+
+  it("remembers the group the dashboard shows until it reports none", () => {
+    expect(shownGroupEventGroup()).toBeNull();
+    setShownGroupEventGroup("g-1");
+    expect(shownGroupEventGroup()).toBe("g-1");
+    setShownGroupEventGroup(null);
+    expect(shownGroupEventGroup()).toBeNull();
   });
 });

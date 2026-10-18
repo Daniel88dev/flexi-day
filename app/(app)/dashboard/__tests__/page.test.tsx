@@ -12,7 +12,11 @@ import {
 } from "@/lib/api/types";
 import type { BirthdayCalendarRow } from "@/lib/api/birthdays";
 import type { GroupEventGroup, GroupEventRow } from "@/lib/api/group-events";
-import { closeGroupEventSheet, groupEventSheetState } from "@/lib/group-events/sheet-store";
+import {
+  closeGroupEventSheet,
+  groupEventSheetState,
+  shownGroupEventGroup,
+} from "@/lib/group-events/sheet-store";
 
 const useVacationsSpy = vi.fn();
 const useVacationCalendarSpy = vi.fn();
@@ -88,9 +92,13 @@ let groupEventRows: GroupEventRow[] = [];
 
 let groupEventGroups: GroupEventGroup[] = [];
 
+let searchParams = new URLSearchParams();
+const routerReplace = vi.fn();
+
 vi.mock("next/navigation", () => ({
   usePathname: () => "/dashboard/",
-  useRouter: () => ({ replace: vi.fn(), push: vi.fn() }),
+  useRouter: () => ({ replace: routerReplace, push: vi.fn() }),
+  useSearchParams: () => searchParams,
 }));
 
 vi.mock("@/lib/auth-client", () => ({
@@ -242,6 +250,48 @@ describe("DashboardPage scope switch", () => {
 
     expect(screen.getByTitle("Dana Holt · Vacation")).toBeInTheDocument();
     expect(screen.getByTitle("Dana Holt · Vacation · Pending")).toHaveTextContent("Dana ½");
+  });
+});
+
+describe("DashboardPage calendar link", () => {
+  beforeEach(() => {
+    settings = { ...DEFAULT_SETTINGS, dashboardScope: "MINE", dashboardGroupId: null };
+    useVacationCalendarSpy.mockClear();
+    routerReplace.mockClear();
+  });
+  afterEach(() => {
+    searchParams = new URLSearchParams();
+  });
+
+  it("lands in Group scope on the linked group and month, then drops the link", () => {
+    searchParams = new URLSearchParams("groupId=g-1&month=2027-02");
+    renderWithClient(<DashboardPage />);
+
+    expect(useVacationCalendarSpy).toHaveBeenLastCalledWith({
+      year: 2027,
+      month: 2,
+      groupId: "g-1",
+    });
+    expect(screen.getByRole("heading", { name: "February 2027" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Group", pressed: true })).toBeInTheDocument();
+    expect(routerReplace).toHaveBeenCalledWith("/dashboard/", { scroll: false });
+  });
+
+  it("leaves the URL alone without a link", () => {
+    renderWithClient(<DashboardPage />);
+    expect(routerReplace).not.toHaveBeenCalled();
+  });
+
+  it("reports the group it shows to the header until it leaves", async () => {
+    const user = userEvent.setup();
+    const { unmount } = renderWithClient(<DashboardPage />);
+    expect(shownGroupEventGroup()).toBeNull();
+
+    await user.click(screen.getByRole("button", { name: "Group", pressed: false }));
+    expect(shownGroupEventGroup()).toBe("g-1");
+
+    unmount();
+    expect(shownGroupEventGroup()).toBeNull();
   });
 });
 

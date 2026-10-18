@@ -63,3 +63,14 @@ export function confirmGroupEventDelete(target: GroupEventTarget) {
 export function closeGroupEventSheet() {
   set(null);
 }
+
+let shownGroupId: string | null = null;
+
+/** The dashboard reports the group it shows in Group scope (null in Mine), for D27's default. */
+export function setShownGroupEventGroup(groupId: string | null) {
+  shownGroupId = groupId;
+}
+
+export function shownGroupEventGroup(): string | null {
+  return shownGroupId;
+}

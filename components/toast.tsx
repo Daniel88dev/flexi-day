@@ -1,10 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
 import { Check, TriangleAlert } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export type ToastKind = "ok" | "danger" | "warm";
-type Toast = { id: number; msg: string; kind: ToastKind };
+export type ToastAction = { label: string; href: string };
+type Toast = { id: number; msg: string; kind: ToastKind; action?: ToastAction };
 
 let toastSeq = 0;
 const listeners = new Set<(t: Toast) => void>();
@@ -17,8 +20,12 @@ const listeners = new Set<(t: Toast) => void>();
  * pushing from a mount effect needs the host to have subscribed first — which
  * is why the layout mounts `ToastHost` above `{children}`.
  */
-export function pushToast(msg: string, kind: ToastKind = "ok") {
-  const t: Toast = { id: ++toastSeq, msg, kind };
+export function pushToast(
+  msg: string,
+  kind: ToastKind = "ok",
+  options: { action?: ToastAction } = {}
+) {
+  const t: Toast = { id: ++toastSeq, msg, kind, action: options.action };
   listeners.forEach((fn) => fn(t));
 }
 
@@ -72,15 +79,19 @@ function ToastItem({ toast, onExpire }: { toast: Toast; onExpire: (id: number) =
   useEffect(() => {
     // Long enough to be noticed away from the pointer — a save confirmation
     // is the whole reason the toast exists.
-    const timer = setTimeout(() => onExpire(toast.id), 4000);
+    // A toast with a link stays longer, so there is time to reach it.
+    const timer = setTimeout(() => onExpire(toast.id), toast.action ? 6000 : 4000);
     return () => clearTimeout(timer);
-  }, [toast.id, onExpire]);
+  }, [toast.id, toast.action, onExpire]);
 
   const c =
     toast.kind === "danger" ? "var(--danger)" : toast.kind === "warm" ? "var(--warm)" : "var(--ok)";
   return (
     <div
-      className="flex items-center gap-2.5 rounded-full px-4 py-2.5 text-sm font-semibold"
+      className={cn(
+        "flex items-center gap-2.5 rounded-full px-4 py-2.5 text-sm font-semibold",
+        toast.action && "pointer-events-auto"
+      )}
       style={{
         background: "var(--surface)",
         border: "1px solid var(--border)",
@@ -95,6 +106,16 @@ function ToastItem({ toast, onExpire }: { toast: Toast; onExpire: (id: number) =
         {toast.kind === "danger" ? <TriangleAlert size={13} /> : <Check size={13} />}
       </span>
       {toast.msg}
+      {toast.action ? (
+        <Link
+          href={toast.action.href}
+          onClick={() => onExpire(toast.id)}
+          className="underline underline-offset-2"
+          style={{ color: "var(--primary-strong)" }}
+        >
+          {toast.action.label}
+        </Link>
+      ) : null}
     </div>
   );
 }

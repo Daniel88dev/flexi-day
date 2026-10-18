@@ -1,8 +1,22 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
-import { fireEvent, screen, within } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { act, fireEvent, screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { renderWithClient } from "@/lib/test-utils";
+import { ToastHost } from "@/components/toast";
+import {
+  closeGroupEventSheet,
+  groupEventSheetState,
+  setShownGroupEventGroup,
+} from "@/lib/group-events/sheet-store";
 import { AppShell } from "../app-shell";
-import { clockState, resetShellState, roles, shellState } from "./shell-test-setup";
+import {
+  clockState,
+  createdGroupEvent,
+  groupEventGroups,
+  resetShellState,
+  roles,
+  shellState,
+} from "./shell-test-setup";
 
 vi.mock("next/navigation", async () => {
   const { shellState } = await import("./shell-test-setup");
@@ -184,11 +198,121 @@ describe("AppShell", () => {
     it("keeps the header actions", () => {
       renderWithClient(<AppShell>x</AppShell>);
 
-      expect(screen.getByRole("button", { name: "+ New Request" })).toBeInTheDocument();
       expect(screen.getByRole("button", { name: "Notifications" })).toBeInTheDocument();
       expect(screen.getByRole("button", { name: "Toggle theme" })).toBeInTheDocument();
       expect(screen.getByRole("button", { name: "Switch to Czech" })).toBeInTheDocument();
       expect(screen.getByRole("button", { name: /User menu/ })).toBeInTheDocument();
+    });
+  });
+
+  describe("New menu", () => {
+    afterEach(() => {
+      closeGroupEventSheet();
+      setShownGroupEventGroup(null);
+      vi.useRealTimers();
+    });
+
+    async function openNewMenu() {
+      const user = userEvent.setup();
+      await user.click(screen.getByRole("button", { name: "+ New" }));
+      return { user, menu: within(screen.getByRole("menu")) };
+    }
+
+    it("keeps the plain + New Request while no group can create", () => {
+      renderWithClient(<AppShell>x</AppShell>);
+
+      expect(screen.getByRole("button", { name: "+ New Request" })).toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: "+ New" })).not.toBeInTheDocument();
+    });
+
+    it.each(["/dashboard", "/settings"])(
+      "lists Time off request and Group event on %s when a group can create",
+      async (pathname) => {
+        shellState.pathname = pathname;
+        shellState.groupEventGroups = groupEventGroups.creatable;
+        renderWithClient(<AppShell>x</AppShell>);
+
+        expect(screen.queryByRole("button", { name: "+ New Request" })).not.toBeInTheDocument();
+        const { menu } = await openNewMenu();
+        expect(menu.getAllByRole("menuitem").map((item) => item.textContent)).toEqual([
+          "Time off request",
+          "Group event",
+        ]);
+      }
+    );
+
+    it("opens the time off dialog from Time off request", async () => {
+      shellState.groupEventGroups = groupEventGroups.creatable;
+      renderWithClient(<AppShell>x</AppShell>);
+
+      const { user, menu } = await openNewMenu();
+      await user.click(menu.getByRole("menuitem", { name: "Time off request" }));
+      expect(screen.getByRole("dialog", { name: "New Request" })).toBeInTheDocument();
+    });
+
+    it("opens the group event sheet on today with the group the dashboard shows", async () => {
+      vi.useFakeTimers({ now: new Date(2026, 9, 18, 9), shouldAdvanceTime: true });
+      shellState.groupEventGroups = groupEventGroups.creatable;
+      setShownGroupEventGroup("g-2");
+      renderWithClient(<AppShell>x</AppShell>);
+
+      const { user, menu } = await openNewMenu();
+      await user.click(menu.getByRole("menuitem", { name: "Group event" }));
+      expect(groupEventSheetState()).toMatchObject({
+        kind: "create",
+        date: "2026-10-18",
+        groupId: "g-2",
+      });
+    });
+
+    it("leaves the group to the sheet's default away from the dashboard", async () => {
+      shellState.pathname = "/settings";
+      shellState.groupEventGroups = groupEventGroups.creatable;
+      setShownGroupEventGroup("g-2");
+      renderWithClient(<AppShell>x</AppShell>);
+
+      const { user, menu } = await openNewMenu();
+      await user.click(menu.getByRole("menuitem", { name: "Group event" }));
+      expect(groupEventSheetState()).toMatchObject({ kind: "create", groupId: null });
+    });
+
+    async function createFromMenu() {
+      const { user, menu } = await openNewMenu();
+      await user.click(menu.getByRole("menuitem", { name: "Group event" }));
+      const state = groupEventSheetState();
+      if (state?.kind !== "create") throw new Error("sheet not open");
+      act(() => state.onCreated?.(createdGroupEvent));
+    }
+
+    it("toasts with View on calendar after a create away from the dashboard", async () => {
+      shellState.pathname = "/settings";
+      shellState.groupEventGroups = groupEventGroups.creatable;
+      renderWithClient(
+        <>
+          <ToastHost />
+          <AppShell>x</AppShell>
+        </>
+      );
+
+      await createFromMenu();
+      expect(screen.getByText("Group event created")).toBeInTheDocument();
+      expect(screen.getByRole("link", { name: "View on calendar" }).getAttribute("href")).toMatch(
+        /^\/dashboard\/?\?groupId=g-2&month=2026-11$/
+      );
+    });
+
+    it("toasts without a link after a create on the dashboard", async () => {
+      shellState.groupEventGroups = groupEventGroups.creatable;
+      renderWithClient(
+        <>
+          <ToastHost />
+          <AppShell>x</AppShell>
+        </>
+      );
+
+      await createFromMenu();
+      expect(screen.getByText("Group event created")).toBeInTheDocument();
+      expect(screen.queryByRole("link", { name: "View on calendar" })).not.toBeInTheDocument();
     });
   });
 

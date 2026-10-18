@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Menu } from "lucide-react";
 import { ClockSlot } from "@/components/attendance/clock-slot";
 import { NewRequestDialog } from "@/components/new-request-dialog";
+import { Button } from "@/components/ui/button";
 import { LocaleToggle } from "@/components/ui/LocaleToggle";
 import { ModeToggle } from "@/components/ui/ModeToggle";
 import {
@@ -14,6 +15,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import { useGroups } from "@/lib/api/queries";
 import { useTranslation } from "@/lib/i18n/use-translation";
 import {
   BOTTOM_BAR_CLOCK_INDEX,
@@ -22,6 +24,7 @@ import {
 } from "@/lib/navigation/shell-links";
 import { useShellNav } from "@/lib/navigation/use-shell-nav";
 import { cn } from "@/lib/utils";
+import { useNewGroupEvent } from "./new-menu";
 
 const tabClass =
   "flex flex-col items-center gap-1 pt-1.5 text-[11px] font-semibold transition-colors [&_svg]:size-[22px]";
@@ -89,6 +92,10 @@ export function BottomBar() {
   const { t } = useTranslation();
   const { sections, utility, isActive } = useShellNav();
   const [moreOpen, setMoreOpen] = useState(false);
+  const [requestOpen, setRequestOpen] = useState(false);
+  const groupsQuery = useGroups();
+  const groupEvent = useNewGroupEvent();
+  const noGroups = (groupsQuery.data ?? []).length === 0 && !groupsQuery.isLoading;
 
   const { bar, sheet } = splitForBottomBar(sections);
   const slots: (NavLink | null)[] = [...bar];
@@ -172,17 +179,39 @@ export function BottomBar() {
           </nav>
 
           <div
-            className="mt-3 flex items-center gap-3 border-t pt-3"
+            className="mt-3 flex flex-col gap-2 border-t pt-3"
             style={{ borderColor: "var(--border)" }}
           >
-            <div className="flex-1">
-              <NewRequestDialog />
+            <Button
+              className="w-full"
+              disabled={noGroups}
+              onClick={() => {
+                close();
+                setRequestOpen(true);
+              }}
+            >
+              {t.groupEvents.menu.requestTimeOff}
+            </Button>
+            {groupEvent.canCreate ? (
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={() => {
+                  close();
+                  groupEvent.open();
+                }}
+              >
+                {t.groupEvents.menu.newGroupEvent}
+              </Button>
+            ) : null}
+            <div className="flex items-center justify-end gap-3 pt-1">
+              <ModeToggle />
+              <LocaleToggle />
             </div>
-            <ModeToggle />
-            <LocaleToggle />
           </div>
         </SheetContent>
       </Sheet>
+      <NewRequestDialog open={requestOpen} onOpenChange={setRequestOpen} />
     </>
   );
 }

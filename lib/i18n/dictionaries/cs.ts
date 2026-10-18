@@ -634,6 +634,8 @@ export const cs: Dictionary = {
   groupEvents: {
     newTitle: "Nová skupinová událost",
     editTitle: "Upravit skupinovou událost",
+    created: "Skupinová událost vytvořena",
+    viewOnCalendar: "Zobrazit v kalendáři",
     title: "Název",
     group: "Skupina",
     noGroup: "Do žádné z vašich skupin teď nejde přidat novou skupinovou událost.",
@@ -715,6 +717,12 @@ export const cs: Dictionary = {
   newRequest: {
     trigger: "+ Nová žádost",
     title: "Nová žádost",
+    menu: {
+      // Feminine, so it agrees with both items: "žádost" and "událost".
+      trigger: "+ Nová",
+      timeOff: "Žádost o volno",
+      groupEvent: "Skupinová událost",
+    },
     group: "Skupina",
     loadingGroups: "Načítání skupin…",
     selectGroup: "Vyberte skupinu…",

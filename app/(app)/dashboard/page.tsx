@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   Calendar as CalendarIcon,
   ChevronLeft,
@@ -62,7 +63,9 @@ import {
   confirmGroupEventDelete,
   openGroupEventEditor,
   openGroupEventSheet,
+  setShownGroupEventGroup,
 } from "@/lib/group-events/sheet-store";
+import { calendarLanding, withoutCalendarLanding } from "@/lib/group-events/calendar-link";
 import { DayContextMenu } from "@/components/group-events/day-context-menu";
 import { gridRange, gridYears, isoDate } from "@/lib/calendar/month-grid";
 import type { DateRange } from "@/lib/calendar/drag-range";
@@ -88,7 +91,16 @@ function greetingKey(): GreetingKey {
   return "evening";
 }
 
+// `useSearchParams` needs a Suspense boundary for the static export to build.
 export default function DashboardPage() {
+  return (
+    <Suspense fallback={null}>
+      <Dashboard />
+    </Suspense>
+  );
+}
+
+function Dashboard() {
   const { t } = useTranslation();
   const initial = todayParts();
   const [year, setYear] = useState(initial.year);
@@ -101,6 +113,29 @@ export default function DashboardPage() {
   // without committing to it in settings.
   const [scopeOverride, setScopeOverride] = useState<DashboardScope | null>(null);
   const [groupOverride, setGroupOverride] = useState<string | null>(null);
+
+  // "View on calendar" after a group event create lands here with `?groupId=&month=`. It is
+  // applied during render, so the first fetch already asks for that group and month.
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const landing = calendarLanding(searchParams);
+  const landingKey = landing ? `${landing.groupId}:${landing.year}-${landing.month}` : null;
+  const [appliedLanding, setAppliedLanding] = useState<string | null>(null);
+  if (landingKey !== appliedLanding) {
+    setAppliedLanding(landingKey);
+    if (landing) {
+      setYear(landing.year);
+      setMonth(landing.month);
+      setScopeOverride("GROUP");
+      setGroupOverride(landing.groupId);
+    }
+  }
+  useEffect(() => {
+    if (landingKey) {
+      router.replace(`${pathname}${withoutCalendarLanding(searchParams)}`, { scroll: false });
+    }
+  }, [landingKey, router, pathname, searchParams]);
 
   const groupsQuery = useGroups();
   const summaryQuery = useDashboardSummary();
@@ -125,6 +160,11 @@ export default function DashboardPage() {
       ? "GROUP"
       : "MINE";
   const activeGroupId = scope === "GROUP" ? selectedGroupId : null;
+
+  useEffect(() => {
+    setShownGroupEventGroup(activeGroupId);
+    return () => setShownGroupEventGroup(null);
+  }, [activeGroupId]);
 
   const calendarQuery = useVacationCalendar({ year, month, groupId: activeGroupId });
   const outTodayQuery = useVacations({ year, month, groupId: activeGroupId });

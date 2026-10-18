@@ -628,6 +628,8 @@ export const en = {
   groupEvents: {
     newTitle: "New group event",
     editTitle: "Edit group event",
+    created: "Group event created",
+    viewOnCalendar: "View on calendar",
     title: "Title",
     group: "Group",
     noGroup: "None of your groups can take new group events right now.",
@@ -704,6 +706,11 @@ export const en = {
   newRequest: {
     trigger: "+ New Request",
     title: "New Request",
+    menu: {
+      trigger: "+ New",
+      timeOff: "Time off request",
+      groupEvent: "Group event",
+    },
     group: "Group",
     loadingGroups: "Loading groups…",
     selectGroup: "Select group…",
