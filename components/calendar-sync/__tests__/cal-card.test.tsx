@@ -10,6 +10,9 @@ const config: CalendarSyncConfig = {
   name: "My time off",
   scope: "ME",
   distinguishMine: false,
+  timeZone: "Europe/Prague",
+  includeBirthdays: false,
+  birthdaysColor: null,
   teamIds: [],
   types: [
     { type: CalendarRecordType.Vacation, label: "Vacation", color: "violet", mineColor: null },
@@ -47,6 +50,16 @@ function renderCard(c: CalendarSyncConfig) {
 }
 
 describe("CalCard", () => {
+  it("shows a Birthdays badge when the feed carries birthdays", () => {
+    renderCard({ ...config, types: [], includeBirthdays: true, birthdaysColor: "rose" });
+    expect(screen.getByText("Birthdays")).toBeInTheDocument();
+  });
+
+  it("shows no Birthdays badge while the row is off", () => {
+    renderCard(config);
+    expect(screen.queryByText("Birthdays")).not.toBeInTheDocument();
+  });
+
   it("renders the name, scope, masked url and type badges", () => {
     renderCard(config);
     expect(screen.getByText("My time off")).toBeInTheDocument();

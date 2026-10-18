@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import type { LucideIcon } from "lucide-react";
 import {
   ArrowRight,
   Calendar,
@@ -16,7 +17,9 @@ import type { Group, VacationListItem } from "@/lib/api/types";
 import { CalendarRecordType } from "@/lib/api/types";
 import { useTranslation } from "@/lib/i18n/use-translation";
 import {
+  BIRTHDAYS_META,
   builderToInput,
+  carriesSomething,
   swatch,
   TYPE_META,
   TYPE_ORDER,
@@ -28,6 +31,7 @@ import { PreviewPanel, type PreviewMode } from "./preview-panel";
 import { SubscribePanel } from "./subscribe-panel";
 import { SwatchPicker } from "./swatch-picker";
 import { pushToast } from "@/components/toast";
+import { browserTimezone } from "@/lib/attendance/timezones";
 
 export type MonthContext = {
   year: number;
@@ -69,6 +73,7 @@ function TypeRow({
         type="button"
         role="checkbox"
         aria-checked={on}
+        aria-label={typeLabel}
         onClick={() => onToggle(type)}
         className="grid flex-none place-items-center rounded-md"
         style={{
@@ -135,6 +140,78 @@ function TypeRow({
   );
 }
 
+/**
+ * A row for a source beyond the record types (Birthdays): the same checkbox,
+ * icon tile and swatch, plus a line saying what it carries on this feed.
+ */
+function SourceRow({
+  on,
+  label,
+  line,
+  icon: Icon,
+  color,
+  onToggle,
+  onColor,
+}: {
+  on: boolean;
+  label: string;
+  line: string;
+  icon: LucideIcon;
+  color: SwatchKey;
+  onToggle: () => void;
+  onColor: (v: SwatchKey) => void;
+}) {
+  const css = swatch(color);
+  return (
+    <div
+      className="flex items-center gap-3 rounded-xl"
+      style={{
+        padding: "10px 12px",
+        border: "1px solid var(--border)",
+        background: on ? "var(--surface)" : "var(--surface-2)",
+        opacity: on ? 1 : 0.72,
+        transition: "opacity .15s, background .15s",
+      }}
+    >
+      <button
+        type="button"
+        role="checkbox"
+        aria-checked={on}
+        aria-label={label}
+        onClick={onToggle}
+        className="grid flex-none place-items-center rounded-md"
+        style={{
+          width: 22,
+          height: 22,
+          border: `1.5px solid ${on ? "var(--primary)" : "var(--border-strong)"}`,
+          background: on ? "var(--primary)" : "var(--surface)",
+          color: "var(--primary-fg)",
+        }}
+      >
+        {on ? <Check size={14} /> : null}
+      </button>
+      <span
+        className="grid flex-none place-items-center rounded-lg"
+        style={{
+          width: 30,
+          height: 30,
+          color: css,
+          background: `color-mix(in oklch, ${css} 15%, transparent)`,
+        }}
+      >
+        <Icon size={16} />
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block text-[14.5px] font-semibold">{label}</span>
+        <span className="block text-xs" style={{ color: "var(--text-faint)" }}>
+          {line}
+        </span>
+      </span>
+      {on ? <SwatchPicker label={label} value={color} onChange={onColor} /> : null}
+    </div>
+  );
+}
+
 export function CalBuilder({
   initial,
   isNew,
@@ -186,14 +263,18 @@ export function CalBuilder({
   const submit = async () => {
     setTouched(true);
     if (!config.name.trim()) return;
-    if (config.types.length === 0) {
+    if (!carriesSomething(config)) {
       pushToast(t.calSync.toasts.pickType, "danger");
       return;
     }
     if (config.scope === "TEAM" && config.teamIds.length === 0) return;
     setStep("loading");
     try {
-      const saved = await onSubmit(builderToInput(config));
+      const input = builderToInput(config);
+      // A feed takes the browser's zone once, at creation; an edit keeps the stored one.
+      const saved = await onSubmit(
+        isNew ? { ...input, timeZone: browserTimezone() ?? "Europe/Prague" } : input
+      );
       setConfig((c) => ({ ...c, id: saved.id, feedUrl: saved.feedUrl, tokenMasked: false }));
       setStep("done");
     } catch (e) {
@@ -467,6 +548,19 @@ export function CalBuilder({
                       onColor={setColor}
                     />
                   ))}
+                  <SourceRow
+                    on={config.includeBirthdays}
+                    label={t.calSync.builder.birthdays}
+                    line={
+                      config.scope === "TEAM"
+                        ? t.calSync.builder.birthdaysTeam
+                        : t.calSync.builder.birthdaysMe
+                    }
+                    icon={BIRTHDAYS_META.icon}
+                    color={config.birthdaysColor}
+                    onToggle={() => patch({ includeBirthdays: !config.includeBirthdays })}
+                    onColor={(v) => patch({ birthdaysColor: v })}
+                  />
                 </div>
                 {config.scope === "TEAM" ? (
                   <div

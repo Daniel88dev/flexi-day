@@ -13,6 +13,9 @@ function meConfig(target: Partial<CalendarTarget> | null = {}): CalendarSyncConf
     name: "My time off",
     scope: "ME",
     distinguishMine: false,
+    timeZone: "Europe/Prague",
+    includeBirthdays: false,
+    birthdaysColor: null,
     teamIds: [],
     types: [
       { type: CalendarRecordType.Vacation, label: "Vacation", color: "violet", mineColor: null },

@@ -18,6 +18,8 @@ const input: CalendarSyncInput = {
   name: "My feed",
   scope: "TEAM",
   distinguishMine: true,
+  includeBirthdays: false,
+  birthdaysColor: "coral",
   teamIds: ["t1"],
   types: [{ type: CalendarRecordType.Vacation, color: "violet", mineColor: "plum" }],
 };

@@ -4,6 +4,7 @@ import type { CalendarSyncConfig } from "@/lib/api/calendar-sync";
 import type { SwatchKey } from "../meta";
 import {
   builderToInput,
+  carriesSomething,
   colorFor,
   configToBuilder,
   defaultColors,
@@ -117,6 +118,46 @@ describe("builderToInput", () => {
   });
 });
 
+describe("the Birthdays row", () => {
+  it("is off with the coral swatch on a new config", () => {
+    expect(newBuilderConfig()).toMatchObject({ includeBirthdays: false, birthdaysColor: "coral" });
+  });
+
+  it("goes into the request body, with or without record types", () => {
+    const cfg = { ...newBuilderConfig(), types: [], includeBirthdays: true };
+    cfg.birthdaysColor = "rose";
+    expect(builderToInput(cfg)).toMatchObject({
+      types: [],
+      includeBirthdays: true,
+      birthdaysColor: "rose",
+    });
+    expect(carriesSomething(cfg)).toBe(true);
+    expect(carriesSomething({ ...cfg, includeBirthdays: false })).toBe(false);
+  });
+
+  it("comes back from a stored config, its colour falling back to coral", () => {
+    const api = {
+      id: "x",
+      name: "n",
+      scope: "ME",
+      distinguishMine: false,
+      timeZone: "Europe/Prague",
+      includeBirthdays: true,
+      birthdaysColor: null,
+      teamIds: [],
+      types: [],
+      feedUrl: "https://api.flexiday.app/calendars/abc.ics",
+      tokenMasked: false,
+      lastFetchedAt: null,
+      target: null,
+      createdAt: "2026-01-01T00:00:00.000Z",
+      updatedAt: "2026-01-01T00:00:00.000Z",
+    } satisfies CalendarSyncConfig;
+    expect(configToBuilder(api)).toMatchObject({ includeBirthdays: true, birthdaysColor: "coral" });
+    expect(configToBuilder({ ...api, birthdaysColor: "plum" }).birthdaysColor).toBe("plum");
+  });
+});
+
 describe("configToBuilder", () => {
   it("round-trips an API config into an editable builder config", () => {
     const api: CalendarSyncConfig = {
@@ -124,6 +165,9 @@ describe("configToBuilder", () => {
       name: "Design team",
       scope: "TEAM",
       distinguishMine: true,
+      timeZone: "Europe/Prague",
+      includeBirthdays: false,
+      birthdaysColor: null,
       teamIds: ["t1", "t2"],
       types: [
         {
@@ -162,6 +206,9 @@ describe("configToBuilder", () => {
       name: "n",
       scope: "ME",
       distinguishMine: false,
+      timeZone: "Europe/Prague",
+      includeBirthdays: false,
+      birthdaysColor: null,
       teamIds: [],
       types: [
         { type: CalendarRecordType.Vacation, label: "Vacation", color: "violet", mineColor: null },
