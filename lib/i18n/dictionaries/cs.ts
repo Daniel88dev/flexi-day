@@ -933,7 +933,7 @@ export const cs: Dictionary = {
       year: "Rok",
       optional: "(nepovinné)",
       yearHint: "Rok ukáže váš věk každému, kdo narozeniny uvidí. Když rok odeberete, zmizí i věk.",
-      yearInvalid: (max: number) => `Zadejte rok od 1900 do ${max}.`,
+      yearInvalid: (min: number, max: number) => `Zadejte rok od ${min} do ${max}.`,
       leapNote: "V letech bez 29. února se zobrazí 28. února.",
       share: "Sdílet moje narozeniny se skupinami",
       noPaidGroup:
@@ -952,9 +952,6 @@ export const cs: Dictionary = {
       colleaguesCalendars: "Kalendáře Google nebo Microsoft vašich kolegů",
       never: "Nikdy",
       youTurn: (age: number) => `Bude vám ${age}`,
-      yourBirthday: "Vaše narozeniny",
-      nameTurns: (name: string, age: number) => `${name} slaví ${age}`,
-      namesBirthday: (name: string) => `${name} má narozeniny`,
     },
     twoFactor: {
       title: "Dvoufázové ověření",

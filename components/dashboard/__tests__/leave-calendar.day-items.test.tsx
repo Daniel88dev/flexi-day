@@ -58,7 +58,12 @@ describe("LeaveCalendar day items", () => {
       />
     );
 
-    await user.click(screen.getByRole("button", { name: "1 birthday on 8 July" }));
+    const chip = screen.getByRole("button", { name: "1 birthday on 8 July" });
+    expect(screen.getByRole("button", { name: "Create request for 8 July" })).not.toContainElement(
+      chip
+    );
+
+    await user.click(chip);
     await user.click(screen.getByText("Petra turns 34"));
 
     expect(onDayClick).not.toHaveBeenCalled();

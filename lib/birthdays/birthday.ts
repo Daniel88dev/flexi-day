@@ -1,6 +1,7 @@
-import type { BirthdayShareGroup } from "@/lib/api/birthday";
-
 export const EARLIEST_BIRTH_YEAR = 1900;
+
+/** The soft pink every birthday wears, on the calendar and in settings. */
+export const BIRTHDAY_TINT = "oklch(0.7 0.14 340)";
 
 const DAYS_IN_MONTH = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31] as const;
 
@@ -38,17 +39,21 @@ export function ageAtNextBirthday(
 }
 
 /**
- * What the share switch offers (D28). `open`: it turns on and off. `lapsed`: only turning off
- * works, because no group is on a paid plan any more. `notice`: there is nowhere to share.
+ * What the share switch offers. `open`: it turns on and off. `lapsed`: a stored share outlived
+ * every paid group, so the switch stays only for turning it off. `notice`: no paid group and
+ * nothing shared, so the notice replaces the switch.
  */
 export type ShareSwitchState = "open" | "lapsed" | "notice";
 
 export function shareSwitchState(input: {
   canShare: boolean;
   storedShared: boolean;
-  shareGroups: BirthdayShareGroup[];
 }): ShareSwitchState {
   if (input.canShare) return "open";
-  if (input.storedShared || input.shareGroups.length > 0) return "lapsed";
-  return "notice";
+  return input.storedShared ? "lapsed" : "notice";
+}
+
+/** The first word of a person's name, or `fallback` when there is none. */
+export function firstName(name: string | null | undefined, fallback = ""): string {
+  return name?.trim().split(/\s+/)[0] || fallback;
 }

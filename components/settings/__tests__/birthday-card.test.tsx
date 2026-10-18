@@ -79,12 +79,9 @@ describe("BirthdayCard", () => {
     renderCard();
 
     expect(await panel().findByText("You turn 39")).toBeInTheDocument();
-    expect(panel().getByText("Group calendar: Platform and Support Prague")).toBeInTheDocument();
-    expect(
-      section("Group calendar: Platform and Support Prague")
-        .getByText("Olivia's birthday")
-        .closest("del")
-    ).not.toBeNull();
+    for (const group of ["Group calendar: Platform", "Group calendar: Support Prague"]) {
+      expect(section(group).getByText("Olivia turns 39").closest("del")).not.toBeNull();
+    }
     expect(
       section("Team calendar feeds").getByText("Olivia's birthday").closest("del")
     ).not.toBeNull();
@@ -100,8 +97,11 @@ describe("BirthdayCard", () => {
     const share = await screen.findByRole("switch", { name: "Share my birthday with my groups" });
     await userEvent.click(share);
 
-    const group = section("Group calendar: Platform and Support Prague");
+    const group = section("Group calendar: Platform");
     expect(group.getByText("Olivia turns 39").closest("del")).toBeNull();
+    expect(
+      section("Group calendar: Support Prague").getByText("Olivia turns 39").closest("del")
+    ).toBeNull();
     expect(section("Team calendar feeds").getByText("Olivia's birthday").closest("del")).toBeNull();
 
     await pick("Day", "3");
@@ -140,6 +140,19 @@ describe("BirthdayCard", () => {
     );
   });
 
+  it("shows the notice to someone who never shared once every group lapsed", async () => {
+    getMock.mockResolvedValue(settings({ canShare: false, shareGroups: [PLATFORM] }));
+    renderCard();
+
+    await panel().findByText("You turn 39");
+    expect(screen.getByText(/None of your groups is on a paid plan/)).toBeInTheDocument();
+    expect(screen.queryByRole("switch")).toBeNull();
+    expect(screen.queryByText(/Your groups are no longer on Pro or Enterprise/)).toBeNull();
+    expect(
+      section("Group calendar: Platform").getByText("Olivia turns 39").closest("del")
+    ).not.toBeNull();
+  });
+
   it("lets a share outlive a lapse only until it is turned off", async () => {
     const base = settings({
       birthday: { month: 10, day: 25, year: 1987, shared: true },
@@ -168,8 +181,8 @@ describe("BirthdayCard", () => {
     await waitFor(() =>
       expect(putMock).toHaveBeenCalledWith({ month: 10, day: 25, year: 1987, shared: false })
     );
-    await waitFor(() => expect(screen.getByRole("switch")).toBeDisabled());
-    expect(screen.getByRole("switch")).not.toBeChecked();
+    expect(await screen.findByText(/None of your groups is on a paid plan/)).toBeInTheDocument();
+    expect(screen.queryByRole("switch")).toBeNull();
   });
 
   it("drops the age from the panel and the save when the year is removed", async () => {
@@ -183,9 +196,7 @@ describe("BirthdayCard", () => {
 
     expect(panel().queryByText(/39/)).toBeNull();
     expect(panel().getByText("Your birthday")).toBeInTheDocument();
-    expect(
-      section("Group calendar: Platform and Support Prague").getByText("Olivia's birthday")
-    ).toBeInTheDocument();
+    expect(section("Group calendar: Platform").getByText("Olivia's birthday")).toBeInTheDocument();
 
     await userEvent.click(screen.getByRole("button", { name: "Save" }));
 

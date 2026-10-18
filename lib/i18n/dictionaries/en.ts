@@ -926,7 +926,7 @@ export const en = {
       optional: "(optional)",
       yearHint:
         "The year shows your age to everyone who sees the birthday. Remove the year and the age goes with it.",
-      yearInvalid: (max: number) => `Enter a year from 1900 to ${max}.`,
+      yearInvalid: (min: number, max: number) => `Enter a year from ${min} to ${max}.`,
       leapNote: "In years without 29 February, it shows on 28 February.",
       share: "Share my birthday with my groups",
       noPaidGroup:
@@ -945,9 +945,6 @@ export const en = {
       colleaguesCalendars: "Colleagues' Google or Microsoft calendars",
       never: "Never",
       youTurn: (age: number) => `You turn ${age}`,
-      yourBirthday: "Your birthday",
-      nameTurns: (name: string, age: number) => `${name} turns ${age}`,
-      namesBirthday: (name: string) => `${name}'s birthday`,
     },
     twoFactor: {
       title: "Two-factor authentication",

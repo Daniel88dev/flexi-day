@@ -1,12 +1,9 @@
 import type { BirthdayCalendarRow } from "@/lib/api/birthdays";
 import type { DayItem } from "@/lib/calendar/day-items";
 import type { Dictionary } from "@/lib/i18n/dictionaries/en";
+import { firstName } from "@/lib/birthdays/birthday";
 
 type BirthdayLabels = Dictionary["calendar"]["birthday"];
-
-function firstName(name: string): string {
-  return name.split(" ")[0] || name;
-}
 
 /** The calendar rows as day items, on the date the server placed each one. */
 export function birthdayDayItems(

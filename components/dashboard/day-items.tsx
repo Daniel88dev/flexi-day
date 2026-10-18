@@ -9,8 +9,8 @@ import type { IsoDate } from "@/lib/api/types";
 import { formatIsoDate } from "@/lib/calendar/month-grid";
 import { countDayItems, type DayItem } from "@/lib/calendar/day-items";
 import { useTranslation } from "@/lib/i18n/use-translation";
+import { BIRTHDAY_TINT } from "@/lib/birthdays/birthday";
 
-export const BIRTHDAY_TINT = "oklch(0.7 0.14 340)";
 export const EVENT_INK = "var(--text)";
 
 const CAKE_COLOR = `color-mix(in oklch, ${BIRTHDAY_TINT} 75%, var(--text))`;

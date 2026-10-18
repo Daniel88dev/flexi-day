@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { ageAtNextBirthday, daysInMonth, parseBirthYear, shareSwitchState } from "../birthday";
+import {
+  ageAtNextBirthday,
+  daysInMonth,
+  firstName,
+  parseBirthYear,
+  shareSwitchState,
+} from "../birthday";
 
 const today = new Date(2026, 9, 18);
 
@@ -52,29 +58,29 @@ describe("ageAtNextBirthday", () => {
 });
 
 describe("shareSwitchState", () => {
-  const groups = [{ groupId: "g1", groupName: "Platform" }];
-
   it("opens the switch while a group is on a paid plan", () => {
-    expect(shareSwitchState({ canShare: true, storedShared: false, shareGroups: groups })).toBe(
-      "open"
-    );
+    expect(shareSwitchState({ canShare: true, storedShared: false })).toBe("open");
+    expect(shareSwitchState({ canShare: true, storedShared: true })).toBe("open");
   });
 
-  it("shows the notice with no paid or lapsed group", () => {
-    expect(shareSwitchState({ canShare: false, storedShared: false, shareGroups: [] })).toBe(
-      "notice"
-    );
+  it("shows the notice with no paid group and nothing shared, lapsed groups or not", () => {
+    expect(shareSwitchState({ canShare: false, storedShared: false })).toBe("notice");
   });
 
-  it("keeps the switch for turning off once every group lapsed", () => {
-    expect(shareSwitchState({ canShare: false, storedShared: true, shareGroups: groups })).toBe(
-      "lapsed"
-    );
-    expect(shareSwitchState({ canShare: false, storedShared: false, shareGroups: groups })).toBe(
-      "lapsed"
-    );
-    expect(shareSwitchState({ canShare: false, storedShared: true, shareGroups: [] })).toBe(
-      "lapsed"
-    );
+  it("keeps the switch for turning off a share that outlived every paid group", () => {
+    expect(shareSwitchState({ canShare: false, storedShared: true })).toBe("lapsed");
+  });
+});
+
+describe("firstName", () => {
+  it("returns the first word of the name", () => {
+    expect(firstName("Olivia  Owner")).toBe("Olivia");
+    expect(firstName(" Petra ")).toBe("Petra");
+  });
+
+  it("falls back without a name", () => {
+    expect(firstName("", "owner")).toBe("owner");
+    expect(firstName(null, "there")).toBe("there");
+    expect(firstName(undefined)).toBe("");
   });
 });

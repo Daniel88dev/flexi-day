@@ -20,8 +20,11 @@ import { errorCode } from "@/lib/api/client";
 import { useMyBirthday, useRemoveMyBirthday, useSaveMyBirthday } from "@/lib/api/queries";
 import { useSession } from "@/lib/auth-client";
 import {
+  BIRTHDAY_TINT,
+  EARLIEST_BIRTH_YEAR,
   ageAtNextBirthday,
   daysInMonth,
+  firstName,
   parseBirthYear,
   shareSwitchState,
 } from "@/lib/birthdays/birthday";
@@ -45,21 +48,22 @@ function sameDraft(a: Draft, b: Draft) {
   );
 }
 
-function firstName(user: { name?: string | null; email?: string | null } | undefined) {
-  const name = user?.name?.trim().split(/\s+/)[0];
-  return name || user?.email?.split("@")[0] || "";
-}
-
 function Chip({ children, muted }: { children: ReactNode; muted?: boolean }) {
   const Tag = muted ? "del" : "span";
   return (
     <Tag
       className={cn(
         "inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-[13px] font-semibold",
-        muted
-          ? "text-muted-foreground decoration-1"
-          : "bg-[color-mix(in_oklch,oklch(0.62_0.15_40)_14%,transparent)] text-[color-mix(in_oklch,oklch(0.62_0.15_40)_70%,var(--foreground))]"
+        muted && "text-muted-foreground decoration-1"
       )}
+      style={
+        muted
+          ? undefined
+          : {
+              background: `color-mix(in oklch, ${BIRTHDAY_TINT} 14%, transparent)`,
+              color: `color-mix(in oklch, ${BIRTHDAY_TINT} 70%, var(--foreground))`,
+            }
+      }
     >
       <Cake className="size-3.5" aria-hidden />
       {children}
@@ -74,6 +78,7 @@ function Chip({ children, muted }: { children: ReactNode; muted?: boolean }) {
 export function BirthdayCard() {
   const { t } = useTranslation();
   const b = t.settings.birthday;
+  const labels = t.calendar.birthday;
   const { data: session } = useSession();
   const query = useMyBirthday();
   const save = useSaveMyBirthday();
@@ -101,14 +106,10 @@ export function BirthdayCard() {
   const switchState = shareSwitchState({
     canShare: query.data?.canShare ?? false,
     storedShared: stored?.shared ?? false,
-    shareGroups,
   });
   const shown = value.shared && hasDate && shareGroups.length > 0;
-  const name = firstName(session?.user);
-  const groupNames = new Intl.ListFormat(t.common.dateLocale, {
-    style: "long",
-    type: "conjunction",
-  }).format(shareGroups.map((g) => g.groupName));
+  const name = firstName(session?.user?.name, session?.user?.email?.split("@")[0]);
+  const groupChip = age !== null ? labels.nameTurns(name, age) : labels.namesBirthday(name);
 
   function edit(patch: Partial<Draft>) {
     setError(null);
@@ -226,7 +227,9 @@ export function BirthdayCard() {
                 </div>
               </div>
               {!year.valid ? (
-                <p className="text-destructive text-sm">{b.yearInvalid(today.getFullYear())}</p>
+                <p className="text-destructive text-sm">
+                  {b.yearInvalid(EARLIEST_BIRTH_YEAR, today.getFullYear())}
+                </p>
               ) : null}
               <p className="text-muted-foreground text-sm">{b.yearHint}</p>
               {value.day === 29 && value.month === 2 ? (
@@ -306,24 +309,27 @@ export function BirthdayCard() {
             <div className="space-y-1.5">
               <p className="text-sm font-medium">{b.yourCalendar}</p>
               {hasDate ? (
-                <Chip>{age !== null ? b.youTurn(age) : b.yourBirthday}</Chip>
+                <Chip>{age !== null ? b.youTurn(age) : labels.yours}</Chip>
               ) : (
                 <p className="text-muted-foreground text-sm">{b.nothingYet}</p>
               )}
             </div>
-            <div className="space-y-1.5">
-              <p className="text-sm font-medium">
-                {shareGroups.length > 0 ? b.groupCalendarIn(groupNames) : b.groupCalendar}
-              </p>
-              {shown ? (
-                <Chip>{age !== null ? b.nameTurns(name, age) : b.namesBirthday(name)}</Chip>
-              ) : (
-                <Chip muted>{b.namesBirthday(name)}</Chip>
-              )}
-            </div>
+            {shareGroups.length > 0 ? (
+              shareGroups.map((group) => (
+                <div key={group.groupId} className="space-y-1.5">
+                  <p className="text-sm font-medium">{b.groupCalendarIn(group.groupName)}</p>
+                  <Chip muted={!shown}>{groupChip}</Chip>
+                </div>
+              ))
+            ) : (
+              <div className="space-y-1.5">
+                <p className="text-sm font-medium">{b.groupCalendar}</p>
+                <Chip muted>{groupChip}</Chip>
+              </div>
+            )}
             <div className="space-y-1.5">
               <p className="text-sm font-medium">{b.teamFeeds}</p>
-              <Chip muted={!shown}>{b.namesBirthday(name)}</Chip>
+              <Chip muted={!shown}>{labels.namesBirthday(name)}</Chip>
               <p className="text-muted-foreground text-xs">{b.neverWithAge}</p>
             </div>
             <div className="space-y-1.5">

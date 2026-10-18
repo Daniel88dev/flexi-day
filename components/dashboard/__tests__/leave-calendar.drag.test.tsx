@@ -41,6 +41,8 @@ const ranges: CalendarRange[] = [
 ];
 
 const day = (label: string) => screen.getByRole("button", { name: `Create request for ${label}` });
+// The create-request button fills the day cell; the cell carries the tint and the hover fade.
+const cell = (label: string) => day(label).parentElement as HTMLElement;
 
 function renderCalendar() {
   const onRangeSelect = vi.fn();
@@ -94,15 +96,15 @@ describe("LeaveCalendar", () => {
     fireEvent.pointerDown(day("7 October"), mouse);
     fireEvent.pointerMove(day("15 October"), mouse);
 
-    expect(day("7 October").style.background).toBe(RANGE_FILL);
+    expect(cell("7 October").style.background).toBe(RANGE_FILL);
     // A weekend cell in range loses its own tint to the wash.
-    expect(day("10 October").style.background).toBe(RANGE_FILL);
+    expect(cell("10 October").style.background).toBe(RANGE_FILL);
     // Pat's days are not the viewer's.
-    expect(day("12 October").style.background).toBe(RANGE_FILL);
-    expect(day("14 October").style.background).toBe(BOOKED_FILL);
-    expect(day("15 October").style.background).toBe(BOOKED_FILL);
-    expect(day("16 October").style.background).not.toBe(RANGE_FILL);
-    expect(day("6 October").style.background).not.toBe(RANGE_FILL);
+    expect(cell("12 October").style.background).toBe(RANGE_FILL);
+    expect(cell("14 October").style.background).toBe(BOOKED_FILL);
+    expect(cell("15 October").style.background).toBe(BOOKED_FILL);
+    expect(cell("16 October").style.background).not.toBe(RANGE_FILL);
+    expect(cell("6 October").style.background).not.toBe(RANGE_FILL);
   });
 
   it("shows a drag label with working days and the booked count", () => {
@@ -127,19 +129,19 @@ describe("LeaveCalendar", () => {
   it("drops the colour fade, bar hits and text selection while dragging, and restores them", () => {
     renderCalendar();
     const bar = screen.getByTitle("Pat Lee · Vacation");
-    expect(day("7 October")).toHaveClass("transition-colors");
+    expect(cell("7 October")).toHaveClass("transition-colors");
     expect(bar.parentElement).toHaveStyle({ pointerEvents: "auto" });
 
     fireEvent.pointerDown(day("7 October"), mouse);
     fireEvent.pointerMove(day("15 October"), mouse);
 
-    expect(day("7 October")).not.toHaveClass("transition-colors");
+    expect(cell("7 October")).not.toHaveClass("transition-colors");
     expect(bar.parentElement).toHaveStyle({ pointerEvents: "none" });
     expect(screen.getByTestId("leave-calendar")).toHaveStyle({ userSelect: "none" });
 
     fireEvent.pointerUp(day("15 October"), mouse);
 
-    expect(day("7 October")).toHaveClass("transition-colors");
+    expect(cell("7 October")).toHaveClass("transition-colors");
     expect(bar.parentElement).toHaveStyle({ pointerEvents: "auto" });
     expect(screen.queryByTestId("drag-range-label")).toBeNull();
   });
@@ -193,7 +195,7 @@ describe("LeaveCalendar", () => {
     fireEvent.pointerUp(day("15 October"), mouse);
 
     expect(onRangeSelect).not.toHaveBeenCalled();
-    expect(day("7 October").style.background).not.toBe(RANGE_FILL);
+    expect(cell("7 October").style.background).not.toBe(RANGE_FILL);
     fireEvent.click(day("7 October"));
     expect(onDayClick).toHaveBeenCalledWith("2026-10-07");
   });

@@ -54,6 +54,7 @@ import { StripeCalendar } from "@/components/dashboard/stripe-calendar";
 import { toDayRecords } from "@/lib/calendar/stripes";
 import { dayItemsByDate } from "@/lib/calendar/day-items";
 import { birthdayDayItems } from "@/lib/birthdays/calendar";
+import { firstName } from "@/lib/birthdays/birthday";
 import { gridRange, gridYears, isoDate } from "@/lib/calendar/month-grid";
 import type { DateRange } from "@/lib/calendar/drag-range";
 import { NewRequestDialog } from "@/components/new-request-dialog";
@@ -131,7 +132,7 @@ export default function DashboardPage() {
     groupsQuery.isPending || activeGroupFromList ? null : activeGroupId
   );
 
-  const firstName = session.data?.user?.name?.split(" ")[0] ?? t.dashboard.fallbackName;
+  const greetingName = firstName(session.data?.user?.name, t.dashboard.fallbackName);
   const viewerId = session.data?.user?.id ?? null;
 
   // `?? []` builds a new array on every render while the query is empty, which
@@ -262,7 +263,7 @@ export default function DashboardPage() {
             className="font-display font-semibold"
             style={{ fontSize: 34, letterSpacing: "-0.02em", marginBottom: 4 }}
           >
-            {t.dashboard.greeting(t.dashboard.greetings[greetingKey()], firstName)}
+            {t.dashboard.greeting(t.dashboard.greetings[greetingKey()], greetingName)}
           </h1>
           <p style={{ color: "var(--text-muted)", fontSize: 16 }}>{t.dashboard.subtitle}</p>
         </div>
