@@ -10,10 +10,12 @@ import {
   type UserSettings,
   type VacationListItem,
 } from "@/lib/api/types";
+import type { BirthdayCalendarRow } from "@/lib/api/birthdays";
 
 const useVacationsSpy = vi.fn();
 const useVacationCalendarSpy = vi.fn();
 const useBankHolidaysMultiSpy = vi.fn();
+const useBirthdaysSpy = vi.fn();
 
 let bankHolidayRows: BankHoliday[] = [];
 
@@ -77,6 +79,8 @@ let settings: UserSettings | undefined = DEFAULT_SETTINGS;
 
 let vacations: VacationListItem[] = [day("v-1", dana, inVisibleMonth(17))];
 
+let birthdayRows: BirthdayCalendarRow[] = [];
+
 vi.mock("next/navigation", () => ({
   usePathname: () => "/dashboard/",
   useRouter: () => ({ replace: vi.fn(), push: vi.fn() }),
@@ -98,6 +102,10 @@ vi.mock("@/lib/api/queries", () => ({
   useVacationCalendar: (params: unknown) => {
     useVacationCalendarSpy(params);
     return { data: vacations, isLoading: false, error: null };
+  },
+  useBirthdays: (params: unknown) => {
+    useBirthdaysSpy(params);
+    return { data: birthdayRows, isLoading: false, error: null };
   },
   useGroups: () => ({
     data: [
@@ -320,5 +328,59 @@ describe("DashboardPage calendar view", () => {
 
     expect(screen.queryByRole("button", { name: /Create request for/ })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: /^\w+,? 15 \w+$/ })).toBeInTheDocument();
+  });
+});
+
+describe("DashboardPage birthdays", () => {
+  const dayLabel = (d: number) =>
+    formatIsoDate(inVisibleMonth(d), "en-GB", { day: "numeric", month: "long" });
+
+  beforeEach(() => {
+    settings = { ...DEFAULT_SETTINGS, dashboardScope: "MINE", dashboardGroupId: null };
+    vacations = [];
+    birthdayRows = [];
+    useBirthdaysSpy.mockClear();
+  });
+
+  it("asks only for the viewer's own birthday in Mine scope", () => {
+    renderWithClient(<DashboardPage />);
+
+    expect(useBirthdaysSpy).toHaveBeenLastCalledWith({
+      year: now.getFullYear(),
+      month: now.getMonth() + 1,
+      groupId: null,
+    });
+  });
+
+  it("asks for the group's birthdays in Group scope", async () => {
+    const user = userEvent.setup();
+    renderWithClient(<DashboardPage />);
+
+    await user.click(screen.getByRole("button", { name: "Group", pressed: false }));
+
+    expect(useBirthdaysSpy).toHaveBeenLastCalledWith(expect.objectContaining({ groupId: "g-1" }));
+  });
+
+  it("puts the viewer's birthday on its day, linked to Settings", async () => {
+    const user = userEvent.setup();
+    birthdayRows = [
+      {
+        userId: dana.id,
+        user: dana,
+        date: inVisibleMonth(20),
+        month: now.getMonth() + 1,
+        day: 20,
+        year: 1988,
+        age: 38,
+      },
+    ];
+    renderWithClient(<DashboardPage />);
+
+    await user.click(screen.getByRole("button", { name: `1 birthday on ${dayLabel(20)}` }));
+
+    expect(screen.getByRole("link", { name: /Your birthday · 38/ })).toHaveAttribute(
+      "href",
+      "/settings"
+    );
   });
 });

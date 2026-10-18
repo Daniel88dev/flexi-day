@@ -1,5 +1,6 @@
 import type { LucideIcon } from "lucide-react";
 import {
+  Cake,
   CalendarDays,
   CircleDashed,
   GraduationCap,
@@ -79,6 +80,9 @@ export const TYPE_ORDER: CalendarRecordType[] = [
   CalendarRecordType.Other,
 ];
 
+/** The Birthdays row: its icon and default swatch, beside the record types. */
+export const BIRTHDAYS_META: { icon: LucideIcon; def: SwatchKey } = { icon: Cake, def: "coral" };
+
 /** Distinct default swatches for the owner's own records when `distinguishMine`. */
 const MINE_DEFAULTS: Partial<Record<CalendarRecordType, SwatchKey>> = {
   [CalendarRecordType.Vacation]: "plum",
@@ -97,6 +101,8 @@ export type BuilderConfig = {
   distinguishMine: boolean;
   types: CalendarRecordType[];
   colors: Record<string, SwatchKey>; // keyed by `${type}` and `${type}_mine`
+  includeBirthdays: boolean;
+  birthdaysColor: SwatchKey;
   feedUrl: string | null;
   tokenMasked: boolean;
 };
@@ -121,6 +127,8 @@ export function newBuilderConfig(defaultTeamIds: string[] = []): BuilderConfig {
     distinguishMine: false,
     types: [CalendarRecordType.Vacation, CalendarRecordType.PaidTimeOff, CalendarRecordType.Sick],
     colors: defaultColors(),
+    includeBirthdays: false,
+    birthdaysColor: BIRTHDAYS_META.def,
     feedUrl: null,
     tokenMasked: false,
   };
@@ -141,6 +149,11 @@ export function configToBuilder(cfg: CalendarSyncConfig): BuilderConfig {
     distinguishMine: cfg.distinguishMine,
     types: cfg.types.map((t) => t.type),
     colors,
+    includeBirthdays: cfg.includeBirthdays,
+    birthdaysColor:
+      cfg.birthdaysColor && isSwatchKey(cfg.birthdaysColor)
+        ? cfg.birthdaysColor
+        : BIRTHDAYS_META.def,
     feedUrl: cfg.tokenMasked ? null : cfg.feedUrl,
     tokenMasked: cfg.tokenMasked,
   };
@@ -159,7 +172,14 @@ export function builderToInput(cfg: BuilderConfig): CalendarSyncInput {
       color: cfg.colors[type] ?? typeMetaFor(type).def,
       ...(sendMine ? { mineColor: cfg.colors[mineKey(type)] ?? typeMetaFor(type).def } : {}),
     })),
+    includeBirthdays: cfg.includeBirthdays,
+    birthdaysColor: cfg.birthdaysColor,
   };
+}
+
+/** Whether a config carries anything: a record type, or Birthdays. */
+export function carriesSomething(cfg: Pick<BuilderConfig, "types" | "includeBirthdays">): boolean {
+  return cfg.types.length > 0 || cfg.includeBirthdays;
 }
 
 /** Resolve the CSS color for an entry, honouring the "distinguish mine" split. */

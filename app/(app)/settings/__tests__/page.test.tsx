@@ -50,6 +50,10 @@ vi.mock("@/lib/auth-client", () => ({
   },
 }));
 
+vi.mock("@/components/settings/birthday-card", () => ({
+  BirthdayCard: () => <div data-testid="birthday-card" />,
+}));
+
 vi.mock("@/components/settings/delete-account-card", () => ({
   DeleteAccountCard: ({ layoutReady }: { layoutReady: boolean }) => (
     <div data-testid="delete-account-card" data-layout-ready={String(layoutReady)} />
@@ -263,6 +267,14 @@ describe("SettingsPage", () => {
     // CREDENTIAL_ACCOUNT_NOT_FOUND, so the form could only ever fail.
     expect(await screen.findByText("Sign-in methods")).toBeInTheDocument();
     expect(screen.queryByLabelText("Current password")).not.toBeInTheDocument();
+  });
+
+  it("puts the birthday card right after the notifications card", () => {
+    const { container } = renderWithClient(<SettingsPage />);
+
+    const notifications = screen.getByText("Notifications").closest('[data-slot="card"]');
+    expect(notifications?.nextElementSibling).toBe(screen.getByTestId("birthday-card"));
+    expect(container.firstElementChild?.children[2]).toBe(screen.getByTestId("birthday-card"));
   });
 
   it("puts the delete account card last, once the cards above it have settled", async () => {

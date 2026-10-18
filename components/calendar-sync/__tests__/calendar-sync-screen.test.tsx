@@ -47,6 +47,9 @@ function config(target: CalendarSyncConfig["target"]): CalendarSyncConfig {
     name: "My time off",
     scope: "ME",
     distinguishMine: false,
+    timeZone: "Europe/Prague",
+    includeBirthdays: false,
+    birthdaysColor: null,
     teamIds: [],
     types: [
       { type: CalendarRecordType.Vacation, label: "Vacation", color: "violet", mineColor: null },

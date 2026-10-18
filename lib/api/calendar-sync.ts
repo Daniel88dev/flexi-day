@@ -35,6 +35,11 @@ export type CalendarSyncConfig = {
   name: string;
   scope: CalendarSyncScope;
   distinguishMine: boolean;
+  /** IANA zone the feed and its sync target write timed events in. */
+  timeZone: string;
+  /** Whether the feed carries birthdays: the owner's own on `ME`, members' shared ones on `TEAM`. */
+  includeBirthdays: boolean;
+  birthdaysColor: string | null;
   teamIds: UUID[];
   types: CalendarSyncTypeEntry[];
   feedUrl: string; // full URL on create/get/update/regenerate, masked on list
@@ -51,13 +56,20 @@ export type CalendarSyncTypeInput = {
   mineColor?: string;
 };
 
-/** Body for creating/updating a config (update replaces the whole config). */
+/**
+ * Body for creating/updating a config (update replaces the whole config). `types`
+ * may be empty when `includeBirthdays` is on. `timeZone` goes on create only; an
+ * update without it keeps the stored zone.
+ */
 export type CalendarSyncInput = {
   name: string;
   scope: CalendarSyncScope;
   distinguishMine: boolean;
   teamIds: UUID[];
   types: CalendarSyncTypeInput[];
+  includeBirthdays: boolean;
+  birthdaysColor: string;
+  timeZone?: string;
 };
 
 export function listCalendarSyncs(): Promise<CalendarSyncConfig[]> {

@@ -20,6 +20,9 @@ import {
 } from "@/lib/calendar/month-grid";
 import { DayHeading, MonthSeam, dayNumberColor, dayTint } from "@/components/dashboard/month-seam";
 import { DragRangeLabel } from "@/components/dashboard/drag-range-label";
+import { DayItemsChip } from "@/components/dashboard/day-items";
+import type { DayItem } from "@/lib/calendar/day-items";
+import { firstName } from "@/lib/birthdays/birthday";
 import { datesCovered, rangeCellFill, type DateRange } from "@/lib/calendar/drag-range";
 import { useDragRange } from "@/hooks/use-drag-range";
 import { useTranslation } from "@/lib/i18n/use-translation";
@@ -60,6 +63,8 @@ interface LeaveCalendarProps {
   onRangeSelect?: (range: DateRange) => void;
   /** Whose records a drag marks as already booked. */
   viewerId?: string | null;
+  /** Group events and birthdays per day, shown as a chip in the day's header row. */
+  dayItems?: ReadonlyMap<IsoDate, DayItem[]>;
 }
 
 /** Bars a week shows before the rest collapse behind the "+N more" toggle. */
@@ -80,10 +85,6 @@ interface PlacedBar {
   contL: boolean;
   contR: boolean;
   lane: number;
-}
-
-function firstName(name: string): string {
-  return name.split(" ")[0] ?? name;
 }
 
 function CalBar({
@@ -328,6 +329,7 @@ export function LeaveCalendar({
   showAdjacentDays = true,
   onRangeSelect,
   viewerId = null,
+  dayItems,
 }: LeaveCalendarProps) {
   const { t } = useTranslation();
   const drag = useDragRange((range) => onRangeSelect?.(range));
@@ -469,6 +471,25 @@ export function LeaveCalendar({
                 const isWeekend = di >= 5;
                 const dayClickable = shown && Boolean(onDayClick);
                 const dayDraggable = dayClickable && draggable;
+                const heading = shown ? (
+                  <DayHeading labelDate={labelled.has(cell.date) ? cell.date : null}>
+                    <span
+                      className="tnum inline-grid place-items-center rounded-full"
+                      style={{
+                        minWidth: cellLabelSize,
+                        height: cellLabelSize,
+                        padding: "0 4px",
+                        fontSize: cellFs,
+                        fontWeight: isToday ? 700 : 500,
+                        background: isToday ? "var(--primary)" : "transparent",
+                        color: dayNumberColor({ isToday, inMonth: cell.inMonth, isWeekend }),
+                      }}
+                    >
+                      {cell.day}
+                    </span>
+                  </DayHeading>
+                ) : null;
+                const cellPadding = mini ? "4px 5px" : "8px 10px";
                 return (
                   <div
                     // Seven fixed columns that never reorder: the column is the cell.
@@ -483,67 +504,43 @@ export function LeaveCalendar({
                           )
                         : ""
                     }
-                    role={dayClickable ? "button" : undefined}
-                    tabIndex={dayClickable ? 0 : undefined}
-                    aria-label={
-                      dayClickable
-                        ? t.calendar.createRequestDay(
-                            formatIsoDate(cell.date, t.common.dateLocale, {
-                              day: "numeric",
-                              month: "long",
-                            })
-                          )
-                        : undefined
-                    }
-                    onClick={
-                      dayClickable
-                        ? () => {
-                            if (!drag.isClickSuppressed()) onDayClick?.(cell.date);
-                          }
-                        : undefined
-                    }
-                    onKeyDown={
-                      dayClickable
-                        ? (e) => {
-                            if (e.key === "Enter" || e.key === " ") {
-                              e.preventDefault();
-                              onDayClick?.(cell.date);
-                            }
-                          }
-                        : undefined
-                    }
                     style={{
+                      position: "relative",
                       borderRight: di < 6 ? "1px solid var(--border)" : "none",
-                      padding: mini ? "4px 5px" : "8px 10px",
-                      cursor:
-                        dayDraggable && drag.canDrag
-                          ? "cell"
-                          : dayClickable
-                            ? "pointer"
-                            : undefined,
+                      padding: dayClickable ? 0 : cellPadding,
                       background:
                         (shown ? rangeCellFill(cell.date, drag.range, bookedDates) : undefined) ??
                         dayTint({ inMonth: cell.inMonth, isWeekend }) ??
                         "transparent",
                     }}
                   >
-                    {shown ? (
-                      <DayHeading labelDate={labelled.has(cell.date) ? cell.date : null}>
-                        <span
-                          className="tnum inline-grid place-items-center rounded-full"
-                          style={{
-                            minWidth: cellLabelSize,
-                            height: cellLabelSize,
-                            padding: "0 4px",
-                            fontSize: cellFs,
-                            fontWeight: isToday ? 700 : 500,
-                            background: isToday ? "var(--primary)" : "transparent",
-                            color: dayNumberColor({ isToday, inMonth: cell.inMonth, isWeekend }),
-                          }}
-                        >
-                          {cell.day}
-                        </span>
-                      </DayHeading>
+                    {dayClickable ? (
+                      // The chip below is this button's sibling, not its child: nested
+                      // interactive controls flatten for screen readers.
+                      <button
+                        type="button"
+                        className="absolute inset-0 flex items-start text-left outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-inset"
+                        aria-label={t.calendar.createRequestDay(
+                          formatIsoDate(cell.date, t.common.dateLocale, {
+                            day: "numeric",
+                            month: "long",
+                          })
+                        )}
+                        onClick={() => {
+                          if (!drag.isClickSuppressed()) onDayClick?.(cell.date);
+                        }}
+                        style={{
+                          padding: cellPadding,
+                          cursor: dayDraggable && drag.canDrag ? "cell" : "pointer",
+                        }}
+                      >
+                        {heading}
+                      </button>
+                    ) : (
+                      heading
+                    )}
+                    {shown && !mini && dayItems?.has(cell.date) ? (
+                      <DayItemsChip date={cell.date} items={dayItems.get(cell.date) ?? []} />
                     ) : null}
                   </div>
                 );

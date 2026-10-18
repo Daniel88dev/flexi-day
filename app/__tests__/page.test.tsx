@@ -35,4 +35,16 @@ describe("LandingPage", () => {
 
     expect(screen.getByText("Přílohy k žádostem (obrázky a PDF)")).toBeInTheDocument();
   });
+
+  it("lists birthdays on the group calendar under the Pro plan in English", () => {
+    renderIn("en");
+
+    expect(screen.getByText("Birthdays on the group calendar")).toBeInTheDocument();
+  });
+
+  it("lists birthdays on the group calendar under the Pro plan in Czech", () => {
+    renderIn("cs");
+
+    expect(screen.getByText("Narozeniny v kalendáři skupiny")).toBeInTheDocument();
+  });
 });

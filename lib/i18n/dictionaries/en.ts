@@ -110,6 +110,23 @@ export const en = {
     bookDay: (date: string) => `Book ${date}`,
     dragRangeDays: (n: number) => `${n} ${n === 1 ? "day" : "days"}`,
     dragRangeBooked: (n: number) => `${n} already booked`,
+    birthday: {
+      yours: "Your birthday",
+      yoursWithAge: (age: number) => `Your birthday · ${age}`,
+      nameTurns: (name: string, age: number) => `${name} turns ${age}`,
+      namesBirthday: (name: string) => `${name}'s birthday`,
+      changeInSettings: "Change in Settings",
+    },
+    dayItems: {
+      summary: (events: number, birthdays: number) =>
+        [
+          events > 0 ? `${events} ${events === 1 ? "group event" : "group events"}` : null,
+          birthdays > 0 ? `${birthdays} ${birthdays === 1 ? "birthday" : "birthdays"}` : null,
+        ]
+          .filter(Boolean)
+          .join(", "),
+      onDay: (summary: string, date: string) => `${summary} on ${date}`,
+    },
   },
 
   nav: {
@@ -900,6 +917,35 @@ export const en = {
       "Includes time off mirrored into this group from another one. Only groups you may view are listed.",
     noViewableGroups:
       "You cannot view any group's time off yet. A group admin can grant you view access.",
+    birthday: {
+      title: "Birthday",
+      description: "Optional. The panel shows who sees what.",
+      day: "Day",
+      month: "Month",
+      year: "Year",
+      optional: "(optional)",
+      yearHint:
+        "The year shows your age to everyone who sees the birthday. Remove the year and the age goes with it.",
+      yearInvalid: (min: number, max: number) => `Enter a year from ${min} to ${max}.`,
+      leapNote: "In years without 29 February, it shows on 28 February.",
+      share: "Share my birthday with my groups",
+      noPaidGroup:
+        "None of your groups is on a paid plan, so there is nowhere to share your birthday yet. You still see it on your own calendar.",
+      lapsed:
+        "Your groups are no longer on Pro or Enterprise. You can stop sharing, but turning it back on needs a group on a paid plan.",
+      remove: "Remove birthday",
+      removed: "Birthday removed",
+      panelTitle: "What others see",
+      yourCalendar: "Your calendar",
+      nothingYet: "Nothing yet",
+      groupCalendar: "Group calendar",
+      groupCalendarIn: (names: string) => `Group calendar: ${names}`,
+      teamFeeds: "Team calendar feeds",
+      neverWithAge: "Never with your age.",
+      colleaguesCalendars: "Colleagues' Google or Microsoft calendars",
+      never: "Never",
+      youTurn: (age: number) => `You turn ${age}`,
+    },
     twoFactor: {
       title: "Two-factor authentication",
       hint: "Add a second step to password sign-in: a code from an authenticator app or your email. Google and Microsoft sign-in are not affected.",
@@ -1476,6 +1522,7 @@ export const en = {
     featureMembers: (n: number) => `${n} people per group`,
     featureSlots: (n: number) => `Up to ${n} extra group slots`,
     featureAttachments: "Attachments on requests (images & PDF)",
+    featureBirthdays: "Birthdays on the group calendar",
     subscribe: "Subscribe",
     switchPlan: "Switch to this plan",
     current: "Current plan",
@@ -1640,6 +1687,7 @@ export const en = {
           "5 groups, 25 people each",
           "Everything in Free",
           "Attachments on requests (images & PDF)",
+          "Birthdays on the group calendar",
           "Extra group slots (€1.50 / mo each)",
           "Priority email support",
         ],
@@ -1677,7 +1725,7 @@ export const en = {
       wrong: "Something went wrong",
       feedCopied: "Feed URL copied",
       feedCopyFailed: "Couldn't copy the feed URL",
-      pickType: "Pick at least one record type",
+      pickType: "Pick at least one record type or Birthdays",
       saveFailed: "Couldn't save the calendar",
       linkCopied: "Link copied to clipboard",
       opening: (name: string) => `Opening ${name}…`,
@@ -1731,6 +1779,10 @@ export const en = {
       team: "Team",
       distinguishTitle: "Give my own records a distinct color",
       distinguishSub: "Tell your vacation apart from the team's at a glance.",
+      birthdays: "Birthdays",
+      birthdaysMe: "Only your own birthday",
+      birthdaysTeam:
+        "Birthdays that members of the selected groups chose to share. Never with ages.",
       colorLabelMine: (type: string) => `${type} — mine`,
       colorLabelTeam: (type: string) => `${type} — team`,
       footerNote: "Read-only feed · a private link is generated on save",

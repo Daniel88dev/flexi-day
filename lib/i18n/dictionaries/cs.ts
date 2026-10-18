@@ -112,6 +112,25 @@ export const cs: Dictionary = {
     bookDay: (date: string) => `Zadat ${date}`,
     dragRangeDays: (n: number) => `${n} ${plural(n, "den", "dny", "dní")}`,
     dragRangeBooked: (n: number) => `Už zadáno: ${n} ${plural(n, "den", "dny", "dní")}`,
+    birthday: {
+      yours: "Vaše narozeniny",
+      yoursWithAge: (age: number) => `Vaše narozeniny · ${age}`,
+      nameTurns: (name: string, age: number) => `${name} slaví ${age}`,
+      namesBirthday: (name: string) => `${name} má narozeniny`,
+      changeInSettings: "Změnit v Nastavení",
+    },
+    dayItems: {
+      summary: (events: number, birthdays: number) =>
+        [
+          events > 0
+            ? `${events} ${plural(events, "skupinová událost", "skupinové události", "skupinových událostí")}`
+            : null,
+          birthdays > 0 ? `narozeniny: ${birthdays}` : null,
+        ]
+          .filter(Boolean)
+          .join(", "),
+      onDay: (summary: string, date: string) => `${date}: ${summary}`,
+    },
   },
 
   nav: {
@@ -906,6 +925,34 @@ export const cs: Dictionary = {
       "Zahrnuje i volno zrcadlené do této skupiny z jiné. Nabízíme jen skupiny, které smíte zobrazit.",
     noViewableGroups:
       "Zatím nemůžete zobrazit volno žádné skupiny. Přístup k zobrazení vám může udělit správce skupiny.",
+    birthday: {
+      title: "Narozeniny",
+      description: "Nepovinné. Panel ukazuje, kdo co uvidí.",
+      day: "Den",
+      month: "Měsíc",
+      year: "Rok",
+      optional: "(nepovinné)",
+      yearHint: "Rok ukáže váš věk každému, kdo narozeniny uvidí. Když rok odeberete, zmizí i věk.",
+      yearInvalid: (min: number, max: number) => `Zadejte rok od ${min} do ${max}.`,
+      leapNote: "V letech bez 29. února se zobrazí 28. února.",
+      share: "Sdílet moje narozeniny se skupinami",
+      noPaidGroup:
+        "Žádná z vašich skupin nemá placený tarif, takže narozeniny zatím není kde sdílet. Ve svém kalendáři je uvidíte i tak.",
+      lapsed:
+        "Vaše skupiny už nemají tarif Pro ani Enterprise. Sdílení můžete vypnout, ale znovu ho zapnete jen se skupinou na placeném tarifu.",
+      remove: "Odebrat narozeniny",
+      removed: "Narozeniny odebrány",
+      panelTitle: "Co uvidí ostatní",
+      yourCalendar: "Váš kalendář",
+      nothingYet: "Zatím nic",
+      groupCalendar: "Kalendář skupiny",
+      groupCalendarIn: (names: string) => `Kalendář skupiny: ${names}`,
+      teamFeeds: "Týmové kalendářové kanály",
+      neverWithAge: "Nikdy s vaším věkem.",
+      colleaguesCalendars: "Kalendáře Google nebo Microsoft vašich kolegů",
+      never: "Nikdy",
+      youTurn: (age: number) => `Bude vám ${age}`,
+    },
     twoFactor: {
       title: "Dvoufázové ověření",
       hint: "Přidejte k přihlášení heslem druhý krok: kód z ověřovací aplikace nebo z e-mailu. Přihlášení přes Google a Microsoft se nemění.",
@@ -1483,6 +1530,7 @@ export const cs: Dictionary = {
     featureMembers: (n: number) => `${n} lidí na skupinu`,
     featureSlots: (n: number) => `Až ${n} extra slotů pro skupiny`,
     featureAttachments: "Přílohy k žádostem (obrázky a PDF)",
+    featureBirthdays: "Narozeniny v kalendáři skupiny",
     subscribe: "Předplatit",
     switchPlan: "Přejít na tento tarif",
     current: "Aktuální tarif",
@@ -1649,6 +1697,7 @@ export const cs: Dictionary = {
           "5 skupin po 25 lidech",
           "Vše z tarifu Free",
           "Přílohy k žádostem (obrázky a PDF)",
+          "Narozeniny v kalendáři skupiny",
           "Extra sloty pro skupiny (1,50 € / měs.)",
           "Prioritní e-mailová podpora",
         ],
@@ -1686,7 +1735,7 @@ export const cs: Dictionary = {
       wrong: "Něco se pokazilo",
       feedCopied: "URL feedu zkopírováno",
       feedCopyFailed: "Nepodařilo se zkopírovat URL feedu",
-      pickType: "Vyberte alespoň jeden typ záznamu",
+      pickType: "Vyberte alespoň jeden typ záznamu nebo narozeniny",
       saveFailed: "Nepodařilo se uložit kalendář",
       linkCopied: "Odkaz zkopírován do schránky",
       opening: (name: string) => `Otevírání ${name}…`,
@@ -1740,6 +1789,10 @@ export const cs: Dictionary = {
       team: "Tým",
       distinguishTitle: "Odlišit mé vlastní záznamy jinou barvou",
       distinguishSub: "Rozeznejte svou dovolenou od týmové na první pohled.",
+      birthdays: "Narozeniny",
+      birthdaysMe: "Jen vaše vlastní narozeniny",
+      birthdaysTeam:
+        "Narozeniny, které se členové vybraných skupin rozhodli sdílet. Nikdy s věkem.",
       colorLabelMine: (type: string) => `${type} — moje`,
       colorLabelTeam: (type: string) => `${type} — tým`,
       footerNote: "Feed pouze pro čtení · soukromý odkaz se vygeneruje při uložení",
