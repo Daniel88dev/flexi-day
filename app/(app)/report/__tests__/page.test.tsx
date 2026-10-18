@@ -111,7 +111,11 @@ const mocks = vi.hoisted(() => ({
     isPending: false,
     isError: false,
   },
-  overviewResult: { data: undefined as ReportOverview | undefined, isPending: false },
+  overviewResult: {
+    data: undefined as ReportOverview | undefined,
+    isPending: false,
+    isError: false,
+  },
   fetchYear: (() => Promise.resolve(undefined)) as (year: number) => Promise<unknown>,
 }));
 
@@ -153,7 +157,7 @@ describe("ReportPage", () => {
     vi.useFakeTimers({ shouldAdvanceTime: true });
     vi.setSystemTime(new Date(2026, 7, 22));
     mocks.scopeResult = { data: scope, isPending: false, isError: false };
-    mocks.overviewResult = { data: overview, isPending: false };
+    mocks.overviewResult = { data: overview, isPending: false, isError: false };
     mocks.fetchYear = (year) => Promise.resolve(year === 2025 ? priorOverview : overview);
   });
 
@@ -284,6 +288,7 @@ describe("ReportPage", () => {
     mocks.overviewResult = {
       data: { ...overview, members: [], monthly: [], summary: [] },
       isPending: false,
+      isError: false,
     };
 
     renderPage();
@@ -301,6 +306,39 @@ describe("ReportPage", () => {
     expect(panelTriggers(container)).toHaveLength(0);
   });
 
+  it("says the report could not load when the overview query fails", () => {
+    mocks.overviewResult = { data: undefined, isPending: false, isError: true };
+
+    const { container } = renderPage();
+
+    expect(screen.getByRole("alert")).toHaveTextContent(/Could not load the report/i);
+    expect(screen.queryByText(/No leave recorded/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/No members match/i)).not.toBeInTheDocument();
+    expect(panelTriggers(container)).toHaveLength(0);
+  });
+
+  it("says no leave was recorded when the filters match nothing", () => {
+    mocks.overviewResult = {
+      data: { ...overview, members: [], monthly: [], summary: [] },
+      isPending: false,
+      isError: false,
+    };
+
+    renderPage();
+
+    expect(screen.getByText(/No leave recorded for these filters/i)).toBeInTheDocument();
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
+  it("keeps drawing a cached overview when its refetch fails", () => {
+    mocks.overviewResult = { data: overview, isPending: false, isError: true };
+
+    const { container } = renderPage();
+
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    expect(panelTriggers(container).length).toBeGreaterThan(0);
+  });
+
   it("does not call the report empty while the scope is still loading", () => {
     mocks.scopeResult = { data: undefined, isPending: true, isError: false };
 
@@ -312,7 +350,7 @@ describe("ReportPage", () => {
 
   it("shows the loading state while the overview is in flight", () => {
     mocks.scopeResult = { data: scope, isPending: false, isError: false };
-    mocks.overviewResult = { data: undefined, isPending: true };
+    mocks.overviewResult = { data: undefined, isPending: true, isError: false };
 
     renderPage();
 
