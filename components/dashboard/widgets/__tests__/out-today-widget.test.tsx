@@ -32,28 +32,26 @@ function buildVacation(overrides: Partial<VacationListItem>): VacationListItem {
 }
 
 describe("OutTodayWidget", () => {
-  it("renders the heading and notes another-month view when todayDay is null", () => {
-    render(<OutTodayWidget vacations={[]} todayDay={null} />);
+  it("renders the heading and notes another-month view when today is null", () => {
+    render(<OutTodayWidget vacations={[]} today={null} />);
     expect(screen.getByText("Out today")).toBeInTheDocument();
     expect(screen.getByText(/Viewing another month/i)).toBeInTheDocument();
   });
 
   it("lists approved users whose requestedDay matches today", () => {
-    const todayIso = new Date().toISOString().slice(0, 10);
-    const todayDay = Number(todayIso.slice(8, 10));
+    const todayIso = "2026-06-13";
     const vacations = [buildVacation({ requestedDay: todayIso })];
-    render(<OutTodayWidget vacations={vacations} todayDay={todayDay} />);
+    render(<OutTodayWidget vacations={vacations} today={todayIso} />);
     expect(screen.getByText("Dana Holt")).toBeInTheDocument();
     expect(screen.getByText(/1 away/i)).toBeInTheDocument();
   });
 
   it("reports the record's actual type instead of coercing it to Vacation", () => {
-    const todayIso = new Date().toISOString().slice(0, 10);
-    const todayDay = Number(todayIso.slice(8, 10));
+    const todayIso = "2026-06-13";
     const vacations = [
       buildVacation({ requestedDay: todayIso, vacationType: CalendarRecordType.StudyLeave }),
     ];
-    render(<OutTodayWidget vacations={vacations} todayDay={todayDay} />);
+    render(<OutTodayWidget vacations={vacations} today={todayIso} />);
     expect(screen.getByText("Study Leave")).toBeInTheDocument();
     expect(screen.queryByText("Vacation")).not.toBeInTheDocument();
   });
@@ -61,15 +59,14 @@ describe("OutTodayWidget", () => {
   it("still lists someone whose record type comes from a newer backend", () => {
     // Presence is the widget's whole job: an unknown type renders with its raw
     // value rather than hiding the person or crashing.
-    const todayIso = new Date().toISOString().slice(0, 10);
-    const todayDay = Number(todayIso.slice(8, 10));
+    const todayIso = "2026-06-13";
     const vacations = [
       buildVacation({
         requestedDay: todayIso,
         vacationType: "SABBATICAL" as CalendarRecordType,
       }),
     ];
-    render(<OutTodayWidget vacations={vacations} todayDay={todayDay} />);
+    render(<OutTodayWidget vacations={vacations} today={todayIso} />);
     expect(screen.getByText("Dana Holt")).toBeInTheDocument();
     expect(screen.getByText("SABBATICAL")).toBeInTheDocument();
   });
@@ -77,10 +74,9 @@ describe("OutTodayWidget", () => {
 
 describe("OutTodayWidget teammate's Away", () => {
   it("lists a teammate's Sick as Away, never the raw value", () => {
-    const todayIso = new Date().toISOString().slice(0, 10);
-    const todayDay = Number(todayIso.slice(8, 10));
+    const todayIso = "2026-06-13";
     const vacations = [buildVacation({ requestedDay: todayIso, vacationType: AWAY_RECORD_TYPE })];
-    render(<OutTodayWidget vacations={vacations} todayDay={todayDay} />);
+    render(<OutTodayWidget vacations={vacations} today={todayIso} />);
 
     expect(screen.getByText("Dana Holt")).toBeInTheDocument();
     expect(screen.getByText("Away")).toBeInTheDocument();

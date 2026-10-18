@@ -1,6 +1,6 @@
 import type { GroupEventRow } from "@/lib/api/group-events";
 import type { IsoDate } from "@/lib/api/types";
-import { isoDate } from "@/lib/calendar/month-grid";
+import { localDayOf } from "@/lib/calendar/month-grid";
 import type { GroupEventTarget } from "./day-items";
 
 export interface OpenGroupEventSheetOptions {
@@ -27,11 +27,6 @@ function set(next: GroupEventSheetState | null) {
   listeners.forEach((fn) => fn());
 }
 
-function today(): IsoDate {
-  const d = new Date();
-  return isoDate(d.getFullYear(), d.getMonth() + 1, d.getDate());
-}
-
 export function subscribeGroupEventSheet(listener: () => void): () => void {
   listeners.add(listener);
   return () => {
@@ -45,7 +40,7 @@ export function groupEventSheetState(): GroupEventSheetState | null {
 
 export function openGroupEventSheet(options: OpenGroupEventSheetOptions = {}) {
   const { date, ...rest } = options;
-  set({ kind: "create", id: ++seq, date: date ?? today(), ...rest });
+  set({ kind: "create", id: ++seq, date: date ?? localDayOf(new Date()), ...rest });
 }
 
 export function openGroupEventEditor(target: GroupEventTarget) {

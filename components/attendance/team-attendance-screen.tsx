@@ -38,6 +38,7 @@ import {
   type AttendanceTeamPerson,
 } from "@/lib/api/attendance";
 import { ApiError } from "@/lib/api/client";
+import type { IsoDate } from "@/lib/api/types";
 import { useGroups, useOrganization, useTeamAttendance } from "@/lib/api/queries";
 import { formatMinutes } from "@/lib/attendance/duration";
 import { exclusionLabel } from "@/lib/attendance/exclusion";
@@ -56,6 +57,7 @@ import {
 } from "@/lib/attendance/team";
 import { formatBusinessDay, formatBusinessWeekday, formatClockTime } from "@/lib/attendance/today";
 import { useSession } from "@/lib/auth-client";
+import { localDayOf } from "@/lib/calendar/month-grid";
 import { useTranslation } from "@/lib/i18n/use-translation";
 import { useViewerRoles } from "@/lib/viewer/use-viewer-roles";
 import { cn } from "@/lib/utils";
@@ -693,8 +695,10 @@ export function TeamAttendanceScreen() {
   const activeOrganization =
     organizations.find((candidate) => candidate.id === organizationId) ?? organizations[0] ?? null;
 
-  // The browser's day only until the answer names the organization's.
-  const fallbackToday = new Date().toISOString().slice(0, 10);
+  // The browser's day only until an answer names the organization's. Kept in
+  // state, because the read for the organization's period has no answer yet.
+  const [businessToday, setBusinessToday] = useState<IsoDate | null>(null);
+  const fallbackToday = businessToday ?? localDayOf(new Date());
   const anchor = anchored ?? fallbackToday;
   const range = rangeOf(view, anchor, custom ?? weekRange(fallbackToday));
   const days = daysInRange(range);
@@ -714,6 +718,7 @@ export function TeamAttendanceScreen() {
   );
   const team = query.data;
   const today = team?.businessDate ?? null;
+  if (today !== null && today !== businessToday) setBusinessToday(today);
 
   // The filter is the org admin's; a group admin's list is their groups already.
   const filterable = team?.scope === "ORGANIZATION";

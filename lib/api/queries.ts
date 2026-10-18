@@ -176,6 +176,7 @@ import type {
   CreateGroupInviteInput,
   CreateVacationInput,
   InviteSignUpInput,
+  IsoDate,
   SetGroupMirrorsInput,
   SetUserQuotaInput,
   UpdateGroupHolidayCountryInput,
@@ -205,7 +206,7 @@ export const qk = {
     ["quotas", groupId, year, userId ?? "all"] as const,
   myApprovals: () => ["my-approvals"] as const,
   myPendingRequests: () => ["my-pending-requests"] as const,
-  dashboardSummary: () => ["dashboard-summary"] as const,
+  dashboardSummary: (today: IsoDate) => ["dashboard-summary", today] as const,
   myBalances: (year: number) => ["my-balances", year] as const,
   notifications: (unreadOnly: boolean) => ["notifications", unreadOnly] as const,
   bankHolidays: (year: number, country: string, region?: string) =>
@@ -278,7 +279,7 @@ function invalidateVacationDependants(qc: ReturnType<typeof useQueryClient>) {
   qc.invalidateQueries({ queryKey: ["vacation"] });
   qc.invalidateQueries({ queryKey: qk.myApprovals() });
   qc.invalidateQueries({ queryKey: qk.myPendingRequests() });
-  qc.invalidateQueries({ queryKey: qk.dashboardSummary() });
+  qc.invalidateQueries({ queryKey: ["dashboard-summary"] });
   qc.invalidateQueries({ queryKey: ["my-balances"] });
 }
 
@@ -426,10 +427,10 @@ export function useMyPendingRequests() {
   });
 }
 
-export function useDashboardSummary() {
+export function useDashboardSummary(today: IsoDate) {
   return useQuery({
-    queryKey: qk.dashboardSummary(),
-    queryFn: getDashboardSummary,
+    queryKey: qk.dashboardSummary(today),
+    queryFn: () => getDashboardSummary(today),
   });
 }
 
@@ -815,7 +816,7 @@ export function useCreateGroup() {
 // scopes to, the user's balances, and what they may mirror from.
 function invalidateAfterMembershipChange(qc: ReturnType<typeof useQueryClient>) {
   qc.invalidateQueries({ queryKey: qk.groups() });
-  qc.invalidateQueries({ queryKey: qk.dashboardSummary() });
+  qc.invalidateQueries({ queryKey: ["dashboard-summary"] });
   qc.invalidateQueries({ queryKey: qk.reportScope() });
   qc.invalidateQueries({ queryKey: ["my-balances"] });
   qc.invalidateQueries({ queryKey: ["group-mirrors"] });

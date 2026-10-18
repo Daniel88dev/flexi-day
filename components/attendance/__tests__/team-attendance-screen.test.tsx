@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { renderWithClient, withClient } from "@/lib/test-utils";
@@ -18,6 +18,10 @@ const teamQuery = {
   error: null as Error | null,
 };
 const teamRequests: (TeamAttendanceParams | null)[] = [];
+/** Answers per range, for a read that has not answered for every range yet. */
+const answerFor = {
+  current: null as ((params: TeamAttendanceParams) => AttendanceTeam | undefined) | null,
+};
 const roles = { current: null as ViewerRoles | null };
 const organizationDetail = {
   data: undefined as { groups: { id: string; groupName: string }[] } | undefined,
@@ -28,7 +32,9 @@ const groups = { data: [] as GroupListItem[], isPending: false };
 vi.mock("@/lib/api/queries", () => ({
   useTeamAttendance: (params: TeamAttendanceParams | null, enabled = true) => {
     teamRequests.push(enabled ? params : null);
-    return teamQuery;
+    return answerFor.current
+      ? { ...teamQuery, data: params ? answerFor.current(params) : undefined }
+      : teamQuery;
   },
   useGroups: () => groups,
   useOrganization: () => organizationDetail,
@@ -428,6 +434,50 @@ describe("TeamAttendanceScreen", () => {
       expect(
         within(screen.getByTestId("team-day-noah-2026-09-09")).queryByText("Changed later")
       ).toBeNull();
+    });
+  });
+
+  describe("the period it opens on", () => {
+    beforeEach(() => {
+      vi.useFakeTimers({ toFake: ["Date"] });
+      // Sunday 18 Oct, 20:00 in Los Angeles: already Monday 19 Oct in UTC.
+      vi.setSystemTime(new Date(2026, 9, 18, 20));
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+      answerFor.current = null;
+    });
+
+    const mondayTeam = () =>
+      team({ businessDate: "2026-10-19", from: "2026-10-19", to: "2026-10-25" });
+
+    it("opens on the local week, then moves to the organization's once the read names it", () => {
+      const { rerender } = renderWithClient(<TeamAttendanceScreen />);
+      expect(teamRequests.at(-1)).toMatchObject({ from: "2026-10-12", to: "2026-10-18" });
+
+      // The local week's read answers; the organization's week has not answered yet.
+      answerFor.current = (params) =>
+        params.from === "2026-10-12"
+          ? team({ businessDate: "2026-10-19", from: "2026-10-12", to: "2026-10-18" })
+          : undefined;
+      rerender(withClient(<TeamAttendanceScreen />));
+      expect(teamRequests.at(-1)).toMatchObject({ from: "2026-10-19", to: "2026-10-25" });
+
+      rerender(withClient(<TeamAttendanceScreen />));
+      expect(teamRequests.at(-1)).toMatchObject({ from: "2026-10-19", to: "2026-10-25" });
+    });
+
+    it("keeps the period the admin stepped to when the read answers", async () => {
+      const { rerender } = renderWithClient(<TeamAttendanceScreen />);
+      await userEvent.click(screen.getByRole("button", { name: "Next" }));
+      expect(teamRequests.at(-1)).toMatchObject({ from: "2026-10-19", to: "2026-10-25" });
+      await userEvent.click(screen.getByRole("button", { name: "Previous" }));
+      expect(teamRequests.at(-1)).toMatchObject({ from: "2026-10-12", to: "2026-10-18" });
+
+      teamQuery.data = mondayTeam();
+      rerender(withClient(<TeamAttendanceScreen />));
+      expect(teamRequests.at(-1)).toMatchObject({ from: "2026-10-12", to: "2026-10-18" });
     });
   });
 

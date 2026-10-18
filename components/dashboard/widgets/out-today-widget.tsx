@@ -5,6 +5,7 @@ import { LeaveTag } from "@/components/dashboard/leave-tag";
 import {
   vacationStatus,
   CalendarRecordType,
+  type IsoDate,
   type VacationListItem,
   type WireRecordType,
 } from "@/lib/api/types";
@@ -12,22 +13,19 @@ import { useTranslation } from "@/lib/i18n/use-translation";
 
 interface OutTodayWidgetProps {
   vacations: VacationListItem[];
-  todayDay: number | null;
+  /** The viewer's local day, or null while the calendar shows another month. */
+  today: IsoDate | null;
 }
 
-export function OutTodayWidget({ vacations, todayDay }: OutTodayWidgetProps) {
+export function OutTodayWidget({ vacations, today }: OutTodayWidgetProps) {
   const { t } = useTranslation();
-  const today = new Date();
-  const todayIso = today.toISOString().slice(0, 10);
-
-  // If the calendar month being viewed isn't the current month, "today" isn't meaningful.
-  const considerToday = todayDay !== null;
+  const considerToday = today !== null;
 
   const seen = new Set<string>();
   const out: Array<{ user: VacationListItem["user"]; type: WireRecordType }> = [];
   if (considerToday) {
     for (const v of vacations) {
-      if (v.requestedDay !== todayIso) continue;
+      if (v.requestedDay !== today) continue;
       if (vacationStatus(v) !== "approved") continue;
       if (v.vacationType === CalendarRecordType.BankHoliday) continue;
       if (seen.has(v.userId)) continue;

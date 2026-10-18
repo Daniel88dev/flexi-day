@@ -4,6 +4,7 @@ import {
   gridRange,
   gridYears,
   isoDate,
+  localDayOf,
   monthLabelDates,
   monthWeeks,
   seamColumn,
@@ -163,6 +164,15 @@ describe("isoDate", () => {
   it("rolls day zero back to the last day of the previous month", () => {
     expect(isoDate(2026, 3, 0)).toBe("2026-02-28");
     expect(isoDate(2028, 3, 0)).toBe("2028-02-29");
+  });
+});
+
+describe("localDayOf", () => {
+  it("names the browser's day, not the UTC date, across the UTC midnight", () => {
+    // The suite runs in Los Angeles: 20:00 on 13 Oct there is 03:00 on 14 Oct in UTC.
+    const evening = new Date(2026, 9, 13, 20);
+    expect(evening.toISOString().slice(0, 10)).toBe("2026-10-14");
+    expect(localDayOf(evening)).toBe("2026-10-13");
   });
 });
 
