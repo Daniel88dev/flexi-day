@@ -32,7 +32,7 @@ describe("Legal pages", () => {
 
   it("Legal pages carry the current update date", () => {
     render(<PrivacyPage />);
-    expect(screen.getByText("Last updated: 17 October 2026")).toBeInTheDocument();
+    expect(screen.getByText("Last updated: 18 October 2026")).toBeInTheDocument();
   });
 
   it("Privacy page describes attendance location, its audience and its retention", () => {
