@@ -5,6 +5,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { NewRequestDialog } from "../new-request-dialog";
 import { renderWithClient } from "@/lib/test-utils";
 import { UploadError } from "@/lib/api/attachment-upload";
+import { ApiError } from "@/lib/api/client";
 import { CalendarRecordType, type Attachment, type VacationDetail } from "@/lib/api/types";
 
 const createMutate = vi.fn();
@@ -179,6 +180,26 @@ describe("NewRequestDialog", () => {
       halfDay: false,
       note: null,
     });
+  });
+
+  it("names the stored days the overlap error reports", async () => {
+    createMutate.mockRejectedValueOnce(
+      new ApiError(409, "Conflict", undefined, [
+        { message: "Conflict", context: { conflictingDays: ["2026-12-24", "2027-01-01"] } },
+      ])
+    );
+    renderWithClient(
+      <NewRequestDialog
+        open
+        initialDate="2026-12-24"
+        initialEndDate="2027-01-01"
+        onOpenChange={() => {}}
+      />
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Submit Request" }));
+
+    expect(await screen.findByText(/already booked: 24 Dec, 1 Jan\./)).toBeInTheDocument();
   });
 
   it("falls back to a single day when initialEndDate is before initialDate", () => {

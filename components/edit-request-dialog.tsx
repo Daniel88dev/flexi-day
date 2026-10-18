@@ -23,6 +23,7 @@ import {
   type VacationDetail,
 } from "@/lib/api/types";
 import { useTranslation } from "@/lib/i18n/use-translation";
+import { formatIsoDate } from "@/lib/calendar/month-grid";
 
 /** Backend times are HH:MM:SS; `<input type="time">` wants HH:MM. */
 function toInputTime(value: string | null): string {
@@ -30,7 +31,7 @@ function toInputTime(value: string | null): string {
 }
 
 function formatDay(iso: string, locale: string) {
-  return new Date(iso).toLocaleDateString(locale, { day: "numeric", month: "short" });
+  return formatIsoDate(iso, locale, { day: "numeric", month: "short" });
 }
 
 function formatDayRange(startIso: string, endIso: string, locale: string) {

@@ -75,6 +75,19 @@ describe("ApprovalsWidget", () => {
       approvals = sample;
     });
 
+    it("keeps a range starting on 1 January in its own year", () => {
+      vi.useFakeTimers({ toFake: ["Date"] });
+      vi.setSystemTime(new Date("2026-10-18T12:00:00Z"));
+      approvals = [{ ...sample[0], from: "2027-01-01", to: "2027-01-04" }];
+      try {
+        renderWithClient(<ApprovalsWidget />);
+
+        expect(screen.getByText(/Jan 1–4 2027/)).toBeInTheDocument();
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
     it("renders pending approval rows under Waiting on you", () => {
       renderWithClient(<ApprovalsWidget />);
       expect(screen.getByText("Pending approvals")).toBeInTheDocument();

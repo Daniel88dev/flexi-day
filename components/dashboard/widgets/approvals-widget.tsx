@@ -15,17 +15,19 @@ import { leaveMetaFor } from "@/lib/demo/leave-meta";
 import { useOpenVacationDetail } from "@/lib/vacations/use-vacation-detail";
 import { useViewerRoles } from "@/lib/viewer/use-viewer-roles";
 import type { PendingApproval } from "@/lib/api/types";
+import { toUtc } from "@/lib/calendar/month-grid";
 
 function formatRange(fromIso: string, toIso: string, monthsShort: string[]) {
-  const f = new Date(fromIso);
-  const t = new Date(toIso);
-  const fm = monthsShort[f.getMonth()];
-  const tm = monthsShort[t.getMonth()];
+  const f = new Date(toUtc(fromIso));
+  const t = new Date(toUtc(toIso));
+  const fm = monthsShort[f.getUTCMonth()];
+  const tm = monthsShort[t.getUTCMonth()];
   // Or next January's "Jan 6" reads as this January's.
-  const year = f.getFullYear() === new Date().getFullYear() ? "" : ` ${f.getFullYear().toString()}`;
-  if (fromIso === toIso) return `${fm} ${f.getDate()}${year}`;
-  if (fm === tm) return `${fm} ${f.getDate()}–${t.getDate()}${year}`;
-  return `${fm} ${f.getDate()} – ${tm} ${t.getDate()}${year}`;
+  const year =
+    f.getUTCFullYear() === new Date().getFullYear() ? "" : ` ${f.getUTCFullYear().toString()}`;
+  if (fromIso === toIso) return `${fm} ${f.getUTCDate()}${year}`;
+  if (fm === tm) return `${fm} ${f.getUTCDate()}–${t.getUTCDate()}${year}`;
+  return `${fm} ${f.getUTCDate()} – ${tm} ${t.getUTCDate()}${year}`;
 }
 
 type ListQuery = { data?: PendingApproval[]; isLoading: boolean; error: Error | null };

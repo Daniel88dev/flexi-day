@@ -13,9 +13,9 @@
     "typecheck": "tsc --noEmit",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage"
+    "test": "TZ=America/Los_Angeles vitest run",
+    "test:watch": "TZ=America/Los_Angeles vitest",
+    "test:coverage": "TZ=America/Los_Angeles vitest run --coverage"
   },
   "dependencies": {
     "@hugeicons/core-free-icons": "^4.3.5",
