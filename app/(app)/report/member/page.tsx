@@ -90,6 +90,9 @@ export default function MemberReportPage() {
     );
   }
 
+  // Notes reach only privileged readers.
+  const showNotes = report.bookings.some((booking) => booking.note);
+
   // One chart per allowance; they are independent budgets and must not merge.
   const allowances: CalendarRecordType[] = [];
   for (const row of report.summary) {
@@ -219,7 +222,7 @@ export default function MemberReportPage() {
                     <TableHead>{t.report.detail.range}</TableHead>
                     <TableHead className="text-right">{t.report.detail.days}</TableHead>
                     <TableHead>{t.report.detail.status}</TableHead>
-                    <TableHead>{t.report.detail.note}</TableHead>
+                    {showNotes ? <TableHead>{t.report.detail.note}</TableHead> : null}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -240,9 +243,11 @@ export default function MemberReportPage() {
                       <TableCell>
                         <Badge variant="outline">{t.report.detail.statuses[booking.status]}</Badge>
                       </TableCell>
-                      <TableCell className="text-muted-foreground max-w-[240px] truncate">
-                        {booking.note ?? ""}
-                      </TableCell>
+                      {showNotes ? (
+                        <TableCell className="text-muted-foreground max-w-[240px] truncate">
+                          {booking.note ?? ""}
+                        </TableCell>
+                      ) : null}
                     </TableRow>
                   ))}
                 </TableBody>

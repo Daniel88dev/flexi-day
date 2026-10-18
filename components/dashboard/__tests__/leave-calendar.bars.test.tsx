@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { render, screen, within } from "@testing-library/react";
 import { LeaveCalendar, type CalendarRange } from "../leave-calendar";
-import { CalendarRecordType } from "@/lib/api/types";
+import { AWAY_RECORD_TYPE, CalendarRecordType } from "@/lib/api/types";
 import { isoDate } from "@/lib/calendar/month-grid";
 
 const baseProps = { year: 2026, month: 7 } as const;
@@ -99,5 +99,22 @@ describe("LeaveCalendar bar look", () => {
     render(<LeaveCalendar {...baseProps} ranges={[danaBar({})]} />);
 
     expect(within(screen.getByTitle("Dana Holt · Vacation")).getByText("Dana")).toBeVisible();
+  });
+});
+
+describe("LeaveCalendar teammate's Away", () => {
+  it("labels a teammate's Away bar with no note and a neutral colour that isn't Sick's", () => {
+    render(
+      <LeaveCalendar
+        {...baseProps}
+        onSelect={() => {}}
+        ranges={[danaBar({ type: AWAY_RECORD_TYPE, pending: true })]}
+      />
+    );
+
+    const bar = screen.getByTitle("Dana Holt · Away · Pending");
+    expect(bar).toHaveAttribute("aria-label", "Open request details: Dana Holt · Away · Pending");
+    expect(bar.getAttribute("style")).not.toContain("var(--text-muted)");
+    expect(bar.getAttribute("style")).not.toContain("var(--c-sick)");
   });
 });

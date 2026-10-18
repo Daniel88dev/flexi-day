@@ -3,9 +3,9 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { LeaveTypeFilter } from "../leave-type-filter";
 import { DEFAULT_LEAVE_TYPES } from "@/lib/demo/leave-meta";
-import { CalendarRecordType } from "@/lib/api/types";
+import { CalendarRecordType, type WireRecordType } from "@/lib/api/types";
 
-function setup(selected: CalendarRecordType[]) {
+function setup(selected: WireRecordType[]) {
   const onChange = vi.fn();
   render(<LeaveTypeFilter value={new Set(selected)} onChange={onChange} />);
   return { onChange };
@@ -97,5 +97,19 @@ describe("LeaveTypeFilter", () => {
     expect((onChange.mock.calls[0][0] as Set<CalendarRecordType>).size).toBe(
       DEFAULT_LEAVE_TYPES.length
     );
+  });
+});
+
+describe("LeaveTypeFilter Away chip", () => {
+  it("offers Away as a chip of its own that Sick doesn't toggle", async () => {
+    const user = userEvent.setup();
+    const { onChange } = setup(DEFAULT_LEAVE_TYPES);
+
+    expect(screen.getByRole("button", { name: "Away" })).toHaveAttribute("aria-pressed", "true");
+    await user.click(screen.getByRole("button", { name: "Sick" }));
+
+    const next = onChange.mock.calls[0][0] as Set<WireRecordType>;
+    expect(next.has(CalendarRecordType.Sick)).toBe(false);
+    expect(next.has("AWAY")).toBe(true);
   });
 });

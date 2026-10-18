@@ -1,4 +1,4 @@
-import { CalendarRecordType } from "@/lib/api/types";
+import { AWAY_RECORD_TYPE, CalendarRecordType, type WireRecordType } from "@/lib/api/types";
 
 const daySpan = (range: string, days: number) =>
   `${range} · ${days} ${days === 1 ? "day" : "days"}`;
@@ -59,7 +59,8 @@ export const en = {
     [CalendarRecordType.SickDay]: { label: "Sick day", short: "SickD" },
     [CalendarRecordType.StudyLeave]: { label: "Study Leave", short: "Study" },
     [CalendarRecordType.Other]: { label: "Other", short: "Other" },
-  } satisfies Record<CalendarRecordType, { label: string; short: string }>,
+    [AWAY_RECORD_TYPE]: { label: "Away", short: "Away" },
+  } satisfies Record<WireRecordType, { label: string; short: string }>,
 
   calendar: {
     /** Full month names, January-first. */
@@ -1684,7 +1685,7 @@ export const en = {
     featuresEyebrow: "Everything in one place",
     featuresTitle: "One calendar your whole team trusts",
     featuresSubtitle:
-      "Vacations, sick days, home office and holidays, tracked together and visible to everyone.",
+      "Vacations, sick leave, home office and holidays, tracked together in one shared calendar.",
     features: [
       {
         title: "Shared team calendar",
@@ -1708,7 +1709,7 @@ export const en = {
       },
       {
         title: "Private by default",
-        body: "Sensitive leave stays discreet. Granular permissions keep the right details with the right people.",
+        body: "Teammates see sick leave only as Away. Notes, comments and attachments stay with you, your approvers and your group admins.",
       },
     ],
     stepsTitle: "Three steps to a happier team",
@@ -1737,7 +1738,7 @@ export const en = {
       items: [
         {
           q: "Who can see the details of my leave?",
-          a: "Your manager and group approvers see the requests they decide on. Teammates only see that you're away, and sensitive leave types stay discreet.",
+          a: "Teammates see when you're off and what type of leave it is, except sick leave, which they see only as Away. Your notes, comments and attachments stay between you, your approvers and your group admins, and teammates never see a declined or cancelled request.",
         },
         {
           q: "Is flexiday GDPR-compliant?",

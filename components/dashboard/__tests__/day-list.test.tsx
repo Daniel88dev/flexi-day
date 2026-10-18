@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { DayList } from "../day-list";
-import { CalendarRecordType } from "@/lib/api/types";
+import { AWAY_RECORD_TYPE, CalendarRecordType } from "@/lib/api/types";
 import type { DayRecord } from "@/lib/calendar/stripes";
 
 const anna: DayRecord = {
@@ -58,5 +58,16 @@ describe("DayList", () => {
 
     expect(onOpenRequest).toHaveBeenCalledWith("v-anna");
     expect(onBook).toHaveBeenCalledOnce();
+  });
+});
+
+describe("DayList teammate's Away", () => {
+  it("labels a teammate's Away with the pending marker, never the raw value", () => {
+    renderList([{ ...anna, type: AWAY_RECORD_TYPE, pending: true }]);
+
+    const row = screen.getByRole("button", { name: /Anna Adams/ });
+    expect(row).toHaveTextContent("Away");
+    expect(row).toHaveTextContent("Pending");
+    expect(row).not.toHaveTextContent("AWAY");
   });
 });

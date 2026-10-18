@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { CalendarRecordType, type VacationListItem } from "@/lib/api/types";
+import { AWAY_RECORD_TYPE, CalendarRecordType, type VacationListItem } from "@/lib/api/types";
 import {
   MAX_STRIPES,
   dayEntries,
@@ -240,5 +240,11 @@ describe("toDayRecords", () => {
     ]);
 
     expect(records).toEqual([]);
+  });
+
+  it("keeps a teammate's Away row so the day list and stripes show them away", () => {
+    const records = toDayRecords([vacation({ vacationType: AWAY_RECORD_TYPE, approvedAt: null })]);
+
+    expect(records).toMatchObject([{ id: "v1", type: "AWAY", pending: true }]);
   });
 });

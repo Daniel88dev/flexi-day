@@ -27,9 +27,9 @@ import { bankHolidaysToRanges } from "@/lib/holidays";
 import { useSession } from "@/lib/auth-client";
 import { ApiError } from "@/lib/api/client";
 import {
-  isKnownCalendarRecordType,
+  isKnownWireRecordType,
   vacationStatus,
-  type CalendarRecordType,
+  type WireRecordType,
   type DashboardScope,
 } from "@/lib/api/types";
 import {
@@ -105,7 +105,7 @@ function Dashboard() {
   const initial = todayParts();
   const [year, setYear] = useState(initial.year);
   const [month, setMonth] = useState(initial.month);
-  const [filter, setFilter] = useState<Set<CalendarRecordType>>(() => new Set(DEFAULT_LEAVE_TYPES));
+  const [filter, setFilter] = useState<Set<WireRecordType>>(() => new Set(DEFAULT_LEAVE_TYPES));
   const [presetDate, setPresetDate] = useState<string | null>(null);
   const [presetEndDate, setPresetEndDate] = useState<string | null>(null);
   const [newRequestOpen, setNewRequestOpen] = useState(false);
@@ -233,7 +233,7 @@ function Dashboard() {
       .filter((v) => vacationStatus(v) !== "rejected")
       // A newer backend can serve types this build doesn't know; hide the bar
       // rather than crash the calendar on its missing meta.
-      .filter((v) => isKnownCalendarRecordType(v.vacationType))
+      .filter((v) => isKnownWireRecordType(v.vacationType))
       .map((v) => ({
         id: v.id,
         userId: v.userId,

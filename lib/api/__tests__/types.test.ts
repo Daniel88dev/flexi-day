@@ -1,7 +1,10 @@
 import { describe, it, expect } from "vitest";
 import {
+  AWAY_RECORD_TYPE,
   CalendarRecordType,
   isKnownCalendarRecordType,
+  isKnownWireRecordType,
+  writableRecordType,
   sickDayBenefitActive,
   type GroupOrganization,
 } from "../types";
@@ -47,5 +50,28 @@ describe("isKnownCalendarRecordType", () => {
   it("rejects values a newer backend might serve", () => {
     expect(isKnownCalendarRecordType("SABBATICAL")).toBe(false);
     expect(isKnownCalendarRecordType("")).toBe(false);
+  });
+});
+
+describe("isKnownWireRecordType", () => {
+  it("accepts Away beside every stored type", () => {
+    expect(isKnownWireRecordType("AWAY")).toBe(true);
+    for (const value of Object.values(CalendarRecordType)) {
+      expect(isKnownWireRecordType(value)).toBe(true);
+    }
+  });
+
+  it("rejects values a newer backend might serve", () => {
+    expect(isKnownWireRecordType("SABBATICAL")).toBe(false);
+  });
+});
+
+describe("writableRecordType", () => {
+  it("returns a stored type unchanged", () => {
+    expect(writableRecordType(CalendarRecordType.Sick)).toBe(CalendarRecordType.Sick);
+  });
+
+  it("returns null for Away, which no write accepts", () => {
+    expect(writableRecordType(AWAY_RECORD_TYPE)).toBeNull();
   });
 });

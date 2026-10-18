@@ -1,7 +1,7 @@
 "use client";
 
 import { visibleRanges, type CalendarRange } from "@/components/dashboard/leave-calendar";
-import type { CalendarRecordType } from "@/lib/api/types";
+import type { WireRecordType } from "@/lib/api/types";
 import { DEFAULT_LEAVE_TYPES, leaveMetaFor } from "@/lib/demo/leave-meta";
 import { useTranslation } from "@/lib/i18n/use-translation";
 
@@ -15,7 +15,7 @@ export function CalendarLegend({
   filter,
 }: {
   ranges: CalendarRange[];
-  filter?: Set<CalendarRecordType>;
+  filter?: Set<WireRecordType>;
 }) {
   const { t } = useTranslation();
 

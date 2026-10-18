@@ -2,7 +2,12 @@
 
 import { AvatarBubble } from "@/components/brand/avatar-bubble";
 import { LeaveTag } from "@/components/dashboard/leave-tag";
-import { vacationStatus, CalendarRecordType, type VacationListItem } from "@/lib/api/types";
+import {
+  vacationStatus,
+  CalendarRecordType,
+  type VacationListItem,
+  type WireRecordType,
+} from "@/lib/api/types";
 import { useTranslation } from "@/lib/i18n/use-translation";
 
 interface OutTodayWidgetProps {
@@ -19,7 +24,7 @@ export function OutTodayWidget({ vacations, todayDay }: OutTodayWidgetProps) {
   const considerToday = todayDay !== null;
 
   const seen = new Set<string>();
-  const out: Array<{ user: VacationListItem["user"]; type: CalendarRecordType }> = [];
+  const out: Array<{ user: VacationListItem["user"]; type: WireRecordType }> = [];
   if (considerToday) {
     for (const v of vacations) {
       if (v.requestedDay !== todayIso) continue;

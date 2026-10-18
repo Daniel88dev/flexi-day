@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { CalendarRecordType, type VacationListItem } from "@/lib/api/types";
+import { AWAY_RECORD_TYPE, CalendarRecordType, type VacationListItem } from "@/lib/api/types";
 import { buildPreviewEntries, feedVacations } from "../preview";
 import { newBuilderConfig } from "../meta";
 
@@ -138,5 +138,90 @@ describe("buildPreviewEntries", () => {
     ];
     const entries = buildPreviewEntries(cfg, items, ME, 2026, 7);
     expect(entries[0]).toMatchObject({ isMine: false, name: "Sam Lee" });
+  });
+});
+
+describe("buildPreviewEntries for other people's sick leave", () => {
+  const sam = { id: OTHER, name: "Sam Lee", initials: "SL", avatarColor: "hsl(1 1% 1%)" };
+
+  function teamSickConfig() {
+    const cfg = newBuilderConfig();
+    cfg.scope = "TEAM";
+    cfg.teamIds = ["team-a"];
+    cfg.types = [CalendarRecordType.Sick];
+    return cfg;
+  }
+
+  it("shows a teammate's Away row in a feed that includes Sick, as Away with no note", () => {
+    const items = [
+      vac({
+        requestedDay: "2026-07-10",
+        userId: OTHER,
+        user: sam,
+        vacationType: AWAY_RECORD_TYPE,
+      }),
+    ];
+
+    const entries = buildPreviewEntries(teamSickConfig(), items, ME, 2026, 7);
+
+    expect(entries).toEqual([
+      expect.objectContaining({ name: "Sam Lee", type: "AWAY", note: null, isMine: false }),
+    ]);
+  });
+
+  it("shows another person's full Sick row as Away with no note, as the team feed does", () => {
+    const items = [
+      vac({
+        requestedDay: "2026-07-10",
+        userId: OTHER,
+        user: sam,
+        vacationType: CalendarRecordType.Sick,
+        note: "Flu",
+      }),
+    ];
+
+    const entries = buildPreviewEntries(teamSickConfig(), items, ME, 2026, 7);
+
+    expect(entries).toEqual([expect.objectContaining({ type: "AWAY", note: null })]);
+  });
+
+  it("drops the note from another person's vacation, as the team feed does", () => {
+    const cfg = teamSickConfig();
+    cfg.types = [CalendarRecordType.Vacation];
+    const items = [
+      vac({ requestedDay: "2026-07-10", userId: OTHER, user: sam, note: "Family trip" }),
+    ];
+
+    const entries = buildPreviewEntries(cfg, items, ME, 2026, 7);
+
+    expect(entries).toEqual([
+      expect.objectContaining({ type: CalendarRecordType.Vacation, note: null }),
+    ]);
+  });
+
+  it("keeps the viewer's own Sick and note", () => {
+    const items = [
+      vac({ requestedDay: "2026-07-10", vacationType: CalendarRecordType.Sick, note: "Flu" }),
+    ];
+
+    const entries = buildPreviewEntries(teamSickConfig(), items, ME, 2026, 7);
+
+    expect(entries).toEqual([
+      expect.objectContaining({ type: CalendarRecordType.Sick, note: "Flu", isMine: true }),
+    ]);
+  });
+
+  it("leaves out a teammate's Away row when the feed doesn't include Sick", () => {
+    const cfg = teamSickConfig();
+    cfg.types = [CalendarRecordType.Vacation];
+    const items = [
+      vac({
+        requestedDay: "2026-07-10",
+        userId: OTHER,
+        vacationType: AWAY_RECORD_TYPE,
+      }),
+    ];
+
+    expect(buildPreviewEntries(cfg, items, ME, 2026, 7)).toEqual([]);
   });
 });

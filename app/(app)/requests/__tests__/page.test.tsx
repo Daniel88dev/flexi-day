@@ -1,10 +1,10 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
-import { screen } from "@testing-library/react";
+import { screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import RequestsPage from "../page";
 import { renderWithClient } from "@/lib/test-utils";
 import { ApiError } from "@/lib/api/client";
-import { CalendarRecordType, type VacationListItem } from "@/lib/api/types";
+import { AWAY_RECORD_TYPE, CalendarRecordType, type VacationListItem } from "@/lib/api/types";
 
 const approveMutate = vi.fn();
 const rejectMutate = vi.fn();
@@ -254,5 +254,32 @@ describe("RequestsPage action errors", () => {
 
     await user.click(screen.getByRole("button", { name: "Approve" }));
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+});
+
+describe("RequestsPage teammate's Away", () => {
+  it("labels a teammate's Sick as Away with a colour, never the raw value", () => {
+    const bob = { id: "u-bob", name: "Bob Dvorak", initials: "BD", avatarColor: "hsl(0 0% 30%)" };
+    // The shape the backend sends a teammate for a Sick row: AWAY, no note.
+    const away = {
+      ...day("v-away", "2026-08-25", false),
+      userId: bob.id,
+      user: bob,
+      requestId: "r-away",
+      vacationType: AWAY_RECORD_TYPE,
+      note: null,
+    };
+    vacations.push(away);
+    try {
+      renderWithClient(<RequestsPage />);
+
+      const row = screen.getByText("Bob Dvorak").closest("tr") as HTMLElement;
+      const type = within(row).getByText("Away");
+      expect(type.className).toMatch(/\bbg-/);
+      expect(within(row).getByText("Pending")).toBeInTheDocument();
+      expect(row).not.toHaveTextContent("AWAY");
+    } finally {
+      vacations.pop();
+    }
   });
 });

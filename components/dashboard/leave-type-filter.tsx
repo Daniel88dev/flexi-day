@@ -9,13 +9,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import type { CalendarRecordType } from "@/lib/api/types";
+import type { WireRecordType } from "@/lib/api/types";
 import { DEFAULT_LEAVE_TYPES, leaveMetaFor } from "@/lib/demo/leave-meta";
 import { useTranslation } from "@/lib/i18n/use-translation";
 
 interface LeaveTypeFilterProps {
-  value: Set<CalendarRecordType>;
-  onChange: (next: Set<CalendarRecordType>) => void;
+  value: Set<WireRecordType>;
+  onChange: (next: Set<WireRecordType>) => void;
 }
 
 /**
@@ -26,7 +26,7 @@ interface LeaveTypeFilterProps {
 export function LeaveTypeFilter({ value, onChange }: LeaveTypeFilterProps) {
   const { t } = useTranslation();
 
-  function toggle(id: CalendarRecordType) {
+  function toggle(id: WireRecordType) {
     const next = new Set(value);
     if (next.has(id)) next.delete(id);
     else next.add(id);
