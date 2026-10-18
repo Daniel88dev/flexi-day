@@ -134,7 +134,7 @@ export interface DemoLeave {
 export const DEMO_LEAVE: DemoLeave[] = [
   { id: "l1", who: "mr", type: CalendarRecordType.Vacation, from: 8, to: 19, note: "Sardinia" },
   { id: "l2", who: "sa", type: CalendarRecordType.Vacation, from: 11, to: 16, note: "Family trip" },
-  { id: "l3", who: "lo", type: CalendarRecordType.Sick, from: 9, to: 9, note: "Flu" },
+  { id: "l3", who: "lo", type: CalendarRecordType.Sick, from: 9, to: 9 },
   {
     id: "l4",
     who: "ak",
