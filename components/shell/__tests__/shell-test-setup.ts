@@ -1,3 +1,4 @@
+import type { GroupEventGroup, GroupEventRow } from "@/lib/api/group-events";
 import type { ViewerRoles } from "@/lib/viewer/use-viewer-roles";
 
 const member: ViewerRoles = {
@@ -34,6 +35,24 @@ export const clockState = {
   autoClosedSession: null,
 };
 
+export const groupEventGroups = {
+  creatable: [
+    { groupId: "g-1", groupName: "Design", canCreate: true },
+    { groupId: "g-2", groupName: "Support", canCreate: true },
+  ] as GroupEventGroup[],
+  none: [{ groupId: "g-1", groupName: "Design", canCreate: false }] as GroupEventGroup[],
+};
+
+/** What the create answers; only the group and the first date matter to the shell. */
+export const createdGroupEvent = {
+  id: "ge-1",
+  groupId: "g-2",
+  groupName: "Support",
+  title: "Offsite",
+  startDate: "2026-11-03",
+  endDate: "2026-11-03",
+} as GroupEventRow;
+
 /** Mutable seams the shell tests flip between cases; every mock factory reads them. */
 export const shellState = {
   pathname: "/dashboard",
@@ -42,6 +61,7 @@ export const shellState = {
   roles: member as ViewerRoles,
   /** Undefined stands for a viewer with no Employment, whose clock never renders. */
   clock: undefined as typeof clockState | undefined,
+  groupEventGroups: groupEventGroups.none,
 };
 
 export function resetShellState() {
@@ -50,6 +70,7 @@ export function resetShellState() {
   shellState.supportAdmin = false;
   shellState.roles = member;
   shellState.clock = undefined;
+  shellState.groupEventGroups = groupEventGroups.none;
 }
 
 /** What the header widgets pull from the queries module; none of it matters to the shell. */
@@ -59,7 +80,8 @@ export const queryMocks = () => ({
   useMarkAllNotificationsRead: () => ({ mutate: () => {}, isPending: false }),
   useDeleteNotification: () => ({ mutate: () => {}, isPending: false }),
   useDeleteAllNotifications: () => ({ mutate: () => {}, isPending: false }),
-  useGroups: () => ({ data: [], isLoading: false }),
+  useGroups: () => ({ data: [{ id: "g-1", name: "Design" }], isLoading: false }),
+  useGroupEventGroups: () => ({ data: shellState.groupEventGroups, isPending: false }),
   useCreateVacation: () => ({ mutateAsync: async () => {}, isPending: false }),
   useGroup: () => ({ data: undefined, isLoading: false, error: null }),
   useGroupUsers: () => ({ data: [], isLoading: false, error: null }),

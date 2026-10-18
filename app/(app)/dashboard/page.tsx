@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   Calendar as CalendarIcon,
   ChevronLeft,
@@ -14,6 +15,8 @@ import {
   useBirthdays,
   useDashboardSummary,
   useGroup,
+  useGroupEventGroups,
+  useGroupEvents,
   useGroups,
   useMySettings,
   useReportScope,
@@ -55,6 +58,15 @@ import { toDayRecords } from "@/lib/calendar/stripes";
 import { dayItemsByDate } from "@/lib/calendar/day-items";
 import { birthdayDayItems } from "@/lib/birthdays/calendar";
 import { firstName } from "@/lib/birthdays/birthday";
+import { groupEventDayItems } from "@/lib/group-events/day-items";
+import {
+  confirmGroupEventDelete,
+  openGroupEventEditor,
+  openGroupEventSheet,
+  setShownGroupEventGroup,
+} from "@/lib/group-events/sheet-store";
+import { calendarLanding, withoutCalendarLanding } from "@/lib/group-events/calendar-link";
+import { DayContextMenu } from "@/components/group-events/day-context-menu";
 import { gridRange, gridYears, isoDate } from "@/lib/calendar/month-grid";
 import type { DateRange } from "@/lib/calendar/drag-range";
 import { NewRequestDialog } from "@/components/new-request-dialog";
@@ -79,7 +91,16 @@ function greetingKey(): GreetingKey {
   return "evening";
 }
 
+// `useSearchParams` needs a Suspense boundary for the static export to build.
 export default function DashboardPage() {
+  return (
+    <Suspense fallback={null}>
+      <Dashboard />
+    </Suspense>
+  );
+}
+
+function Dashboard() {
   const { t } = useTranslation();
   const initial = todayParts();
   const [year, setYear] = useState(initial.year);
@@ -92,6 +113,29 @@ export default function DashboardPage() {
   // without committing to it in settings.
   const [scopeOverride, setScopeOverride] = useState<DashboardScope | null>(null);
   const [groupOverride, setGroupOverride] = useState<string | null>(null);
+
+  // "View on calendar" after a group event create lands here with `?groupId=&month=`. It is
+  // applied during render, so the first fetch already asks for that group and month.
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const landing = calendarLanding(searchParams);
+  const landingKey = landing ? `${landing.groupId}:${landing.year}-${landing.month}` : null;
+  const [appliedLanding, setAppliedLanding] = useState<string | null>(null);
+  if (landingKey !== appliedLanding) {
+    setAppliedLanding(landingKey);
+    if (landing) {
+      setYear(landing.year);
+      setMonth(landing.month);
+      setScopeOverride("GROUP");
+      setGroupOverride(landing.groupId);
+    }
+  }
+  useEffect(() => {
+    if (landingKey) {
+      router.replace(`${pathname}${withoutCalendarLanding(searchParams)}`, { scroll: false });
+    }
+  }, [landingKey, router, pathname, searchParams]);
 
   const groupsQuery = useGroups();
   const summaryQuery = useDashboardSummary();
@@ -117,10 +161,22 @@ export default function DashboardPage() {
       : "MINE";
   const activeGroupId = scope === "GROUP" ? selectedGroupId : null;
 
+  useEffect(() => {
+    setShownGroupEventGroup(activeGroupId);
+    return () => setShownGroupEventGroup(null);
+  }, [activeGroupId]);
+
   const calendarQuery = useVacationCalendar({ year, month, groupId: activeGroupId });
   const outTodayQuery = useVacations({ year, month, groupId: activeGroupId });
   // Mine scope asks without a group, which answers the viewer's own birthday only.
   const birthdaysQuery = useBirthdays({ year, month, groupId: activeGroupId });
+  // Mine scope asks without a group, which answers every group the viewer is a member of.
+  const groupEventsQuery = useGroupEvents({ year, month, groupId: activeGroupId });
+  const groupEventGroupsQuery = useGroupEventGroups();
+  // Group scope follows that group's create right; Mine scope offers it while any group can.
+  const canCreateGroupEvent = (groupEventGroupsQuery.data ?? []).some(
+    (g) => g.canCreate && (activeGroupId === null || g.groupId === activeGroupId)
+  );
   // The membership list already carries `holidayCountry`; the detail fetch is
   // only for groups the caller sees without a membership (org admins). Report
   // scope can also grant GROUP view to a manager the detail endpoint refuses,
@@ -158,10 +214,18 @@ export default function DashboardPage() {
   }, [bankHolidays, year, month]);
   const dayRecords = useMemo(() => toDayRecords(calendarVacations), [calendarVacations]);
   const showStripes = settingsQuery.data?.dashboardCalendarView === "STRIPES";
-  const birthdayLabels = t.calendar.birthday;
   const dayItems = useMemo(
-    () => dayItemsByDate(birthdayDayItems(birthdaysQuery.data ?? [], viewerId, birthdayLabels)),
-    [birthdaysQuery.data, viewerId, birthdayLabels]
+    () =>
+      dayItemsByDate([
+        ...groupEventDayItems(groupEventsQuery.data ?? [], gridRange(year, month), {
+          viewerId,
+          showGroup: scope === "MINE",
+          t,
+          handlers: { onEdit: openGroupEventEditor, onDelete: confirmGroupEventDelete },
+        }),
+        ...birthdayDayItems(birthdaysQuery.data ?? [], viewerId, t.calendar.birthday),
+      ]),
+    [groupEventsQuery.data, birthdaysQuery.data, year, month, viewerId, scope, t]
   );
 
   const ranges: CalendarRange[] = useMemo(() => {
@@ -213,6 +277,10 @@ export default function DashboardPage() {
   function openNewRequestForRange({ from, to }: DateRange) {
     openNewRequestForDate(from, to);
   }
+
+  const openNewGroupEvent = canCreateGroupEvent
+    ? (date: string) => openGroupEventSheet({ date, groupId: activeGroupId })
+    : undefined;
 
   const noGroups = groups.length === 0 && !groupsQuery.isLoading;
 
@@ -407,35 +475,42 @@ export default function DashboardPage() {
               <LeaveTypeFilter value={filter} onChange={setFilter} />
             </div>
           </div>
-          {showStripes ? (
-            <StripeCalendar
-              key={`${year}-${month}`}
-              year={year}
-              month={month}
-              today={todayDate}
-              records={dayRecords}
-              holidays={holidayRanges}
-              filter={filter}
-              viewerId={viewerId}
-              onOpenRequest={openVacation}
-              onBook={openNewRequestForDate}
-              onRangeSelect={openNewRequestForRange}
-              dayItems={dayItems}
-            />
-          ) : (
-            <LeaveCalendar
-              year={year}
-              month={month}
-              today={todayDate}
-              ranges={ranges}
-              filter={filter}
-              onSelect={openVacation}
-              onDayClick={openNewRequestForDate}
-              onRangeSelect={openNewRequestForRange}
-              viewerId={viewerId}
-              dayItems={dayItems}
-            />
-          )}
+          <DayContextMenu
+            dayItems={dayItems}
+            onRequestTimeOff={(date) => openNewRequestForDate(date)}
+            onNewGroupEvent={openNewGroupEvent}
+          >
+            {showStripes ? (
+              <StripeCalendar
+                key={`${year}-${month}`}
+                year={year}
+                month={month}
+                today={todayDate}
+                records={dayRecords}
+                holidays={holidayRanges}
+                filter={filter}
+                viewerId={viewerId}
+                onOpenRequest={openVacation}
+                onBook={openNewRequestForDate}
+                onRangeSelect={openNewRequestForRange}
+                dayItems={dayItems}
+                onNewGroupEvent={openNewGroupEvent}
+              />
+            ) : (
+              <LeaveCalendar
+                year={year}
+                month={month}
+                today={todayDate}
+                ranges={ranges}
+                filter={filter}
+                onSelect={openVacation}
+                onDayClick={openNewRequestForDate}
+                onRangeSelect={openNewRequestForRange}
+                viewerId={viewerId}
+                dayItems={dayItems}
+              />
+            )}
+          </DayContextMenu>
           <CalendarLegend ranges={ranges} filter={filter} />
           {calendarQuery.error ? (
             <p className="mt-3 text-sm" style={{ color: "var(--destructive)" }}>

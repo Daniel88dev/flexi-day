@@ -12,6 +12,10 @@ function plural(n: number, one: string, few: string, many: string): string {
   return many;
 }
 
+/** "Každý den", "Každé 3 dny", "Každých 5 dní". */
+const every = (n: number, once: string, few: string, many: string) =>
+  n === 1 ? once : `${plural(n, "Každý", "Každé", "Každých")} ${n} ${plural(n, "", few, many)}`;
+
 const daySpan = (range: string, days: number) =>
   `${range} · ${days} ${plural(days, "den", "dny", "dní")}`;
 
@@ -130,6 +134,32 @@ export const cs: Dictionary = {
           .filter(Boolean)
           .join(", "),
       onDay: (summary: string, date: string) => `${date}: ${summary}`,
+    },
+    groupEvent: {
+      allDay: "Celý den",
+      changedOnce: "Změněno jen pro tento den",
+      addedBy: (name: string) => `Autor: ${name}`,
+      addedByYou: "Autor: vy",
+      addedByFormerMember: "Autor: bývalý člen skupiny",
+      lockedTo: (name: string) => `Změnit ji může jen ${name} nebo správce skupiny`,
+      lockedToAdmins: "Změnit ji může jen správce skupiny",
+      edit: "Upravit",
+      delete: "Smazat",
+      newOn: (date: string) => `Nová skupinová událost: ${date}`,
+      repeat: {
+        daily: (n: number) => every(n, "Každý den", "dny", "dní"),
+        weekly: (n: number, days: string) =>
+          `${every(n, "Každý týden", "týdny", "týdnů")}: ${days}`,
+        everyWeekday: "Každý pracovní den",
+        monthlyOnDay: (n: number, day: number) =>
+          `${every(n, "Každý měsíc", "měsíce", "měsíců")}, ${day}. den`,
+        monthlyOnWeekday: (n: number, nth: number, weekday: string) =>
+          `${every(n, "Každý měsíc", "měsíce", "měsíců")}, ${nth}. ${weekday}`,
+        monthlyOnLastWeekday: (n: number, weekday: string) =>
+          `${every(n, "Každý měsíc", "měsíce", "měsíců")}, poslední ${weekday}`,
+        yearly: (n: number, date: string) => `${every(n, "Každý rok", "roky", "let")}, ${date}`,
+        until: (summary: string, date: string) => `${summary}, do ${date}`,
+      },
     },
   },
 
@@ -601,9 +631,102 @@ export const cs: Dictionary = {
     daysAgo: (n: number) => `před ${n} d`,
   },
 
+  groupEvents: {
+    newTitle: "Nová skupinová událost",
+    editTitle: "Upravit skupinovou událost",
+    created: "Skupinová událost vytvořena",
+    viewOnCalendar: "Zobrazit v kalendáři",
+    title: "Název",
+    group: "Skupina",
+    noGroup: "Do žádné z vašich skupin teď nejde přidat novou skupinovou událost.",
+    date: "Datum",
+    from: "Od",
+    until: "Do",
+    starts: "Začátek",
+    ends: "Konec",
+    note: "Poznámka",
+    optional: "Nepovinné",
+    cancel: "Zrušit",
+    create: "Vytvořit",
+    save: "Uložit",
+    repeat: {
+      label: "Opakování",
+      never: "Neopakuje se",
+      daily: "Denně",
+      weekly: "Týdně",
+      monthly: "Měsíčně",
+      yearly: "Ročně",
+      every: "Jednou za",
+      interval: "Interval",
+      unit: (freq: "daily" | "weekly" | "monthly" | "yearly", n: number) =>
+        ({
+          daily: plural(n, "den", "dny", "dní"),
+          weekly: plural(n, "týden", "týdny", "týdnů"),
+          monthly: plural(n, "měsíc", "měsíce", "měsíců"),
+          yearly: plural(n, "rok", "roky", "let"),
+        })[freq],
+      on: "Ve dnech",
+      startWeekday: "Den v týdnu, kdy událost začíná, se opakuje vždy",
+      onDay: (day: number) => `${day}. den v měsíci`,
+      onNthWeekday: (nth: number, weekday: string) => `${nth}. ${weekday} v měsíci`,
+      onLastWeekday: (weekday: string) => `Poslední ${weekday} v měsíci`,
+      shorterMonths: "Kratší měsíce použijí svůj poslední den.",
+      endsLabel: "Konec",
+      endsNever: "Nikdy",
+      endsOnDate: "K datu",
+      lastDate: "Poslední datum",
+      oneDayOnly: "Opakovaná skupinová událost trvá jeden den",
+      nextDates: "Další termíny",
+    },
+    problems: {
+      title: "Zadejte název skupinové události.",
+      group: "Vyberte skupinu.",
+      endsBeforeStart: "Končí dřív, než začne.",
+      untilBeforeStart: "Opakování končí před prvním dnem.",
+    },
+    planRequired:
+      "Tato skupina nemá placený tarif, takže do ní nové skupinové události přidat nejde.",
+    scope: {
+      changeTitle: (title: string) => `Změnit „${title}“`,
+      deleteTitle: (title: string) => `Smazat „${title}“?`,
+      changeQuestion: "Na které dny se má změna použít?",
+      thisEvent: "Tato událost",
+      onlyDate: (date: string) => `Jen ${date}`,
+      following: "Tato a následující",
+      fromDate: (date: string) => `Od ${date}`,
+      all: "Všechny události",
+      everyDate: "Každý den, i ty minulé",
+      ruleOnOneDate: "Nové pravidlo opakování nejde použít na jeden den",
+      checking: "Kontroluji změny jednotlivých dnů…",
+      dropped: (n: number) =>
+        `${n} ${plural(n, "změna", "změny", "změn")} jednotlivých dnů se ztratí, včetně smazaných dnů.`,
+      deleteBody:
+        "Zmizí ze všech kalendářů, včetně odběrů .ics a synchronizovaných kalendářů Google a Microsoft. Nejde to vrátit.",
+      deleteConfirm: "Smazat",
+      impactFailed: "Nepodařilo se spočítat změny jednotlivých dnů.",
+      retry: "Zkusit znovu",
+      followingNeedsPlan:
+        "Tato skupina nemůže přijímat nové skupinové události a tohle jednu založí",
+    },
+    menu: {
+      open: "Otevřít",
+      edit: "Upravit…",
+      delete: "Smazat…",
+      pickDay: "Klikněte pravým tlačítkem na den",
+    },
+  },
+
   newRequest: {
     trigger: "+ Nová žádost",
     title: "Nová žádost",
+    menu: {
+      // Feminine, so it agrees with both items: "žádost" and "událost".
+      trigger: "+ Nová",
+      timeOff: "Žádost o volno",
+      groupEvent: "Skupinová událost",
+      requestTimeOff: "Požádat o volno",
+      newGroupEvent: "Nová skupinová událost",
+    },
     group: "Skupina",
     loadingGroups: "Načítání skupin…",
     selectGroup: "Vyberte skupinu…",
@@ -1531,6 +1654,7 @@ export const cs: Dictionary = {
     featureSlots: (n: number) => `Až ${n} extra slotů pro skupiny`,
     featureAttachments: "Přílohy k žádostem (obrázky a PDF)",
     featureBirthdays: "Narozeniny v kalendáři skupiny",
+    featureGroupEvents: "Skupinové události ve sdíleném kalendáři",
     subscribe: "Předplatit",
     switchPlan: "Přejít na tento tarif",
     current: "Aktuální tarif",
@@ -1698,6 +1822,7 @@ export const cs: Dictionary = {
           "Vše z tarifu Free",
           "Přílohy k žádostem (obrázky a PDF)",
           "Narozeniny v kalendáři skupiny",
+          "Skupinové události ve sdíleném kalendáři",
           "Extra sloty pro skupiny (1,50 € / měs.)",
           "Prioritní e-mailová podpora",
         ],
@@ -1735,7 +1860,7 @@ export const cs: Dictionary = {
       wrong: "Něco se pokazilo",
       feedCopied: "URL feedu zkopírováno",
       feedCopyFailed: "Nepodařilo se zkopírovat URL feedu",
-      pickType: "Vyberte alespoň jeden typ záznamu nebo narozeniny",
+      pickType: "Vyberte alespoň jeden typ záznamu, skupinové události nebo narozeniny",
       saveFailed: "Nepodařilo se uložit kalendář",
       linkCopied: "Odkaz zkopírován do schránky",
       opening: (name: string) => `Otevírání ${name}…`,
@@ -1789,6 +1914,9 @@ export const cs: Dictionary = {
       team: "Tým",
       distinguishTitle: "Odlišit mé vlastní záznamy jinou barvou",
       distinguishSub: "Rozeznejte svou dovolenou od týmové na první pohled.",
+      groupEvents: "Skupinové události",
+      groupEventsMe: "Události ze všech skupin, ve kterých jste",
+      groupEventsTeam: "Události z vybraných skupin",
       birthdays: "Narozeniny",
       birthdaysMe: "Jen vaše vlastní narozeniny",
       birthdaysTeam:
@@ -1813,11 +1941,11 @@ export const cs: Dictionary = {
     connect: {
       label: "Přímá synchronizace",
       intro: {
-        both: "Přenášejte schválené volno do vlastního kalendáře Google nebo Microsoft. Synchronizují se jen vaše záznamy, nikdy záznamy kolegů.",
+        both: "Přenášejte schválené volno a události svých skupin do vlastního kalendáře Google nebo Microsoft. Záznamy kolegů se nikdy nesynchronizují.",
         google:
-          "Přenášejte schválené volno do vlastního kalendáře Google. Synchronizují se jen vaše záznamy, nikdy záznamy kolegů.",
+          "Přenášejte schválené volno a události svých skupin do vlastního kalendáře Google. Záznamy kolegů se nikdy nesynchronizují.",
         microsoft:
-          "Přenášejte schválené volno do vlastního kalendáře Microsoft. Synchronizují se jen vaše záznamy, nikdy záznamy kolegů.",
+          "Přenášejte schválené volno a události svých skupin do vlastního kalendáře Microsoft. Záznamy kolegů se nikdy nesynchronizují.",
       },
       connectProvider: (name: string) => `Připojit ${name}`,
       whyPrimary:

@@ -100,6 +100,83 @@ describe("DayItemRows", () => {
   });
 });
 
+const offsiteCard = {
+  when: "Wed 21 Oct – Fri 23 Oct · All day",
+  repeat: "Every year on 21 October",
+  note: "Bring boots",
+  addedBy: "Added by Bob Dvorak",
+  group: "Dev Team",
+};
+
+describe("DayItemRows group event cards", () => {
+  it("shows a non-editor the card's lines and the lock line instead of Edit and Delete", () => {
+    render(
+      <DayItemRows
+        label="21 October"
+        items={[
+          groupEvent("ge:1", "Offsite", {
+            card: { ...offsiteCard, locked: "Only Bob or a group admin can change this" },
+          }),
+        ]}
+      />
+    );
+
+    const card = screen.getByRole("listitem");
+    for (const line of [
+      "Offsite",
+      "Wed 21 Oct – Fri 23 Oct · All day",
+      "Every year on 21 October",
+      "Bring boots",
+      "Added by Bob Dvorak",
+      "Dev Team",
+      "Only Bob or a group admin can change this",
+    ]) {
+      expect(within(card).getByText(line)).toBeVisible();
+    }
+    expect(within(card).queryByRole("button")).not.toBeInTheDocument();
+  });
+
+  it("gives an editor Edit and Delete, disabled until a handler arrives", async () => {
+    const user = userEvent.setup();
+    const onDelete = vi.fn();
+    render(
+      <DayItemRows
+        label="21 October"
+        items={[
+          groupEvent("ge:1", "Offsite", {
+            card: offsiteCard,
+            actions: [
+              { label: "Edit" },
+              { label: "Delete", destructive: true, onSelect: onDelete },
+            ],
+          }),
+        ]}
+      />
+    );
+
+    expect(screen.getByRole("button", { name: "Edit" })).toBeDisabled();
+    await user.click(screen.getByRole("button", { name: "Delete" }));
+    expect(onDelete).toHaveBeenCalledOnce();
+    expect(screen.queryByText(/can change this/)).not.toBeInTheDocument();
+  });
+});
+
+describe("DayItemsChip ribbon", () => {
+  it("draws the ribbon on a day a multi-day event covers", () => {
+    const { container } = render(
+      <DayItemsChip date={DATE} items={[groupEvent("ge:1", "Offsite", { spansDays: true })]} />
+    );
+    expect(container.querySelector("[data-ribbon]")).not.toBeNull();
+  });
+
+  it("draws no ribbon for single-day events and birthdays", () => {
+    const { container } = render(
+      <DayItemsChip date={DATE} items={[groupEvent("ge:1", "Retro"), petra]} />
+    );
+    expect(container.querySelector("[data-ribbon]")).toBeNull();
+  });
+});
+
 describe("DayItemMarks", () => {
   it("marks birthdays with a cake and group events with up to three dots", () => {
     const { container } = render(

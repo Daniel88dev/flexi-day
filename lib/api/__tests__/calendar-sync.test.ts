@@ -18,6 +18,8 @@ const input: CalendarSyncInput = {
   name: "My feed",
   scope: "TEAM",
   distinguishMine: true,
+  includeGroupEvents: false,
+  groupEventsColor: "teal",
   includeBirthdays: false,
   birthdaysColor: "coral",
   teamIds: ["t1"],

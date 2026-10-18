@@ -2,6 +2,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { CalendarRecordType } from "@/lib/api/types";
 import type { CalendarSyncConfig, CalendarTarget } from "@/lib/api/calendar-sync";
+import { I18nContext } from "@/lib/i18n/i18n-provider";
+import { dictionaries } from "@/lib/i18n";
 import { ConnectSection, type ConnectHandlers } from "../connect-section";
 
 const NOW = new Date("2026-10-11T12:00:00.000Z");
@@ -14,6 +16,8 @@ function meConfig(target: Partial<CalendarTarget> | null = {}): CalendarSyncConf
     scope: "ME",
     distinguishMine: false,
     timeZone: "Europe/Prague",
+    includeGroupEvents: false,
+    groupEventsColor: null,
     includeBirthdays: false,
     birthdaysColor: null,
     teamIds: [],
@@ -76,7 +80,7 @@ describe("ConnectSection", () => {
       expect(screen.getByText("Direct sync")).toBeInTheDocument();
       expect(
         screen.getByText(
-          "Push your approved days off into your own Google or Microsoft calendar. Only your records are synced; teammates never are."
+          "Push your approved days off and your groups' events into your own Google or Microsoft calendar. Teammates' records are never synced."
         )
       ).toBeInTheDocument();
       expect(screen.getByText(/Events go to your primary calendar\./)).toBeInTheDocument();
@@ -96,10 +100,43 @@ describe("ConnectSection", () => {
       );
 
       expect(
-        screen.getByText(/into your own Google calendar\. Only your records/)
+        screen.getByText(
+          "Push your approved days off and your groups' events into your own Google calendar. Teammates' records are never synced."
+        )
       ).toBeInTheDocument();
       expect(screen.getByRole("button", { name: "Connect Google" })).toBeInTheDocument();
       expect(screen.queryByRole("button", { name: "Connect Microsoft" })).not.toBeInTheDocument();
+    });
+
+    it("names Microsoft alone while Google is switched off", () => {
+      render(
+        <ConnectSection
+          config={meConfig(null)}
+          {...handlers({ providers: { google: false, microsoft: true } })}
+        />
+      );
+
+      expect(
+        screen.getByText(
+          "Push your approved days off and your groups' events into your own Microsoft calendar. Teammates' records are never synced."
+        )
+      ).toBeInTheDocument();
+    });
+
+    it("reads the intro in Czech", () => {
+      render(
+        <I18nContext
+          value={{ locale: "cs", setLocale: () => {}, t: dictionaries.cs, localeReady: true }}
+        >
+          <ConnectSection config={meConfig(null)} {...handlers()} />
+        </I18nContext>
+      );
+
+      expect(
+        screen.getByText(
+          "Přenášejte schválené volno a události svých skupin do vlastního kalendáře Google nebo Microsoft. Záznamy kolegů se nikdy nesynchronizují."
+        )
+      ).toBeInTheDocument();
     });
 
     it("renders nothing while every provider is switched off", () => {

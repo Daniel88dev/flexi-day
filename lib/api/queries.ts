@@ -112,6 +112,18 @@ import {
   type MyBirthday,
 } from "./birthday";
 import { listBirthdays, type ListBirthdaysParams } from "./birthdays";
+import {
+  createGroupEvent,
+  deleteGroupEvent,
+  groupEventImpact,
+  listGroupEventGroups,
+  listGroupEvents,
+  updateGroupEvent,
+  type CreateGroupEventInput,
+  type GroupEventDeleteRequest,
+  type GroupEventEditRequest,
+  type ListGroupEventsParams,
+} from "./group-events";
 import { deleteMyAccount, getAccountDeletionStatus } from "./account-deletion";
 import {
   getSupportGroup,
@@ -199,6 +211,18 @@ export const qk = {
   myBirthday: () => ["my-birthday"] as const,
   birthdays: (year: number, month: number, groupId?: string | null) =>
     ["birthdays", year, month, groupId ?? "mine"] as const,
+  groupEvents: (year: number, month: number, groupId?: string | null) =>
+    ["group-events", year, month, groupId ?? "mine"] as const,
+  groupEventGroups: () => ["group-events", "groups"] as const,
+  groupEventImpact: (id: string, request: GroupEventEditRequest) =>
+    [
+      "group-events",
+      "impact",
+      id,
+      request.scope ?? null,
+      request.occurrenceDate ?? null,
+      JSON.stringify(request.changes),
+    ] as const,
   accountDeletion: () => ["account-deletion"] as const,
   reportScope: () => ["report-scope"] as const,
   // Keyed on the serialised filters so every filter combination caches on its
@@ -275,6 +299,57 @@ export function useBirthdays(params: ListBirthdaysParams) {
   return useQuery({
     queryKey: qk.birthdays(params.year, params.month, params.groupId),
     queryFn: () => listBirthdays(params),
+  });
+}
+
+export function useGroupEvents(params: ListGroupEventsParams) {
+  return useQuery({
+    queryKey: qk.groupEvents(params.year, params.month, params.groupId),
+    queryFn: () => listGroupEvents(params),
+  });
+}
+
+export function useGroupEventGroups() {
+  return useQuery({ queryKey: qk.groupEventGroups(), queryFn: listGroupEventGroups });
+}
+
+/** Every group event write ends here: each month's calendar and the create rights refetch. */
+export function invalidateGroupEventDependants(qc: ReturnType<typeof useQueryClient>) {
+  return qc.invalidateQueries({ queryKey: ["group-events"] });
+}
+
+export function useCreateGroupEvent() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: CreateGroupEventInput) => createGroupEvent(input),
+    onSuccess: () => invalidateGroupEventDependants(qc),
+  });
+}
+
+export function useUpdateGroupEvent() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, request }: { id: string; request: GroupEventEditRequest }) =>
+      updateGroupEvent(id, request),
+    onSuccess: () => invalidateGroupEventDependants(qc),
+  });
+}
+
+export function useDeleteGroupEvent() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, request }: { id: string; request: GroupEventDeleteRequest }) =>
+      deleteGroupEvent(id, request),
+    onSuccess: () => invalidateGroupEventDependants(qc),
+  });
+}
+
+/** How many one-off changes an edit would drop, asked before the user confirms it. */
+export function useGroupEventImpact(id: string, request: GroupEventEditRequest, enabled: boolean) {
+  return useQuery({
+    queryKey: qk.groupEventImpact(id, request),
+    queryFn: () => groupEventImpact(id, request),
+    enabled,
   });
 }
 

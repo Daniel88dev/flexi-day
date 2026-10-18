@@ -1,11 +1,11 @@
 "use client";
 
 import { Logo } from "@/components/brand/logo";
-import { NewRequestDialog } from "@/components/new-request-dialog";
 import { NotificationsBell } from "@/components/notifications-bell";
 import { LocaleToggle } from "@/components/ui/LocaleToggle";
 import { ModeToggle } from "@/components/ui/ModeToggle";
 import { UserMenu } from "@/components/user-menu";
+import { NewMenu } from "./new-menu";
 import { useShellNav } from "@/lib/navigation/use-shell-nav";
 
 export function TopBar() {
@@ -45,7 +45,7 @@ export function TopBar() {
 
         <div className="flex items-center gap-2.5">
           <div className="max-md:hidden">
-            <NewRequestDialog />
+            <NewMenu />
           </div>
           <NotificationsBell />
           <div className="max-md:hidden">

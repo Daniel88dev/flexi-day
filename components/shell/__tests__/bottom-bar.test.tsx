@@ -1,8 +1,15 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, screen, within } from "@testing-library/react";
 import { renderWithClient } from "@/lib/test-utils";
+import { closeGroupEventSheet, groupEventSheetState } from "@/lib/group-events/sheet-store";
 import { BottomBar } from "../bottom-bar";
-import { clockState, resetShellState, roles, shellState } from "./shell-test-setup";
+import {
+  clockState,
+  groupEventGroups,
+  resetShellState,
+  roles,
+  shellState,
+} from "./shell-test-setup";
 
 vi.mock("next/navigation", async () => {
   const { shellState } = await import("./shell-test-setup");
@@ -112,7 +119,7 @@ describe("BottomBar", () => {
       "Settings",
     ]);
     expect(sheet.queryByText("Organization")).not.toBeInTheDocument();
-    expect(sheet.getByRole("button", { name: "+ New Request" })).toBeInTheDocument();
+    expect(sheet.getByRole("button", { name: "Request time off" })).toBeInTheDocument();
     expect(sheet.getByRole("button", { name: "Toggle theme" })).toBeInTheDocument();
   });
 
@@ -147,5 +154,51 @@ describe("BottomBar", () => {
 
     fireEvent.click(sheet.getByRole("link", { name: "Groups" }));
     expect(screen.getByRole("button", { name: "More" })).toHaveAttribute("aria-expanded", "false");
+  });
+
+  describe("create buttons", () => {
+    afterEach(() => closeGroupEventSheet());
+
+    it("shows only Request time off while no group can create", () => {
+      renderWithClient(<BottomBar />);
+      const sheet = openMore();
+
+      expect(sheet.getByRole("button", { name: "Request time off" })).toBeInTheDocument();
+      expect(sheet.queryByRole("button", { name: "New group event" })).not.toBeInTheDocument();
+    });
+
+    it("adds New group event when a group can create", () => {
+      shellState.groupEventGroups = groupEventGroups.creatable;
+      renderWithClient(<BottomBar />);
+      const sheet = openMore();
+
+      expect(sheet.getByRole("button", { name: "Request time off" })).toBeInTheDocument();
+      expect(sheet.getByRole("button", { name: "New group event" })).toBeInTheDocument();
+    });
+
+    it("closes More and opens the time off dialog", () => {
+      renderWithClient(<BottomBar />);
+      const sheet = openMore();
+
+      fireEvent.click(sheet.getByRole("button", { name: "Request time off" }));
+      expect(screen.getByRole("dialog", { name: "New Request" })).toBeInTheDocument();
+      expect(document.querySelector('button[aria-label="More"]')).toHaveAttribute(
+        "aria-expanded",
+        "false"
+      );
+    });
+
+    it("closes More and opens the group event sheet", () => {
+      shellState.groupEventGroups = groupEventGroups.creatable;
+      renderWithClient(<BottomBar />);
+      const sheet = openMore();
+
+      fireEvent.click(sheet.getByRole("button", { name: "New group event" }));
+      expect(groupEventSheetState()).toMatchObject({ kind: "create" });
+      expect(screen.getByRole("button", { name: "More" })).toHaveAttribute(
+        "aria-expanded",
+        "false"
+      );
+    });
   });
 });

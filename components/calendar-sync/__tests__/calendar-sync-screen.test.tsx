@@ -48,6 +48,8 @@ function config(target: CalendarSyncConfig["target"]): CalendarSyncConfig {
     scope: "ME",
     distinguishMine: false,
     timeZone: "Europe/Prague",
+    includeGroupEvents: false,
+    groupEventsColor: null,
     includeBirthdays: false,
     birthdaysColor: null,
     teamIds: [],

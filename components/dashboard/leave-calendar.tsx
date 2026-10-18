@@ -496,6 +496,7 @@ export function LeaveCalendar({
                     // eslint-disable-next-line @eslint-react/no-array-index-key
                     key={di}
                     {...(dayDraggable ? drag.cellProps(cell.date) : {})}
+                    data-date={shown ? cell.date : undefined}
                     className={
                       shown
                         ? cn(
