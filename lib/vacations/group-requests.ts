@@ -12,6 +12,7 @@ export interface RequestGroup {
   userId: string;
   user: UserSummary;
   groupId: string;
+  mirroredFromGroupName: string | null;
   vacationType: CalendarRecordType;
   status: VacationStatus;
   from: string;
@@ -77,6 +78,7 @@ export function groupVacationRequests(vacations: VacationListItem[]): RequestGro
         userId: v.userId,
         user: v.user,
         groupId: v.groupId,
+        mirroredFromGroupName: v.mirroredFromGroupName ?? null,
         vacationType: v.vacationType,
         status: vacationStatus(v),
         from: v.requestedDay,

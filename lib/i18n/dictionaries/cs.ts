@@ -859,6 +859,8 @@ export const cs: Dictionary = {
     scopeMine: "Jen moje žádosti",
     empty: "V tomto měsíci nejsou žádné žádosti",
     emptyFiltered: (filter: string) => `V tomto měsíci nejsou žádné žádosti (${filter}).`,
+    forbidden: "K žádostem této skupiny nemáte přístup.",
+    loadFailed: "Žádosti se nepodařilo načíst. Zkuste to za chvíli znovu.",
     columns: {
       group: "Skupina",
       type: "Typ",
@@ -1243,7 +1245,8 @@ export const cs: Dictionary = {
       group: "Skupina",
       groupPicker: "Skupina zobrazená v kalendáři",
       settingsHint: "Výchozí nastavení změníte v Nastavení",
-      forbidden: "K volnu této skupiny už nemáte přístup.",
+      forbidden: "K volnu této skupiny nemáte přístup.",
+      loadFailed: "Kalendář se nepodařilo načíst. Zkuste to za chvíli znovu.",
     },
   },
 

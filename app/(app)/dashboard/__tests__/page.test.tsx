@@ -3,6 +3,7 @@ import { act, fireEvent, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import DashboardPage from "../page";
 import { renderWithClient } from "@/lib/test-utils";
+import { ApiError } from "@/lib/api/client";
 import { formatIsoDate, gridYears, isoDate } from "@/lib/calendar/month-grid";
 import {
   CalendarRecordType,
@@ -86,6 +87,8 @@ let settings: UserSettings | undefined = DEFAULT_SETTINGS;
 
 let vacations: VacationListItem[] = [day("v-1", dana, inVisibleMonth(17))];
 
+let calendarError: unknown = null;
+
 let birthdayRows: BirthdayCalendarRow[] = [];
 
 let groupEventRows: GroupEventRow[] = [];
@@ -116,7 +119,7 @@ vi.mock("@/lib/api/queries", () => ({
   },
   useVacationCalendar: (params: unknown) => {
     useVacationCalendarSpy(params);
-    return { data: vacations, isLoading: false, error: null };
+    return { data: calendarError ? undefined : vacations, isLoading: false, error: calendarError };
   },
   useBirthdays: (params: unknown) => {
     useBirthdaysSpy(params);
@@ -250,6 +253,35 @@ describe("DashboardPage scope switch", () => {
 
     expect(screen.getByTitle("Dana Holt · Vacation")).toBeInTheDocument();
     expect(screen.getByTitle("Dana Holt · Vacation · Pending")).toHaveTextContent("Dana ½");
+  });
+});
+
+describe("DashboardPage calendar refusal", () => {
+  beforeEach(() => {
+    settings = { ...DEFAULT_SETTINGS, dashboardScope: "GROUP", dashboardGroupId: "g-1" };
+  });
+
+  afterEach(() => {
+    calendarError = null;
+  });
+
+  it("explains a refused group without claiming access was lost", () => {
+    calendarError = new ApiError(403, "No access to view this group's records");
+    renderWithClient(<DashboardPage />);
+
+    expect(screen.getByText("You don't have access to this group's time off.")).toBeInTheDocument();
+    expect(screen.queryByText(/no longer/i)).not.toBeInTheDocument();
+    expect(screen.queryByText("No access to view this group's records")).not.toBeInTheDocument();
+  });
+
+  it("shows its own copy rather than the backend's message on any other failure", () => {
+    calendarError = new ApiError(500, "Internal Server Error");
+    renderWithClient(<DashboardPage />);
+
+    expect(
+      screen.getByText("Could not load the calendar. Try again in a moment.")
+    ).toBeInTheDocument();
+    expect(screen.queryByText("Internal Server Error")).not.toBeInTheDocument();
   });
 });
 
