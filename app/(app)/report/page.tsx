@@ -133,6 +133,8 @@ export default function ReportPage() {
   );
 
   const hasScope = (scopeQuery.data?.groups.length ?? 0) > 0;
+  const loadFailed =
+    (scopeQuery.isError && !scopeQuery.data) || (overviewQuery.isError && !overviewQuery.data);
 
   const changePeriod = (next: ReportPeriod) => {
     setPeriod(next);
@@ -159,7 +161,7 @@ export default function ReportPage() {
 
       {overviewQuery.isPending || scopeQuery.isPending ? (
         <p className="text-muted-foreground text-sm">{t.common.loading}</p>
-      ) : scopeQuery.isError && !scopeQuery.data ? (
+      ) : loadFailed ? (
         <p role="alert" className="text-destructive text-sm">
           {t.report.loadFailed}
         </p>
