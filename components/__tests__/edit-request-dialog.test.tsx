@@ -77,6 +77,18 @@ describe("EditRequestDialog", () => {
     expect(screen.getByLabelText("End time (optional)")).toHaveValue("17:00");
   });
 
+  it("names the stored days in its description", () => {
+    renderWithClient(
+      <EditRequestDialog
+        detail={{ ...detail, rangeStart: "2026-12-24", rangeEnd: "2026-12-24" }}
+        open
+        onOpenChange={() => {}}
+      />
+    );
+
+    expect(screen.getByText(/· 24 Dec$/)).toBeInTheDocument();
+  });
+
   it("submits only the fields that changed, sending times as a pair", async () => {
     renderWithClient(
       <EditRequestDialog

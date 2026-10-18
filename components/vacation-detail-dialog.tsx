@@ -24,6 +24,7 @@ import { dayLengthLabel } from "@/lib/vacations/day-length";
 import { mergeTimeline, type TimelineEntry, type TimelineKind } from "@/lib/vacations/timeline";
 import { vacationActionErrorMessage, type VacationAction } from "@/lib/vacations/action-error";
 import { cn } from "@/lib/utils";
+import { formatIsoDate } from "@/lib/calendar/month-grid";
 import { useTranslation } from "@/lib/i18n/use-translation";
 import type { Dictionary } from "@/lib/i18n";
 import { EditRequestDialog } from "@/components/edit-request-dialog";
@@ -49,7 +50,7 @@ const EVENT_META: Record<TimelineKind, { icon: typeof Check; tint: string }> = {
 };
 
 function formatDay(iso: string, locale: string) {
-  return new Date(iso).toLocaleDateString(locale, {
+  return formatIsoDate(iso, locale, {
     weekday: "short",
     day: "numeric",
     month: "short",

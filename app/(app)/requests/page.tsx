@@ -36,6 +36,7 @@ import { dayLengthLabel } from "@/lib/vacations/day-length";
 import { useOpenVacationDetail } from "@/lib/vacations/use-vacation-detail";
 import { vacationActionErrorMessage, type VacationAction } from "@/lib/vacations/action-error";
 import { cn } from "@/lib/utils";
+import { formatIsoDate } from "@/lib/calendar/month-grid";
 import { useTranslation } from "@/lib/i18n/use-translation";
 import { recordTypeLabel } from "@/lib/i18n/record-type-label";
 
@@ -52,7 +53,7 @@ const STATUS_BADGE: Record<VacationStatus, string> = {
 };
 
 function formatDate(iso: string, locale: string) {
-  return new Date(iso).toLocaleDateString(locale, {
+  return formatIsoDate(iso, locale, {
     day: "numeric",
     month: "short",
     year: "numeric",

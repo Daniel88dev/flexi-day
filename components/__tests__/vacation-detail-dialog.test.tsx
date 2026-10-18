@@ -153,6 +153,18 @@ describe("VacationDetailDialog", () => {
     expect(screen.getByText(/10 Aug 2026 –.*11 Aug 2026/)).toBeInTheDocument();
   });
 
+  it("shows the stored day and its weekday", () => {
+    currentDetail = {
+      ...detail,
+      requestedDay: "2026-12-24",
+      rangeStart: "2026-12-24",
+      rangeEnd: "2026-12-24",
+    };
+    renderWithClient(<VacationDetailDialog vacationId="v-1" open onOpenChange={() => {}} />);
+
+    expect(screen.getByText(/Thu,? 24 Dec 2026/)).toBeInTheDocument();
+  });
+
   it("approves every day of the range in one call", async () => {
     currentDetail = { ...detail, canApprove: true, vacationIds: ["v-1", "v-2"] };
     const user = userEvent.setup();

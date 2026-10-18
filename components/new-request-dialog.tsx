@@ -46,6 +46,7 @@ import { useAttachmentUploads } from "@/lib/attachments/use-attachment-uploads";
 import { useTranslation } from "@/lib/i18n/use-translation";
 import { useSession } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
+import { formatIsoDate, toUtc } from "@/lib/calendar/month-grid";
 
 function todayIso() {
   return new Date().toISOString().slice(0, 10);
@@ -58,9 +59,8 @@ function bookableWindow(): { min: string; max: string } {
 }
 
 function formatIsoDay(iso: string, locale: string): string {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return iso;
-  return d.toLocaleDateString(locale, { month: "short", day: "numeric" });
+  if (Number.isNaN(toUtc(iso))) return iso;
+  return formatIsoDate(iso, locale, { month: "short", day: "numeric" });
 }
 
 function extractConflictingDays(err: ApiError): string[] {
