@@ -2,6 +2,7 @@ import type {
   CreateGroupEventInput,
   GroupEventChanges,
   GroupEventEditRequest,
+  GroupEventGroup,
   GroupEventRow,
   GroupEventScope,
   RepeatRule,
@@ -101,7 +102,7 @@ export function nextDates(start: IsoDate, rule: RepeatRule): IsoDate[] {
 
 /**
  * Applies a date change: a moved start keeps the event's length, the end never falls before the
- * start, and a run of days cannot repeat (D5).
+ * start, and a run of days cannot repeat.
  */
 export function withDates(
   draft: GroupEventDraft,
@@ -116,6 +117,20 @@ export function withDates(
     endDate,
     repeat: endDate === startDate ? draft.repeat : null,
   };
+}
+
+/**
+ * The groups a new group event may go to, and the one it goes to: the one picked, else the
+ * requested one if it can create, else the first that can.
+ */
+export function createGroups(
+  groups: readonly GroupEventGroup[],
+  picked: string | null,
+  requested: string | null | undefined
+): { creatable: GroupEventGroup[]; selected: GroupEventGroup | null } {
+  const creatable = groups.filter((g) => g.canCreate);
+  const selected = creatable.find((g) => g.groupId === (picked ?? requested)) ?? creatable[0];
+  return { creatable, selected: selected ?? null };
 }
 
 export function draftProblem(draft: GroupEventDraft): DraftProblem | null {
@@ -169,21 +184,67 @@ export function draftFromEvent(event: GroupEventRow, occurrenceDate: IsoDate): G
   };
 }
 
-/** Whether the user changed the rule itself; moving the date alone does not count. */
-export function ruleChanged(event: GroupEventRow, draft: GroupEventDraft): boolean {
-  return !sameRule(event.repeat, draft.repeat);
-}
-
-/** Every weekday moved by the same number of days the dates moved. */
-function shiftRule(rule: RepeatRule, days: number): RepeatRule {
-  if (rule.freq !== "weekly" || days % 7 === 0) return rule;
-  return { ...rule, weekdays: rule.weekdays.map((d) => (((d + days) % 7) + 7) % 7) };
+/** The rule moved by `days`: a weekly rule's weekdays and the last date move with the start. */
+export function shiftRule(rule: RepeatRule, days: number): RepeatRule {
+  if (days === 0) return rule;
+  return {
+    ...rule,
+    weekdays:
+      rule.freq === "weekly"
+        ? rule.weekdays.map((d) => (((d + days) % 7) + 7) % 7).sort((a, b) => a - b)
+        : rule.weekdays,
+    until: rule.until && plusDays(rule.until, days),
+  };
 }
 
 /**
- * The `PATCH` for a draft. "This event" never sends the rule. "This and following" starts the new
- * rule on the draft's date. "All events" moves the first date, and with it every date, by as many
- * days as the occurrence moved.
+ * Moves the occurrence being edited of a recurring group event. It stays one day, and its rule
+ * moves with it, so the editor and the six-date preview show the rule "This and following" and
+ * "All events" save. "This event" sends no rule, so the move cannot change the others.
+ */
+export function moveOccurrence(draft: GroupEventDraft, startDate: IsoDate): GroupEventDraft {
+  const days = daysBetween(draft.startDate, startDate);
+  return {
+    ...draft,
+    startDate,
+    endDate: startDate,
+    repeat: draft.repeat && shiftRule(draft.repeat, days),
+  };
+}
+
+const movedBy = (target: GroupEventTarget, draft: GroupEventDraft) =>
+  daysBetween(target.occurrenceDate, draft.startDate);
+
+/** Whether the user changed the rule itself; a rule that only moved with the date does not count. */
+export function ruleChanged(target: GroupEventTarget, draft: GroupEventDraft): boolean {
+  const stored = target.event.repeat;
+  return !sameRule(stored && shiftRule(stored, movedBy(target, draft)), draft.repeat);
+}
+
+/**
+ * The dates the sheet previews: what the picked scope saves from this occurrence on. Before a
+ * scope is picked, and for "This and following" and "All events", that is the draft's rule; for
+ * "This event" it is the stored rule with this one date moved.
+ */
+export function previewDates(
+  target: GroupEventTarget | null,
+  draft: GroupEventDraft,
+  scope: GroupEventScope | null
+): IsoDate[] {
+  const stored = target?.event.repeat;
+  if (target && stored && scope === "this") {
+    const dates = nextDates(target.occurrenceDate, stored).filter(
+      (d) => d !== target.occurrenceDate
+    );
+    return [...new Set([...dates, draft.startDate])].sort().slice(0, PREVIEW_COUNT);
+  }
+  return draft.repeat ? nextDates(draft.startDate, draft.repeat) : [];
+}
+
+/**
+ * The `PATCH` for a draft whose occurrence moved through `moveOccurrence`. "This event" never
+ * sends the rule. "This and following" starts the moved rule on the draft's date. "All events"
+ * moves the first date by as many days as the occurrence moved, with the moved rule.
  */
 export function editRequest(
   target: GroupEventTarget,
@@ -216,13 +277,12 @@ export function editRequest(
       repeat: rule(draft.startDate, draft.repeat),
     };
   } else {
-    const shift = daysBetween(occurrenceDate, draft.startDate);
-    const startDate = plusDays(event.startDate, shift);
+    const startDate = plusDays(event.startDate, movedBy(target, draft));
     changes = {
       ...base,
       startDate,
       endDate: plusDays(startDate, daysBetween(draft.startDate, draft.endDate)),
-      repeat: rule(startDate, draft.repeat && shiftRule(draft.repeat, shift)),
+      repeat: rule(startDate, draft.repeat),
     };
   }
   return { scope, occurrenceDate, changes };

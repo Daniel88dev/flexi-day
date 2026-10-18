@@ -146,6 +146,8 @@ describe("GroupEventSheetHost, creating", () => {
 
     expect(await within(sheet()).findByText("Dev Team")).toBeInTheDocument();
     expect(screen.queryByRole("combobox", { name: "Group" })).not.toBeInTheDocument();
+    expect(within(sheet()).getByRole("term")).toHaveTextContent("Group");
+    expect(within(sheet()).getByRole("definition")).toHaveTextContent("Dev Team");
   });
 
   it("turns repeat off and disables it once the event runs over more than one day", async () => {
@@ -269,6 +271,104 @@ describe("GroupEventSheetHost, editing", () => {
         expect.objectContaining({ scope: "all", occurrenceDate: "2026-10-12" })
       )
     );
+  });
+});
+
+describe("GroupEventSheetHost, editing a recurring group event", () => {
+  it("keeps an occurrence one day instead of dropping its rule", () => {
+    setup();
+    act(() => openGroupEventEditor({ event: STANDUP, occurrenceDate: "2026-10-12" }));
+
+    expect(screen.getByLabelText("Until")).toBeDisabled();
+    expect(screen.getByText("A recurring group event lasts one day")).toBeInTheDocument();
+    expect(screen.getByRole("combobox", { name: "Repeat" })).toHaveTextContent("Weekly");
+  });
+
+  it("moves the rule with the date and previews what each scope saves", async () => {
+    const { user } = setup();
+    act(() => openGroupEventEditor({ event: STANDUP, occurrenceDate: "2026-10-12" }));
+
+    fireEvent.change(screen.getByLabelText("Date"), { target: { value: "2026-10-13" } });
+    const preview = () =>
+      within(screen.getByRole("list", { name: "Next dates", hidden: true }))
+        .getAllByRole("listitem", { hidden: true })
+        .map((li) => li.textContent);
+    expect(screen.getByRole("button", { name: "Tue" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: "Mon" })).toHaveAttribute("aria-pressed", "false");
+    expect(preview()[0]).toBe("Tue 13 Oct");
+    expect(preview()[1]).toBe("Tue 20 Oct");
+
+    await user.click(screen.getByRole("button", { name: "Save" }));
+    const scope = await screen.findByRole("alertdialog");
+    expect(within(scope).getByRole("radio", { name: /This event/ })).toBeChecked();
+    expect(preview().slice(0, 2)).toEqual(["Tue 13 Oct", "Mon 19 Oct"]);
+
+    await user.click(within(scope).getByRole("radio", { name: /This and following/ }));
+    expect(preview().slice(0, 2)).toEqual(["Tue 13 Oct", "Tue 20 Oct"]);
+    await waitFor(() => expect(within(scope).getByRole("button", { name: "Save" })).toBeEnabled());
+    await user.click(within(scope).getByRole("button", { name: "Save" }));
+
+    await waitFor(() =>
+      expect(updateMock).toHaveBeenCalledWith("ge-1", {
+        scope: "following",
+        occurrenceDate: "2026-10-12",
+        changes: expect.objectContaining({ startDate: "2026-10-13", repeat: weekly([1]) }),
+      })
+    );
+  });
+
+  it("names the scopes after the dialog and moves between them with the arrow keys", async () => {
+    const { user } = setup();
+    act(() => openGroupEventEditor({ event: STANDUP, occurrenceDate: "2026-10-12" }));
+    await user.click(screen.getByRole("button", { name: "Save" }));
+
+    const scope = await screen.findByRole("alertdialog");
+    expect(within(scope).getByRole("radiogroup", { name: "Change “Standup”" })).toBeInTheDocument();
+    const thisEvent = within(scope).getByRole("radio", { name: /This event/ });
+    const following = within(scope).getByRole("radio", { name: /This and following/ });
+    expect(thisEvent).toHaveAttribute("tabindex", "0");
+    expect(following).toHaveAttribute("tabindex", "-1");
+
+    thisEvent.focus();
+    await user.keyboard("{ArrowDown}");
+
+    expect(following).toBeChecked();
+    expect(following).toHaveFocus();
+  });
+
+  it("offers no This and following on a group that can't create", async () => {
+    groupsMock.mockResolvedValue([{ ...GROUPS[0], canCreate: false }]);
+    const { user } = setup();
+    act(() => openGroupEventEditor({ event: STANDUP, occurrenceDate: "2026-10-12" }));
+    await waitFor(() => expect(groupsMock).toHaveBeenCalled());
+    await user.click(screen.getByRole("button", { name: "Wed" }));
+    await user.click(screen.getByRole("button", { name: "Save" }));
+
+    const scope = await screen.findByRole("alertdialog");
+    expect(within(scope).getByRole("radio", { name: /This and following/ })).toBeDisabled();
+    expect(
+      within(scope).getByText("This group can't take new group events, and this starts one")
+    ).toBeInTheDocument();
+    expect(within(scope).getByRole("radio", { name: /All events/ })).toBeChecked();
+  });
+
+  it("blocks Save until the count of dropped changes is known", async () => {
+    impactMock.mockRejectedValueOnce(new Error("Network down"));
+    const { user } = setup();
+    act(() => openGroupEventEditor({ event: STANDUP, occurrenceDate: "2026-10-12" }));
+    await user.click(screen.getByRole("button", { name: "Wed" }));
+    await user.click(screen.getByRole("button", { name: "Save" }));
+
+    const scope = await screen.findByRole("alertdialog");
+    expect(
+      await within(scope).findByText("Couldn't count the changes made to single dates.")
+    ).toBeInTheDocument();
+    expect(within(scope).getByRole("button", { name: "Save" })).toBeDisabled();
+
+    await user.click(within(scope).getByRole("button", { name: "Retry" }));
+
+    await waitFor(() => expect(within(scope).getByRole("button", { name: "Save" })).toBeEnabled());
+    expect(updateMock).not.toHaveBeenCalled();
   });
 });
 

@@ -22,16 +22,20 @@ import { useTranslation } from "@/lib/i18n/use-translation";
 
 type Point = { x: number; y: number };
 
+const cellDate = (el: Element | null): IsoDate | null =>
+  el?.closest("[data-date]")?.getAttribute("data-date") ?? null;
+
 /**
  * The day cell under a point. Bars and stripes are drawn over the cells, so the first element
- * there is often not a cell; every element stacked at the point is checked.
+ * there is often not a cell; every element stacked at the point is checked. A menu opened from
+ * the keyboard may report a point outside the cell, so the event's target is the fallback.
  */
-function dateAt(point: Point): IsoDate | null {
+function dateAt(point: Point, target: EventTarget | null): IsoDate | null {
   for (const el of document.elementsFromPoint(point.x, point.y)) {
-    const date = el.closest("[data-date]")?.getAttribute("data-date");
+    const date = cellDate(el);
     if (date) return date;
   }
-  return null;
+  return target instanceof Element ? cellDate(target) : null;
 }
 
 function GroupEventSub({ item, onOpen }: { item: DayItem; onOpen: () => void }) {
@@ -84,9 +88,10 @@ export function DayContextMenu({
   const events = items.filter((i) => i.kind === "groupEvent");
   const birthdays = items.filter((i) => i.kind === "birthday");
 
-  function locate(at: Point) {
+  function locate(e: { clientX: number; clientY: number; target: EventTarget | null }) {
+    const at = { x: e.clientX, y: e.clientY };
     setPoint(at);
-    setDate(dateAt(at));
+    setDate(dateAt(at, e.target));
   }
 
   return (
@@ -94,10 +99,10 @@ export function DayContextMenu({
       <ContextMenu>
         <ContextMenuTrigger
           asChild
-          onContextMenu={(e) => locate({ x: e.clientX, y: e.clientY })}
+          onContextMenu={locate}
           // A touch long-press opens the menu without a contextmenu event in some browsers.
           onPointerDown={(e) => {
-            if (e.pointerType !== "mouse") locate({ x: e.clientX, y: e.clientY });
+            if (e.pointerType !== "mouse") locate(e);
           }}
         >
           <div>{children}</div>
@@ -107,11 +112,11 @@ export function DayContextMenu({
             <>
               <ContextMenuLabel>{cardDate(date, t)}</ContextMenuLabel>
               <ContextMenuItem onSelect={() => onRequestTimeOff(date)}>
-                <CalendarPlus /> {labels.requestTimeOff}
+                <CalendarPlus /> {t.newRequest.menu.requestTimeOff}
               </ContextMenuItem>
               {onNewGroupEvent ? (
                 <ContextMenuItem onSelect={() => onNewGroupEvent(date)}>
-                  <CalendarClock /> {labels.newGroupEvent}
+                  <CalendarClock /> {t.newRequest.menu.newGroupEvent}
                 </ContextMenuItem>
               ) : null}
               {items.length > 0 ? <ContextMenuSeparator /> : null}

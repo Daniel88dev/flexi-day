@@ -173,6 +173,22 @@ describe("DayContextMenu", () => {
     expect(onNewGroupEvent).toHaveBeenCalledWith("2026-10-13");
   });
 
+  it("falls back to the focused day when a keyboard-opened menu reports a point off the grid", async () => {
+    const user = userEvent.setup();
+    const { onRequestTimeOff } = renderLanes();
+    document.elementsFromPoint = vi.fn(() => [document.body]);
+
+    fireEvent.contextMenu(screen.getByRole("button", { name: "Create request for 20 October" }), {
+      clientX: 0,
+      clientY: 0,
+    });
+
+    const menu = await screen.findByRole("menu");
+    expect(within(menu).getByText("Tue 20 Oct")).toBeInTheDocument();
+    await user.click(within(menu).getByRole("menuitem", { name: "Request time off" }));
+    expect(onRequestTimeOff).toHaveBeenCalledWith("2026-10-20");
+  });
+
   it("leaves New group event out where nobody may create", async () => {
     renderLanes({ onNewGroupEvent: undefined });
 

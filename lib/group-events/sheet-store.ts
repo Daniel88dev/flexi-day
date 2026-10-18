@@ -8,7 +8,6 @@ export interface OpenGroupEventSheetOptions {
   date?: IsoDate;
   /** Preselects this group when the viewer may create in it; otherwise the first group that can. */
   groupId?: string | null;
-  /** Runs after a successful create, with the row the server answered. */
   onCreated?: (event: GroupEventRow) => void;
 }
 
@@ -44,18 +43,15 @@ export function groupEventSheetState(): GroupEventSheetState | null {
   return state;
 }
 
-/** Opens the side sheet on a new group event. */
 export function openGroupEventSheet(options: OpenGroupEventSheetOptions = {}) {
   const { date, ...rest } = options;
   set({ kind: "create", id: ++seq, date: date ?? today(), ...rest });
 }
 
-/** Opens the side sheet on an existing group event, at the occurrence picked. */
 export function openGroupEventEditor(target: GroupEventTarget) {
   set({ kind: "edit", id: ++seq, target });
 }
 
-/** Asks whether to delete the group event, and which dates for a recurring one. */
 export function confirmGroupEventDelete(target: GroupEventTarget) {
   set({ kind: "delete", id: ++seq, target });
 }
@@ -66,7 +62,7 @@ export function closeGroupEventSheet() {
 
 let shownGroupId: string | null = null;
 
-/** The dashboard reports the group it shows in Group scope (null in Mine), for D27's default. */
+/** The dashboard reports the group it shows in Group scope (null in Mine), for the sheet's default group. */
 export function setShownGroupEventGroup(groupId: string | null) {
   shownGroupId = groupId;
 }

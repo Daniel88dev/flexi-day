@@ -692,10 +692,11 @@ export const en = {
       deleteBody:
         "It leaves every calendar, .ics feeds and synced Google or Microsoft calendars included. This can't be undone.",
       deleteConfirm: "Delete",
+      impactFailed: "Couldn't count the changes made to single dates.",
+      retry: "Retry",
+      followingNeedsPlan: "This group can't take new group events, and this starts one",
     },
     menu: {
-      requestTimeOff: "Request time off",
-      newGroupEvent: "New group event",
       open: "Open",
       edit: "Edit…",
       delete: "Delete…",
@@ -710,6 +711,8 @@ export const en = {
       trigger: "+ New",
       timeOff: "Time off request",
       groupEvent: "Group event",
+      requestTimeOff: "Request time off",
+      newGroupEvent: "New group event",
     },
     group: "Group",
     loadingGroups: "Loading groups…",

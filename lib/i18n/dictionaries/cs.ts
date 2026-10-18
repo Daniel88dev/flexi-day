@@ -703,10 +703,12 @@ export const cs: Dictionary = {
       deleteBody:
         "Zmizí ze všech kalendářů, včetně odběrů .ics a synchronizovaných kalendářů Google a Microsoft. Nejde to vrátit.",
       deleteConfirm: "Smazat",
+      impactFailed: "Nepodařilo se spočítat změny jednotlivých dnů.",
+      retry: "Zkusit znovu",
+      followingNeedsPlan:
+        "Tato skupina nemůže přijímat nové skupinové události a tohle jednu založí",
     },
     menu: {
-      requestTimeOff: "Požádat o volno",
-      newGroupEvent: "Nová skupinová událost",
       open: "Otevřít",
       edit: "Upravit…",
       delete: "Smazat…",
@@ -722,6 +724,8 @@ export const cs: Dictionary = {
       trigger: "+ Nová",
       timeOff: "Žádost o volno",
       groupEvent: "Skupinová událost",
+      requestTimeOff: "Požádat o volno",
+      newGroupEvent: "Nová skupinová událost",
     },
     group: "Skupina",
     loadingGroups: "Načítání skupin…",

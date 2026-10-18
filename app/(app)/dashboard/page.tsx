@@ -173,7 +173,7 @@ function Dashboard() {
   // Mine scope asks without a group, which answers every group the viewer is a member of.
   const groupEventsQuery = useGroupEvents({ year, month, groupId: activeGroupId });
   const groupEventGroupsQuery = useGroupEventGroups();
-  // D27 and S3: Group scope follows that group's right; Mine scope offers it while any group can.
+  // Group scope follows that group's create right; Mine scope offers it while any group can.
   const canCreateGroupEvent = (groupEventGroupsQuery.data ?? []).some(
     (g) => g.canCreate && (activeGroupId === null || g.groupId === activeGroupId)
   );

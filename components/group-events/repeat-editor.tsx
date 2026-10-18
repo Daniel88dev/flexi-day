@@ -52,11 +52,14 @@ export function RepeatEditor({
   value,
   onChange,
   disabledReason,
+  preview,
 }: {
   start: IsoDate;
   value: RepeatRule | null;
   onChange: (rule: RepeatRule | null) => void;
   disabledReason?: string | null;
+  /** The dates to preview when they differ from the rule's own, as for a "This event" edit. */
+  preview?: readonly IsoDate[];
 }) {
   const { t } = useTranslation();
   const labels = t.groupEvents.repeat;
@@ -213,16 +216,15 @@ export function RepeatEditor({
             {ruleSummary(start, rule, t)}
           </p>
 
-          <NextDates start={start} rule={rule} />
+          <NextDates dates={preview ?? nextDates(start, rule)} />
         </div>
       ) : null}
     </div>
   );
 }
 
-function NextDates({ start, rule }: { start: IsoDate; rule: RepeatRule }) {
+function NextDates({ dates }: { dates: readonly IsoDate[] }) {
   const { t } = useTranslation();
-  const dates = nextDates(start, rule);
   const label = t.groupEvents.repeat.nextDates;
   return (
     <div className="space-y-1">

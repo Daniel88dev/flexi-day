@@ -24,6 +24,7 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { errorCode } from "@/lib/api/client";
 import type { GroupEventScope } from "@/lib/api/group-events";
+import type { IsoDate } from "@/lib/api/types";
 import {
   invalidateGroupEventDependants,
   useCreateGroupEvent,
@@ -39,6 +40,9 @@ import {
   draftFromEvent,
   draftProblem,
   editRequest,
+  createGroups,
+  moveOccurrence,
+  previewDates,
   ruleChanged,
   withDates,
   type GroupEventDraft,
@@ -53,7 +57,7 @@ import {
 import type { Dictionary } from "@/lib/i18n/dictionaries/en";
 import { useTranslation } from "@/lib/i18n/use-translation";
 import { RepeatEditor } from "./repeat-editor";
-import { ScopeDialog } from "./scope-dialog";
+import { ScopeDialog, initialScope } from "./scope-dialog";
 
 const PLAN_REQUIRED = "GROUP_EVENTS_PLAN_REQUIRED";
 
@@ -70,6 +74,14 @@ function useWriteError() {
   };
 }
 
+function useCreateGroups(draft: GroupEventDraft, requested: string | null | undefined) {
+  const groupsQuery = useGroupEventGroups();
+  return {
+    pending: groupsQuery.isPending,
+    ...createGroups(groupsQuery.data ?? [], draft.groupId, requested),
+  };
+}
+
 function GroupField({
   draft,
   requestedGroupId,
@@ -80,24 +92,13 @@ function GroupField({
   onChange: (groupId: string) => void;
 }) {
   const { t } = useTranslation();
-  const groupsQuery = useGroupEventGroups();
-  const creatable = (groupsQuery.data ?? []).filter((g) => g.canCreate);
-  if (groupsQuery.isPending) return null;
-  const selected =
-    creatable.find((g) => g.groupId === (draft.groupId ?? requestedGroupId)) ?? creatable[0];
+  const { pending, creatable, selected } = useCreateGroups(draft, requestedGroupId);
+  if (pending) return null;
 
-  return (
-    <div className="space-y-1.5">
-      <Label htmlFor="ge-group">{t.groupEvents.group}</Label>
-      {creatable.length === 0 ? (
-        <p className="text-sm" style={{ color: "var(--text-muted)" }}>
-          {t.groupEvents.noGroup}
-        </p>
-      ) : creatable.length === 1 ? (
-        <p id="ge-group" className="text-sm font-semibold">
-          {creatable[0].groupName}
-        </p>
-      ) : (
+  if (creatable.length > 1) {
+    return (
+      <div className="space-y-1.5">
+        <Label htmlFor="ge-group">{t.groupEvents.group}</Label>
         <Select value={selected?.groupId ?? ""} onValueChange={onChange}>
           <SelectTrigger id="ge-group" className="w-full" aria-label={t.groupEvents.group}>
             <SelectValue />
@@ -110,19 +111,21 @@ function GroupField({
             ))}
           </SelectContent>
         </Select>
-      )}
-    </div>
-  );
-}
+      </div>
+    );
+  }
 
-/** The group the draft goes to: the one picked, else the requested one if it can create, else the first that can. */
-function useCreateGroupId(draft: GroupEventDraft, requested: string | null | undefined) {
-  const groupsQuery = useGroupEventGroups();
-  const creatable = (groupsQuery.data ?? []).filter((g) => g.canCreate);
   return (
-    creatable.find((g) => g.groupId === (draft.groupId ?? requested))?.groupId ??
-    creatable[0]?.groupId ??
-    null
+    <dl className="space-y-1.5">
+      <dt className="text-sm leading-none font-medium">{t.groupEvents.group}</dt>
+      {selected ? (
+        <dd className="text-sm font-semibold">{selected.groupName}</dd>
+      ) : (
+        <dd className="text-sm" style={{ color: "var(--text-muted)" }}>
+          {t.groupEvents.noGroup}
+        </dd>
+      )}
+    </dl>
   );
 }
 
@@ -130,14 +133,20 @@ function EventFields({
   draft,
   onChange,
   groupField,
+  recurringEdit = false,
+  preview,
 }: {
   draft: GroupEventDraft;
   onChange: (draft: GroupEventDraft) => void;
   groupField?: React.ReactNode;
+  /** Editing a recurring group event: a moved date carries its rule, and the end stays on the start. */
+  recurringEdit?: boolean;
+  preview?: readonly IsoDate[];
 }) {
   const { t } = useTranslation();
   const labels = t.groupEvents;
   const multiDay = draft.startDate !== draft.endDate;
+  const endLocked = recurringEdit && draft.repeat !== null;
   const set = (patch: Partial<GroupEventDraft>) => onChange({ ...draft, ...patch });
 
   return (
@@ -163,7 +172,12 @@ function EventFields({
             type="date"
             value={draft.startDate}
             onChange={(e) =>
-              e.target.value && onChange(withDates(draft, { startDate: e.target.value }))
+              e.target.value &&
+              onChange(
+                endLocked
+                  ? moveOccurrence(draft, e.target.value)
+                  : withDates(draft, { startDate: e.target.value })
+              )
             }
           />
         </div>
@@ -174,12 +188,23 @@ function EventFields({
             type="date"
             min={draft.startDate}
             value={draft.endDate}
+            disabled={endLocked}
+            aria-describedby={endLocked ? "ge-end-locked" : undefined}
             onChange={(e) =>
               e.target.value && onChange(withDates(draft, { endDate: e.target.value }))
             }
           />
         </div>
       </div>
+      {endLocked ? (
+        <p
+          id="ge-end-locked"
+          className="-mt-2 text-[12.5px]"
+          style={{ color: "var(--text-muted)" }}
+        >
+          {labels.repeat.oneDayOnly}
+        </p>
+      ) : null}
 
       <div className="flex items-center justify-between gap-3">
         <Label htmlFor="ge-allday" className="font-normal">
@@ -220,6 +245,7 @@ function EventFields({
         value={draft.repeat}
         onChange={(repeat) => set({ repeat })}
         disabledReason={multiDay ? labels.repeat.oneDayOnly : null}
+        preview={preview}
       />
 
       <div className="space-y-1.5">
@@ -306,7 +332,7 @@ function CreateSheet({ state }: { state: Extract<GroupEventSheetState, { kind: "
   const { t } = useTranslation();
   const [draft, setDraft] = useState(() => blankDraft(state.date, null));
   const [error, setError] = useState<string | null>(null);
-  const groupId = useCreateGroupId(draft, state.groupId);
+  const groupId = useCreateGroups(draft, state.groupId).selected?.groupId ?? null;
   const create = useCreateGroupEvent();
   const writeError = useWriteError();
   const full = { ...draft, groupId };
@@ -349,26 +375,26 @@ function CreateSheet({ state }: { state: Extract<GroupEventSheetState, { kind: "
 function EditScopeDialog({
   target,
   draft,
+  scope,
+  onScopeChange,
+  followingAllowed,
   busy,
-  error,
   onCancel,
   onConfirm,
 }: {
   target: GroupEventTarget;
   draft: GroupEventDraft;
+  scope: GroupEventScope;
+  onScopeChange: (scope: GroupEventScope) => void;
+  followingAllowed: boolean;
   busy: boolean;
-  error: string | null;
   onCancel: () => void;
   onConfirm: (scope: GroupEventScope | undefined) => void;
 }) {
-  const changed = ruleChanged(target.event, draft);
-  const [scope, setScope] = useState<GroupEventScope>(changed ? "following" : "this");
+  const { t } = useTranslation();
   // "This event" never drops a one-off change; the other two may.
-  const impact = useGroupEventImpact(
-    target.event.id,
-    editRequest(target, draft, scope),
-    scope !== "this"
-  );
+  const asks = scope !== "this";
+  const impact = useGroupEventImpact(target.event.id, editRequest(target, draft, scope), asks);
 
   return (
     <ScopeDialog
@@ -376,12 +402,15 @@ function EditScopeDialog({
       title={target.event.title}
       occurrenceDate={target.occurrenceDate}
       recurring
-      ruleChanged={changed}
+      scope={scope}
+      onScopeChange={onScopeChange}
+      ruleChanged={ruleChanged(target, draft)}
+      followingDisabledReason={followingAllowed ? null : t.groupEvents.scope.followingNeedsPlan}
       busy={busy}
-      error={error}
-      checking={scope !== "this" && impact.isPending}
-      dropped={scope !== "this" ? impact.data?.droppedOneOffs : undefined}
-      onScopeChange={setScope}
+      checking={asks && impact.isPending}
+      impactFailed={asks && impact.isError}
+      onRetryImpact={() => void impact.refetch()}
+      dropped={asks ? impact.data?.droppedOneOffs : undefined}
       onCancel={onCancel}
       onConfirm={onConfirm}
     />
@@ -393,17 +422,22 @@ function EditSheet({ target }: { target: GroupEventTarget }) {
   const { event } = target;
   const [draft, setDraft] = useState(() => draftFromEvent(event, target.occurrenceDate));
   const [error, setError] = useState<string | null>(null);
-  const [asking, setAsking] = useState(false);
+  // Set while the scope question is open; the preview follows it.
+  const [scope, setScope] = useState<GroupEventScope | null>(null);
   const update = useUpdateGroupEvent();
   const writeError = useWriteError();
+  const groupsQuery = useGroupEventGroups();
+  // "This and following" starts a new group event, which needs the group's create right.
+  const followingAllowed =
+    groupsQuery.data?.find((g) => g.groupId === event.groupId)?.canCreate !== false;
 
-  async function apply(scope: GroupEventScope | undefined) {
+  async function apply(chosen: GroupEventScope | undefined) {
     setError(null);
     try {
-      await update.mutateAsync({ id: event.id, request: editRequest(target, draft, scope) });
+      await update.mutateAsync({ id: event.id, request: editRequest(target, draft, chosen) });
       closeGroupEventSheet();
     } catch (e) {
-      setAsking(false);
+      setScope(null);
       setError(writeError(e));
     }
   }
@@ -420,17 +454,28 @@ function EditSheet({ target }: { target: GroupEventTarget }) {
       error={error}
       busy={update.isPending}
       saveLabel={t.groupEvents.save}
-      onSave={() => (event.repeat ? setAsking(true) : void apply(undefined))}
+      onSave={() =>
+        event.repeat
+          ? setScope(initialScope(ruleChanged(target, draft), followingAllowed))
+          : void apply(undefined)
+      }
     >
-      <EventFields draft={draft} onChange={setDraft} />
-      {asking ? (
+      <EventFields
+        draft={draft}
+        onChange={setDraft}
+        recurringEdit={Boolean(event.repeat)}
+        preview={event.repeat ? previewDates(target, draft, scope) : undefined}
+      />
+      {scope ? (
         <EditScopeDialog
           target={target}
           draft={draft}
+          scope={scope}
+          onScopeChange={setScope}
+          followingAllowed={followingAllowed}
           busy={update.isPending}
-          error={null}
-          onCancel={() => setAsking(false)}
-          onConfirm={(scope) => void apply(scope)}
+          onCancel={() => setScope(null)}
+          onConfirm={(chosen) => void apply(chosen)}
         />
       ) : null}
     </SheetFrame>
@@ -440,6 +485,7 @@ function EditSheet({ target }: { target: GroupEventTarget }) {
 function DeleteDialog({ target }: { target: GroupEventTarget }) {
   const { event, occurrenceDate } = target;
   const [error, setError] = useState<string | null>(null);
+  const [scope, setScope] = useState<GroupEventScope>("this");
   const remove = useDeleteGroupEvent();
   const writeError = useWriteError();
 
@@ -462,6 +508,8 @@ function DeleteDialog({ target }: { target: GroupEventTarget }) {
       title={event.title}
       occurrenceDate={occurrenceDate}
       recurring={Boolean(event.repeat)}
+      scope={scope}
+      onScopeChange={setScope}
       busy={remove.isPending}
       error={error}
       onCancel={() => closeGroupEventSheet()}

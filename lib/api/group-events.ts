@@ -39,7 +39,6 @@ export type GroupEventRow = {
   updatedAt: string;
 };
 
-/** One of the caller's groups and whether they may add a group event to it now. */
 export type GroupEventGroup = { groupId: string; groupName: string; canCreate: boolean };
 
 export type ListGroupEventsParams = {
@@ -95,7 +94,6 @@ export type GroupEventEditRequest = {
 
 export type GroupEventDeleteRequest = { scope?: GroupEventScope; occurrenceDate?: IsoDate };
 
-/** What an edit or delete wrote: the live rows and the ids it removed. */
 export type GroupEventWriteResult = {
   droppedOneOffs: number;
   events: GroupEventRow[];

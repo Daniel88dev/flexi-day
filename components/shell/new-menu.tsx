@@ -18,9 +18,15 @@ import { openGroupEventSheet, shownGroupEventGroup } from "@/lib/group-events/sh
 import { useTranslation } from "@/lib/i18n/use-translation";
 import { isLinkActive } from "@/lib/navigation/shell-links";
 
+/** True once the groups have loaded and there is none to request time off in. */
+export function useNoGroups(): boolean {
+  const groupsQuery = useGroups();
+  return (groupsQuery.data ?? []).length === 0 && !groupsQuery.isLoading;
+}
+
 /**
- * The shell's way into a new group event (D27): whether any group can take one, and the opener
- * that starts the sheet on today and toasts after the create.
+ * The shell's way into a new group event: whether any group can take one, and the opener that
+ * starts the sheet on today and toasts after the create.
  */
 export function useNewGroupEvent() {
   const { t } = useTranslation();
@@ -48,13 +54,11 @@ export function useNewGroupEvent() {
 /** The header's create entry: "+ New ▾" while a group can take a group event, else "+ New Request". */
 export function NewMenu() {
   const { t } = useTranslation();
-  const groupsQuery = useGroups();
+  const noGroups = useNoGroups();
   const groupEvent = useNewGroupEvent();
   const [requestOpen, setRequestOpen] = useState(false);
 
   if (!groupEvent.canCreate) return <NewRequestDialog />;
-
-  const noGroups = (groupsQuery.data ?? []).length === 0 && !groupsQuery.isLoading;
 
   return (
     <>

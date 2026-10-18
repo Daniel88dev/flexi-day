@@ -1,17 +1,22 @@
 import { describe, expect, it } from "vitest";
-import type { GroupEventRow, RepeatRule } from "@/lib/api/group-events";
+import type { GroupEventGroup, GroupEventRow, RepeatRule } from "@/lib/api/group-events";
 import {
   blankDraft,
   createInput,
   defaultRule,
   draftFromEvent,
   draftProblem,
+  createGroups,
   editRequest,
   fitRule,
+  moveOccurrence,
   nextDates,
+  previewDates,
   ruleChanged,
+  shiftRule,
   withDates,
 } from "../draft";
+import { occurrences } from "../occurrences";
 
 const weekly = (weekdays: number[], until: string | null = null): RepeatRule => ({
   freq: "weekly",
@@ -267,18 +272,122 @@ describe("draftFromEvent", () => {
 });
 
 describe("ruleChanged", () => {
+  const target = { event: ROW, occurrenceDate: "2026-10-14" };
+
   it("is false when only the date moves", () => {
-    const draft = withDates(draftFromEvent(ROW, "2026-10-14"), { startDate: "2026-10-15" });
-    expect(ruleChanged(ROW, draft)).toBe(false);
+    const draft = moveOccurrence(draftFromEvent(ROW, "2026-10-14"), "2026-10-15");
+    expect(ruleChanged(target, draft)).toBe(false);
   });
 
   it("is true when the weekdays change", () => {
     const draft = { ...draftFromEvent(ROW, "2026-10-14"), repeat: weekly([0, 2, 4]) };
-    expect(ruleChanged(ROW, draft)).toBe(true);
+    expect(ruleChanged(target, draft)).toBe(true);
   });
 
   it("is true when repeat is turned off", () => {
-    expect(ruleChanged(ROW, { ...draftFromEvent(ROW, "2026-10-14"), repeat: null })).toBe(true);
+    expect(ruleChanged(target, { ...draftFromEvent(ROW, "2026-10-14"), repeat: null })).toBe(true);
+  });
+});
+
+describe("shiftRule", () => {
+  it("moves a weekly rule's weekdays and its last date, wrapping the week", () => {
+    expect(shiftRule(weekly([1, 6], "2026-11-03"), 1)).toEqual(weekly([0, 2], "2026-11-04"));
+    expect(shiftRule(weekly([0], "2026-11-02"), -1)).toEqual(weekly([6], "2026-11-01"));
+  });
+
+  it("moves only the last date of a rule without weekdays", () => {
+    const daily: RepeatRule = { ...defaultRule("daily", "2026-10-20"), until: "2026-10-31" };
+    expect(shiftRule(daily, 2)).toEqual({ ...daily, until: "2026-11-02" });
+  });
+});
+
+describe("moveOccurrence", () => {
+  it("keeps the occurrence one day and moves its rule with it", () => {
+    const draft = draftFromEvent({ ...ROW, repeat: weekly([1], "2026-11-03") }, "2026-10-20");
+    expect(moveOccurrence(draft, "2026-10-21")).toMatchObject({
+      startDate: "2026-10-21",
+      endDate: "2026-10-21",
+      repeat: weekly([2], "2026-11-04"),
+    });
+  });
+});
+
+describe("a weekly Tuesday occurrence moved to Wednesday", () => {
+  const TUESDAYS: GroupEventRow = {
+    ...ROW,
+    startDate: "2026-10-06",
+    endDate: "2026-10-06",
+    repeat: weekly([1], "2026-11-03"),
+  };
+  const target = { event: TUESDAYS, occurrenceDate: "2026-10-20" };
+  const draft = moveOccurrence(draftFromEvent(TUESDAYS, "2026-10-20"), "2026-10-21");
+  const savedFrom = (changes: { startDate?: string; repeat?: RepeatRule | null }) =>
+    occurrences(
+      {
+        startDate: changes.startDate ?? "",
+        endDate: changes.startDate ?? "",
+        repeat: changes.repeat ?? null,
+        skippedDates: [],
+      },
+      "2026-10-20",
+      "2027-12-31"
+    ).map((o) => o.startDate);
+
+  it("is not a rule change", () => {
+    expect(ruleChanged(target, draft)).toBe(false);
+  });
+
+  it("moves that date alone with this event, and previews the rest unchanged", () => {
+    const { changes } = editRequest(target, draft, "this");
+    expect(changes).toMatchObject({ startDate: "2026-10-21", endDate: "2026-10-21" });
+    expect(changes).not.toHaveProperty("repeat");
+    expect(previewDates(target, draft, "this")).toEqual(["2026-10-21", "2026-10-27", "2026-11-03"]);
+  });
+
+  it("moves the start, the weekday and the last date with this and following", () => {
+    const { changes } = editRequest(target, draft, "following");
+    expect(changes).toMatchObject({
+      startDate: "2026-10-21",
+      endDate: "2026-10-21",
+      repeat: weekly([2], "2026-11-04"),
+    });
+    expect(previewDates(target, draft, "following")).toEqual(savedFrom(changes));
+    expect(savedFrom(changes)).toEqual(["2026-10-21", "2026-10-28", "2026-11-04"]);
+  });
+
+  it("moves the first date, the weekday and the last date with all events", () => {
+    const { changes } = editRequest(target, draft, "all");
+    expect(changes).toMatchObject({
+      startDate: "2026-10-07",
+      endDate: "2026-10-07",
+      repeat: weekly([2], "2026-11-04"),
+    });
+    expect(previewDates(target, draft, "all")).toEqual(savedFrom(changes));
+  });
+
+  it("previews the moved rule before a scope is picked", () => {
+    expect(previewDates(target, draft, null)).toEqual(["2026-10-21", "2026-10-28", "2026-11-04"]);
+  });
+});
+
+describe("createGroups", () => {
+  const groups: GroupEventGroup[] = [
+    { groupId: "g-1", groupName: "Dev Team", canCreate: true },
+    { groupId: "g-2", groupName: "Design", canCreate: true },
+    { groupId: "g-3", groupName: "Free crew", canCreate: false },
+  ];
+
+  it("lists the groups that can create and selects the one picked", () => {
+    expect(createGroups(groups, "g-2", "g-1")).toEqual({
+      creatable: groups.slice(0, 2),
+      selected: groups[1],
+    });
+  });
+
+  it("selects the requested group when it can create, else the first that can", () => {
+    expect(createGroups(groups, null, "g-2").selected).toBe(groups[1]);
+    expect(createGroups(groups, null, "g-3").selected).toBe(groups[0]);
+    expect(createGroups([groups[2]], null, null)).toEqual({ creatable: [], selected: null });
   });
 });
 
@@ -301,7 +410,7 @@ describe("editRequest", () => {
   });
 
   it("moves one occurrence with this event and leaves the rule out", () => {
-    const draft = withDates(draftFromEvent(ROW, "2026-10-14"), { startDate: "2026-10-15" });
+    const draft = moveOccurrence(draftFromEvent(ROW, "2026-10-14"), "2026-10-15");
     expect(editRequest({ event: ROW, occurrenceDate: "2026-10-14" }, draft, "this")).toEqual({
       scope: "this",
       occurrenceDate: "2026-10-14",
@@ -347,7 +456,7 @@ describe("editRequest", () => {
   });
 
   it("moves every date by as many days as the occurrence moved with all events", () => {
-    const draft = withDates(draftFromEvent(ROW, "2026-10-14"), { startDate: "2026-10-15" });
+    const draft = moveOccurrence(draftFromEvent(ROW, "2026-10-14"), "2026-10-15");
     expect(
       editRequest({ event: ROW, occurrenceDate: "2026-10-14" }, draft, "all").changes
     ).toMatchObject({ startDate: "2026-10-06", endDate: "2026-10-06", repeat: weekly([1, 3]) });

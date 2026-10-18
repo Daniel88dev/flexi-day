@@ -4,6 +4,7 @@ import type { DayItem, DayItemAction } from "@/lib/calendar/day-items";
 import type { Dictionary } from "@/lib/i18n/dictionaries/en";
 import { ruleSummary, whenLabel } from "./labels";
 import { occurrences, plusDays, type Occurrence } from "./occurrences";
+import { firstName } from "@/lib/birthdays/birthday";
 
 /** Which group event a card's action is about, and which of its dates the viewer picked it on. */
 export interface GroupEventTarget {
@@ -29,10 +30,6 @@ interface Placed {
   item: DayItem;
   startsToday: boolean;
   startTime: string | null;
-}
-
-function firstName(name: string): string {
-  return name.split(" ")[0] || name;
 }
 
 function actionsFor(

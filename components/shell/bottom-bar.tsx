@@ -15,7 +15,6 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { useGroups } from "@/lib/api/queries";
 import { useTranslation } from "@/lib/i18n/use-translation";
 import {
   BOTTOM_BAR_CLOCK_INDEX,
@@ -24,7 +23,7 @@ import {
 } from "@/lib/navigation/shell-links";
 import { useShellNav } from "@/lib/navigation/use-shell-nav";
 import { cn } from "@/lib/utils";
-import { useNewGroupEvent } from "./new-menu";
+import { useNewGroupEvent, useNoGroups } from "./new-menu";
 
 const tabClass =
   "flex flex-col items-center gap-1 pt-1.5 text-[11px] font-semibold transition-colors [&_svg]:size-[22px]";
@@ -93,9 +92,8 @@ export function BottomBar() {
   const { sections, utility, isActive } = useShellNav();
   const [moreOpen, setMoreOpen] = useState(false);
   const [requestOpen, setRequestOpen] = useState(false);
-  const groupsQuery = useGroups();
   const groupEvent = useNewGroupEvent();
-  const noGroups = (groupsQuery.data ?? []).length === 0 && !groupsQuery.isLoading;
+  const noGroups = useNoGroups();
 
   const { bar, sheet } = splitForBottomBar(sections);
   const slots: (NavLink | null)[] = [...bar];
@@ -190,7 +188,7 @@ export function BottomBar() {
                 setRequestOpen(true);
               }}
             >
-              {t.groupEvents.menu.requestTimeOff}
+              {t.newRequest.menu.requestTimeOff}
             </Button>
             {groupEvent.canCreate ? (
               <Button
@@ -201,7 +199,7 @@ export function BottomBar() {
                   groupEvent.open();
                 }}
               >
-                {t.groupEvents.menu.newGroupEvent}
+                {t.newRequest.menu.newGroupEvent}
               </Button>
             ) : null}
             <div className="flex items-center justify-end gap-3 pt-1">
