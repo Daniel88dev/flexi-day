@@ -103,6 +103,7 @@ export function VacationDetailDialog({
   const canReadPrivateDetails = detail?.canReadPrivateDetails ?? false;
   const hasActions = !!detail && (detail.canEdit || detail.canApprove || detail.canCancel);
   const isMutating = approve.isPending || reject.isPending || cancel.isPending || comment.isPending;
+  const trimmedReason = reason.trim();
 
   function close(nextOpen: boolean) {
     if (!nextOpen) {
@@ -223,10 +224,10 @@ export function VacationDetailDialog({
                     <Button
                       size="sm"
                       variant="secondary"
-                      disabled={isMutating || reason.trim().length === 0}
+                      disabled={isMutating || trimmedReason.length === 0}
                       onClick={() =>
                         run("comment", () =>
-                          comment.mutateAsync({ id: detail.id, message: reason.trim() })
+                          comment.mutateAsync({ id: detail.id, message: trimmedReason })
                         )
                       }
                     >
@@ -252,7 +253,12 @@ export function VacationDetailDialog({
                           className="border-green-300 text-green-700 hover:bg-green-50 dark:border-green-800 dark:text-green-400 dark:hover:bg-green-950/30"
                           disabled={isMutating}
                           onClick={() =>
-                            run("approve", () => approve.mutateAsync(detail.vacationIds))
+                            run("approve", () =>
+                              approve.mutateAsync({
+                                ids: detail.vacationIds,
+                                reason: trimmedReason || undefined,
+                              })
+                            )
                           }
                         >
                           {t.vacationDetail.approve}
@@ -266,7 +272,7 @@ export function VacationDetailDialog({
                             run("reject", () =>
                               reject.mutateAsync({
                                 ids: detail.vacationIds,
-                                reason: reason.trim() || undefined,
+                                reason: trimmedReason || undefined,
                               })
                             )
                           }
@@ -284,7 +290,7 @@ export function VacationDetailDialog({
                           run("cancel", () =>
                             cancel.mutateAsync({
                               ids: detail.vacationIds,
-                              reason: reason.trim() || undefined,
+                              reason: trimmedReason || undefined,
                             })
                           )
                         }

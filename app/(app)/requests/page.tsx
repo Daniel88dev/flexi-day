@@ -372,7 +372,7 @@ export default function RequestsPage() {
                               className="border-green-300 text-green-700 hover:bg-green-50 dark:border-green-800 dark:text-green-400 dark:hover:bg-green-950/30"
                               disabled={isMutating}
                               onClick={() =>
-                                approve.mutate(r.vacationIds, actionCallbacks("approve"))
+                                approve.mutate({ ids: r.vacationIds }, actionCallbacks("approve"))
                               }
                             >
                               {t.requests.approve}

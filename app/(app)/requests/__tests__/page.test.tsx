@@ -108,7 +108,7 @@ describe("RequestsPage grouping", () => {
     await user.click(screen.getByRole("button", { name: "Approve" }));
 
     expect(approveMutate).toHaveBeenCalledWith(
-      ["v-1", "v-2", "v-3"],
+      { ids: ["v-1", "v-2", "v-3"] },
       expect.objectContaining({ onError: expect.any(Function) })
     );
   });
