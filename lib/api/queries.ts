@@ -1,6 +1,12 @@
 "use client";
 
-import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  queryOptions,
+  useMutation,
+  useQueries,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { ApiError, errorCode } from "./client";
 import {
   approveVacation,
@@ -640,20 +646,27 @@ export function useReportScope() {
   });
 }
 
-export function useReportOverview(filters: ReportFilters, enabled = true) {
-  return useQuery({
+export function reportOverviewQuery(filters: ReportFilters) {
+  return queryOptions({
     queryKey: qk.reportOverview(filters),
     queryFn: () => getReportOverview(filters),
-    enabled,
   });
 }
 
-export function useMemberReport(userId: string | null | undefined, year: number, enabled = true) {
-  return useQuery({
+export function useReportOverview(filters: ReportFilters) {
+  return useQuery(reportOverviewQuery(filters));
+}
+
+export function memberReportQuery(userId: string | null | undefined, year: number) {
+  return queryOptions({
     queryKey: qk.memberReport(userId ?? "", year),
     queryFn: () => getMemberReport(userId!, year),
-    enabled: enabled && !!userId,
+    enabled: !!userId,
   });
+}
+
+export function useMemberReport(userId: string | null | undefined, year: number) {
+  return useQuery(memberReportQuery(userId, year));
 }
 
 // Both also invalidate the single-group query: the detail screen reads the

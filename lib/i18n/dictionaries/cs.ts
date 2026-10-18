@@ -503,6 +503,7 @@ export const cs: Dictionary = {
   report: {
     title: "Report",
     subtitle: "Nároky a čerpání volna napříč vašimi týmy.",
+    loadFailed: "Report se nepodařilo načíst. Zkuste to za chvíli znovu.",
     filters: {
       year: "Rok",
       period: "Období",

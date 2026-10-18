@@ -496,6 +496,7 @@ export const en = {
   report: {
     title: "Report",
     subtitle: "Allowances and leave usage across your teams.",
+    loadFailed: "Could not load the report. Try again in a moment.",
     filters: {
       year: "Year",
       period: "Period",

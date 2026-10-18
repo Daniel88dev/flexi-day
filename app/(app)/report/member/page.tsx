@@ -18,7 +18,8 @@ import {
 import { AvatarBubble } from "@/components/brand/avatar-bubble";
 import { MemberQuotaChart } from "@/components/report/member-quota-chart";
 import { QuotaEditDialog } from "@/components/report/quota-edit-dialog";
-import { useMemberReport, useReportScope } from "@/lib/api/queries";
+import { memberReportQuery, useMemberReport } from "@/lib/api/queries";
+import { useReportWindow } from "@/hooks/use-report-window";
 import {
   calendarMonths,
   formatDays,
@@ -28,7 +29,6 @@ import {
   trailingMonths,
   windowLabel,
   withYear,
-  yearsInWindow,
 } from "@/lib/report/series";
 import type { ReportScopeGroup } from "@/lib/api/report-types";
 import type { CalendarRecordType } from "@/lib/api/types";
@@ -58,16 +58,12 @@ export default function MemberReportPage() {
   );
 
   const reportQuery = useMemberReport(userId, year);
-  const scopeQuery = useReportScope();
-
-  const priorYear = yearsInWindow(slots)[0];
-  const needsPriorYear = priorYear !== year && (scopeQuery.data?.years ?? []).includes(priorYear);
-  const priorQuery = useMemberReport(userId, priorYear, needsPriorYear);
+  const reportWindow = useReportWindow(slots, year, (priorYear) =>
+    memberReportQuery(userId, priorYear)
+  );
 
   const report = reportQuery.data;
-  // Not `priorQuery.data`: a disabled query still hands back whatever the cache
-  // holds for its key, which is the very year already in `report`.
-  const prior = needsPriorYear ? priorQuery.data : undefined;
+  const prior = reportWindow.prior;
 
   const usage = useMemo(
     () => [
@@ -76,17 +72,6 @@ export default function MemberReportPage() {
     ],
     [report, prior]
   );
-
-  // A cross-year window is only complete once scope has said which years hold
-  // data and the second year has landed; drawing earlier shows last year's
-  // months as zeros that then jump.
-  const spansYears = yearsInWindow(slots).length > 1;
-  const windowPending =
-    spansYears && (scopeQuery.isPending || (needsPriorYear && priorQuery.isPending));
-  // A failed scope leaves `needsPriorYear` false, which would quietly drop last
-  // year's half rather than admit it never looked.
-  const windowIncomplete =
-    (needsPriorYear && priorQuery.isError) || (spansYears && scopeQuery.isError);
 
   if (reportQuery.isPending) {
     return <p className="text-muted-foreground text-sm">{t.common.loading}</p>;
@@ -133,9 +118,9 @@ export default function MemberReportPage() {
         </div>
       </div>
 
-      {windowIncomplete ? (
+      {reportWindow.state === "incomplete" ? (
         <p role="status" className="text-muted-foreground text-sm">
-          {t.report.charts.windowIncomplete(priorYear)}
+          {t.report.charts.windowIncomplete(reportWindow.priorYear)}
         </p>
       ) : null}
 
@@ -152,7 +137,7 @@ export default function MemberReportPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {windowPending ? (
+                {reportWindow.state === "pending" ? (
                   <p className="text-muted-foreground text-sm">{t.common.loading}</p>
                 ) : (
                   <MemberQuotaChart

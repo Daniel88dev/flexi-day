@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { fireEvent, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import userEvent from "@testing-library/user-event";
 import ReportPage from "../page";
-import { renderWithClient } from "@/lib/test-utils";
 import type { ReportOverview, ReportScope } from "@/lib/api/report-types";
 import { CalendarRecordType } from "@/lib/api/types";
 
@@ -106,23 +106,42 @@ const priorOverview: ReportOverview = {
 };
 
 const mocks = vi.hoisted(() => ({
-  priorYear: 2025,
-  scopeResult: { data: undefined as ReportScope | undefined, isPending: false },
+  scopeResult: {
+    data: undefined as ReportScope | undefined,
+    isPending: false,
+    isError: false,
+  },
   overviewResult: { data: undefined as ReportOverview | undefined, isPending: false },
-  priorResult: { data: undefined as ReportOverview | undefined, isPending: false, isError: false },
+  fetchYear: (() => Promise.resolve(undefined)) as (year: number) => Promise<unknown>,
+}));
+
+// Last year goes through a real query. Keying the mock by year alone makes a
+// single calendar year resolve to the cache entry the test seeds for it.
+vi.mock("@/lib/api/queries", () => ({
+  useReportScope: () => mocks.scopeResult,
+  useReportOverview: () => mocks.overviewResult,
+  reportOverviewQuery: (filters: { year: number }) => ({
+    queryKey: ["report-overview", filters.year],
+    queryFn: () => mocks.fetchYear(filters.year),
+  }),
 }));
 
 /**
- * Keyed by year, and deliberately indifferent to `enabled`: a disabled query
- * still hands back whatever the cache holds for its key, and a mock that
- * returns nothing when disabled cannot catch the page reading the prior-year
- * result it asked not to fetch.
+ * Seeds the cache per year, which is how a test hands the window its second
+ * year synchronously. A disabled query still returns what the cache holds, so
+ * seeding a year the page should not read is how that guard is caught.
  */
-vi.mock("@/lib/api/queries", () => ({
-  useReportScope: () => mocks.scopeResult,
-  useReportOverview: (filters: { year: number }) =>
-    filters.year === mocks.priorYear ? mocks.priorResult : mocks.overviewResult,
-}));
+function renderPage(cached: Record<number, ReportOverview> = { 2025: priorOverview }) {
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  for (const [year, data] of Object.entries(cached)) {
+    client.setQueryData(["report-overview", Number(year)], data);
+  }
+  return render(
+    <QueryClientProvider client={client}>
+      <ReportPage />
+    </QueryClientProvider>
+  );
+}
 
 const panelTriggers = (container: HTMLElement) =>
   Array.from(container.querySelectorAll<HTMLElement>('[data-slot="accordion-trigger"]'));
@@ -133,10 +152,9 @@ describe("ReportPage", () => {
   beforeEach(() => {
     vi.useFakeTimers({ shouldAdvanceTime: true });
     vi.setSystemTime(new Date(2026, 7, 22));
-    mocks.priorYear = 2025;
-    mocks.scopeResult = { data: scope, isPending: false };
+    mocks.scopeResult = { data: scope, isPending: false, isError: false };
     mocks.overviewResult = { data: overview, isPending: false };
-    mocks.priorResult = { data: priorOverview, isPending: false, isError: false };
+    mocks.fetchYear = (year) => Promise.resolve(year === 2025 ? priorOverview : overview);
   });
 
   afterEach(() => {
@@ -144,7 +162,7 @@ describe("ReportPage", () => {
   });
 
   it("renders a chart and a table row per member", () => {
-    renderWithClient(<ReportPage />);
+    renderPage();
 
     expect(screen.getByRole("heading", { name: "Report", level: 1 })).toBeInTheDocument();
     expect(screen.getByTestId("usage-chart")).toBeInTheDocument();
@@ -152,7 +170,7 @@ describe("ReportPage", () => {
   });
 
   it("opens only the leading panel and leaves the rest collapsed", () => {
-    const { container } = renderWithClient(<ReportPage />);
+    const { container } = renderPage();
 
     const open = panelTriggers(container).filter(
       (trigger) => trigger.getAttribute("aria-expanded") === "true"
@@ -165,7 +183,7 @@ describe("ReportPage", () => {
   });
 
   it("lists usage before days-left for each leave type in turn", () => {
-    const { container } = renderWithClient(<ReportPage />);
+    const { container } = renderPage();
 
     expect(panelTriggers(container).map((trigger) => trigger.textContent)).toEqual([
       expect.stringContaining("Vacation · Monthly usage"),
@@ -176,7 +194,7 @@ describe("ReportPage", () => {
   });
 
   it("keeps monthly usage open when days-left is expanded", () => {
-    renderWithClient(<ReportPage />);
+    renderPage();
 
     fireEvent.click(screen.getByRole("button", { name: /Vacation · Days left/ }));
 
@@ -189,7 +207,7 @@ describe("ReportPage", () => {
   });
 
   it("merges last year's half of the rolling window and ignores months outside it", () => {
-    const { container } = renderWithClient(<ReportPage />);
+    const { container } = renderPage();
 
     const [usage] = panelTriggers(container);
 
@@ -201,7 +219,7 @@ describe("ReportPage", () => {
 
   it("drops the prior year when a single calendar year is picked", async () => {
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
-    const { container } = renderWithClient(<ReportPage />);
+    const { container } = renderPage({ 2025: priorOverview, 2026: overview });
 
     await user.click(screen.getByRole("combobox", { name: "Period" }));
     await user.click(screen.getByRole("option", { name: "2026" }));
@@ -215,9 +233,9 @@ describe("ReportPage", () => {
   });
 
   it("ignores a cached prior year the scope says holds no data", () => {
-    mocks.scopeResult = { data: { ...scope, years: [2026] }, isPending: false };
+    mocks.scopeResult = { data: { ...scope, years: [2026] }, isPending: false, isError: false };
 
-    const { container } = renderWithClient(<ReportPage />);
+    const { container } = renderPage();
 
     // The 2025 query is disabled, but a disabled query still returns its cached
     // payload — merging it would report 6.
@@ -225,24 +243,34 @@ describe("ReportPage", () => {
   });
 
   it("waits for both halves of the window before drawing anything", () => {
-    mocks.priorResult = { data: undefined, isPending: true, isError: false };
+    mocks.fetchYear = () => new Promise(() => {});
 
-    const { container } = renderWithClient(<ReportPage />);
+    const { container } = renderPage({});
 
     expect(panelTriggers(container)).toHaveLength(0);
     expect(screen.getByText(/Loading/i)).toBeInTheDocument();
   });
 
-  it("says so when last year could not be loaded", () => {
-    mocks.priorResult = { data: undefined, isPending: false, isError: true };
+  it("says so when last year could not be loaded", async () => {
+    mocks.fetchYear = () => Promise.reject(new Error("boom"));
 
-    renderWithClient(<ReportPage />);
+    renderPage({});
 
-    expect(screen.getByRole("status")).toHaveTextContent(/Could not load 2025/);
+    expect(await screen.findByRole("status")).toHaveTextContent(/Could not load 2025/);
+  });
+
+  it("still draws both halves when a scope refetch fails over a cached scope", () => {
+    mocks.scopeResult = { data: scope, isPending: false, isError: true };
+
+    const { container } = renderPage();
+
+    expect(panelTriggers(container)[0]?.textContent).toContain("Total: 6");
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
 
   it("offers the Excel export", () => {
-    renderWithClient(<ReportPage />);
+    renderPage();
 
     expect(screen.getByRole("button", { name: /Export to Excel/i })).toBeInTheDocument();
   });
@@ -251,22 +279,42 @@ describe("ReportPage", () => {
     mocks.scopeResult = {
       data: { groups: [], members: [], years: [2026] },
       isPending: false,
+      isError: false,
     };
     mocks.overviewResult = {
       data: { ...overview, members: [], monthly: [], summary: [] },
       isPending: false,
     };
 
-    renderWithClient(<ReportPage />);
+    renderPage();
 
     expect(screen.getByText(/Nothing to report yet/i)).toBeInTheDocument();
   });
 
+  it("says the report could not load when the scope query fails", () => {
+    mocks.scopeResult = { data: undefined, isPending: false, isError: true };
+
+    const { container } = renderPage();
+
+    expect(screen.getByText(/Could not load the report/i)).toBeInTheDocument();
+    expect(screen.queryByText(/Nothing to report yet/i)).not.toBeInTheDocument();
+    expect(panelTriggers(container)).toHaveLength(0);
+  });
+
+  it("does not call the report empty while the scope is still loading", () => {
+    mocks.scopeResult = { data: undefined, isPending: true, isError: false };
+
+    renderPage();
+
+    expect(screen.queryByText(/Nothing to report yet/i)).not.toBeInTheDocument();
+    expect(screen.getByText(/Loading/i)).toBeInTheDocument();
+  });
+
   it("shows the loading state while the overview is in flight", () => {
-    mocks.scopeResult = { data: scope, isPending: false };
+    mocks.scopeResult = { data: scope, isPending: false, isError: false };
     mocks.overviewResult = { data: undefined, isPending: true };
 
-    renderWithClient(<ReportPage />);
+    renderPage();
 
     expect(screen.getByText(/Loading/i)).toBeInTheDocument();
   });
