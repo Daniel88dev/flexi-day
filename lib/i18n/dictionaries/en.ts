@@ -1837,7 +1837,7 @@ export const en = {
       wrong: "Something went wrong",
       feedCopied: "Feed URL copied",
       feedCopyFailed: "Couldn't copy the feed URL",
-      pickType: "Pick at least one record type or Birthdays",
+      pickType: "Pick at least one record type, Group events or Birthdays",
       saveFailed: "Couldn't save the calendar",
       linkCopied: "Link copied to clipboard",
       opening: (name: string) => `Opening ${name}…`,
@@ -1891,6 +1891,9 @@ export const en = {
       team: "Team",
       distinguishTitle: "Give my own records a distinct color",
       distinguishSub: "Tell your vacation apart from the team's at a glance.",
+      groupEvents: "Group events",
+      groupEventsMe: "Events in every group you're in",
+      groupEventsTeam: "Events in the selected groups",
       birthdays: "Birthdays",
       birthdaysMe: "Only your own birthday",
       birthdaysTeam:
@@ -1915,11 +1918,11 @@ export const en = {
     connect: {
       label: "Direct sync",
       intro: {
-        both: "Push your approved days off into your own Google or Microsoft calendar. Only your records are synced; teammates never are.",
+        both: "Push your approved days off and your groups' events into your own Google or Microsoft calendar. Teammates' records are never synced.",
         google:
-          "Push your approved days off into your own Google calendar. Only your records are synced; teammates never are.",
+          "Push your approved days off and your groups' events into your own Google calendar. Teammates' records are never synced.",
         microsoft:
-          "Push your approved days off into your own Microsoft calendar. Only your records are synced; teammates never are.",
+          "Push your approved days off and your groups' events into your own Microsoft calendar. Teammates' records are never synced.",
       },
       connectProvider: (name: string) => `Connect ${name}`,
       whyPrimary:

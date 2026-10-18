@@ -37,6 +37,9 @@ export type CalendarSyncConfig = {
   distinguishMine: boolean;
   /** IANA zone the feed and its sync target write timed events in. */
   timeZone: string;
+  /** Whether the feed carries group events: every group the owner is in on `ME`, the selected ones on `TEAM`. */
+  includeGroupEvents: boolean;
+  groupEventsColor: string | null;
   /** Whether the feed carries birthdays: the owner's own on `ME`, members' shared ones on `TEAM`. */
   includeBirthdays: boolean;
   birthdaysColor: string | null;
@@ -58,7 +61,7 @@ export type CalendarSyncTypeInput = {
 
 /**
  * Body for creating/updating a config (update replaces the whole config). `types`
- * may be empty when `includeBirthdays` is on. `timeZone` goes on create only; an
+ * may be empty when `includeGroupEvents` or `includeBirthdays` is on. `timeZone` goes on create only; an
  * update without it keeps the stored zone.
  */
 export type CalendarSyncInput = {
@@ -67,6 +70,8 @@ export type CalendarSyncInput = {
   distinguishMine: boolean;
   teamIds: UUID[];
   types: CalendarSyncTypeInput[];
+  includeGroupEvents: boolean;
+  groupEventsColor: string;
   includeBirthdays: boolean;
   birthdaysColor: string;
   timeZone?: string;

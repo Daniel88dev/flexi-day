@@ -18,6 +18,7 @@ import { CalendarRecordType } from "@/lib/api/types";
 import { useTranslation } from "@/lib/i18n/use-translation";
 import {
   BIRTHDAYS_META,
+  GROUP_EVENTS_META,
   builderToInput,
   carriesSomething,
   swatch,
@@ -141,7 +142,7 @@ function TypeRow({
 }
 
 /**
- * A row for a source beyond the record types (Birthdays): the same checkbox,
+ * A row for a source beyond the record types (Group events, Birthdays): the same checkbox,
  * icon tile and swatch, plus a line saying what it carries on this feed.
  */
 function SourceRow({
@@ -548,6 +549,19 @@ export function CalBuilder({
                       onColor={setColor}
                     />
                   ))}
+                  <SourceRow
+                    on={config.includeGroupEvents}
+                    label={t.calSync.builder.groupEvents}
+                    line={
+                      config.scope === "TEAM"
+                        ? t.calSync.builder.groupEventsTeam
+                        : t.calSync.builder.groupEventsMe
+                    }
+                    icon={GROUP_EVENTS_META.icon}
+                    color={config.groupEventsColor}
+                    onToggle={() => patch({ includeGroupEvents: !config.includeGroupEvents })}
+                    onColor={(v) => patch({ groupEventsColor: v })}
+                  />
                   <SourceRow
                     on={config.includeBirthdays}
                     label={t.calSync.builder.birthdays}

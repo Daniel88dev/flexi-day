@@ -11,6 +11,8 @@ const config: CalendarSyncConfig = {
   scope: "ME",
   distinguishMine: false,
   timeZone: "Europe/Prague",
+  includeGroupEvents: false,
+  groupEventsColor: null,
   includeBirthdays: false,
   birthdaysColor: null,
   teamIds: [],
@@ -58,6 +60,15 @@ describe("CalCard", () => {
   it("shows no Birthdays badge while the row is off", () => {
     renderCard(config);
     expect(screen.queryByText("Birthdays")).not.toBeInTheDocument();
+  });
+
+  it("shows a Group events badge when the feed carries group events, and none while it is off", () => {
+    const { unmount } = renderCard({ ...config, types: [], includeGroupEvents: true });
+    expect(screen.getByText("Group events")).toBeInTheDocument();
+    unmount();
+
+    renderCard(config);
+    expect(screen.queryByText("Group events")).not.toBeInTheDocument();
   });
 
   it("renders the name, scope, masked url and type badges", () => {

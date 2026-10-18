@@ -2,6 +2,7 @@ import type { LucideIcon } from "lucide-react";
 import {
   Cake,
   CalendarDays,
+  CalendarHeart,
   CircleDashed,
   GraduationCap,
   HeartPulse,
@@ -80,6 +81,12 @@ export const TYPE_ORDER: CalendarRecordType[] = [
   CalendarRecordType.Other,
 ];
 
+/** The Group events row: its icon and default swatch, beside the record types. */
+export const GROUP_EVENTS_META: { icon: LucideIcon; def: SwatchKey } = {
+  icon: CalendarHeart,
+  def: "teal",
+};
+
 /** The Birthdays row: its icon and default swatch, beside the record types. */
 export const BIRTHDAYS_META: { icon: LucideIcon; def: SwatchKey } = { icon: Cake, def: "coral" };
 
@@ -101,6 +108,8 @@ export type BuilderConfig = {
   distinguishMine: boolean;
   types: CalendarRecordType[];
   colors: Record<string, SwatchKey>; // keyed by `${type}` and `${type}_mine`
+  includeGroupEvents: boolean;
+  groupEventsColor: SwatchKey;
   includeBirthdays: boolean;
   birthdaysColor: SwatchKey;
   feedUrl: string | null;
@@ -127,6 +136,8 @@ export function newBuilderConfig(defaultTeamIds: string[] = []): BuilderConfig {
     distinguishMine: false,
     types: [CalendarRecordType.Vacation, CalendarRecordType.PaidTimeOff, CalendarRecordType.Sick],
     colors: defaultColors(),
+    includeGroupEvents: false,
+    groupEventsColor: GROUP_EVENTS_META.def,
     includeBirthdays: false,
     birthdaysColor: BIRTHDAYS_META.def,
     feedUrl: null,
@@ -149,6 +160,11 @@ export function configToBuilder(cfg: CalendarSyncConfig): BuilderConfig {
     distinguishMine: cfg.distinguishMine,
     types: cfg.types.map((t) => t.type),
     colors,
+    includeGroupEvents: cfg.includeGroupEvents,
+    groupEventsColor:
+      cfg.groupEventsColor && isSwatchKey(cfg.groupEventsColor)
+        ? cfg.groupEventsColor
+        : GROUP_EVENTS_META.def,
     includeBirthdays: cfg.includeBirthdays,
     birthdaysColor:
       cfg.birthdaysColor && isSwatchKey(cfg.birthdaysColor)
@@ -172,14 +188,18 @@ export function builderToInput(cfg: BuilderConfig): CalendarSyncInput {
       color: cfg.colors[type] ?? typeMetaFor(type).def,
       ...(sendMine ? { mineColor: cfg.colors[mineKey(type)] ?? typeMetaFor(type).def } : {}),
     })),
+    includeGroupEvents: cfg.includeGroupEvents,
+    groupEventsColor: cfg.groupEventsColor,
     includeBirthdays: cfg.includeBirthdays,
     birthdaysColor: cfg.birthdaysColor,
   };
 }
 
-/** Whether a config carries anything: a record type, or Birthdays. */
-export function carriesSomething(cfg: Pick<BuilderConfig, "types" | "includeBirthdays">): boolean {
-  return cfg.types.length > 0 || cfg.includeBirthdays;
+/** Whether a config carries anything: a record type, Group events or Birthdays. */
+export function carriesSomething(
+  cfg: Pick<BuilderConfig, "types" | "includeGroupEvents" | "includeBirthdays">
+): boolean {
+  return cfg.types.length > 0 || cfg.includeGroupEvents || cfg.includeBirthdays;
 }
 
 /** Resolve the CSS color for an entry, honouring the "distinguish mine" split. */

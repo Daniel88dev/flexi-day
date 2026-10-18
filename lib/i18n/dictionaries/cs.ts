@@ -1856,7 +1856,7 @@ export const cs: Dictionary = {
       wrong: "Něco se pokazilo",
       feedCopied: "URL feedu zkopírováno",
       feedCopyFailed: "Nepodařilo se zkopírovat URL feedu",
-      pickType: "Vyberte alespoň jeden typ záznamu nebo narozeniny",
+      pickType: "Vyberte alespoň jeden typ záznamu, skupinové události nebo narozeniny",
       saveFailed: "Nepodařilo se uložit kalendář",
       linkCopied: "Odkaz zkopírován do schránky",
       opening: (name: string) => `Otevírání ${name}…`,
@@ -1910,6 +1910,9 @@ export const cs: Dictionary = {
       team: "Tým",
       distinguishTitle: "Odlišit mé vlastní záznamy jinou barvou",
       distinguishSub: "Rozeznejte svou dovolenou od týmové na první pohled.",
+      groupEvents: "Skupinové události",
+      groupEventsMe: "Události ze všech skupin, ve kterých jste",
+      groupEventsTeam: "Události z vybraných skupin",
       birthdays: "Narozeniny",
       birthdaysMe: "Jen vaše vlastní narozeniny",
       birthdaysTeam:
@@ -1934,11 +1937,11 @@ export const cs: Dictionary = {
     connect: {
       label: "Přímá synchronizace",
       intro: {
-        both: "Přenášejte schválené volno do vlastního kalendáře Google nebo Microsoft. Synchronizují se jen vaše záznamy, nikdy záznamy kolegů.",
+        both: "Přenášejte schválené volno a události svých skupin do vlastního kalendáře Google nebo Microsoft. Záznamy kolegů se nikdy nesynchronizují.",
         google:
-          "Přenášejte schválené volno do vlastního kalendáře Google. Synchronizují se jen vaše záznamy, nikdy záznamy kolegů.",
+          "Přenášejte schválené volno a události svých skupin do vlastního kalendáře Google. Záznamy kolegů se nikdy nesynchronizují.",
         microsoft:
-          "Přenášejte schválené volno do vlastního kalendáře Microsoft. Synchronizují se jen vaše záznamy, nikdy záznamy kolegů.",
+          "Přenášejte schválené volno a události svých skupin do vlastního kalendáře Microsoft. Záznamy kolegů se nikdy nesynchronizují.",
       },
       connectProvider: (name: string) => `Připojit ${name}`,
       whyPrimary:

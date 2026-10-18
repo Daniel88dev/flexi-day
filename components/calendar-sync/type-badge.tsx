@@ -2,7 +2,7 @@
 
 import type { LucideIcon } from "lucide-react";
 import { type CalendarRecordType } from "@/lib/api/types";
-import { BIRTHDAYS_META, swatch, typeMetaFor } from "@/lib/calendar-sync/meta";
+import { BIRTHDAYS_META, GROUP_EVENTS_META, swatch, typeMetaFor } from "@/lib/calendar-sync/meta";
 import { useTranslation } from "@/lib/i18n/use-translation";
 import { recordTypeLabel } from "@/lib/i18n/record-type-label";
 
@@ -51,6 +51,19 @@ export function TypeBadge({
       icon={meta.icon}
       label={recordTypeLabel(t.calendarRecordTypes, type)}
       color={color ?? swatch(meta.def)}
+      small={small}
+    />
+  );
+}
+
+/** The same pill for a feed's Group events row. */
+export function GroupEventsBadge({ color, small }: { color: string | null; small?: boolean }) {
+  const { t } = useTranslation();
+  return (
+    <Pill
+      icon={GROUP_EVENTS_META.icon}
+      label={t.calSync.builder.groupEvents}
+      color={swatch(color ?? GROUP_EVENTS_META.def)}
       small={small}
     />
   );

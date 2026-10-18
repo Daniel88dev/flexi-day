@@ -118,6 +118,58 @@ describe("builderToInput", () => {
   });
 });
 
+describe("the Group events row", () => {
+  it("is off with the teal swatch on a new config", () => {
+    expect(newBuilderConfig()).toMatchObject({
+      includeGroupEvents: false,
+      groupEventsColor: "teal",
+    });
+  });
+
+  it("goes into the request body and carries a feed on its own", () => {
+    const cfg = {
+      ...newBuilderConfig(),
+      types: [],
+      includeGroupEvents: true,
+      groupEventsColor: "plum" as const,
+    };
+    expect(builderToInput(cfg)).toMatchObject({
+      types: [],
+      includeGroupEvents: true,
+      groupEventsColor: "plum",
+    });
+    expect(carriesSomething(cfg)).toBe(true);
+    expect(carriesSomething({ ...cfg, includeGroupEvents: false })).toBe(false);
+  });
+
+  it("comes back from a stored config, its colour falling back to teal", () => {
+    const api = {
+      id: "x",
+      name: "n",
+      scope: "ME",
+      distinguishMine: false,
+      timeZone: "Europe/Prague",
+      includeGroupEvents: true,
+      groupEventsColor: null,
+      includeBirthdays: false,
+      birthdaysColor: null,
+      teamIds: [],
+      types: [],
+      feedUrl: "https://api.flexiday.app/calendars/abc.ics",
+      tokenMasked: false,
+      lastFetchedAt: null,
+      target: null,
+      createdAt: "2026-01-01T00:00:00.000Z",
+      updatedAt: "2026-01-01T00:00:00.000Z",
+    } satisfies CalendarSyncConfig;
+    expect(configToBuilder(api)).toMatchObject({
+      includeGroupEvents: true,
+      groupEventsColor: "teal",
+    });
+    expect(configToBuilder({ ...api, groupEventsColor: "rose" }).groupEventsColor).toBe("rose");
+  });
+});
+
 describe("the Birthdays row", () => {
   it("is off with the coral swatch on a new config", () => {
     expect(newBuilderConfig()).toMatchObject({ includeBirthdays: false, birthdaysColor: "coral" });
@@ -142,6 +194,8 @@ describe("the Birthdays row", () => {
       scope: "ME",
       distinguishMine: false,
       timeZone: "Europe/Prague",
+      includeGroupEvents: false,
+      groupEventsColor: null,
       includeBirthdays: true,
       birthdaysColor: null,
       teamIds: [],
@@ -166,6 +220,8 @@ describe("configToBuilder", () => {
       scope: "TEAM",
       distinguishMine: true,
       timeZone: "Europe/Prague",
+      includeGroupEvents: false,
+      groupEventsColor: null,
       includeBirthdays: false,
       birthdaysColor: null,
       teamIds: ["t1", "t2"],
@@ -207,6 +263,8 @@ describe("configToBuilder", () => {
       scope: "ME",
       distinguishMine: false,
       timeZone: "Europe/Prague",
+      includeGroupEvents: false,
+      groupEventsColor: null,
       includeBirthdays: false,
       birthdaysColor: null,
       teamIds: [],

@@ -2,6 +2,8 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { newBuilderConfig, type BuilderConfig } from "@/lib/calendar-sync/meta";
 import type { CalendarSyncConfig, CalendarSyncInput } from "@/lib/api/calendar-sync";
+import { I18nContext } from "@/lib/i18n/i18n-provider";
+import { dictionaries } from "@/lib/i18n";
 import { CalBuilder, type MonthContext } from "../cal-builder";
 
 const monthCtx: MonthContext = {
@@ -143,6 +145,102 @@ describe("CalBuilder", () => {
       fireEvent.click(screen.getByRole("button", { name: /Save & get link/ }));
 
       expect(onSubmit).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("the Group events row", () => {
+    const saved = { id: "cfg-1", feedUrl: "https://x/calendars/t.ics" } as CalendarSyncConfig;
+
+    it("sits after the record types and before Birthdays, off, saying it carries every group you're in", () => {
+      renderBuilder();
+      const events = screen.getByRole("checkbox", { name: "Group events" });
+      const boxes = screen.getAllByRole("checkbox");
+
+      expect(boxes.at(-2)).toBe(events);
+      expect(events).toHaveAttribute("aria-checked", "false");
+      expect(screen.getByText("Events in every group you're in")).toBeInTheDocument();
+    });
+
+    it("says what a team feed carries once the scope is the team", () => {
+      renderBuilder();
+      fireEvent.click(screen.getByRole("button", { name: /My team's records/ }));
+
+      expect(screen.getByText("Events in the selected groups")).toBeInTheDocument();
+      expect(screen.queryByText("Events in every group you're in")).not.toBeInTheDocument();
+    });
+
+    it("saves a feed that carries only group events, in their default swatch", async () => {
+      const onSubmit = vi.fn<(input: CalendarSyncInput) => Promise<CalendarSyncConfig>>(() =>
+        Promise.resolve(saved)
+      );
+      renderBuilder({ onSubmit });
+
+      fireEvent.change(screen.getByLabelText("Calendar name"), { target: { value: "Events" } });
+      for (const type of ["Vacation", "Paid Time Off", "Sick"]) {
+        fireEvent.click(screen.getByRole("checkbox", { name: type }));
+      }
+      fireEvent.click(screen.getByRole("checkbox", { name: "Group events" }));
+      fireEvent.click(screen.getByRole("button", { name: /Save & get link/ }));
+
+      await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1));
+      expect(onSubmit.mock.calls[0]![0]).toMatchObject({
+        types: [],
+        includeGroupEvents: true,
+        groupEventsColor: "teal",
+        includeBirthdays: false,
+      });
+    });
+
+    it("keeps a stored Group events row on when an existing feed is saved", async () => {
+      const onSubmit = vi.fn<(input: CalendarSyncInput) => Promise<CalendarSyncConfig>>(() =>
+        Promise.resolve(saved)
+      );
+      renderBuilder({
+        onSubmit,
+        isNew: false,
+        initial: {
+          ...newBuilderConfig(),
+          id: "cfg-1",
+          name: "Mine",
+          types: [],
+          includeGroupEvents: true,
+          groupEventsColor: "plum",
+        },
+      });
+
+      expect(screen.getByRole("checkbox", { name: "Group events" })).toHaveAttribute(
+        "aria-checked",
+        "true"
+      );
+      fireEvent.click(screen.getByRole("button", { name: /Save changes/ }));
+
+      await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1));
+      expect(onSubmit.mock.calls[0]![0]).toMatchObject({
+        includeGroupEvents: true,
+        groupEventsColor: "plum",
+      });
+    });
+
+    it("reads in Czech", () => {
+      render(
+        <I18nContext
+          value={{ locale: "cs", setLocale: () => {}, t: dictionaries.cs, localeReady: true }}
+        >
+          <CalBuilder
+            initial={newBuilderConfig()}
+            isNew
+            groups={[]}
+            vacations={[]}
+            currentUserId="u1"
+            monthCtx={monthCtx}
+            onClose={vi.fn()}
+            onSubmit={vi.fn()}
+          />
+        </I18nContext>
+      );
+
+      expect(screen.getByRole("checkbox", { name: "Skupinové události" })).toBeInTheDocument();
+      expect(screen.getByText("Události ze všech skupin, ve kterých jste")).toBeInTheDocument();
     });
   });
 });

@@ -17,7 +17,7 @@ import { colorFor, configToBuilder } from "@/lib/calendar-sync/meta";
 import { useTranslation } from "@/lib/i18n/use-translation";
 import { relativeTime } from "@/lib/calendar-sync/relative-time";
 import { ConnectSection, type ConnectHandlers } from "./connect-section";
-import { BirthdaysBadge, TypeBadge } from "./type-badge";
+import { BirthdaysBadge, GroupEventsBadge, TypeBadge } from "./type-badge";
 import { copyText, pushToast } from "@/components/toast";
 
 export function CalCard({
@@ -176,6 +176,9 @@ export function CalCard({
             small
           />
         ))}
+        {config.includeGroupEvents ? (
+          <GroupEventsBadge color={config.groupEventsColor} small />
+        ) : null}
         {config.includeBirthdays ? <BirthdaysBadge color={config.birthdaysColor} small /> : null}
       </div>
 
