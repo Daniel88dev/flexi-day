@@ -16,6 +16,7 @@ import {
 import { AvatarBubble } from "@/components/brand/avatar-bubble";
 import { useGroupUsers, useQuotas, useSetUserQuota, useUpdateGroupQuotas } from "@/lib/api/queries";
 import { sickDayBenefitActive, type Group } from "@/lib/api/types";
+import { planLimitOrErrorMessage } from "@/lib/billing/plan-limit-error";
 import { useTranslation } from "@/lib/i18n/use-translation";
 
 /**
@@ -86,7 +87,7 @@ export function QuotasTab({
       });
       setEditing(null);
     } catch (err) {
-      setSaveError(err instanceof Error ? err.message : t.groupDetail.saveQuotaFailed);
+      setSaveError(planLimitOrErrorMessage(err, t, t.groupDetail.saveQuotaFailed));
     }
   }
 
@@ -283,7 +284,7 @@ function GroupDefaultsCard({ group }: { group?: Group }) {
       });
       setSaved(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : t.groupDetail.saveDefaultsFailed);
+      setError(planLimitOrErrorMessage(err, t, t.groupDetail.saveDefaultsFailed));
     }
   }
 

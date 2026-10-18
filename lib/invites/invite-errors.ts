@@ -1,6 +1,6 @@
 import { errorCode } from "@/lib/api/client";
 import type { InviteStatus } from "@/lib/api/types";
-import { planLimitMessage } from "@/lib/billing/plan-limit-error";
+import { planLimitOrErrorMessage } from "@/lib/billing/plan-limit-error";
 import type { Dictionary } from "@/lib/i18n";
 
 export type ClosedStatus = Exclude<InviteStatus, "open">;
@@ -39,7 +39,5 @@ export function joinErrorMessage(error: unknown, t: Dictionary): string {
     return `${title}. ${body}`;
   }
 
-  return (
-    planLimitMessage(error, t) ?? (error instanceof Error ? error.message : t.groups.joinFailed)
-  );
+  return planLimitOrErrorMessage(error, t, t.groups.joinFailed);
 }

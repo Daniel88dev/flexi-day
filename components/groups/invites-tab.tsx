@@ -23,6 +23,7 @@ import {
   useSubscription,
 } from "@/lib/api/queries";
 import { cn } from "@/lib/utils";
+import { planLimitOrErrorMessage } from "@/lib/billing/plan-limit-error";
 import { useTranslation } from "@/lib/i18n/use-translation";
 
 /**
@@ -69,7 +70,7 @@ export function InvitesTab({ groupId, isAdmin }: { groupId: string; isAdmin: boo
       setNotice({ email: email.trim(), delivered: result.emailDelivered });
       setEmail("");
     } catch (err) {
-      setError(err instanceof Error ? err.message : t.groupDetail.invites.failed);
+      setError(planLimitOrErrorMessage(err, t, t.groupDetail.invites.failed));
     }
   }
 

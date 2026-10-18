@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { ApiError } from "@/lib/api/client";
 import { en } from "@/lib/i18n/dictionaries/en";
-import { planLimitFromError, planLimitMessage } from "../plan-limit-error";
+import { planLimitFromError, planLimitMessage, planLimitOrErrorMessage } from "../plan-limit-error";
 
 const make402 = (context: unknown) =>
   new ApiError(402, "Your plan's group limit has been reached", null, [
@@ -55,5 +55,20 @@ describe("planLimitMessage", () => {
 
   it("returns null for anything else", () => {
     expect(planLimitMessage(new ApiError(410, "gone"), en)).toBeNull();
+  });
+});
+
+describe("planLimitOrErrorMessage", () => {
+  it("prefers the translated plan limit over the backend's message", () => {
+    const error = make402({ reason: "READ_ONLY", limit: 3, current: 5 });
+    expect(planLimitOrErrorMessage(error, en, "fallback")).toBe(en.billing.readOnlyGroup);
+  });
+
+  it("keeps the backend's message for any other error", () => {
+    expect(planLimitOrErrorMessage(new ApiError(409, "Conflict"), en, "fallback")).toBe("Conflict");
+  });
+
+  it("falls back when the rejection is not an Error", () => {
+    expect(planLimitOrErrorMessage("nope", en, "fallback")).toBe("fallback");
   });
 });

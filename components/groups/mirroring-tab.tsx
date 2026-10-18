@@ -9,6 +9,7 @@ import { pushToast } from "@/components/toast";
 import { useGroupMirrors, useSetGroupMirrors } from "@/lib/api/queries";
 import type { MirrorMember } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
+import { planLimitOrErrorMessage } from "@/lib/billing/plan-limit-error";
 import { useTranslation } from "@/lib/i18n/use-translation";
 
 /**
@@ -125,7 +126,7 @@ function MirroringMemberRow({ groupId, member }: { groupId: string; member: Mirr
       setDraft(null);
       pushToast(t.common.saved);
     } catch (err) {
-      const message = err instanceof Error ? err.message : t.groupDetail.mirroring.failed;
+      const message = planLimitOrErrorMessage(err, t, t.groupDetail.mirroring.failed);
       setError(message);
       pushToast(message, "danger");
     }
