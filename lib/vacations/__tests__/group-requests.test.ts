@@ -117,6 +117,24 @@ describe("groupVacationRequests", () => {
     expect(groups.every((g) => g.dayCount === 1)).toBe(true);
   });
 
+  it("carries a mirrored run's source group name, and null otherwise", () => {
+    const groups = groupVacationRequests([
+      vac({ id: "a", requestedDay: "2026-08-17" }),
+      vac({
+        id: "b",
+        requestedDay: "2026-08-17",
+        groupId: "g-2",
+        mirroredFromGroupId: "g-2",
+        mirroredFromGroupName: "Sales",
+      }),
+    ]);
+
+    expect(groups.map((g) => [g.groupId, g.mirroredFromGroupName])).toEqual([
+      ["g-1", null],
+      ["g-2", "Sales"],
+    ]);
+  });
+
   it("returns [] for no input", () => {
     expect(groupVacationRequests([])).toEqual([]);
   });

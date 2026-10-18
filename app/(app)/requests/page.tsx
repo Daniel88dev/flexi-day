@@ -26,12 +26,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useSession } from "@/lib/auth-client";
+import { ApiError } from "@/lib/api/client";
 import {
   CALENDAR_RECORD_TYPE_COLORS,
   type VacationListItem,
   type VacationStatus,
 } from "@/lib/api/types";
-import { groupVacationRequests } from "@/lib/vacations/group-requests";
+import { groupVacationRequests, type RequestGroup } from "@/lib/vacations/group-requests";
 import { dayLengthLabel } from "@/lib/vacations/day-length";
 import { useOpenVacationDetail } from "@/lib/vacations/use-vacation-detail";
 import { vacationActionErrorMessage, type VacationAction } from "@/lib/vacations/action-error";
@@ -169,7 +170,13 @@ export default function RequestsPage() {
 
   const requests = useMemo(() => groupVacationRequests(vacations), [vacations]);
 
-  const groupName = (id: string) => groups.find((g) => g.id === id)?.groupName ?? id.slice(0, 8);
+  // `GET /api/group` lists memberships only; the report scope also covers the
+  // groups the caller administers without belonging to them.
+  const groupLabel = (r: RequestGroup) =>
+    r.mirroredFromGroupName ??
+    reportScopeQuery.data?.groups.find((g) => g.groupId === r.groupId)?.groupName ??
+    groups.find((g) => g.id === r.groupId)?.groupName ??
+    r.groupId.slice(0, 8);
 
   const counts = useMemo(() => {
     const c = { all: requests.length, pending: 0, approved: 0, rejected: 0, cancelled: 0, mine: 0 };
@@ -266,7 +273,9 @@ export default function RequestsPage() {
         <div className="text-muted-foreground py-16 text-center text-sm">{t.common.loading}</div>
       ) : vacationsQuery.error ? (
         <div className="text-destructive py-16 text-center text-sm">
-          {vacationsQuery.error.message}
+          {vacationsQuery.error instanceof ApiError && vacationsQuery.error.status === 403
+            ? t.requests.forbidden
+            : t.requests.loadFailed}
         </div>
       ) : filtered.length === 0 ? (
         <div className="text-muted-foreground py-16 text-center text-sm">
@@ -308,7 +317,7 @@ export default function RequestsPage() {
                     }}
                   >
                     <TableCell className="text-sm">
-                      <div className="font-medium">{groupName(r.groupId)}</div>
+                      <div className="font-medium">{groupLabel(r)}</div>
                       <div className="text-muted-foreground text-xs">
                         {mine ? t.requests.you : r.user.name}
                       </div>

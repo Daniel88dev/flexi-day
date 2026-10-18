@@ -516,7 +516,7 @@ function Dashboard() {
             <p className="mt-3 text-sm" style={{ color: "var(--destructive)" }}>
               {calendarQuery.error instanceof ApiError && calendarQuery.error.status === 403
                 ? t.dashboard.scope.forbidden
-                : calendarQuery.error.message}
+                : t.dashboard.scope.loadFailed}
             </p>
           ) : null}
         </section>

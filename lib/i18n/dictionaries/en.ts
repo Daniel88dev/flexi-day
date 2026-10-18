@@ -842,6 +842,8 @@ export const en = {
     scopeMine: "Only my requests",
     empty: "No requests in this month",
     emptyFiltered: (filter: string) => `No requests in this month (${filter}).`,
+    forbidden: "You don't have access to this group's requests.",
+    loadFailed: "Could not load the requests. Try again in a moment.",
     columns: {
       group: "Group",
       type: "Type",
@@ -1227,7 +1229,8 @@ export const en = {
       group: "Group",
       groupPicker: "Group shown on the calendar",
       settingsHint: "Change the default in settings",
-      forbidden: "You no longer have access to this group's time off.",
+      forbidden: "You don't have access to this group's time off.",
+      loadFailed: "Could not load the calendar. Try again in a moment.",
     },
   },
 
