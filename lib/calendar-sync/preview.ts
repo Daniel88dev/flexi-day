@@ -1,11 +1,15 @@
-import { CalendarRecordType } from "@/lib/api/types";
-import type { VacationListItem } from "@/lib/api/types";
+import {
+  AWAY_RECORD_TYPE,
+  CalendarRecordType,
+  type VacationListItem,
+  type WireRecordType,
+} from "@/lib/api/types";
 import { colorFor, type BuilderConfig } from "./meta";
 
 /** One contiguous block of time off, ready to render in the builder preview. */
 export type PreviewEntry = {
   id: string;
-  type: CalendarRecordType;
+  type: WireRecordType;
   from: number; // day-of-month, inclusive
   to: number; // day-of-month, inclusive
   name: string; // owner display name
@@ -13,6 +17,11 @@ export type PreviewEntry = {
   color: string; // resolved CSS color
   note: string | null;
 };
+
+/** A teammate's Away is their Sick, so a feed's Sick toggle governs it. */
+function sickForAway(type: WireRecordType): CalendarRecordType {
+  return type === AWAY_RECORD_TYPE ? CalendarRecordType.Sick : type;
+}
 
 /** Which of a config's vacations belong in its feed, for the given month. */
 export function feedVacations(
@@ -27,7 +36,7 @@ export function feedVacations(
   const teamSet = new Set(config.teamIds);
   return vacations.filter((v) => {
     if (!v.requestedDay.startsWith(prefix)) return false;
-    if (!typeSet.has(v.vacationType)) return false;
+    if (!typeSet.has(sickForAway(v.vacationType))) return false;
     // Bank holidays are company-wide — always included when their type is on.
     if (v.vacationType === CalendarRecordType.BankHoliday) return true;
     if (config.scope === "ME") return v.userId === currentUserId;
@@ -37,7 +46,8 @@ export function feedVacations(
 
 /**
  * Groups a config's feed vacations into contiguous day ranges (per user+type)
- * with the feed's chosen color applied. Pure — safe to unit-test.
+ * with the feed's chosen color applied. Other people's rows look as a team feed
+ * shows them to anyone holding its link: Sick as Away, and no note.
  */
 export function buildPreviewEntries(
   config: BuilderConfig,
@@ -61,20 +71,24 @@ export function buildPreviewEntries(
 
   for (const v of sorted) {
     const day = Number(v.requestedDay.slice(8, 10));
-    const key = `${v.userId}|${v.vacationType}`;
+    const isMine = v.userId === currentUserId;
+    const type =
+      isMine || sickForAway(v.vacationType) !== CalendarRecordType.Sick
+        ? v.vacationType
+        : AWAY_RECORD_TYPE;
+    const key = `${v.userId}|${type}`;
     if (current && key === lastKey && lastIso && isNextDay(lastIso, v.requestedDay)) {
       current.to = day;
     } else {
-      const isMine = v.userId === currentUserId;
       current = {
         id: `p${seq++}`,
-        type: v.vacationType,
+        type,
         from: day,
         to: day,
         name: isMine ? "You" : v.user.name,
         isMine,
-        color: colorFor(config, v.vacationType, isMine),
-        note: v.note,
+        color: colorFor(config, sickForAway(v.vacationType), isMine),
+        note: isMine ? v.note : null,
       };
       entries.push(current);
     }

@@ -1,4 +1,4 @@
-import { CalendarRecordType } from "@/lib/api/types";
+import { AWAY_RECORD_TYPE, CalendarRecordType, type WireRecordType } from "@/lib/api/types";
 import type { Dictionary } from "./en";
 
 /**
@@ -67,7 +67,8 @@ export const cs: Dictionary = {
     [CalendarRecordType.SickDay]: { label: "Zdravotní volno", short: "Zdrav." },
     [CalendarRecordType.StudyLeave]: { label: "Studijní volno", short: "Studium" },
     [CalendarRecordType.Other]: { label: "Ostatní", short: "Ostatní" },
-  } satisfies Record<CalendarRecordType, { label: string; short: string }>,
+    [AWAY_RECORD_TYPE]: { label: "Pryč", short: "Pryč" },
+  } satisfies Record<WireRecordType, { label: string; short: string }>,
 
   calendar: {
     months: [
@@ -1702,7 +1703,7 @@ export const cs: Dictionary = {
     featuresEyebrow: "Vše na jednom místě",
     featuresTitle: "Jeden kalendář, kterému věří celý váš tým",
     featuresSubtitle:
-      "Dovolené, nemoci, home office i svátky, sledované společně a viditelné pro všechny.",
+      "Dovolené, nemoci, home office i svátky, sledované společně v jednom sdíleném kalendáři.",
     features: [
       {
         title: "Sdílený týmový kalendář",
@@ -1726,7 +1727,7 @@ export const cs: Dictionary = {
       },
       {
         title: "Soukromé ve výchozím nastavení",
-        body: "Citlivé informace o volnu zůstávají diskrétní. Podrobná oprávnění drží ty správné detaily u těch správných lidí.",
+        body: "Kolegové vidí nemoc jen jako Pryč. Poznámky, komentáře a přílohy zůstávají jen vám, vašim schvalovatelům a správcům skupiny.",
       },
     ],
     stepsTitle: "Tři kroky ke spokojenějšímu týmu",
@@ -1755,7 +1756,7 @@ export const cs: Dictionary = {
       items: [
         {
           q: "Kdo vidí detaily mého volna?",
-          a: "Manažer a schvalovatelé skupiny vidí žádosti, o kterých rozhodují. Kolegové vidí jen to, že jste pryč, a citlivé typy volna zůstávají diskrétní.",
+          a: "Kolegové vidí, kdy máte volno a jakého typu, jen nemoc se jim zobrazí jako Pryč. Poznámky, komentáře a přílohy zůstávají mezi vámi, vašimi schvalovateli a správci skupiny. Zamítnuté ani zrušené žádosti kolegové neuvidí.",
         },
         {
           q: "Je flexiday v souladu s GDPR?",

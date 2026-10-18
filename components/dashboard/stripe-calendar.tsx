@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { DayList } from "@/components/dashboard/day-list";
 import type { CalendarRange } from "@/components/dashboard/leave-calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarRecordType, type IsoDate } from "@/lib/api/types";
+import { CalendarRecordType, type IsoDate, type WireRecordType } from "@/lib/api/types";
 import { addDays } from "@/lib/attendance/month";
 import { formatIsoDate, monthLabelDates, monthWeeks, seamColumn } from "@/lib/calendar/month-grid";
 import { DayHeading, MonthSeam, dayNumberColor, dayTint } from "@/components/dashboard/month-seam";
@@ -32,7 +32,7 @@ interface StripeCalendarProps {
   records: DayRecord[];
   /** Bank holiday ranges; each one's `note` carries the holiday names. */
   holidays: CalendarRange[];
-  filter: Set<CalendarRecordType>;
+  filter: Set<WireRecordType>;
   viewerId: string | null;
   onOpenRequest: (vacationId: string) => void;
   onBook: (date: IsoDate) => void;

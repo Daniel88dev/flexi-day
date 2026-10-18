@@ -1,12 +1,12 @@
 "use client";
 
 import { leaveMetaFor } from "@/lib/demo/leave-meta";
-import type { CalendarRecordType } from "@/lib/api/types";
+import type { WireRecordType } from "@/lib/api/types";
 import { useTranslation } from "@/lib/i18n/use-translation";
 import { recordTypeLabel } from "@/lib/i18n/record-type-label";
 
 interface LeaveTagProps {
-  type: CalendarRecordType;
+  type: WireRecordType;
   small?: boolean;
 }
 

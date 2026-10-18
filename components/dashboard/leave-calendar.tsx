@@ -9,6 +9,7 @@ import {
   type IsoDate,
   type UserSummary,
   type VacationStatus,
+  type WireRecordType,
 } from "@/lib/api/types";
 import { addDays } from "@/lib/attendance/month";
 import {
@@ -33,7 +34,7 @@ export interface CalendarRange {
   id: string;
   who: string; // person id, or 'all' for bank holidays
   user?: UserSummary; // present when row represents a real user
-  type: CalendarRecordType;
+  type: WireRecordType;
   from: IsoDate; // inclusive
   to: IsoDate;
   note?: string;
@@ -51,7 +52,7 @@ interface LeaveCalendarProps {
   month: number;
   today?: IsoDate | null;
   ranges: CalendarRange[];
-  filter?: Set<CalendarRecordType>;
+  filter?: Set<WireRecordType>;
   mini?: boolean;
   /** Makes bars clickable; receives the first vacation id of the range. */
   onSelect?: (vacationId: string) => void;
@@ -73,7 +74,7 @@ export const MAX_LANES = 2;
 /** The one visibility rule; the legend shares it so it never diverges from the calendar. */
 export function visibleRanges(
   ranges: CalendarRange[],
-  filter?: Set<CalendarRecordType>
+  filter?: Set<WireRecordType>
 ): CalendarRange[] {
   return filter ? ranges.filter((r) => filter.has(r.type)) : ranges;
 }
@@ -657,7 +658,7 @@ export function groupConsecutiveByUserType<
   T extends {
     id?: string;
     userId: string;
-    vacationType: CalendarRecordType;
+    vacationType: WireRecordType;
     requestedDay: string;
     user?: UserSummary;
     note?: string | null;

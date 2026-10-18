@@ -176,6 +176,25 @@ describe("MemberReportPage", () => {
     window.localStorage.clear();
   });
 
+  it("leaves out the Note column when no booking carries a note, as for a teammate", () => {
+    renderPage();
+
+    expect(screen.getByText("2026-03-12 – 2026-03-14")).toBeInTheDocument();
+    expect(screen.queryByRole("columnheader", { name: "Note" })).not.toBeInTheDocument();
+  });
+
+  it("keeps the Note column when a booking carries a note", () => {
+    mocks.result = {
+      data: { ...report, bookings: report.bookings.map((b) => ({ ...b, note: "Family trip" })) },
+      isPending: false,
+      isError: false,
+    };
+    renderPage();
+
+    expect(screen.getByRole("columnheader", { name: "Note" })).toBeInTheDocument();
+    expect(screen.getByText("Family trip")).toBeInTheDocument();
+  });
+
   it("renders the member's bookings", () => {
     renderPage();
 

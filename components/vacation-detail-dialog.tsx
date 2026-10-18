@@ -100,6 +100,8 @@ export function VacationDetailDialog({
   const [editOpen, setEditOpen] = useState(false);
 
   const detail = detailQuery.data;
+  const canReadPrivateDetails = detail?.canReadPrivateDetails ?? false;
+  const hasActions = !!detail && (detail.canEdit || detail.canApprove || detail.canCancel);
   const isMutating = approve.isPending || reject.isPending || cancel.isPending || comment.isPending;
 
   function close(nextOpen: boolean) {
@@ -197,7 +199,7 @@ export function VacationDetailDialog({
 
             <AttachmentSection key={detail.requestId} detail={detail} />
 
-            <Timeline entries={mergeTimeline(detail)} t={t} />
+            {canReadPrivateDetails ? <Timeline entries={mergeTimeline(detail)} t={t} /> : null}
 
             {actionError ? (
               <p role="alert" className="text-destructive text-sm">
@@ -205,89 +207,95 @@ export function VacationDetailDialog({
               </p>
             ) : null}
 
-            <div className="space-y-2 border-t pt-4">
-              <Textarea
-                rows={2}
-                value={reason}
-                onChange={(e) => setReason(e.target.value)}
-                placeholder={t.vacationDetail.commentPlaceholder}
-                aria-label={t.vacationDetail.commentAriaLabel}
-              />
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  disabled={isMutating || reason.trim().length === 0}
-                  onClick={() =>
-                    run("comment", () =>
-                      comment.mutateAsync({ id: detail.id, message: reason.trim() })
-                    )
-                  }
-                >
-                  {comment.isPending ? t.vacationDetail.sending : t.vacationDetail.comment}
-                </Button>
-                <div className="flex flex-wrap justify-end gap-2">
-                  {detail.canEdit ? (
+            {canReadPrivateDetails || hasActions ? (
+              <div className="space-y-2 border-t pt-4">
+                {canReadPrivateDetails ? (
+                  <Textarea
+                    rows={2}
+                    value={reason}
+                    onChange={(e) => setReason(e.target.value)}
+                    placeholder={t.vacationDetail.commentPlaceholder}
+                    aria-label={t.vacationDetail.commentAriaLabel}
+                  />
+                ) : null}
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  {canReadPrivateDetails ? (
                     <Button
                       size="sm"
-                      variant="outline"
-                      disabled={isMutating}
-                      onClick={() => setEditOpen(true)}
+                      variant="secondary"
+                      disabled={isMutating || reason.trim().length === 0}
+                      onClick={() =>
+                        run("comment", () =>
+                          comment.mutateAsync({ id: detail.id, message: reason.trim() })
+                        )
+                      }
                     >
-                      {t.vacationDetail.edit}
+                      {comment.isPending ? t.vacationDetail.sending : t.vacationDetail.comment}
                     </Button>
                   ) : null}
-                  {detail.canApprove ? (
-                    <>
+                  <div className="ml-auto flex flex-wrap justify-end gap-2">
+                    {detail.canEdit ? (
                       <Button
                         size="sm"
                         variant="outline"
-                        className="border-green-300 text-green-700 hover:bg-green-50 dark:border-green-800 dark:text-green-400 dark:hover:bg-green-950/30"
                         disabled={isMutating}
-                        onClick={() =>
-                          run("approve", () => approve.mutateAsync(detail.vacationIds))
-                        }
+                        onClick={() => setEditOpen(true)}
                       >
-                        {t.vacationDetail.approve}
+                        {t.vacationDetail.edit}
                       </Button>
+                    ) : null}
+                    {detail.canApprove ? (
+                      <>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="border-green-300 text-green-700 hover:bg-green-50 dark:border-green-800 dark:text-green-400 dark:hover:bg-green-950/30"
+                          disabled={isMutating}
+                          onClick={() =>
+                            run("approve", () => approve.mutateAsync(detail.vacationIds))
+                          }
+                        >
+                          {t.vacationDetail.approve}
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="border-red-300 text-red-700 hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-950/30"
+                          disabled={isMutating}
+                          onClick={() =>
+                            run("reject", () =>
+                              reject.mutateAsync({
+                                ids: detail.vacationIds,
+                                reason: reason.trim() || undefined,
+                              })
+                            )
+                          }
+                        >
+                          {t.vacationDetail.decline}
+                        </Button>
+                      </>
+                    ) : null}
+                    {detail.canCancel ? (
                       <Button
                         size="sm"
-                        variant="outline"
-                        className="border-red-300 text-red-700 hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-950/30"
+                        variant="ghost"
                         disabled={isMutating}
                         onClick={() =>
-                          run("reject", () =>
-                            reject.mutateAsync({
+                          run("cancel", () =>
+                            cancel.mutateAsync({
                               ids: detail.vacationIds,
                               reason: reason.trim() || undefined,
                             })
                           )
                         }
                       >
-                        {t.vacationDetail.decline}
+                        {t.vacationDetail.cancelRequest}
                       </Button>
-                    </>
-                  ) : null}
-                  {detail.canCancel ? (
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      disabled={isMutating}
-                      onClick={() =>
-                        run("cancel", () =>
-                          cancel.mutateAsync({
-                            ids: detail.vacationIds,
-                            reason: reason.trim() || undefined,
-                          })
-                        )
-                      }
-                    >
-                      {t.vacationDetail.cancelRequest}
-                    </Button>
-                  ) : null}
+                    ) : null}
+                  </div>
                 </div>
               </div>
-            </div>
+            ) : null}
           </div>
         ) : null}
       </DialogContent>

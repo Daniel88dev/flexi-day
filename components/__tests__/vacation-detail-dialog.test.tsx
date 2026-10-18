@@ -4,7 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { VacationDetailDialog } from "../vacation-detail-dialog";
 import { renderWithClient } from "@/lib/test-utils";
 import { ApiError } from "@/lib/api/client";
-import { CalendarRecordType, type VacationDetail } from "@/lib/api/types";
+import { AWAY_RECORD_TYPE, CalendarRecordType, type VacationDetail } from "@/lib/api/types";
 
 const detail: VacationDetail = {
   id: "v-1",
@@ -44,6 +44,7 @@ const detail: VacationDetail = {
   canApprove: false,
   canCancel: true,
   canEdit: false,
+  canReadPrivateDetails: true,
   history: [
     {
       id: "e-1",
@@ -355,5 +356,76 @@ describe("VacationDetailDialog", () => {
     // The removed file is history only: the attachment list no longer offers it.
     expect(screen.queryByRole("button", { name: /doctors-note/ })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Open receipt.pdf" })).toBeInTheDocument();
+  });
+});
+
+describe("VacationDetailDialog for a teammate's redacted request", () => {
+  const bob = { id: "u-bob", name: "Bob Dvorak", initials: "BD", avatarColor: "hsl(324 65% 50%)" };
+
+  // The shape the backend sends a teammate: Sick as AWAY, no note, an empty
+  // history, and canReadPrivateDetails false so the viewer may not comment.
+  function teammateDetail(): VacationDetail {
+    return {
+      ...detail,
+      id: "v-9",
+      userId: bob.id,
+      user: bob,
+      vacationIds: ["v-9"],
+      vacationType: AWAY_RECORD_TYPE,
+      note: null,
+      approvedAt: null,
+      approvedBy: null,
+      approvedByUser: null,
+      canApprove: false,
+      canCancel: false,
+      canEdit: false,
+      history: [],
+      canReadPrivateDetails: false,
+    };
+  }
+
+  beforeEach(() => {
+    currentDetail = detail;
+  });
+
+  it("labels a teammate's Sick as Away, with a colour and the pending marker", () => {
+    currentDetail = teammateDetail();
+    renderWithClient(<VacationDetailDialog vacationId="v-9" open onOpenChange={() => {}} />);
+
+    const type = screen.getByText("Away");
+    expect(type.className).toMatch(/\bbg-/);
+    expect(screen.getByText("Pending")).toBeInTheDocument();
+    expect(screen.queryByText("AWAY")).not.toBeInTheDocument();
+    expect(screen.queryByText("Sick")).not.toBeInTheDocument();
+  });
+
+  it("shows no note, no timeline and no comment box to a viewer who may not comment", () => {
+    currentDetail = teammateDetail();
+    renderWithClient(<VacationDetailDialog vacationId="v-9" open onOpenChange={() => {}} />);
+
+    expect(screen.getByText("Bob Dvorak")).toBeInTheDocument();
+    expect(screen.queryByText("Family trip")).not.toBeInTheDocument();
+    expect(screen.queryByText(/No history recorded/)).not.toBeInTheDocument();
+    expect(screen.queryByText("Requested")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Comment or reason")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Comment" })).not.toBeInTheDocument();
+  });
+
+  it("offers no comment box when the backend doesn't say the viewer may comment", () => {
+    currentDetail = { ...detail, canReadPrivateDetails: undefined, canCancel: false };
+    renderWithClient(<VacationDetailDialog vacationId="v-1" open onOpenChange={() => {}} />);
+
+    expect(screen.getByText("Dana Holt")).toBeInTheDocument();
+    expect(screen.queryByLabelText("Comment or reason")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Comment" })).not.toBeInTheDocument();
+  });
+
+  it("still offers the comment box to a viewer the backend lets comment", () => {
+    currentDetail = { ...detail, canReadPrivateDetails: true };
+    renderWithClient(<VacationDetailDialog vacationId="v-1" open onOpenChange={() => {}} />);
+
+    expect(screen.getByLabelText("Comment or reason")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Comment" })).toBeInTheDocument();
+    expect(screen.getByText("Family trip")).toBeInTheDocument();
   });
 });

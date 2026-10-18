@@ -21,6 +21,7 @@ import {
   sickDayBenefitActive,
   type UpdateVacationInput,
   type VacationDetail,
+  writableRecordType,
 } from "@/lib/api/types";
 import { useTranslation } from "@/lib/i18n/use-translation";
 import { formatIsoDate } from "@/lib/calendar/month-grid";
@@ -60,7 +61,8 @@ export function EditRequestDialog({
   const groupDetail = useGroup(open ? detail.groupId : null);
 
   // Null while the Others group is open with no type picked yet.
-  const [vacationType, setVacationType] = useState<CalendarRecordType | null>(detail.vacationType);
+  const writableType = writableRecordType(detail.vacationType);
+  const [vacationType, setVacationType] = useState<CalendarRecordType | null>(writableType);
   const [startTime, setStartTime] = useState(() => toInputTime(detail.startTime));
   const [endTime, setEndTime] = useState(() => toInputTime(detail.endTime));
   const [halfDay, setHalfDay] = useState(detail.halfDay);
@@ -75,7 +77,7 @@ export function EditRequestDialog({
 
   function close(nextOpen: boolean) {
     if (!nextOpen) {
-      setVacationType(detail.vacationType);
+      setVacationType(writableType);
       setStartTime(toInputTime(detail.startTime));
       setEndTime(toInputTime(detail.endTime));
       setHalfDay(detail.halfDay);
@@ -92,7 +94,7 @@ export function EditRequestDialog({
     if (vacationType === null) return;
 
     const patch: Omit<UpdateVacationInput, "ids"> = {};
-    if (vacationType !== detail.vacationType) patch.vacationType = vacationType;
+    if (vacationType !== writableType) patch.vacationType = vacationType;
     // When either time moves, send both: the backend's ordering check then sees
     // the whole pair instead of validating one side against a stored value.
     if (startTime !== toInputTime(detail.startTime) || endTime !== toInputTime(detail.endTime)) {
@@ -146,7 +148,7 @@ export function EditRequestDialog({
               value={vacationType}
               onChange={setVacationType}
               idPrefix="edit-type"
-              extraKind={detail.vacationType}
+              extraKind={writableType ?? undefined}
               offerSickDay={sickDayBenefitActive(groupDetail.data)}
             />
           </div>

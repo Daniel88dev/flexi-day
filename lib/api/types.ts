@@ -28,6 +28,24 @@ export function isKnownCalendarRecordType(value: string): value is CalendarRecor
   return CALENDAR_RECORD_TYPE_VALUES.has(value);
 }
 
+/**
+ * What a teammate receives in place of Sick. Response-only: never stored, never
+ * sent on a write, so it stays out of `CalendarRecordType` and every picker.
+ */
+export const AWAY_RECORD_TYPE = "AWAY" as const;
+
+/** A type as read from the API: a stored type, or Away on a teammate's Sick row. */
+export type WireRecordType = CalendarRecordType | typeof AWAY_RECORD_TYPE;
+
+export function isKnownWireRecordType(value: string): value is WireRecordType {
+  return value === AWAY_RECORD_TYPE || isKnownCalendarRecordType(value);
+}
+
+/** The type a write may send back, or null for Away, which no write accepts. */
+export function writableRecordType(type: WireRecordType): CalendarRecordType | null {
+  return type === AWAY_RECORD_TYPE ? null : type;
+}
+
 /** The everyday types, one click away in the request and edit forms. */
 export const PRIMARY_CALENDAR_RECORD_TYPES: readonly CalendarRecordType[] = [
   CalendarRecordType.Vacation,
@@ -53,7 +71,7 @@ export const REQUESTABLE_CALENDAR_RECORD_TYPES: readonly CalendarRecordType[] = 
   ...OTHER_CALENDAR_RECORD_TYPES,
 ];
 
-export const CALENDAR_RECORD_TYPE_COLORS: Record<CalendarRecordType, string> = {
+export const CALENDAR_RECORD_TYPE_COLORS: Record<WireRecordType, string> = {
   [CalendarRecordType.Vacation]: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300",
   [CalendarRecordType.HomeOffice]:
     "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300",
@@ -69,6 +87,7 @@ export const CALENDAR_RECORD_TYPE_COLORS: Record<CalendarRecordType, string> = {
     "bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300",
   [CalendarRecordType.Other]:
     "bg-slate-100 text-slate-800 dark:bg-slate-800/40 dark:text-slate-300",
+  [AWAY_RECORD_TYPE]: "bg-stone-100 text-stone-700 dark:bg-stone-800/40 dark:text-stone-300",
 };
 
 export type UserSummary = {
@@ -85,7 +104,7 @@ export type Vacation = {
   requestedDay: IsoDate;
   startTime: IsoTime | null;
   endTime: IsoTime | null;
-  vacationType: CalendarRecordType;
+  vacationType: WireRecordType;
   /** Counts 0.5 against the allowance instead of a full day. */
   halfDay: boolean;
   note: string | null;
@@ -164,6 +183,12 @@ export type VacationDetail = VacationListItem & {
   canAttach?: boolean;
   /** May delete attachments other than their own: group and organization admins. */
   canDeleteAnyAttachment?: boolean;
+  /**
+   * Owner, the group's approvers and its admins: they see the note and the
+   * timeline and may comment. Absent from a backend that predates it, which
+   * reads as false.
+   */
+  canReadPrivateDetails?: boolean;
 };
 
 export type AttachmentStatus = "UPLOADING" | "READY" | "REJECTED";

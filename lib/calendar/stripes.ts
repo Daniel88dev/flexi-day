@@ -1,10 +1,11 @@
 import {
   CalendarRecordType,
-  isKnownCalendarRecordType,
+  isKnownWireRecordType,
   vacationStatus,
   type IsoDate,
   type UserSummary,
   type VacationListItem,
+  type WireRecordType,
 } from "@/lib/api/types";
 import { addDays } from "@/lib/attendance/month";
 import { weekSpan, type GridWeek } from "@/lib/calendar/month-grid";
@@ -15,7 +16,7 @@ export type DayRecord = {
   id: string;
   userId: string;
   user?: UserSummary;
-  type: CalendarRecordType;
+  type: WireRecordType;
   date: IsoDate;
   halfDay: boolean;
   pending: boolean;
@@ -26,7 +27,7 @@ export type DayRecord = {
 export type StripeBooking = {
   id: string;
   userId: string;
-  type: CalendarRecordType;
+  type: WireRecordType;
   from: IsoDate;
   to: IsoDate;
   pending: boolean;
@@ -46,7 +47,7 @@ export type PlacedStripe = {
 export function toDayRecords(vacations: readonly VacationListItem[]): DayRecord[] {
   return vacations
     .filter((v) => vacationStatus(v) !== "rejected")
-    .filter((v) => isKnownCalendarRecordType(v.vacationType))
+    .filter((v) => isKnownWireRecordType(v.vacationType))
     .map((v) => ({
       id: v.id,
       userId: v.userId,

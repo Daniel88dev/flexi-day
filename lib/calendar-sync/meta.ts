@@ -12,7 +12,11 @@ import {
   Thermometer,
   Wallet,
 } from "lucide-react";
-import { CalendarRecordType } from "@/lib/api/types";
+import {
+  CalendarRecordType,
+  isKnownCalendarRecordType,
+  type WireRecordType,
+} from "@/lib/api/types";
 import type {
   CalendarSyncConfig,
   CalendarSyncInput,
@@ -64,8 +68,8 @@ export const TYPE_META: Record<CalendarRecordType, { icon: LucideIcon; def: Swat
  */
 const UNKNOWN_TYPE_META = { icon: CircleDashed, def: "slate" as SwatchKey };
 
-export function typeMetaFor(type: CalendarRecordType): { icon: LucideIcon; def: SwatchKey } {
-  return TYPE_META[type] ?? UNKNOWN_TYPE_META;
+export function typeMetaFor(type: WireRecordType): { icon: LucideIcon; def: SwatchKey } {
+  return isKnownCalendarRecordType(type) ? TYPE_META[type] : UNKNOWN_TYPE_META;
 }
 
 /** Display order of record types in the builder. */

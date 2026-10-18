@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { OutTodayWidget } from "../out-today-widget";
-import { CalendarRecordType, type VacationListItem } from "@/lib/api/types";
+import { AWAY_RECORD_TYPE, CalendarRecordType, type VacationListItem } from "@/lib/api/types";
 
 function buildVacation(overrides: Partial<VacationListItem>): VacationListItem {
   return {
@@ -72,5 +72,18 @@ describe("OutTodayWidget", () => {
     render(<OutTodayWidget vacations={vacations} todayDay={todayDay} />);
     expect(screen.getByText("Dana Holt")).toBeInTheDocument();
     expect(screen.getByText("SABBATICAL")).toBeInTheDocument();
+  });
+});
+
+describe("OutTodayWidget teammate's Away", () => {
+  it("lists a teammate's Sick as Away, never the raw value", () => {
+    const todayIso = new Date().toISOString().slice(0, 10);
+    const todayDay = Number(todayIso.slice(8, 10));
+    const vacations = [buildVacation({ requestedDay: todayIso, vacationType: AWAY_RECORD_TYPE })];
+    render(<OutTodayWidget vacations={vacations} todayDay={todayDay} />);
+
+    expect(screen.getByText("Dana Holt")).toBeInTheDocument();
+    expect(screen.getByText("Away")).toBeInTheDocument();
+    expect(screen.queryByText("AWAY")).not.toBeInTheDocument();
   });
 });

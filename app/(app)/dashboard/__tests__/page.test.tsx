@@ -6,6 +6,7 @@ import { renderWithClient } from "@/lib/test-utils";
 import { ApiError } from "@/lib/api/client";
 import { formatIsoDate, gridYears, isoDate } from "@/lib/calendar/month-grid";
 import {
+  AWAY_RECORD_TYPE,
   CalendarRecordType,
   type BankHoliday,
   type UserSettings,
@@ -671,5 +672,29 @@ describe("DashboardPage group event entries", () => {
     await user.click(screen.getByRole("button", { name: `1 group event on ${dayLabel(14)}` }));
     await user.click(screen.getByRole("button", { name: "Delete" }));
     expect(groupEventSheetState()).toMatchObject({ kind: "delete" });
+  });
+});
+
+describe("DashboardPage teammate's Away", () => {
+  beforeEach(() => {
+    settings = { ...DEFAULT_SETTINGS, dashboardScope: "GROUP", dashboardGroupId: "g-1" };
+  });
+
+  it("draws a teammate's Away as a labelled bar, with no note in its hover or aria text", () => {
+    // The shape the backend sends a teammate for a pending Sick row.
+    vacations = [
+      {
+        ...day("v-away", sam, inVisibleMonth(18)),
+        vacationType: AWAY_RECORD_TYPE,
+        approvedAt: null,
+        approvedBy: null,
+        note: null,
+      },
+    ];
+    renderWithClient(<DashboardPage />);
+
+    const bar = screen.getByTitle("Sam Ruiz · Away · Pending");
+    expect(bar).toHaveAttribute("aria-label", "Open request details: Sam Ruiz · Away · Pending");
+    expect(document.body).not.toHaveTextContent("AWAY");
   });
 });

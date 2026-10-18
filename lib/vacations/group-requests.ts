@@ -1,7 +1,7 @@
 import {
   vacationStatus,
   type UserSummary,
-  type CalendarRecordType,
+  type WireRecordType,
   type VacationListItem,
   type VacationStatus,
 } from "@/lib/api/types";
@@ -13,7 +13,7 @@ export interface RequestGroup {
   user: UserSummary;
   groupId: string;
   mirroredFromGroupName: string | null;
-  vacationType: CalendarRecordType;
+  vacationType: WireRecordType;
   status: VacationStatus;
   from: string;
   to: string;
