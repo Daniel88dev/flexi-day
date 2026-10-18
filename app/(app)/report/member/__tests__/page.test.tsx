@@ -1,7 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { fireEvent, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import type { ReactElement } from "react";
 import MemberReportPage from "../page";
-import { renderWithClient } from "@/lib/test-utils";
 import { I18nProvider } from "@/lib/i18n/i18n-provider";
 import type { MemberReport } from "@/lib/api/report-types";
 import { CalendarRecordType } from "@/lib/api/types";
@@ -97,17 +98,20 @@ type QueryResult = { data?: MemberReport; isPending: boolean; isError: boolean; 
 
 const mocks = vi.hoisted(() => ({
   result: {} as QueryResult,
-  prior: { isPending: false, isError: false } as QueryResult,
-  scope: { data: { years: [2026, 2025] } as { years: number[] } | undefined, isPending: false },
+  fetchYear: (() => Promise.resolve(undefined)) as (year: number) => Promise<unknown>,
+  scope: {
+    data: { years: [2026, 2025] } as { years: number[] } | undefined,
+    isPending: false,
+    isError: false,
+  },
 }));
 
-/**
- * Keyed by year and indifferent to `enabled`, mirroring a disabled query still
- * handing back its cached payload — a mock that returns nothing when disabled
- * cannot catch the page merging a year it asked not to fetch.
- */
 vi.mock("@/lib/api/queries", () => ({
-  useMemberReport: (_userId: string, year: number) => (year === 2025 ? mocks.prior : mocks.result),
+  useMemberReport: () => mocks.result,
+  memberReportQuery: (_userId: string, year: number) => ({
+    queryKey: ["member-report", year],
+    queryFn: () => mocks.fetchYear(year),
+  }),
   useReportScope: () => mocks.scope,
   useSetUserQuota: () => ({ mutate: vi.fn(), isPending: false }),
   useCarryOverSuggestion: () => ({ data: undefined }),
@@ -139,6 +143,22 @@ const priorReport: MemberReport = {
   changes: [],
 };
 
+/**
+ * Seeds the cache per year, which hands the window its second year
+ * synchronously. A disabled query still returns what the cache holds, so
+ * seeding a year the page should not read is how that guard is caught.
+ */
+function renderPage(
+  ui: ReactElement = <MemberReportPage />,
+  cached: Record<number, MemberReport> = { [priorYear]: priorReport }
+) {
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  for (const [year, data] of Object.entries(cached)) {
+    client.setQueryData(["member-report", Number(year)], data);
+  }
+  return render(<QueryClientProvider client={client}>{ui}</QueryClientProvider>);
+}
+
 describe("MemberReportPage", () => {
   // The trailing window is relative to "today", so the fixtures only line up
   // against a pinned clock.
@@ -146,8 +166,8 @@ describe("MemberReportPage", () => {
     vi.useFakeTimers({ shouldAdvanceTime: true });
     vi.setSystemTime(new Date(2026, 7, 22));
     mocks.result = { data: report, isPending: false, isError: false };
-    mocks.prior = { data: priorReport, isPending: false, isError: false };
-    mocks.scope = { data: { years: [2026, 2025] }, isPending: false };
+    mocks.fetchYear = (year) => Promise.resolve(year === priorYear ? priorReport : report);
+    mocks.scope = { data: { years: [2026, 2025] }, isPending: false, isError: false };
     dialog.quota = "unset";
   });
 
@@ -157,7 +177,7 @@ describe("MemberReportPage", () => {
   });
 
   it("renders the member's bookings", () => {
-    renderWithClient(<MemberReportPage />);
+    renderPage();
 
     expect(screen.getByRole("heading", { name: "Ada Lovelace" })).toBeInTheDocument();
     expect(screen.getByText("2026-03-12 – 2026-03-14")).toBeInTheDocument();
@@ -167,7 +187,7 @@ describe("MemberReportPage", () => {
   it("renders the booking's type from the dictionary when Czech is active", async () => {
     window.localStorage.setItem("flexiday-locale", "cs");
 
-    renderWithClient(
+    renderPage(
       <I18nProvider>
         <MemberReportPage />
       </I18nProvider>
@@ -178,7 +198,7 @@ describe("MemberReportPage", () => {
   });
 
   it("merges last year's half of the rolling window into each chart", () => {
-    renderWithClient(<MemberReportPage />);
+    renderPage();
 
     const chart = screen.getAllByTestId("chart")[0];
 
@@ -190,33 +210,50 @@ describe("MemberReportPage", () => {
   });
 
   it("ignores a cached prior year the scope says holds no data", () => {
-    mocks.scope = { data: { years: [2026] }, isPending: false };
+    mocks.scope = { data: { years: [2026] }, isPending: false, isError: false };
 
-    renderWithClient(<MemberReportPage />);
+    renderPage();
 
     // The 2025 query is disabled, but still returns its cached payload.
     expect(screen.getAllByTestId("chart")[0]?.getAttribute("data-used")).toBe("0");
   });
 
   it("waits for the second year rather than drawing it as zeros", () => {
-    mocks.prior = { data: undefined, isPending: true, isError: false };
+    mocks.fetchYear = () => new Promise(() => {});
 
-    renderWithClient(<MemberReportPage />);
+    renderPage(<MemberReportPage />, {});
 
     expect(screen.queryByTestId("chart")).not.toBeInTheDocument();
     expect(screen.getByText(/Loading/i)).toBeInTheDocument();
   });
 
-  it("says so when last year could not be loaded", () => {
-    mocks.prior = { data: undefined, isPending: false, isError: true };
+  it("says so when last year could not be loaded", async () => {
+    mocks.fetchYear = () => Promise.reject(new Error("boom"));
 
-    renderWithClient(<MemberReportPage />);
+    renderPage(<MemberReportPage />, {});
+
+    expect(await screen.findByRole("status")).toHaveTextContent(/Could not load 2025/);
+  });
+
+  it("keeps both halves and no notice when a scope refetch fails over a cached scope", () => {
+    mocks.scope = { data: { years: [2026, 2025] }, isPending: false, isError: true };
+
+    renderPage();
+
+    expect(screen.getAllByTestId("chart")[0]?.getAttribute("data-used")).toBe("4");
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+  });
+
+  it("says so when the scope never loaded and last year is unknown", () => {
+    mocks.scope = { data: undefined, isPending: false, isError: true };
+
+    renderPage();
 
     expect(screen.getByRole("status")).toHaveTextContent(/Could not load 2025/);
   });
 
   it("lists the admin changes with who made them", () => {
-    renderWithClient(<MemberReportPage />);
+    renderPage();
 
     expect(screen.getByText("Quota for 2026: carried over 0 → 3")).toBeInTheDocument();
     expect(screen.getByText(/Grace Hopper/)).toBeInTheDocument();
@@ -251,7 +288,7 @@ describe("MemberReportPage", () => {
       isError: false,
     };
 
-    renderWithClient(<MemberReportPage />);
+    renderPage();
 
     const deleted = screen.getByText("Quota for 2026: vacation 20 → 25").closest("li");
     const rollover = screen.getByText("Quota for 2026: carried over 0 → 3").closest("li");
@@ -261,7 +298,7 @@ describe("MemberReportPage", () => {
   });
 
   it("offers the quota edit to an admin on the current year", () => {
-    renderWithClient(<MemberReportPage />);
+    renderPage();
 
     expect(screen.getByRole("button", { name: "Edit quota" })).toBeInTheDocument();
   });
@@ -300,7 +337,7 @@ describe("MemberReportPage", () => {
       isError: false,
     };
 
-    renderWithClient(<MemberReportPage />);
+    renderPage();
 
     const figure = (label: string) => screen.getByText(label).nextElementSibling?.textContent;
     expect(figure("Carried over")).toBe("0");
@@ -313,7 +350,7 @@ describe("MemberReportPage", () => {
   });
 
   it("hands the stored quota row to the edit dialog", () => {
-    renderWithClient(<MemberReportPage />);
+    renderPage();
 
     fireEvent.click(screen.getByRole("button", { name: "Edit quota" }));
     expect(dialog.quota).toEqual(report.quotas[0]);
@@ -329,7 +366,7 @@ describe("MemberReportPage", () => {
       isError: false,
     };
 
-    renderWithClient(<MemberReportPage />);
+    renderPage();
 
     expect(screen.queryByRole("button", { name: "Edit quota" })).not.toBeInTheDocument();
   });
@@ -342,7 +379,7 @@ describe("MemberReportPage", () => {
       error: new Error("No permission to view this member"),
     };
 
-    renderWithClient(<MemberReportPage />);
+    renderPage();
 
     expect(screen.getByText("No permission to view this member")).toBeInTheDocument();
   });

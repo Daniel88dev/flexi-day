@@ -13,7 +13,8 @@ import { TeamUsageChart } from "@/components/report/team-usage-chart";
 import { TeamRemainingChart } from "@/components/report/team-remaining-chart";
 import { UsageTable } from "@/components/report/usage-table";
 import { ExportDialog } from "@/components/report/export-dialog";
-import { useReportOverview, useReportScope } from "@/lib/api/queries";
+import { reportOverviewQuery, useReportOverview, useReportScope } from "@/lib/api/queries";
+import { useReportWindow } from "@/hooks/use-report-window";
 import {
   activeRecordTypes,
   buildMemberCards,
@@ -24,7 +25,6 @@ import {
   trailingMonths,
   windowLabel,
   withYear,
-  yearsInWindow,
 } from "@/lib/report/series";
 import { assignMemberColors, CALENDAR_RECORD_TYPE_CHART_COLORS } from "@/lib/report/colors";
 import type { ReportFilters, ReportPeriod, ReportScopeMember } from "@/lib/api/report-types";
@@ -44,27 +44,12 @@ export default function ReportPage() {
 
   const scopeQuery = useReportScope();
   const overviewQuery = useReportOverview(filters);
-
-  // A trailing window reaches back into last year, and the endpoint is
-  // year-scoped, so that year is a second fetch — skipped when it holds no data.
-  const priorYear = yearsInWindow(slots)[0];
-  const needsPriorYear =
-    priorYear !== filters.year && (scopeQuery.data?.years ?? []).includes(priorYear);
-  const priorQuery = useReportOverview({ ...filters, year: priorYear }, needsPriorYear);
+  const reportWindow = useReportWindow(slots, filters.year, (year) =>
+    reportOverviewQuery({ ...filters, year })
+  );
 
   const overview = overviewQuery.data;
-  // Not `priorQuery.data`: a disabled query still hands back whatever the cache
-  // holds for its key, which is the very year already in `overview`.
-  const prior = needsPriorYear ? priorQuery.data : undefined;
-
-  // Both halves of a cross-year window have to be in before the charts mean
-  // anything: drawn early, last year's months are zeros that read as "nobody
-  // took leave" and then jump when the second fetch lands. Which years are
-  // even worth fetching is not known until scope resolves, so that counts too.
-  const spansYears = yearsInWindow(slots).length > 1;
-  const windowPending =
-    spansYears && (scopeQuery.isPending || (needsPriorYear && priorQuery.isPending));
-  const windowIncomplete = needsPriorYear && priorQuery.isError;
+  const prior = reportWindow.prior;
 
   const usage = useMemo(
     () => [
@@ -172,8 +157,12 @@ export default function ReportPage() {
         onPeriodChange={changePeriod}
       />
 
-      {overviewQuery.isPending ? (
+      {overviewQuery.isPending || scopeQuery.isPending ? (
         <p className="text-muted-foreground text-sm">{t.common.loading}</p>
+      ) : scopeQuery.isError && !scopeQuery.data ? (
+        <p role="alert" className="text-destructive text-sm">
+          {t.report.loadFailed}
+        </p>
       ) : !hasScope ? (
         <Card>
           <CardContent className="py-10 text-center">
@@ -183,15 +172,15 @@ export default function ReportPage() {
         </Card>
       ) : (
         <>
-          {windowPending ? (
+          {reportWindow.state === "pending" ? (
             <p className="text-muted-foreground text-sm">{t.common.loading}</p>
           ) : panels.length === 0 ? (
             <p className="text-muted-foreground text-sm">{t.report.charts.empty}</p>
           ) : (
             <>
-              {windowIncomplete ? (
+              {reportWindow.state === "incomplete" ? (
                 <p role="status" className="text-muted-foreground pb-3 text-sm">
-                  {t.report.charts.windowIncomplete(priorYear)}
+                  {t.report.charts.windowIncomplete(reportWindow.priorYear)}
                 </p>
               ) : null}
               <Accordion
