@@ -10,7 +10,8 @@ import {
 } from "@/components/ui/select";
 import { MultiSelect, type MultiSelectOption } from "@/components/report/multi-select";
 import type { ReportFilters, ReportPeriod, ReportScope } from "@/lib/api/report-types";
-import { CalendarRecordType } from "@/lib/api/types";
+import type { CalendarRecordType } from "@/lib/api/types";
+import { REPORT_RECORD_TYPES } from "@/lib/report/series";
 import { useTranslation } from "@/lib/i18n/use-translation";
 
 type Props = {
@@ -24,12 +25,6 @@ type Props = {
   period?: ReportPeriod;
   onPeriodChange?: (next: ReportPeriod) => void;
 };
-
-// Bank holiday is not offered: a company-wide closure is not leave anyone
-// took, and the backend's export endpoint rejects it as a filter value.
-const FILTERABLE_KINDS = Object.values(CalendarRecordType).filter(
-  (kind) => kind !== CalendarRecordType.BankHoliday
-);
 
 const ROLLING = "rolling";
 
@@ -55,7 +50,10 @@ export function ReportFiltersBar({ scope, filters, onChange, period, onPeriodCha
 
   const typeOptions: MultiSelectOption[] = useMemo(
     () =>
-      FILTERABLE_KINDS.map((kind) => ({ value: kind, label: t.calendarRecordTypes[kind].label })),
+      REPORT_RECORD_TYPES.map((kind) => ({
+        value: kind,
+        label: t.calendarRecordTypes[kind].label,
+      })),
     [t]
   );
 

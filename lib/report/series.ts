@@ -157,9 +157,8 @@ export function groupAllowance(
 }
 
 /**
- * Leave types worth charting for the current filters, in first-seen summary
- * order, with a fallback so an empty summary still yields one chart/card per
- * member instead of nothing.
+ * Leave types the members table lists, in first-seen summary order, with a
+ * fallback so an empty summary still yields one card per member.
  */
 export function activeRecordTypes(
   summary: ReportSummaryRow[],
@@ -175,6 +174,59 @@ export function activeRecordTypes(
     recordTypes.push(...(types && types.length > 0 ? types : [CalendarRecordType.Vacation]));
   }
   return recordTypes;
+}
+
+/**
+ * The Leave types filter list, which is also the order chart panels follow.
+ * Bank holiday is left out: a company-wide closure is not leave anyone took,
+ * and the backend's export endpoint rejects it as a filter value.
+ */
+export const REPORT_RECORD_TYPES: readonly CalendarRecordType[] = Object.values(
+  CalendarRecordType
+).filter((type) => type !== CalendarRecordType.BankHoliday);
+
+const pickedTypes = (types?: CalendarRecordType[]) =>
+  types && types.length > 0 ? new Set(types) : null;
+
+export function allowanceRecordTypes(
+  summary: ReportSummaryRow[],
+  types?: CalendarRecordType[]
+): CalendarRecordType[] {
+  const wanted = pickedTypes(types);
+  const withLines = new Set(summary.map((row) => row.vacationType));
+  return REPORT_RECORD_TYPES.filter((type) => withLines.has(type) && (!wanted || wanted.has(type)));
+}
+
+/**
+ * Types that get a Monthly usage panel: every pick, or with no pick every
+ * allowance type plus any type booked by a charted member inside the window.
+ * `allowance` is what `allowanceRecordTypes` returned for the same filter.
+ */
+export function usageRecordTypes(
+  allowance: CalendarRecordType[],
+  usage: DatedUsage[],
+  memberIds: string[],
+  slots: MonthSlot[],
+  types?: CalendarRecordType[]
+): CalendarRecordType[] {
+  const wanted = pickedTypes(types);
+
+  let include: (type: CalendarRecordType) => boolean;
+  if (wanted) {
+    include = (type) => wanted.has(type);
+  } else {
+    const ids = new Set(memberIds);
+    const inWindow = new Set(slots.map((slot) => slotKey(slot.year, slot.month)));
+    const booked = new Set<CalendarRecordType>();
+    for (const row of usage) {
+      if (row.used + row.pending <= 0 || !ids.has(row.userId)) continue;
+      if (inWindow.has(slotKey(row.year, row.month))) booked.add(row.vacationType);
+    }
+    include = (type) => booked.has(type);
+  }
+
+  const rest = REPORT_RECORD_TYPES.filter((type) => !allowance.includes(type) && include(type));
+  return [...allowance, ...rest];
 }
 
 /** One row per slot; every member id present as a key, zero-filled. */

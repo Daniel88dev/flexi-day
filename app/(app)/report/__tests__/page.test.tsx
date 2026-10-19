@@ -210,6 +210,66 @@ describe("ReportPage", () => {
     );
   });
 
+  describe("with Sick days in the window", () => {
+    const withSick: ReportOverview = {
+      ...overview,
+      monthly: [
+        ...overview.monthly,
+        {
+          userId: "u1",
+          groupId: "g1",
+          month: 5,
+          vacationType: CalendarRecordType.Sick,
+          used: 3,
+          pending: 0,
+        },
+      ],
+    };
+
+    beforeEach(() => {
+      mocks.overviewResult = { data: withSick, isPending: false, isError: false };
+    });
+
+    it("charts Sick usage under All types, with no days-left panel for it", () => {
+      const { container } = renderPage();
+
+      expect(panelTriggers(container).map((trigger) => trigger.textContent)).toEqual([
+        expect.stringContaining("Vacation · Monthly usage"),
+        expect.stringContaining("Vacation · Days left"),
+        expect.stringContaining("Home Office · Monthly usage"),
+        expect.stringContaining("Home Office · Days left"),
+        expect.stringContaining("Sick · Monthly usage"),
+      ]);
+    });
+
+    it("keeps Sick next to Vacation when both are picked", async () => {
+      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+      const { container } = renderPage();
+
+      await user.click(screen.getByRole("button", { name: "Leave types" }));
+      await user.click(screen.getByRole("option", { name: "Sick" }));
+      await user.click(screen.getByRole("option", { name: "Vacation" }));
+
+      expect(panelTriggers(container).map((trigger) => trigger.textContent)).toEqual([
+        expect.stringContaining("Vacation · Monthly usage"),
+        expect.stringContaining("Vacation · Days left"),
+        expect.stringContaining("Sick · Monthly usage"),
+      ]);
+    });
+
+    it("draws no days-left panel for Sick picked alone", async () => {
+      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+      const { container } = renderPage();
+
+      await user.click(screen.getByRole("button", { name: "Leave types" }));
+      await user.click(screen.getByRole("option", { name: "Sick" }));
+
+      expect(panelTriggers(container).map((trigger) => trigger.textContent)).toEqual([
+        expect.stringContaining("Sick · Monthly usage"),
+      ]);
+    });
+  });
+
   it("merges last year's half of the rolling window and ignores months outside it", () => {
     const { container } = renderPage();
 
