@@ -8,8 +8,8 @@ import type {
   AttendanceTeamPerson,
   TeamAttendanceParams,
 } from "@/lib/api/attendance";
+import type { OrganizationSummary } from "@/lib/api/organization";
 import type { GroupListItem } from "@/lib/api/types";
-import type { ViewerRoles } from "@/lib/viewer/use-viewer-roles";
 import { TeamAttendanceScreen } from "../team-attendance-screen";
 
 const teamQuery = {
@@ -22,12 +22,13 @@ const teamRequests: (TeamAttendanceParams | null)[] = [];
 const answerFor = {
   current: null as ((params: TeamAttendanceParams) => AttendanceTeam | undefined) | null,
 };
-const roles = { current: null as ViewerRoles | null };
 const organizationDetail = {
   data: undefined as { groups: { id: string; groupName: string }[] } | undefined,
 };
+const organizationDetailRequests: (string | null | undefined)[] = [];
 
 const groups = { data: [] as GroupListItem[], isPending: false };
+const organizations = { data: [] as OrganizationSummary[], isPending: false };
 
 vi.mock("@/lib/api/queries", () => ({
   useTeamAttendance: (params: TeamAttendanceParams | null, enabled = true) => {
@@ -37,7 +38,11 @@ vi.mock("@/lib/api/queries", () => ({
       : teamQuery;
   },
   useGroups: () => groups,
-  useOrganization: () => organizationDetail,
+  useOrganizations: () => organizations,
+  useOrganization: (organizationId?: string | null) => {
+    organizationDetailRequests.push(organizationId);
+    return organizationDetail;
+  },
   // The correction dialog, which reads nothing until a cell opens it.
   useAttendanceDay: () => correctionDay,
   useSessionEvents: () => ({ data: [], isPending: false, error: null }),
@@ -53,34 +58,11 @@ vi.mock("@/lib/api/queries", () => ({
 const idle = { mutateAsync: vi.fn(), isPending: false };
 const correctionDay = { data: undefined, isPending: true, error: null };
 
-vi.mock("@/lib/viewer/use-viewer-roles", () => ({
-  useViewerRoles: () => roles.current,
-}));
-
 vi.mock("@/lib/auth-client", () => ({
   useSession: () => ({ data: { user: { id: "olivia" } }, isPending: false }),
 }));
 
-const orgAdmin: ViewerRoles = {
-  isLoading: false,
-  isOrgAdmin: true,
-  isOrgOwner: true,
-  organization: { id: "org-1", name: "Studio Modrá", isOwner: true },
-  isGroupAdmin: true,
-  administeredGroups: [],
-  isApprover: false,
-  plan: { name: "PRO", active: true },
-  attendanceActive: true,
-};
-
-const nobody: ViewerRoles = {
-  ...orgAdmin,
-  isOrgAdmin: false,
-  isOrgOwner: false,
-  organization: null,
-  isGroupAdmin: false,
-  attendanceActive: false,
-};
+const studio: OrganizationSummary = { id: "org-1", name: "Studio Modrá", isOwner: true };
 
 const WEEK = [
   "2026-09-07",
@@ -176,8 +158,9 @@ describe("TeamAttendanceScreen", () => {
     teamQuery.isPending = false;
     teamQuery.error = null;
     teamRequests.length = 0;
+    organizationDetailRequests.length = 0;
     groups.data = [];
-    roles.current = orgAdmin;
+    organizations.data = [studio];
     organizationDetail.data = {
       groups: [
         { id: "eng", groupName: "Engineering" },
@@ -200,8 +183,30 @@ describe("TeamAttendanceScreen", () => {
     expect(teamRequests.at(-1)).toMatchObject({ organizationId: "org-1", groupId: "sales" });
   });
 
+  it("offers an organization administered by delegation beside the viewer's own", async () => {
+    const own: OrganizationSummary = { id: "org-own", name: "Milo West", isOwner: true };
+    organizations.data = [own, { ...studio, isOwner: false }];
+    teamQuery.data = team({ people: [person("noah", "Noah Weber", plainWeek())] });
+    renderWithClient(<TeamAttendanceScreen />);
+
+    expect(teamRequests.at(-1)).toMatchObject({ organizationId: "org-own" });
+    const picker = screen.getByRole("combobox", { name: "Organization" });
+    expect(picker).toHaveTextContent("Milo West");
+
+    await userEvent.click(picker);
+    expect(screen.getAllByRole("option").map((option) => option.textContent)).toEqual([
+      "Milo West",
+      "Studio Modrá",
+    ]);
+    await userEvent.click(screen.getByRole("option", { name: "Studio Modrá" }));
+
+    expect(teamRequests.at(-1)).toMatchObject({ organizationId: "org-1", groupId: null });
+    expect(organizationDetailRequests.at(-1)).toBe("org-1");
+    expect(screen.getByRole("combobox", { name: "Group" })).toBeInTheDocument();
+  });
+
   it("shows no group filter to a group admin, whose list is their groups already", () => {
-    roles.current = { ...orgAdmin, isOrgAdmin: false, isOrgOwner: false, organization: null };
+    organizations.data = [];
     // A group admin's organization comes from the groups they administer.
     groups.data = [
       {
@@ -222,7 +227,7 @@ describe("TeamAttendanceScreen", () => {
   });
 
   it("shows a group admin the self-service setting read-only", () => {
-    roles.current = { ...orgAdmin, isOrgAdmin: false, isOrgOwner: false, organization: null };
+    organizations.data = [];
     groups.data = [
       {
         id: "eng",
@@ -318,7 +323,7 @@ describe("TeamAttendanceScreen", () => {
   });
 
   it("tells someone who administers nothing that the page is not theirs, without asking", () => {
-    roles.current = nobody;
+    organizations.data = [];
     renderWithClient(<TeamAttendanceScreen />);
 
     expect(

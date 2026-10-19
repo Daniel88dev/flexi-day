@@ -99,21 +99,50 @@ describe("teamOrganizations", () => {
       }),
     ];
 
-    expect(teamOrganizations({ id: "org-1", name: "Mine" }, groups, "me")).toEqual([
+    expect(teamOrganizations([{ id: "org-1", name: "Mine", isOwner: true }], groups, "me")).toEqual(
+      [
+        { id: "org-1", name: "Mine" },
+        { id: "org-2", name: "Other org" },
+      ]
+    );
+  });
+
+  it("lists every administered organization in order, delegated ones included, then the groups'", () => {
+    const groups = [
+      group({
+        id: "g1",
+        organizationId: "org-3",
+        organization: { id: "org-3", name: "Third" } as GroupListItem["organization"],
+        managerUserId: "me",
+      }),
+      group({ id: "g2", managerUserId: "me" }),
+    ];
+
+    expect(
+      teamOrganizations(
+        [
+          { id: "org-1", name: "Mine", isOwner: true },
+          { id: "org-2", name: "Employer", isOwner: false },
+        ],
+        groups,
+        "me"
+      )
+    ).toEqual([
       { id: "org-1", name: "Mine" },
-      { id: "org-2", name: "Other org" },
+      { id: "org-2", name: "Employer" },
+      { id: "org-3", name: "Third" },
     ]);
   });
 
   it("ignores groups the viewer merely belongs to", () => {
     const groups = [group({ membership: { adminAccess: false, approverAccess: true } })];
 
-    expect(teamOrganizations(null, groups, "me")).toEqual([]);
+    expect(teamOrganizations([], groups, "me")).toEqual([]);
   });
 
   it("falls back to the group's name when the organization is not on the group", () => {
     expect(
-      teamOrganizations(null, [group({ organization: null, managerUserId: "me" })], "me")
+      teamOrganizations([], [group({ organization: null, managerUserId: "me" })], "me")
     ).toEqual([{ id: "org-2", name: "Engineering" }]);
   });
 });
