@@ -37,3 +37,8 @@ export function planLimitMessage(error: unknown, t: Dictionary): string | null {
     ? t.billing.readOnlyGroup
     : t.billing.memberLimitReached(planLimit.limit);
 }
+
+/** The translated plan limit for a 402, else the error's own message, else the fallback. */
+export function planLimitOrErrorMessage(error: unknown, t: Dictionary, fallback: string): string {
+  return planLimitMessage(error, t) ?? (error instanceof Error ? error.message : fallback);
+}

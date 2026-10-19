@@ -18,6 +18,7 @@ import {
 } from "@/lib/api/queries";
 import type { Group } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
+import { planLimitOrErrorMessage } from "@/lib/billing/plan-limit-error";
 import { useTranslation } from "@/lib/i18n/use-translation";
 
 /**
@@ -78,7 +79,7 @@ function GroupWorkingDaysCard({ group }: { group?: Group }) {
       });
       setSaved(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : t.groupDetail.saveWorkingDaysFailed);
+      setError(planLimitOrErrorMessage(err, t, t.groupDetail.saveWorkingDaysFailed));
     }
   }
 
@@ -154,7 +155,7 @@ function GroupHolidayCountryCard({ group }: { group?: Group }) {
       });
       setSaved(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : t.groupDetail.saveHolidayCountryFailed);
+      setError(planLimitOrErrorMessage(err, t, t.groupDetail.saveHolidayCountryFailed));
     }
   }
 
