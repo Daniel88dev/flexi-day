@@ -1,4 +1,4 @@
-import { describe, expect, it, vi, beforeEach } from "vitest";
+import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import { screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import RequestsPage from "../page";
@@ -47,6 +47,7 @@ const vacations: VacationListItem[] = [
 ];
 
 const useVacationsSpy = vi.fn();
+let listOverride: VacationListItem[] | null = null;
 
 const replaceSpy = vi.fn();
 
@@ -68,7 +69,7 @@ vi.mock("@/lib/api/queries", () => ({
   }),
   useVacations: (params: unknown) => {
     useVacationsSpy(params);
-    return { data: vacations, isLoading: false, error: null };
+    return { data: listOverride ?? vacations, isLoading: false, error: null };
   },
   // The page scopes the list to a group it may see in full — without one the
   // API only ever returns the caller's own rows.
@@ -281,5 +282,81 @@ describe("RequestsPage teammate's Away", () => {
     } finally {
       vacations.pop();
     }
+  });
+});
+
+describe("RequestsPage whole Request", () => {
+  // Thu 29 Oct – Tue 3 Nov 2026: a weekend and a month edge inside one Request.
+  const crossing = () => [
+    { ...day("w-1", "2026-10-29"), requestId: "r-cross" },
+    { ...day("w-2", "2026-10-30"), requestId: "r-cross" },
+    { ...day("w-3", "2026-11-02"), requestId: "r-cross" },
+    { ...day("w-4", "2026-11-03"), requestId: "r-cross" },
+  ];
+
+  beforeEach(() => {
+    approveMutate.mockClear();
+    rejectMutate.mockClear();
+    cancelMutate.mockClear();
+  });
+
+  afterEach(() => {
+    listOverride = null;
+  });
+
+  it("asks the API for whole Requests", () => {
+    renderWithClient(<RequestsPage />);
+
+    expect(useVacationsSpy).toHaveBeenCalledWith(expect.objectContaining({ wholeRequests: true }));
+  });
+
+  it("shows a Request across a weekend and a month edge as one row with its full range", () => {
+    listOverride = crossing();
+    renderWithClient(<RequestsPage />);
+
+    expect(screen.getAllByRole("button", { name: "Approve" })).toHaveLength(1);
+    expect(screen.getByText(/29 Oct 2026 –.*3 Nov 2026/)).toBeInTheDocument();
+    expect(screen.getByText("(4 days)")).toBeInTheDocument();
+  });
+
+  it("approves and declines every day of the Request, in both months", async () => {
+    listOverride = crossing();
+    const user = userEvent.setup();
+    renderWithClient(<RequestsPage />);
+
+    await user.click(screen.getByRole("button", { name: "Approve" }));
+    await user.click(screen.getByRole("button", { name: "Reject" }));
+
+    const all = { ids: ["w-1", "w-2", "w-3", "w-4"] };
+    expect(approveMutate).toHaveBeenCalledWith(all, expect.anything());
+    expect(rejectMutate).toHaveBeenCalledWith(all, expect.anything());
+  });
+
+  it("cancels every day of the caller's own Request, in both months", async () => {
+    listOverride = crossing().map((row) => ({ ...row, userId: "approver-1", canApprove: false }));
+    const user = userEvent.setup();
+    renderWithClient(<RequestsPage />);
+
+    await user.click(screen.getByRole("button", { name: "Cancel" }));
+
+    expect(cancelMutate).toHaveBeenCalledWith(
+      { ids: ["w-1", "w-2", "w-3", "w-4"] },
+      expect.anything()
+    );
+  });
+
+  it("acts only on the pending days of a partly approved Request", async () => {
+    const approvedAt = "2026-10-20T09:00:00.000Z";
+    listOverride = crossing().map((row, index) =>
+      index % 2 === 0 ? { ...row, approvedAt, canApprove: false } : row
+    );
+    const user = userEvent.setup();
+    renderWithClient(<RequestsPage />);
+
+    expect(screen.getByRole("button", { name: /^Pending/ })).toHaveTextContent("1");
+    expect(screen.getByRole("button", { name: /^Approved/ })).toHaveTextContent("1");
+    await user.click(screen.getByRole("button", { name: "Approve" }));
+
+    expect(approveMutate).toHaveBeenCalledWith({ ids: ["w-2", "w-4"] }, expect.anything());
   });
 });

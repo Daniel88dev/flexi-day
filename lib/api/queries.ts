@@ -189,8 +189,21 @@ import type {
 } from "./types";
 
 export const qk = {
-  vacations: (year: number, month: number, groupId?: string | null, includeCancelled?: boolean) =>
-    ["vacations", year, month, groupId ?? "mine", includeCancelled ?? false] as const,
+  vacations: (
+    year: number,
+    month: number,
+    groupId?: string | null,
+    includeCancelled?: boolean,
+    wholeRequests?: boolean
+  ) =>
+    [
+      "vacations",
+      year,
+      month,
+      groupId ?? "mine",
+      includeCancelled ?? false,
+      wholeRequests ?? false,
+    ] as const,
   // Under the "vacations" prefix so every vacation invalidation refreshes it too.
   vacationCalendar: (year: number, month: number, groupId?: string | null) =>
     ["vacations", "calendar", year, month, groupId ?? "mine"] as const,
@@ -284,13 +297,16 @@ function invalidateVacationDependants(qc: ReturnType<typeof useQueryClient>) {
 }
 
 export function useVacations(
-  params: Required<Pick<ListVacationsParams, "year" | "month">> & {
-    groupId?: string | null;
-    includeCancelled?: boolean;
-  }
+  params: ListVacationsParams & Required<Pick<ListVacationsParams, "year" | "month">>
 ) {
   return useQuery({
-    queryKey: qk.vacations(params.year, params.month, params.groupId, params.includeCancelled),
+    queryKey: qk.vacations(
+      params.year,
+      params.month,
+      params.groupId,
+      params.includeCancelled,
+      params.wholeRequests
+    ),
     queryFn: () => listVacations(params),
   });
 }
