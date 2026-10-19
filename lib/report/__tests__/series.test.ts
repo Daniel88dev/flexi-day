@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   activeRecordTypes,
+  allowanceRecordTypes,
   buildMemberRemaining,
   buildMemberCards,
   buildTeamMonthlySeries,
@@ -12,6 +13,7 @@ import {
   monthlySeriesFor,
   totalQuotaFor,
   trailingMonths,
+  usageRecordTypes,
   windowLabel,
   withYear,
   yearsInWindow,
@@ -54,6 +56,12 @@ const member = (id: string, name: string): ReportScopeMember => ({
   avatarColor: "hsl(200, 65%, 50%)",
   groupId: "g1",
 });
+
+const allowanceLines = [
+  summaryRow({ vacationType: CalendarRecordType.HomeOffice }),
+  summaryRow({ vacationType: CalendarRecordType.Vacation }),
+  summaryRow({ vacationType: CalendarRecordType.HomeOffice, userId: "u2" }),
+];
 
 describe("monthlySeriesFor", () => {
   it("returns twelve zero-filled months", () => {
@@ -246,6 +254,19 @@ describe("buildMemberCards", () => {
 
     expect(cards[0]).toMatchObject({ quota: 0, usedToDate: 0, remaining: 0 });
   });
+
+  it("keeps listing the allowance types, however the charts change", () => {
+    const typesOf = (types?: CalendarRecordType[]) =>
+      buildMemberCards([member("u1", "Ada Lovelace")], allowanceLines, types).map(
+        (card) => card.vacationType
+      );
+
+    expect(typesOf()).toEqual([CalendarRecordType.HomeOffice, CalendarRecordType.Vacation]);
+    expect(typesOf([CalendarRecordType.Sick])).toEqual([CalendarRecordType.Sick]);
+    expect(typesOf([CalendarRecordType.Vacation, CalendarRecordType.Sick])).toEqual([
+      CalendarRecordType.Vacation,
+    ]);
+  });
 });
 
 describe("formatDays", () => {
@@ -294,6 +315,121 @@ describe("activeRecordTypes", () => {
   it("falls back to the filter, then to Vacation, when the summary is empty", () => {
     expect(activeRecordTypes([], [CalendarRecordType.Sick])).toEqual([CalendarRecordType.Sick]);
     expect(activeRecordTypes([])).toEqual([CalendarRecordType.Vacation]);
+  });
+});
+
+describe("usageRecordTypes", () => {
+  const allowance = [CalendarRecordType.Vacation, CalendarRecordType.HomeOffice];
+  const sick = usage({ vacationType: CalendarRecordType.Sick, used: 3, pending: 0 });
+
+  it("charts a type booked in the window even with no allowance line", () => {
+    expect(usageRecordTypes(allowance, [sick], ["u1"], months)).toEqual([
+      CalendarRecordType.Vacation,
+      CalendarRecordType.HomeOffice,
+      CalendarRecordType.Sick,
+    ]);
+  });
+
+  it("charts every picked type, with or without an allowance", () => {
+    expect(
+      usageRecordTypes([CalendarRecordType.Vacation], [sick], ["u1"], months, [
+        CalendarRecordType.Sick,
+        CalendarRecordType.Vacation,
+      ])
+    ).toEqual([CalendarRecordType.Vacation, CalendarRecordType.Sick]);
+  });
+
+  it("charts a picked type at zero", () => {
+    expect(usageRecordTypes([], [], ["u1"], months, [CalendarRecordType.StudyLeave])).toEqual([
+      CalendarRecordType.StudyLeave,
+    ]);
+  });
+
+  it("counts pending days as well as used ones", () => {
+    const pendingOnly = usage({ vacationType: CalendarRecordType.Other, used: 0, pending: 1 });
+
+    expect(usageRecordTypes([], [pendingOnly], ["u1"], months)).toEqual([CalendarRecordType.Other]);
+  });
+
+  it("reaches into the prior-year months of a rolling window", () => {
+    const rolling = trailingMonths(new Date(2026, 1, 15));
+    const lastAutumn = usage({ vacationType: CalendarRecordType.Sick, year: 2025, month: 10 });
+
+    expect(usageRecordTypes([], [lastAutumn], ["u1"], rolling)).toEqual([CalendarRecordType.Sick]);
+  });
+
+  it("ignores usage outside the window, of members off the chart, and empty rows", () => {
+    const rows = [
+      usage({ vacationType: CalendarRecordType.Sick, year: 2025, month: 3 }),
+      usage({ vacationType: CalendarRecordType.StudyLeave, userId: "ghost" }),
+      usage({ vacationType: CalendarRecordType.Other, used: 0, pending: 0 }),
+    ];
+
+    expect(usageRecordTypes([], rows, ["u1"], months)).toEqual([]);
+  });
+
+  it("puts allowance types first, then the rest in filter order, whatever the row order", () => {
+    const rows = [
+      usage({ vacationType: CalendarRecordType.Other }),
+      usage({ vacationType: CalendarRecordType.NonPaidLeave }),
+      usage({ vacationType: CalendarRecordType.Sick }),
+    ];
+    const withSickDay = allowanceRecordTypes([
+      summaryRow({ vacationType: CalendarRecordType.SickDay }),
+      summaryRow({ vacationType: CalendarRecordType.Vacation }),
+    ]);
+
+    expect(usageRecordTypes(withSickDay, rows, ["u1"], months)).toEqual([
+      CalendarRecordType.Vacation,
+      CalendarRecordType.SickDay,
+      CalendarRecordType.Sick,
+      CalendarRecordType.NonPaidLeave,
+      CalendarRecordType.Other,
+    ]);
+  });
+
+  it("never charts Bank holiday or a type this build does not know", () => {
+    const rows = [
+      usage({ vacationType: CalendarRecordType.BankHoliday }),
+      usage({ vacationType: "FUTURE_TYPE" as CalendarRecordType }),
+    ];
+
+    expect(usageRecordTypes([], rows, ["u1"], months)).toEqual([]);
+    expect(
+      usageRecordTypes([], rows, ["u1"], months, [
+        CalendarRecordType.BankHoliday,
+        "FUTURE_TYPE" as CalendarRecordType,
+      ])
+    ).toEqual([]);
+  });
+});
+
+describe("allowanceRecordTypes", () => {
+  it("offers only types with allowance lines, in filter order", () => {
+    expect(allowanceRecordTypes(allowanceLines)).toEqual([
+      CalendarRecordType.Vacation,
+      CalendarRecordType.HomeOffice,
+    ]);
+  });
+
+  it("never offers a pick without an allowance", () => {
+    expect(allowanceRecordTypes([], [CalendarRecordType.Sick])).toEqual([]);
+    expect(
+      allowanceRecordTypes(allowanceLines, [CalendarRecordType.Vacation, CalendarRecordType.Sick])
+    ).toEqual([CalendarRecordType.Vacation]);
+  });
+
+  it("offers Sick day only where the summary carries its lines", () => {
+    expect(allowanceRecordTypes(allowanceLines, [CalendarRecordType.SickDay])).toEqual([]);
+    expect(
+      allowanceRecordTypes([summaryRow({ vacationType: CalendarRecordType.SickDay })])
+    ).toEqual([CalendarRecordType.SickDay]);
+  });
+
+  it("skips a type this build does not know", () => {
+    expect(
+      allowanceRecordTypes([summaryRow({ vacationType: "FUTURE_TYPE" as CalendarRecordType })])
+    ).toEqual([]);
   });
 });
 

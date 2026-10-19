@@ -16,13 +16,14 @@ import { ExportDialog } from "@/components/report/export-dialog";
 import { reportOverviewQuery, useReportOverview, useReportScope } from "@/lib/api/queries";
 import { useReportWindow } from "@/hooks/use-report-window";
 import {
-  activeRecordTypes,
+  allowanceRecordTypes,
   buildMemberCards,
   buildMemberRemaining,
   buildTeamMonthlySeries,
   calendarMonths,
   formatDays,
   trailingMonths,
+  usageRecordTypes,
   windowLabel,
   withYear,
 } from "@/lib/report/series";
@@ -74,11 +75,6 @@ export default function ReportPage() {
 
   const memberColors = useMemo(() => assignMemberColors(overview?.members ?? []), [overview]);
 
-  const recordTypes = useMemo(
-    () => (overview ? activeRecordTypes(overview.summary, filters.types) : []),
-    [overview, filters.types]
-  );
-
   /**
    * Usage then days-left for one leave type before moving on to the next, so
    * the two views of the same allowance sit together.
@@ -86,6 +82,8 @@ export default function ReportPage() {
   const panels = useMemo(() => {
     if (!overview || chartMembers.length === 0) return [];
     const memberIds = chartMembers.map((member) => member.id);
+    const allowance = allowanceRecordTypes(overview.summary, filters.types);
+    const recordTypes = usageRecordTypes(allowance, usage, memberIds, slots, filters.types);
 
     return recordTypes.flatMap((type, index) => {
       const label = recordTypeLabel(t.calendarRecordTypes, type);
@@ -95,17 +93,20 @@ export default function ReportPage() {
         0
       );
 
+      const usagePanel = {
+        id: `usage-${type}`,
+        // Only the leading panel opens itself; everything else is one click
+        // away, so the page does not land as a wall of charts.
+        openByDefault: index === 0,
+        title: t.report.charts.usageSection(label),
+        hint: windowLabel(slots, t.calendar.monthsShort),
+        meta: `${t.report.charts.total}: ${formatDays(Number(total.toFixed(2)))}`,
+        body: <TeamUsageChart members={chartMembers} series={series} colors={memberColors} />,
+      };
+      if (!allowance.includes(type)) return [usagePanel];
+
       return [
-        {
-          id: `usage-${type}`,
-          // Only the leading panel opens itself; everything else is one click
-          // away, so the page does not land as a wall of charts.
-          openByDefault: index === 0,
-          title: t.report.charts.usageSection(label),
-          hint: windowLabel(slots, t.calendar.monthsShort),
-          meta: `${t.report.charts.total}: ${formatDays(Number(total.toFixed(2)))}`,
-          body: <TeamUsageChart members={chartMembers} series={series} colors={memberColors} />,
-        },
+        usagePanel,
         {
           id: `remaining-${type}`,
           openByDefault: false,
@@ -122,7 +123,7 @@ export default function ReportPage() {
         },
       ];
     });
-  }, [overview, chartMembers, recordTypes, usage, slots, memberColors, filters.year, t]);
+  }, [overview, chartMembers, usage, slots, memberColors, filters.types, filters.year, t]);
 
   // Remounts the accordion when the set of panels changes, so a filter that
   // swaps leave types lands on "usage open, days-left closed" again instead of
