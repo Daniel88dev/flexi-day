@@ -149,7 +149,7 @@ function WaitingOnYou({ query }: { query: ListQuery }) {
               <div className="flex gap-2">
                 <button
                   type="button"
-                  onClick={() => approve.mutate(a.vacationIds)}
+                  onClick={() => approve.mutate({ ids: a.vacationIds })}
                   disabled={isMutating || a.vacationIds.length === 0}
                   className="inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-[13.5px] font-semibold disabled:opacity-60"
                   style={{ background: "var(--primary)", color: "var(--primary-fg)" }}

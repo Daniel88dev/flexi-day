@@ -580,7 +580,8 @@ export function useRejectVacation() {
 export function useApproveVacations() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (ids: string[]) => approveVacations(ids),
+    mutationFn: (input: { ids: string[]; reason?: string }) =>
+      approveVacations(input.ids, input.reason),
     onSuccess: () => invalidateVacationDependants(qc),
   });
 }

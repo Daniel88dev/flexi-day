@@ -84,11 +84,12 @@ export function rejectVacation(id: string, reason?: string): Promise<{ message: 
 }
 
 export function approveVacations(
-  ids: string[]
+  ids: string[],
+  reason?: string
 ): Promise<{ message: string; approvedCount: number }> {
   return api<{ message: string; approvedCount: number }>(`/api/vacation/approve`, {
     method: "POST",
-    body: { ids },
+    body: reason ? { ids, reason } : { ids },
   });
 }
 

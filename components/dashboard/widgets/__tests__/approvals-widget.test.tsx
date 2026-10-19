@@ -100,7 +100,7 @@ describe("ApprovalsWidget", () => {
       const user = userEvent.setup();
       renderWithClient(<ApprovalsWidget />);
       await user.click(screen.getByRole("button", { name: /Approve/i }));
-      expect(approveMutate).toHaveBeenCalledWith(["v-1", "v-2"]);
+      expect(approveMutate).toHaveBeenCalledWith({ ids: ["v-1", "v-2"] });
     });
 
     it("calls reject.mutate with the full vacationIds array when Decline is clicked", async () => {

@@ -88,6 +88,14 @@ describe("vacations api", () => {
     });
   });
 
+  it("approveVacations sends the approver's reason", async () => {
+    await approveVacations(["v-1", "v-2"], "Enjoy the break");
+    expect(apiMock).toHaveBeenCalledWith("/api/vacation/approve", {
+      method: "POST",
+      body: { ids: ["v-1", "v-2"], reason: "Enjoy the break" },
+    });
+  });
+
   it("listVacations opts into cancelled rows only when asked", async () => {
     await listVacations({ year: 2026, month: 8, includeCancelled: true });
     expect(apiMock).toHaveBeenCalledWith("/api/vacation?year=2026&month=8&includeCancelled=true");

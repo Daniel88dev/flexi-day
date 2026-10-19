@@ -173,7 +173,34 @@ describe("VacationDetailDialog", () => {
 
     await user.click(screen.getByRole("button", { name: /^Approve$/i }));
 
-    expect(approveMutate).toHaveBeenCalledWith(["v-1", "v-2"]);
+    expect(approveMutate).toHaveBeenCalledWith({ ids: ["v-1", "v-2"], reason: undefined });
+  });
+
+  it("approves with the typed comment as the reason", async () => {
+    currentDetail = { ...detail, canApprove: true, vacationIds: ["v-1", "v-2"] };
+    const user = userEvent.setup();
+    renderWithClient(<VacationDetailDialog vacationId="v-1" open onOpenChange={() => {}} />);
+
+    await user.type(screen.getByLabelText("Comment or reason"), "  Enjoy the break  ");
+    await user.click(screen.getByRole("button", { name: /^Approve$/i }));
+
+    expect(approveMutate).toHaveBeenCalledWith({ ids: ["v-1", "v-2"], reason: "Enjoy the break" });
+  });
+
+  it("shows the approver's reason under the approval in the history", () => {
+    currentDetail = {
+      ...detail,
+      history: detail.history.map((entry) =>
+        entry.eventType === "APPROVED" ? { ...entry, reason: "Enjoy the break" } : entry
+      ),
+    };
+    renderWithClient(<VacationDetailDialog vacationId="v-1" open onOpenChange={() => {}} />);
+
+    const timeline = screen.getAllByRole("list").find((list) => list.tagName === "OL");
+    const approval = within(timeline as HTMLElement)
+      .getAllByRole("listitem")
+      .find((item) => item.textContent?.startsWith("Approved by Ada Lovelace"));
+    expect(approval).toHaveTextContent("Enjoy the break");
   });
 
   it("posts a comment with the typed message and can comment without approval rights", async () => {

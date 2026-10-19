@@ -79,7 +79,7 @@ describe("vacation mutations refresh the caller's pending requests", () => {
   const cases = [
     { name: "creating", hook: useCreateVacation, input: {} },
     { name: "cancelling", hook: useCancelVacations, input: { ids: ["v-1"] } },
-    { name: "approving", hook: useApproveVacations, input: ["v-1"] },
+    { name: "approving", hook: useApproveVacations, input: { ids: ["v-1"] } },
     { name: "rejecting", hook: useRejectVacations, input: { ids: ["v-1"] } },
   ] as const;
 
