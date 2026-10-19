@@ -1,4 +1,5 @@
 import type { AttendanceTeamPerson } from "@/lib/api/attendance";
+import type { OrganizationSummary } from "@/lib/api/organization";
 import type { GroupListItem } from "@/lib/api/types";
 import { addDays, addMonths, startOfWeek, yearMonthOf, type YearMonth } from "./month";
 
@@ -52,17 +53,18 @@ export function defaultDay({ from, to }: DateRange, today: string | null): strin
 export type TeamOrganization = { id: string; name: string };
 
 /**
- * The organizations whose dashboard the viewer may open: the one they
- * administer, then any their administered groups belong to. UI only — the
- * backend refuses anyone the matrix does not admit.
+ * The organizations whose dashboard the viewer may open: every one they
+ * administer, owned or delegated, in the order given, then any their
+ * administered groups belong to. UI only: the backend refuses anyone the
+ * matrix does not admit.
  */
 export function teamOrganizations(
-  administered: TeamOrganization | null,
+  administered: OrganizationSummary[],
   groups: GroupListItem[],
   viewerId: string | undefined
 ): TeamOrganization[] {
   const found = new Map<string, TeamOrganization>();
-  if (administered) found.set(administered.id, administered);
+  for (const { id, name } of administered) found.set(id, { id, name });
   for (const group of groups) {
     const admin = group.managerUserId === viewerId || group.membership?.adminAccess === true;
     if (!admin || found.has(group.organizationId)) continue;

@@ -39,7 +39,7 @@ import {
 } from "@/lib/api/attendance";
 import { ApiError } from "@/lib/api/client";
 import type { IsoDate } from "@/lib/api/types";
-import { useGroups, useOrganization, useTeamAttendance } from "@/lib/api/queries";
+import { useGroups, useOrganization, useOrganizations, useTeamAttendance } from "@/lib/api/queries";
 import { formatMinutes } from "@/lib/attendance/duration";
 import { exclusionLabel } from "@/lib/attendance/exclusion";
 import {
@@ -59,7 +59,6 @@ import { formatBusinessDay, formatBusinessWeekday, formatClockTime } from "@/lib
 import { useSession } from "@/lib/auth-client";
 import { localDayOf } from "@/lib/calendar/month-grid";
 import { useTranslation } from "@/lib/i18n/use-translation";
-import { useViewerRoles } from "@/lib/viewer/use-viewer-roles";
 import { cn } from "@/lib/utils";
 import {
   BalanceChip,
@@ -675,7 +674,7 @@ function DayList({
 export function TeamAttendanceScreen() {
   const { t, locale } = useTranslation();
   const session = useSession();
-  const roles = useViewerRoles();
+  const organizationsQuery = useOrganizations();
   const groupsQuery = useGroups();
 
   const [organizationId, setOrganizationId] = useState<string | null>(null);
@@ -688,7 +687,7 @@ export function TeamAttendanceScreen() {
   const [adding, setAdding] = useState<Adding | null>(null);
 
   const organizations = teamOrganizations(
-    roles.organization,
+    organizationsQuery.data ?? [],
     groupsQuery.data ?? [],
     session.data?.user.id
   );
@@ -709,7 +708,7 @@ export function TeamAttendanceScreen() {
         ? t.teamAttendance.rangeTooLong(TEAM_RANGE_MAX_DAYS)
         : null;
 
-  const deciding = roles.isLoading || groupsQuery.isPending || session.isPending;
+  const deciding = organizationsQuery.isPending || groupsQuery.isPending || session.isPending;
   const query = useTeamAttendance(
     activeOrganization && rangeError === null
       ? { organizationId: activeOrganization.id, from: range.from, to: range.to, groupId }
