@@ -1593,7 +1593,8 @@ export const cs: Dictionary = {
         "Zaměstnanci mohou doplnit a opravit kterýkoli den svého pracovního poměru. Správci mohou dál opravit cokoli.",
       selfServiceApplies: (name: string) =>
         `Platí pro všechny v organizaci ${name}. Změnit to mohou jen správci organizace. Změna se týká jen pozdějších úprav: nic, co už je zapsané, se nevrací ani znovu neoznačuje.`,
-      saveHint: "Pravidla platí od dalšího příchodu. Samoobsluha platí hned po uložení.",
+      saveHint:
+        "Požadovaný čas, přestávky, pracovní dny a země pro státní svátky platí pro každý den včetně minulých. Časové pásmo platí od dalšího příchodu. Samoobsluha platí hned po uložení.",
       saved: "Nastavení docházky uloženo",
       saveFailed: "Nastavení docházky se nepodařilo uložit",
     },

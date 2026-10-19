@@ -131,6 +131,16 @@ describe("AttendanceCard", () => {
       expect(screen.getByLabelText("Timezone")).toHaveTextContent("America/New_York");
     });
 
+    it("says beside Save that the rules count for past days and only the timezone waits", () => {
+      settings = { ...baseSettings(), attendanceEnabled: true, timezone: "Europe/Prague" };
+      render("PRO");
+
+      expect(screen.queryByText(/Rules apply from the next clock-in/)).not.toBeInTheDocument();
+      expect(screen.getByText(/count for every day, past ones included/)).toBeInTheDocument();
+      expect(screen.getByText(/The timezone applies from the next clock-in/)).toBeInTheDocument();
+      expect(screen.getByText(/Self-service applies as soon as you save/)).toBeInTheDocument();
+    });
+
     it("carries the location switch with its responsibility note", async () => {
       render("PRO");
       await userEvent.click(screen.getByRole("switch", { name: "Turn attendance on" }));

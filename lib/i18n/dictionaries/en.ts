@@ -1577,7 +1577,8 @@ export const en = {
         "Employees can enter and correct any day of their own employment. Admins can still correct anything.",
       selfServiceApplies: (name: string) =>
         `Applies to everyone in ${name}. Only organization admins can change it. A change affects later edits only: nothing already written is undone or flagged again.`,
-      saveHint: "Rules apply from the next clock-in. Self-service applies as soon as you save.",
+      saveHint:
+        "Required time, breaks, working days and holiday country count for every day, past ones included. The timezone applies from the next clock-in. Self-service applies as soon as you save.",
       saved: "Attendance settings saved",
       saveFailed: "Could not save the attendance settings",
     },
