@@ -446,6 +446,8 @@ export function useNotifications(params: ListNotificationsParams = {}) {
   return useQuery({
     queryKey: qk.notifications(unreadOnly),
     queryFn: () => listNotifications({ unreadOnly }),
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
   });
 }
 

@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Bell, X } from "lucide-react";
 import {
   DropdownMenu,
@@ -23,8 +24,8 @@ import { notificationTarget } from "@/lib/vacations/vacation-detail-url";
 import { useTranslation } from "@/lib/i18n/use-translation";
 import type { Dictionary } from "@/lib/i18n";
 
-function relativeTime(iso: string, t: Dictionary): string {
-  const diff = Date.now() - new Date(iso).getTime();
+function relativeTime(iso: string, now: number, t: Dictionary): string {
+  const diff = now - new Date(iso).getTime();
   if (diff < 60_000) return t.notifications.justNow;
   if (diff < 3_600_000) return t.notifications.minutesAgo(Math.floor(diff / 60_000));
   if (diff < 86_400_000) return t.notifications.hoursAgo(Math.floor(diff / 3_600_000));
@@ -42,6 +43,26 @@ export function NotificationsBell() {
   // Controlled because picking a request no longer navigates away, and the
   // menu would otherwise stay open behind the dialog it just opened.
   const [open, setOpen] = useState(false);
+  const [openedAt, setOpenedAt] = useState(() => Date.now());
+  const { isStale, refetch } = query;
+  const pathname = usePathname();
+  const lastPathnameRef = useRef(pathname);
+
+  // The bell lives in the persistent header and never remounts, so a route change is the only
+  // signal that the user moved on. Refetch only if stale, like a remount would.
+  useEffect(() => {
+    if (lastPathnameRef.current === pathname) return;
+    lastPathnameRef.current = pathname;
+    if (isStale) void refetch({ cancelRefetch: false });
+  }, [pathname, isStale, refetch]);
+
+  function onOpenChange(next: boolean) {
+    setOpen(next);
+    if (next) {
+      setOpenedAt(Date.now());
+      void refetch();
+    }
+  }
 
   const items: AppNotification[] = query.data ?? [];
   const unread = items.filter((n) => n.readAt === null);
@@ -52,7 +73,7 @@ export function NotificationsBell() {
   }
 
   return (
-    <DropdownMenu open={open} onOpenChange={setOpen}>
+    <DropdownMenu open={open} onOpenChange={onOpenChange}>
       <DropdownMenuTrigger asChild>
         <button
           type="button"
@@ -130,7 +151,7 @@ export function NotificationsBell() {
                     <div className="truncate text-[13.5px] font-semibold">{n.title}</div>
                     <div className="text-muted-foreground line-clamp-2 text-[12.5px]">{n.body}</div>
                     <div className="text-muted-foreground/70 mt-0.5 text-[11.5px]">
-                      {relativeTime(n.createdAt, t)}
+                      {relativeTime(n.createdAt, openedAt, t)}
                     </div>
                   </div>
                 </div>

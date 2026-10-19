@@ -18,7 +18,12 @@ vi.mock("next/navigation", () => ({
 }));
 
 vi.mock("@/lib/api/queries", () => ({
-  useNotifications: () => ({ data: notifications, isLoading: false, error: null }),
+  useNotifications: () => ({
+    data: notifications,
+    isLoading: false,
+    error: null,
+    refetch: vi.fn(),
+  }),
   useMarkNotificationRead: () => ({ mutate: markReadSpy, isPending: false }),
   useMarkAllNotificationsRead: () => ({ mutate: markAllReadSpy, isPending: false }),
   useDeleteNotification: () => ({ mutate: removeSpy, isPending: false }),
