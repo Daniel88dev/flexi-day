@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { newBuilderConfig, type BuilderConfig } from "@/lib/calendar-sync/meta";
 import type { CalendarSyncConfig, CalendarSyncInput } from "@/lib/api/calendar-sync";
+import type { Group } from "@/lib/api/types";
 import { I18nContext } from "@/lib/i18n/i18n-provider";
 import { dictionaries } from "@/lib/i18n";
 import { CalBuilder, type MonthContext } from "../cal-builder";
@@ -19,12 +20,13 @@ function renderBuilder(overrides?: {
   onSubmit?: (input: CalendarSyncInput) => Promise<CalendarSyncConfig>;
   initial?: BuilderConfig;
   isNew?: boolean;
+  groups?: Group[];
 }) {
   return render(
     <CalBuilder
       initial={overrides?.initial ?? newBuilderConfig()}
       isNew={overrides?.isNew ?? true}
-      groups={[]}
+      groups={overrides?.groups ?? []}
       vacations={[]}
       currentUserId="u1"
       monthCtx={monthCtx}
@@ -241,6 +243,59 @@ describe("CalBuilder", () => {
 
       expect(screen.getByRole("checkbox", { name: "Skupinové události" })).toBeInTheDocument();
       expect(screen.getByText("Události ze všech skupin, ve kterých jste")).toBeInTheDocument();
+    });
+  });
+
+  describe("a team feed whose owner left one of its stored groups", () => {
+    const saved = { id: "cfg-1", feedUrl: "https://x/calendars/t.ics" } as CalendarSyncConfig;
+    const liveGroup = { id: "live-group", groupName: "QA Team" } as Group;
+    const teamFeed = (): BuilderConfig => ({
+      ...newBuilderConfig(),
+      id: "cfg-1",
+      name: "Team feed",
+      scope: "TEAM",
+      teamIds: ["live-group", "left-group"],
+    });
+    const submitSpy = () =>
+      vi.fn<(input: CalendarSyncInput) => Promise<CalendarSyncConfig>>(() =>
+        Promise.resolve(saved)
+      );
+
+    it("saves a rename with the left group sent back untouched", async () => {
+      const onSubmit = submitSpy();
+      renderBuilder({ onSubmit, isNew: false, initial: teamFeed(), groups: [liveGroup] });
+
+      fireEvent.change(screen.getByLabelText("Calendar name"), { target: { value: "Renamed" } });
+      fireEvent.click(screen.getByRole("button", { name: /Save changes/ }));
+
+      await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1));
+      expect(onSubmit.mock.calls[0]![0]).toMatchObject({
+        name: "Renamed",
+        teamIds: ["live-group", "left-group"],
+      });
+    });
+
+    it("asks for a team when only the left group is still selected", () => {
+      const onSubmit = submitSpy();
+      renderBuilder({ onSubmit, isNew: false, initial: teamFeed(), groups: [liveGroup] });
+
+      fireEvent.click(screen.getByRole("button", { name: "QA Team" }));
+      fireEvent.click(screen.getByRole("button", { name: /Save changes/ }));
+
+      expect(onSubmit).not.toHaveBeenCalled();
+      expect(screen.getByText("Pick at least one team.")).toBeInTheDocument();
+    });
+
+    it("keeps the left group through Clear all and Select all", async () => {
+      const onSubmit = submitSpy();
+      renderBuilder({ onSubmit, isNew: false, initial: teamFeed(), groups: [liveGroup] });
+
+      fireEvent.click(screen.getByRole("button", { name: "Clear all" }));
+      fireEvent.click(screen.getByRole("button", { name: "Select all" }));
+      fireEvent.click(screen.getByRole("button", { name: /Save changes/ }));
+
+      await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1));
+      expect([...onSubmit.mock.calls[0]![0].teamIds].sort()).toEqual(["left-group", "live-group"]);
     });
   });
 });

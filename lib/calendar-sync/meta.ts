@@ -179,6 +179,15 @@ export function configToBuilder(cfg: CalendarSyncConfig): BuilderConfig {
   };
 }
 
+/**
+ * The stored team ids the user is still a member of. A feed keeps a group the owner has left so a
+ * re-join restores it; counts and checks go by the live ones only.
+ */
+export function liveTeamIds(teamIds: readonly string[], groups: readonly { id: string }[]) {
+  const live = new Set(groups.map((g) => g.id));
+  return teamIds.filter((id) => live.has(id));
+}
+
 /** Build the API request body from a builder config. */
 export function builderToInput(cfg: BuilderConfig): CalendarSyncInput {
   const sendMine = cfg.distinguishMine;

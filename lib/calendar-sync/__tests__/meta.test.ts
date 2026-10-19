@@ -8,6 +8,7 @@ import {
   colorFor,
   configToBuilder,
   defaultColors,
+  liveTeamIds,
   maskFeedUrl,
   newBuilderConfig,
   PALETTE,
@@ -289,5 +290,15 @@ describe("maskFeedUrl", () => {
     expect(masked).toContain("•");
     expect(masked.endsWith(".ics")).toBe(true);
     expect(masked).not.toContain("0123456789abcdef");
+  });
+});
+
+describe("liveTeamIds", () => {
+  it("returns only the stored ids the user is still a member of, in stored order", () => {
+    expect(liveTeamIds(["b", "left", "a"], [{ id: "a" }, { id: "b" }])).toEqual(["b", "a"]);
+  });
+
+  it("returns an empty list when the user is in none of the stored groups", () => {
+    expect(liveTeamIds(["left"], [{ id: "a" }])).toEqual([]);
   });
 });

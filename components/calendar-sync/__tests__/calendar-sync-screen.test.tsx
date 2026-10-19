@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { act, fireEvent, render, screen } from "@testing-library/react";
-import { CalendarRecordType } from "@/lib/api/types";
+import { CalendarRecordType, type Group } from "@/lib/api/types";
 import type { CalendarSyncConfig } from "@/lib/api/calendar-sync";
 
 vi.mock("@/lib/auth-client", () => ({
@@ -18,8 +18,10 @@ const startMutation = { mutate: vi.fn(), isPending: false };
 const disconnectMutation = { mutateAsync: vi.fn().mockResolvedValue({}), isPending: false };
 const state: {
   configs: { data: CalendarSyncConfig[]; isLoading: boolean; isError: boolean };
+  groups: Group[];
 } = {
   configs: { data: [], isLoading: false, isError: false },
+  groups: [],
 };
 
 vi.mock("@/lib/api/queries", () => ({
@@ -27,7 +29,7 @@ vi.mock("@/lib/api/queries", () => ({
   useCalendarConnections: () => ({
     data: { providers: { google: true, microsoft: false }, connections: [] },
   }),
-  useGroups: () => ({ data: [] }),
+  useGroups: () => ({ data: state.groups }),
   useVacations: () => ({ data: [] }),
   useCreateCalendarSync: () => noopMutation,
   useUpdateCalendarSync: () => noopMutation,
@@ -67,6 +69,7 @@ function config(target: CalendarSyncConfig["target"]): CalendarSyncConfig {
 
 beforeEach(() => {
   state.configs = { data: [], isLoading: false, isError: false };
+  state.groups = [];
   startMutation.mutate.mockReset();
   disconnectMutation.mutateAsync.mockClear();
   window.sessionStorage.clear();
@@ -169,5 +172,39 @@ describe("CalendarSyncScreen", () => {
     state.configs.data = [config(null)];
     render(<CalendarSyncScreen />);
     expect(screen.queryByText("Coming soon")).not.toBeInTheDocument();
+  });
+
+  describe("the team count on a feed whose owner left one of its groups", () => {
+    const qa = { id: "qa", groupName: "QA Team" } as Group;
+    const dev = { id: "dev", groupName: "Dev Team" } as Group;
+    const teamFeed = (teamIds: string[]): CalendarSyncConfig => ({
+      ...config(null),
+      scope: "TEAM",
+      teamIds,
+    });
+
+    it("names the one selected group the owner is still in", () => {
+      state.groups = [qa, dev];
+      state.configs.data = [teamFeed(["qa", "left"])];
+      render(<CalendarSyncScreen />);
+
+      expect(screen.getByText("Team records · QA Team")).toBeInTheDocument();
+    });
+
+    it("names the group when the owner is in only that one", () => {
+      state.groups = [qa];
+      state.configs.data = [teamFeed(["qa", "left"])];
+      render(<CalendarSyncScreen />);
+
+      expect(screen.getByText("Team records · QA Team")).toBeInTheDocument();
+    });
+
+    it("says all teams when the live groups are all selected", () => {
+      state.groups = [qa, dev];
+      state.configs.data = [teamFeed(["qa", "dev", "left"])];
+      render(<CalendarSyncScreen />);
+
+      expect(screen.getByText("Team records · All teams")).toBeInTheDocument();
+    });
   });
 });
