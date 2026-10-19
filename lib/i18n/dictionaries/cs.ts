@@ -927,6 +927,10 @@ export const cs: Dictionary = {
     membersCount: (n: number) => `${n} ${plural(n, "člen", "členové", "členů")}`,
     editPermissions: "Upravit oprávnění",
     saveFailed: "Uložení selhalo",
+    membersLeftNotSaved: (names: string[]) =>
+      names.length === 1
+        ? `${names[0]} už není členem skupiny, změny oprávnění se neuložily.`
+        : `${names.join(", ")} už nejsou členy skupiny, změny jejich oprávnění se neuložily.`,
     removeMember: "Odebrat",
     removeConfirm: (name: string) =>
       `Odebrat ${name} z této skupiny? Historie zůstane, ale ztratí přístup.`,

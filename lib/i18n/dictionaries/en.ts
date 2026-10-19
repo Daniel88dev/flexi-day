@@ -910,6 +910,10 @@ export const en = {
     membersCount: (n: number) => `${n} member${n === 1 ? "" : "s"}`,
     editPermissions: "Edit permissions",
     saveFailed: "Save failed",
+    membersLeftNotSaved: (names: string[]) =>
+      names.length === 1
+        ? `${names[0]} is no longer in this group, so their permission changes were not saved.`
+        : `${names.join(", ")} are no longer in this group, so their permission changes were not saved.`,
     removeMember: "Remove",
     removeConfirm: (name: string) =>
       `Remove ${name} from this group? Their history stays, but they lose access.`,

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
-import { screen, within } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import GroupDetailPage from "../page";
 import { renderWithClient } from "@/lib/test-utils";
@@ -63,7 +63,12 @@ vi.mock("@/lib/api/queries", () => ({
   useBankHolidayCountries: () => ({ data: [], isLoading: false, error: null }),
   useUpdateGroupHolidayCountry: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useGroup: () => ({ data: group, isLoading: false, error: null }),
-  useGroupUsers: () => ({ data: members, isLoading: false, error: null }),
+  useGroupUsers: () => ({
+    data: members,
+    isLoading: false,
+    error: null,
+    refetch: async () => ({ data: members, error: null }),
+  }),
   useQuotas: () => ({ data: [], isLoading: false, error: null }),
   useSetUserQuota: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useUpdateGroupQuotas: () => ({ mutateAsync: vi.fn(), isPending: false }),
@@ -115,11 +120,17 @@ describe("GroupDetailPage members tab", () => {
 
     await user.click(screen.getByRole("button", { name: "Save" }));
 
+    await waitFor(() => expect(updateMembersMutate).toHaveBeenCalledTimes(1));
     expect(updateMembersMutate).toHaveBeenCalledWith({
       groupId: "g-1",
       data: [
-        expect.objectContaining({ userId: "u-1", adminAccess: true, approverAccess: false }),
-        expect.objectContaining({ userId: "u-2", adminAccess: false, approverAccess: false }),
+        {
+          userId: "u-2",
+          viewAccess: true,
+          adminAccess: false,
+          approverAccess: false,
+          controlledUser: true,
+        },
       ],
     });
   });
