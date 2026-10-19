@@ -1,9 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { fireEvent, screen, within } from "@testing-library/react";
+import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { MembersTab } from "../members-tab";
 import { renderWithClient } from "@/lib/test-utils";
 import { I18nContext } from "@/lib/i18n/i18n-provider";
 import { dictionaries } from "@/lib/i18n";
+import { ApiError } from "@/lib/api/client";
 
 const member = (userId: string, name: string, adminAccess: boolean) => ({
   id: `gu-${userId}`,
@@ -20,24 +21,36 @@ const member = (userId: string, name: string, adminAccess: boolean) => ({
 });
 
 let groupData: { managerUserId: string; organizationId: string } | undefined;
+let membersData: ReturnType<typeof member>[];
+const refetchMembers = vi.fn();
+const updateMembers = vi.fn();
 
 vi.mock("@/lib/api/queries", () => ({
   useGroupUsers: () => ({
-    data: [member("u-owner", "Olga Owner", false), member("u-dana", "Dana Holt", true)],
+    data: membersData,
     isLoading: false,
     error: null,
+    refetch: refetchMembers,
   }),
   useGroup: () => ({ data: groupData }),
   useSubscription: () => ({ data: undefined }),
-  useUpdateGroupUsers: () => ({ mutateAsync: vi.fn(), isPending: false }),
+  useUpdateGroupUsers: () => ({ mutateAsync: updateMembers, isPending: false }),
   useRemoveGroupUser: () => ({ mutateAsync: vi.fn(), isPending: false }),
 }));
 
 const rowOf = (name: string) => screen.getByText(name).closest("tr")!;
 
+const cellOf = (name: string, column: number) =>
+  within(rowOf(name)).getAllByRole("cell")[column] as HTMLElement;
+const VIEW = 1;
+const APPROVER = 3;
+const toggleCell = (name: string, column: number) =>
+  fireEvent.click(within(cellOf(name, column)).getByRole("button"));
+
 describe("MembersTab", () => {
   beforeEach(() => {
     groupData = { managerUserId: "u-owner", organizationId: "org-1" };
+    membersData = [member("u-owner", "Olga Owner", false), member("u-dana", "Dana Holt", true)];
   });
 
   it("explains each permission and the manager's implicit rights to non-admins", () => {
@@ -101,5 +114,241 @@ describe("MembersTab", () => {
     expect(legend.getByText("Sledován")).toBeInTheDocument();
     expect(legend.getByText(/může v této skupině zadávat volno/i)).toBeInTheDocument();
     expect(within(rowOf("Olga Owner")).getByText("Manažer")).toBeInTheDocument();
+  });
+
+  describe("permission editor", () => {
+    const milo = () => ({ ...member("u-milo", "Milo Grant", false), viewAccess: false });
+    const nora = () => member("u-nora", "Nora Lind", false);
+    const dana = () => member("u-dana", "Dana Holt", true);
+    const olga = () => member("u-owner", "Olga Owner", false);
+    const leaves = (...userIds: string[]) => {
+      membersData = membersData.filter((m) => !userIds.includes(m.userId));
+    };
+    const noraLeaves = () => leaves("u-nora");
+
+    const openEditor = (name = "Edit permissions") =>
+      fireEvent.click(screen.getByRole("button", { name }));
+    const clickSave = (name = "Save") => fireEvent.click(screen.getByRole("button", { name }));
+    const editorClosed = () =>
+      waitFor(() =>
+        expect(screen.getByRole("button", { name: "Edit permissions" })).toBeInTheDocument()
+      );
+
+    beforeEach(() => {
+      membersData = [olga(), dana(), milo(), nora()];
+      refetchMembers.mockReset();
+      refetchMembers.mockImplementation(async () => ({ data: membersData, error: null }));
+      updateMembers.mockReset();
+      updateMembers.mockResolvedValue({ message: "ok" });
+    });
+
+    it("sends only the toggled member, on top of the current server values", async () => {
+      renderWithClient(<MembersTab groupId="g-1" isAdmin />);
+      openEditor();
+
+      // A co-admin turns Milo's view and approver on, turns Dana's view off and removes Nora.
+      membersData = [
+        olga(),
+        { ...dana(), viewAccess: false },
+        { ...milo(), viewAccess: true, approverAccess: true },
+      ];
+      toggleCell("Dana Holt", APPROVER);
+      clickSave();
+
+      await waitFor(() => expect(updateMembers).toHaveBeenCalledTimes(1));
+      expect(updateMembers).toHaveBeenCalledWith({
+        groupId: "g-1",
+        data: [
+          {
+            userId: "u-dana",
+            viewAccess: false,
+            adminAccess: true,
+            approverAccess: true,
+            controlledUser: true,
+          },
+        ],
+      });
+      await editorClosed();
+    });
+
+    it("sends nothing and closes the editor when every toggle was undone", async () => {
+      renderWithClient(<MembersTab groupId="g-1" isAdmin />);
+      openEditor();
+
+      toggleCell("Milo Grant", VIEW);
+      toggleCell("Milo Grant", VIEW);
+      clickSave();
+
+      await editorClosed();
+      expect(updateMembers).not.toHaveBeenCalled();
+    });
+
+    it("undoes a toggle against the value it started from, keeping a co-admin's change", async () => {
+      renderWithClient(<MembersTab groupId="g-1" isAdmin />);
+      openEditor();
+      toggleCell("Milo Grant", VIEW);
+
+      // The co-admin sets the same field to the value the admin had picked.
+      membersData = [olga(), dana(), { ...milo(), viewAccess: true }, nora()];
+      toggleCell("Milo Grant", VIEW);
+
+      expect(within(cellOf("Milo Grant", VIEW)).getByRole("button")).toHaveTextContent("Yes");
+      clickSave();
+
+      await editorClosed();
+      expect(updateMembers).not.toHaveBeenCalled();
+    });
+
+    it("shows the live member list while editing, so a removed member drops out", () => {
+      renderWithClient(<MembersTab groupId="g-1" isAdmin />);
+      openEditor();
+      expect(screen.getByText("4 members")).toBeInTheDocument();
+
+      noraLeaves();
+      toggleCell("Milo Grant", VIEW);
+
+      expect(screen.queryByText("Nora Lind")).toBeNull();
+      expect(screen.getByText("3 members")).toBeInTheDocument();
+      expect(within(cellOf("Milo Grant", VIEW)).getByRole("button")).toHaveTextContent("Yes");
+    });
+
+    it("names a changed member who left before saving and keeps the other toggles", async () => {
+      renderWithClient(<MembersTab groupId="g-1" isAdmin />);
+      openEditor();
+      toggleCell("Nora Lind", APPROVER);
+      toggleCell("Milo Grant", VIEW);
+
+      noraLeaves();
+      clickSave();
+
+      expect(await screen.findByText(/Nora Lind is no longer in this group/)).toBeInTheDocument();
+      expect(updateMembers).not.toHaveBeenCalled();
+      expect(within(cellOf("Milo Grant", VIEW)).getByRole("button")).toHaveTextContent("Yes");
+
+      clickSave();
+
+      await waitFor(() => expect(updateMembers).toHaveBeenCalledTimes(1));
+      expect(updateMembers.mock.calls[0][0].data).toEqual([
+        expect.objectContaining({ userId: "u-milo", viewAccess: true }),
+      ]);
+    });
+
+    it("names every changed member who left", async () => {
+      renderWithClient(<MembersTab groupId="g-1" isAdmin />);
+      openEditor();
+      toggleCell("Nora Lind", APPROVER);
+      toggleCell("Milo Grant", VIEW);
+
+      leaves("u-nora", "u-milo");
+      clickSave();
+
+      expect(
+        await screen.findByText(
+          "Nora Lind, Milo Grant are no longer in this group, so their permission changes were not saved."
+        )
+      ).toBeInTheDocument();
+    });
+
+    it("names the member when the save is refused because they left meanwhile", async () => {
+      updateMembers.mockImplementationOnce(async () => {
+        noraLeaves();
+        throw new ApiError(400, "Failed to update group user permissions");
+      });
+      renderWithClient(<MembersTab groupId="g-1" isAdmin />);
+      openEditor();
+      toggleCell("Nora Lind", APPROVER);
+      toggleCell("Milo Grant", VIEW);
+      clickSave();
+
+      expect(await screen.findByText(/Nora Lind is no longer in this group/)).toBeInTheDocument();
+      expect(screen.queryByText("Failed to update group user permissions")).toBeNull();
+      expect(screen.getByRole("button", { name: "Save" })).toBeInTheDocument();
+
+      clickSave();
+
+      await waitFor(() => expect(updateMembers).toHaveBeenCalledTimes(2));
+      expect(updateMembers.mock.calls[1][0].data).toEqual([
+        expect.objectContaining({ userId: "u-milo", viewAccess: true }),
+      ]);
+    });
+
+    it("shows the translated failure, not the raw error, when the list cannot be refetched", async () => {
+      refetchMembers.mockResolvedValueOnce({ data: undefined, error: new Error("Network down") });
+      renderWithClient(<MembersTab groupId="g-1" isAdmin />);
+      openEditor();
+      toggleCell("Milo Grant", VIEW);
+      clickSave();
+
+      expect(await screen.findByText("Save failed")).toBeInTheDocument();
+      expect(screen.queryByText("Network down")).toBeNull();
+      expect(updateMembers).not.toHaveBeenCalled();
+    });
+
+    it("locks the editor while saving and starts one save per click burst", async () => {
+      let finishRefetch!: () => void;
+      refetchMembers.mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            finishRefetch = () => resolve({ data: membersData, error: null });
+          })
+      );
+      renderWithClient(<MembersTab groupId="g-1" isAdmin />);
+      openEditor();
+      toggleCell("Milo Grant", VIEW);
+
+      const save = screen.getByRole("button", { name: "Save" });
+      fireEvent.click(save);
+      fireEvent.click(save);
+
+      await waitFor(() =>
+        expect(within(cellOf("Dana Holt", VIEW)).getByRole("button")).toBeDisabled()
+      );
+      expect(screen.getByRole("button", { name: "Cancel" })).toBeDisabled();
+
+      finishRefetch();
+      await editorClosed();
+      expect(refetchMembers).toHaveBeenCalledTimes(1);
+      expect(updateMembers).toHaveBeenCalledTimes(1);
+    });
+
+    describe("in Czech", () => {
+      const renderCs = () =>
+        renderWithClient(
+          <I18nContext
+            value={{ locale: "cs", setLocale: () => {}, t: dictionaries.cs, localeReady: true }}
+          >
+            <MembersTab groupId="g-1" isAdmin />
+          </I18nContext>
+        );
+
+      it("names the departed member", async () => {
+        renderCs();
+        openEditor("Upravit oprávnění");
+        toggleCell("Nora Lind", APPROVER);
+
+        noraLeaves();
+        clickSave("Uložit");
+
+        expect(
+          await screen.findByText("Nora Lind už není členem skupiny, změny oprávnění se neuložily.")
+        ).toBeInTheDocument();
+      });
+
+      it("names every departed member", async () => {
+        renderCs();
+        openEditor("Upravit oprávnění");
+        toggleCell("Nora Lind", APPROVER);
+        toggleCell("Milo Grant", VIEW);
+
+        leaves("u-nora", "u-milo");
+        clickSave("Uložit");
+
+        expect(
+          await screen.findByText(
+            "Nora Lind, Milo Grant už nejsou členy skupiny, změny jejich oprávnění se neuložily."
+          )
+        ).toBeInTheDocument();
+      });
+    });
   });
 });

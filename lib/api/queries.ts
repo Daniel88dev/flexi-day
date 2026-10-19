@@ -927,7 +927,7 @@ export function useUpdateGroupUsers() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (input: UpdateGroupUsersInput) => updateGroupUsers(input),
-    onSuccess: (_, vars) => qc.invalidateQueries({ queryKey: qk.groupUsers(vars.groupId) }),
+    onSettled: (_, __, vars) => qc.invalidateQueries({ queryKey: qk.groupUsers(vars.groupId) }),
   });
 }
 

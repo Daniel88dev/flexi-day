@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -20,9 +20,43 @@ import {
   useSubscription,
   useUpdateGroupUsers,
 } from "@/lib/api/queries";
+import { ApiError } from "@/lib/api/client";
 import type { GroupUserListItem } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/lib/i18n/use-translation";
+
+const PERMISSION_FIELDS = [
+  "viewAccess",
+  "adminAccess",
+  "approverAccess",
+  "controlledUser",
+] as const;
+type PermissionField = (typeof PERMISSION_FIELDS)[number];
+// `base` is the server value when the admin first toggled the field; clicking back to it undoes the edit.
+type PendingField = { value: boolean; base: boolean };
+type PendingFields = Partial<Record<PermissionField, PendingField>>;
+type PendingMember = { name: string; fields: PendingFields };
+type PendingEdits = Record<string, PendingMember>;
+
+const resolve = (
+  member: GroupUserListItem,
+  fields: PendingFields | undefined,
+  field: PermissionField
+): boolean => fields?.[field]?.value ?? member[field];
+
+function hasNetChange(edit: PendingMember, server: GroupUserListItem | undefined): boolean {
+  return PERMISSION_FIELDS.some((f) => {
+    const entry = edit.fields[f];
+    return entry !== undefined && entry.value !== (server ? server[f] : entry.base);
+  });
+}
+
+function withoutUsers(edits: PendingEdits | null, userIds: string[]): PendingEdits | null {
+  if (edits === null) return null;
+  const kept = { ...edits };
+  for (const userId of userIds) delete kept[userId];
+  return kept;
+}
 
 export function MembersTab({ groupId, isAdmin }: { groupId: string; isAdmin: boolean }) {
   const { t } = useTranslation();
@@ -37,13 +71,16 @@ export function MembersTab({ groupId, isAdmin }: { groupId: string; isAdmin: boo
     billingQuery.data?.organization != null &&
     group?.organizationId === billingQuery.data.organization.id;
 
-  const [draft, setDraft] = useState<Record<string, GroupUserListItem> | null>(null);
+  // A user's display name rides along so a departure can still be named.
+  const [pending, setPending] = useState<PendingEdits | null>(null);
+  const submittingRef = useRef(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
   // Per-row so one removal does not disable every other row's button.
   const [removingId, setRemovingId] = useState<string | null>(null);
 
   const members = membersQuery.data ?? [];
-  const editing = draft !== null;
+  const editing = pending !== null;
   const maxMembers = billedHere ? billingQuery.data?.entitlements.maxMembersPerGroup : undefined;
 
   async function handleRemove(member: GroupUserListItem) {
@@ -60,45 +97,102 @@ export function MembersTab({ groupId, isAdmin }: { groupId: string; isAdmin: boo
   }
 
   function startEdit() {
-    const next: Record<string, GroupUserListItem> = {};
-    for (const m of members) next[m.id] = { ...m };
-    setDraft(next);
+    setPending({});
   }
 
   function cancelEdit() {
-    setDraft(null);
+    setPending(null);
     setSaveError(null);
   }
 
-  function toggle(
-    id: string,
-    field: "viewAccess" | "adminAccess" | "approverAccess" | "controlledUser"
-  ) {
-    if (!draft) return;
-    setDraft({ ...draft, [id]: { ...draft[id], [field]: !draft[id][field] } });
+  function toggle(member: GroupUserListItem, field: PermissionField) {
+    if (!pending || saving) return;
+    const edit = pending[member.userId];
+    const base = edit?.fields[field]?.base ?? member[field];
+    const value = !resolve(member, edit?.fields, field);
+    const fields: PendingFields = { ...edit?.fields };
+    if (value === base) delete fields[field];
+    else fields[field] = { value, base };
+    const rest = withoutUsers(pending, [member.userId])!;
+    setPending(
+      Object.keys(fields).length > 0
+        ? { ...rest, [member.userId]: { name: member.user.name, fields } }
+        : rest
+    );
+  }
+
+  function rejectIfDeparted(
+    edits: PendingEdits,
+    current: GroupUserListItem[],
+    lastSeen: GroupUserListItem[]
+  ): boolean {
+    const present = new Set(current.map((m) => m.userId));
+    const departed = Object.keys(edits).filter(
+      (userId) =>
+        !present.has(userId) &&
+        hasNetChange(
+          edits[userId],
+          lastSeen.find((m) => m.userId === userId)
+        )
+    );
+    if (departed.length === 0) return false;
+    setPending((prev) => withoutUsers(prev, departed));
+    setSaveError(t.groupDetail.membersLeftNotSaved(departed.map((id) => edits[id].name)));
+    return true;
   }
 
   async function save() {
-    if (!draft) return;
+    if (!pending || submittingRef.current) return;
+    submittingRef.current = true;
     setSaveError(null);
+    setSaving(true);
     try {
-      await updateMembers.mutateAsync({
-        groupId,
-        data: Object.values(draft).map((m) => ({
-          userId: m.userId,
-          viewAccess: m.viewAccess,
-          adminAccess: m.adminAccess,
-          approverAccess: m.approverAccess,
-          controlledUser: m.controlledUser,
-        })),
-      });
-      setDraft(null);
+      await submit(pending, members);
+    } finally {
+      submittingRef.current = false;
+      setSaving(false);
+    }
+  }
+
+  async function submit(edits: PendingEdits, lastSeen: GroupUserListItem[]) {
+    const refreshed = await membersQuery.refetch();
+    if (refreshed.error || !refreshed.data) {
+      setSaveError(t.groupDetail.saveFailed);
+      return;
+    }
+    const fresh = refreshed.data;
+    if (rejectIfDeparted(edits, fresh, lastSeen)) return;
+
+    const data = fresh.flatMap((m) => {
+      const edit = edits[m.userId];
+      if (!edit || !hasNetChange(edit, m)) return [];
+      const flags = {} as Record<PermissionField, boolean>;
+      for (const f of PERMISSION_FIELDS) flags[f] = resolve(m, edit.fields, f);
+      return [{ userId: m.userId, ...flags }];
+    });
+    if (data.length === 0) {
+      setPending(null);
+      return;
+    }
+
+    try {
+      await updateMembers.mutateAsync({ groupId, data });
+      setPending(null);
     } catch (err) {
+      if (err instanceof ApiError && err.status === 400) {
+        const after = await membersQuery.refetch();
+        if (after.error || !after.data) {
+          setSaveError(t.groupDetail.saveFailed);
+          return;
+        }
+        if (rejectIfDeparted(edits, after.data, fresh)) return;
+      }
       setSaveError(err instanceof Error ? err.message : t.groupDetail.saveFailed);
     }
   }
 
-  const rows = editing ? Object.values(draft!) : members;
+  const displayedValue = (m: GroupUserListItem, field: PermissionField) =>
+    resolve(m, pending?.[m.userId]?.fields, field);
 
   return (
     <div className="space-y-3">
@@ -113,11 +207,11 @@ export function MembersTab({ groupId, isAdmin }: { groupId: string; isAdmin: boo
         {isAdmin ? (
           editing ? (
             <div className="flex gap-2">
-              <Button size="sm" variant="ghost" onClick={cancelEdit}>
+              <Button size="sm" variant="ghost" onClick={cancelEdit} disabled={saving}>
                 {t.common.cancel}
               </Button>
-              <Button size="sm" onClick={save} disabled={updateMembers.isPending}>
-                {updateMembers.isPending ? t.common.saving : t.common.save}
+              <Button size="sm" onClick={save} disabled={saving}>
+                {saving ? t.common.saving : t.common.save}
               </Button>
             </div>
           ) : (
@@ -150,7 +244,7 @@ export function MembersTab({ groupId, isAdmin }: { groupId: string; isAdmin: boo
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {rows.map((m) => (
+                {members.map((m) => (
                   <TableRow key={m.id}>
                     <TableCell>
                       <div className="flex items-center gap-2.5">
@@ -178,30 +272,34 @@ export function MembersTab({ groupId, isAdmin }: { groupId: string; isAdmin: boo
                     </TableCell>
                     <TableCell>
                       <PermBadge
-                        value={m.viewAccess}
+                        value={displayedValue(m, "viewAccess")}
                         editing={editing}
-                        onToggle={() => toggle(m.id, "viewAccess")}
+                        disabled={saving}
+                        onToggle={() => toggle(m, "viewAccess")}
                       />
                     </TableCell>
                     <TableCell>
                       <PermBadge
-                        value={m.adminAccess}
+                        value={displayedValue(m, "adminAccess")}
                         editing={editing}
-                        onToggle={() => toggle(m.id, "adminAccess")}
+                        disabled={saving}
+                        onToggle={() => toggle(m, "adminAccess")}
                       />
                     </TableCell>
                     <TableCell>
                       <PermBadge
-                        value={m.approverAccess}
+                        value={displayedValue(m, "approverAccess")}
                         editing={editing}
-                        onToggle={() => toggle(m.id, "approverAccess")}
+                        disabled={saving}
+                        onToggle={() => toggle(m, "approverAccess")}
                       />
                     </TableCell>
                     <TableCell>
                       <PermBadge
-                        value={m.controlledUser}
+                        value={displayedValue(m, "controlledUser")}
                         editing={editing}
-                        onToggle={() => toggle(m.id, "controlledUser")}
+                        disabled={saving}
+                        onToggle={() => toggle(m, "controlledUser")}
                       />
                     </TableCell>
                     <TableCell className="text-muted-foreground text-xs">
@@ -260,10 +358,12 @@ export function MembersTab({ groupId, isAdmin }: { groupId: string; isAdmin: boo
 function PermBadge({
   value,
   editing,
+  disabled,
   onToggle,
 }: {
   value: boolean;
   editing: boolean;
+  disabled: boolean;
   onToggle: () => void;
 }) {
   const { t } = useTranslation();
@@ -279,7 +379,8 @@ function PermBadge({
     <button
       type="button"
       onClick={onToggle}
-      className={cn(className, "hover:ring-foreground/30 hover:ring-1")}
+      disabled={disabled}
+      className={cn(className, "hover:ring-foreground/30 hover:ring-1 disabled:opacity-60")}
     >
       {text}
     </button>
