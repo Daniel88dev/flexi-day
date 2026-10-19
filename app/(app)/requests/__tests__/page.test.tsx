@@ -285,6 +285,113 @@ describe("RequestsPage teammate's Away", () => {
   });
 });
 
+describe("RequestsPage row keyboard", () => {
+  const ownRequest = {
+    ...day("v-7", "2026-08-21", false),
+    userId: "approver-1",
+    requestId: "r-own",
+  };
+
+  beforeEach(() => {
+    approveMutate.mockReset();
+    rejectMutate.mockReset();
+    cancelMutate.mockReset();
+    replaceSpy.mockClear();
+  });
+
+  afterEach(() => {
+    listOverride = null;
+  });
+
+  const openedDetail = () =>
+    replaceSpy.mock.calls.some(([url]) => String(url).includes("vacationId="));
+
+  it.each(["{Enter}", " "])("approves on %s from the focused Approve button", async (key) => {
+    const user = userEvent.setup();
+    renderWithClient(<RequestsPage />);
+
+    screen.getByRole("button", { name: "Approve" }).focus();
+    await user.keyboard(key);
+
+    expect(approveMutate).toHaveBeenCalledWith(
+      { ids: ["v-1", "v-2", "v-3"] },
+      expect.objectContaining({ onError: expect.any(Function) })
+    );
+    expect(openedDetail()).toBe(false);
+  });
+
+  it.each(["{Enter}", " "])("declines on %s from the focused Reject button", async (key) => {
+    const user = userEvent.setup();
+    renderWithClient(<RequestsPage />);
+
+    screen.getByRole("button", { name: "Reject" }).focus();
+    await user.keyboard(key);
+
+    expect(rejectMutate).toHaveBeenCalledWith(
+      { ids: ["v-1", "v-2", "v-3"] },
+      expect.objectContaining({ onError: expect.any(Function) })
+    );
+    expect(openedDetail()).toBe(false);
+  });
+
+  it.each(["{Enter}", " "])("cancels on %s from the focused Cancel button", async (key) => {
+    listOverride = [ownRequest];
+    const user = userEvent.setup();
+    renderWithClient(<RequestsPage />);
+
+    screen.getByRole("button", { name: "Cancel" }).focus();
+    await user.keyboard(key);
+
+    expect(cancelMutate).toHaveBeenCalledWith(
+      { ids: ["v-7"] },
+      expect.objectContaining({ onError: expect.any(Function) })
+    );
+    expect(openedDetail()).toBe(false);
+  });
+
+  it.each(["{Enter}", " "])("opens the detail on %s from the focused row", async (key) => {
+    const user = userEvent.setup();
+    renderWithClient(<RequestsPage />);
+
+    screen.getByRole("button", { name: /^Open request details/ }).focus();
+    await user.keyboard(key);
+
+    expect(openedDetail()).toBe(true);
+    expect(approveMutate).not.toHaveBeenCalled();
+  });
+
+  it("leaves other keys on a row button alone", async () => {
+    const prevented: boolean[] = [];
+    const record = (e: KeyboardEvent) => prevented.push(e.defaultPrevented);
+    document.addEventListener("keydown", record);
+    try {
+      const user = userEvent.setup();
+      renderWithClient(<RequestsPage />);
+
+      screen.getByRole("button", { name: "Approve" }).focus();
+      await user.keyboard("{Escape}");
+
+      expect(prevented).toEqual([false]);
+      expect(openedDetail()).toBe(false);
+      expect(approveMutate).not.toHaveBeenCalled();
+    } finally {
+      document.removeEventListener("keydown", record);
+    }
+  });
+
+  it("opens the detail on a row click but not on an action click", async () => {
+    const user = userEvent.setup();
+    renderWithClient(<RequestsPage />);
+
+    await user.click(screen.getByRole("button", { name: "Approve" }));
+    expect(approveMutate).toHaveBeenCalledTimes(1);
+    expect(openedDetail()).toBe(false);
+
+    await user.click(screen.getByText("Dana Holt"));
+    expect(openedDetail()).toBe(true);
+  });
+});
+
 describe("RequestsPage whole Request", () => {
   // Thu 29 Oct – Tue 3 Nov 2026: a weekend and a month edge inside one Request.
   const crossing = () => [

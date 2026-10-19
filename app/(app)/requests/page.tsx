@@ -311,6 +311,7 @@ export default function RequestsPage() {
                     className="hover:bg-muted/50 cursor-pointer"
                     onClick={() => openVacation(r.id)}
                     onKeyDown={(e) => {
+                      if (e.target !== e.currentTarget) return;
                       if (e.key === "Enter" || e.key === " ") {
                         e.preventDefault();
                         openVacation(r.id);
