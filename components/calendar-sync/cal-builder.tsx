@@ -21,6 +21,7 @@ import {
   GROUP_EVENTS_META,
   builderToInput,
   carriesSomething,
+  liveTeamIds,
   swatch,
   TYPE_META,
   TYPE_ORDER,
@@ -240,7 +241,9 @@ export function CalBuilder({
 
   const patch = (p: Partial<BuilderConfig>) => setConfig((c) => ({ ...c, ...p }));
   const nameError = touched && !config.name.trim();
-  const teamError = touched && config.scope === "TEAM" && config.teamIds.length === 0;
+  const liveTeams = liveTeamIds(config.teamIds, groups);
+  const noLiveTeam = config.scope === "TEAM" && liveTeams.length === 0;
+  const teamError = touched && noLiveTeam;
 
   const toggleType = (id: CalendarRecordType) =>
     patch({
@@ -254,7 +257,8 @@ export function CalBuilder({
     const has = config.teamIds.includes(id);
     patch({ teamIds: has ? config.teamIds.filter((x) => x !== id) : [...config.teamIds, id] });
   };
-  const allTeams = groups.length > 0 && groups.every((g) => config.teamIds.includes(g.id));
+  const allTeams = groups.length > 0 && liveTeams.length === groups.length;
+  const formerTeamIds = config.teamIds.filter((id) => !liveTeams.includes(id));
 
   const previewEntries = useMemo(
     () => buildPreviewEntries(config, vacations, currentUserId, monthCtx.year, monthCtx.month),
@@ -268,7 +272,7 @@ export function CalBuilder({
       pushToast(t.calSync.toasts.pickType, "danger");
       return;
     }
-    if (config.scope === "TEAM" && config.teamIds.length === 0) return;
+    if (noLiveTeam) return;
     setStep("loading");
     try {
       const input = builderToInput(config);
@@ -471,7 +475,13 @@ export function CalBuilder({
                   </span>
                   <button
                     type="button"
-                    onClick={() => patch({ teamIds: allTeams ? [] : groups.map((g) => g.id) })}
+                    onClick={() =>
+                      patch({
+                        teamIds: allTeams
+                          ? formerTeamIds
+                          : [...formerTeamIds, ...groups.map((g) => g.id)],
+                      })
+                    }
                     className="text-[12.5px] font-semibold"
                     style={{ color: "var(--primary)", background: "none", border: "none" }}
                   >

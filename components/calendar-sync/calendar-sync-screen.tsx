@@ -20,7 +20,12 @@ import {
 } from "@/lib/api/queries";
 import { useSession } from "@/lib/auth-client";
 import { rememberConnectProvider } from "@/lib/calendar-sync/connect-callback";
-import { configToBuilder, newBuilderConfig, type BuilderConfig } from "@/lib/calendar-sync/meta";
+import {
+  configToBuilder,
+  liveTeamIds,
+  newBuilderConfig,
+  type BuilderConfig,
+} from "@/lib/calendar-sync/meta";
 import { useTranslation } from "@/lib/i18n/use-translation";
 import { CalBuilder, type MonthContext } from "./cal-builder";
 import { CalCard } from "./cal-card";
@@ -88,8 +93,8 @@ export function CalendarSyncScreen() {
   const vacations = vacationsQ.data ?? [];
 
   const teamsLabel = (config: CalendarSyncConfig): string => {
-    const ids = config.teamIds;
-    if (groups.length > 0 && ids.length === groups.length) return t.calSync.allTeams;
+    const ids = groupsQ.data ? liveTeamIds(config.teamIds, groups) : config.teamIds;
+    if (groups.length > 1 && ids.length === groups.length) return t.calSync.allTeams;
     if (ids.length > 1) return t.calSync.teamsCount(ids.length);
     if (ids.length === 1)
       return groups.find((g) => g.id === ids[0])?.groupName ?? t.calSync.oneTeam;
