@@ -36,6 +36,7 @@ import {
 } from "@/lib/attendance/self-service";
 import { buildTimeline, formatBusinessDay, formatClockTime } from "@/lib/attendance/today";
 import { useNow } from "@/lib/attendance/use-now";
+import { localDayOf } from "@/lib/calendar/month-grid";
 import { useTranslation } from "@/lib/i18n/use-translation";
 import { anySessionLocated } from "@/lib/attendance/location";
 import { cn } from "@/lib/utils";
@@ -472,9 +473,9 @@ export function MyAttendanceScreen({ linkedDate = null }: { linkedDate?: string 
 
   const state = stateQuery.data;
   const organizationId = state?.organizationId ?? null;
-  // The organization's day, not the browser's; the fallback only covers the
-  // first render, before the clock's read has answered.
-  const today = stateQuery.data?.businessDate ?? new Date().toISOString().slice(0, 10);
+  // The organization's day; the browser's own day only until the clock's read
+  // answers, or when it names none.
+  const today = stateQuery.data?.businessDate ?? localDayOf(new Date());
   // A linked `?date=` stays raw in state and is judged on every render: until
   // the clock's read answers, `today` is the browser's date, which can trail
   // the organization's by a day.

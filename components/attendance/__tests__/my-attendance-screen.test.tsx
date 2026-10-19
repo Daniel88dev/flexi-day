@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { screen } from "@testing-library/react";
 import { NO_SESSION_LOCATION, renderWithClient, withClient } from "@/lib/test-utils";
 import userEvent from "@testing-library/user-event";
@@ -403,6 +403,29 @@ describe("MyAttendanceScreen", () => {
 
       await userEvent.click(screen.getByRole("button", { name: "Today" }));
       expect(screen.getByText("Nothing recorded today yet.")).toBeInTheDocument();
+    });
+
+    describe("before the clock's read answers", () => {
+      beforeEach(() => {
+        query.data = undefined;
+        query.isPending = true;
+        vi.useFakeTimers({ toFake: ["Date"] });
+        // 20:00 on 13 Oct in Los Angeles, already 14 Oct in UTC.
+        vi.setSystemTime(new Date(2026, 9, 13, 20));
+      });
+
+      afterEach(() => {
+        vi.useRealTimers();
+      });
+
+      it("heads the local day and steps back from it", async () => {
+        renderWithClient(<MyAttendanceScreen />);
+
+        expect(screen.getAllByText("Tuesday, October 13").length).toBeGreaterThan(0);
+
+        await userEvent.click(screen.getByRole("button", { name: "Previous" }));
+        expect(screen.getAllByText("Monday, October 12").length).toBeGreaterThan(0);
+      });
     });
 
     it("opens on the earlier day a link names, and returns to today", async () => {

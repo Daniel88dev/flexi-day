@@ -27,6 +27,11 @@ export function isoDate(year: number, month: number, day: number): IsoDate {
   return fromUtc(Date.UTC(year, month - 1, day));
 }
 
+/** The calendar day `instant` falls on in the browser's zone: the "today" a person means. */
+export function localDayOf(instant: Date): IsoDate {
+  return isoDate(instant.getFullYear(), instant.getMonth() + 1, instant.getDate());
+}
+
 function mondayIndex(date: IsoDate): number {
   return (new Date(toUtc(date)).getUTCDay() + 6) % 7;
 }

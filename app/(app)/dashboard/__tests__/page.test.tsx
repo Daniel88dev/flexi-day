@@ -25,6 +25,7 @@ const useVacationCalendarSpy = vi.fn();
 const useBankHolidaysMultiSpy = vi.fn();
 const useBirthdaysSpy = vi.fn();
 const useGroupEventsSpy = vi.fn();
+const useDashboardSummarySpy = vi.fn();
 
 let bankHolidayRows: BankHoliday[] = [];
 
@@ -149,7 +150,10 @@ vi.mock("@/lib/api/queries", () => ({
   },
   useGroupUsers: () => ({ data: [], isLoading: false, error: null }),
 
-  useDashboardSummary: () => ({ data: undefined, isLoading: false, error: null }),
+  useDashboardSummary: (today: unknown) => {
+    useDashboardSummarySpy(today);
+    return { data: undefined, isLoading: false, error: null };
+  },
   useMySettings: () => ({ data: settings, isLoading: false, error: null }),
   useReportScope: () => ({
     data: {
@@ -254,6 +258,37 @@ describe("DashboardPage scope switch", () => {
 
     expect(screen.getByTitle("Dana Holt · Vacation")).toBeInTheDocument();
     expect(screen.getByTitle("Dana Holt · Vacation · Pending")).toHaveTextContent("Dana ½");
+  });
+});
+
+describe("DashboardPage today", () => {
+  beforeEach(() => {
+    settings = { ...DEFAULT_SETTINGS, dashboardScope: "GROUP", dashboardGroupId: "g-1" };
+    vi.useFakeTimers({ toFake: ["Date"] });
+    // 20:00 on 13 Oct in Los Angeles, already 14 Oct in UTC.
+    vi.setSystemTime(new Date(2026, 9, 13, 20));
+    vacations = [day("v-1", dana, "2026-10-13"), day("v-2", sam, "2026-10-14")];
+    useDashboardSummarySpy.mockClear();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    vacations = [day("v-1", dana, inVisibleMonth(17))];
+  });
+
+  it("lists who is out on the local day, not the UTC date", () => {
+    renderWithClient(<DashboardPage />);
+
+    const outToday = screen.getByRole("heading", { name: "Out today" }).closest("div.rounded-2xl");
+    expect(outToday).not.toBeNull();
+    expect(within(outToday as HTMLElement).getByText("Dana Holt")).toBeInTheDocument();
+    expect(within(outToday as HTMLElement).queryByText("Sam Ruiz")).toBeNull();
+  });
+
+  it("asks for the summary counts of the local day", () => {
+    renderWithClient(<DashboardPage />);
+
+    expect(useDashboardSummarySpy).toHaveBeenLastCalledWith("2026-10-13");
   });
 });
 

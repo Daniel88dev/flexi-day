@@ -46,11 +46,7 @@ import { useAttachmentUploads } from "@/lib/attachments/use-attachment-uploads";
 import { useTranslation } from "@/lib/i18n/use-translation";
 import { useSession } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
-import { formatIsoDate, toUtc } from "@/lib/calendar/month-grid";
-
-function todayIso() {
-  return new Date().toISOString().slice(0, 10);
-}
+import { formatIsoDate, localDayOf, toUtc } from "@/lib/calendar/month-grid";
 
 /** The window the backend accepts: this calendar year through the end of the next. */
 function bookableWindow(): { min: string; max: string } {
@@ -93,7 +89,7 @@ export function NewRequestDialog({
   const groupsQuery = useGroups();
   const createVacation = useCreateVacation();
 
-  const baseDate = initialDate ?? todayIso();
+  const baseDate = initialDate ?? localDayOf(new Date());
   const baseEndDate = initialEndDate && initialEndDate > baseDate ? initialEndDate : baseDate;
   const controlled = open !== undefined;
   const [internalOpen, setInternalOpen] = useState(false);

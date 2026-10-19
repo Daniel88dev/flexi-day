@@ -67,7 +67,7 @@ import {
 } from "@/lib/group-events/sheet-store";
 import { calendarLanding, withoutCalendarLanding } from "@/lib/group-events/calendar-link";
 import { DayContextMenu } from "@/components/group-events/day-context-menu";
-import { gridRange, gridYears, isoDate } from "@/lib/calendar/month-grid";
+import { gridRange, gridYears, localDayOf } from "@/lib/calendar/month-grid";
 import type { DateRange } from "@/lib/calendar/drag-range";
 import { NewRequestDialog } from "@/components/new-request-dialog";
 import { useOpenVacationDetail } from "@/lib/vacations/use-vacation-detail";
@@ -138,7 +138,9 @@ function Dashboard() {
   }, [landingKey, router, pathname, searchParams]);
 
   const groupsQuery = useGroups();
-  const summaryQuery = useDashboardSummary();
+  const today = new Date();
+  const todayDate = localDayOf(today);
+  const summaryQuery = useDashboardSummary(todayDate);
   const settingsQuery = useMySettings();
   const reportScopeQuery = useReportScope();
   const session = useSession();
@@ -248,10 +250,7 @@ function Dashboard() {
     return [...groupConsecutiveByUserType(live), ...holidayRanges];
   }, [calendarVacations, holidayRanges]);
 
-  const today = new Date();
   const todayMatches = today.getFullYear() === year && today.getMonth() + 1 === month;
-  const todayDay = todayMatches ? today.getDate() : null;
-  const todayDate = isoDate(today.getFullYear(), today.getMonth() + 1, today.getDate());
 
   function shiftMonth(delta: number) {
     let nm = month + delta;
@@ -523,7 +522,10 @@ function Dashboard() {
 
         <aside className="flex flex-col gap-4">
           <ApprovalsWidget />
-          <OutTodayWidget vacations={outTodayQuery.data ?? []} todayDay={todayDay} />
+          <OutTodayWidget
+            vacations={outTodayQuery.data ?? []}
+            today={todayMatches ? todayDate : null}
+          />
           <BalanceWidget year={year} />
         </aside>
       </div>

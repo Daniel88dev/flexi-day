@@ -1,4 +1,4 @@
-import { describe, expect, it, vi, beforeEach } from "vitest";
+import { afterEach, describe, expect, it, vi, beforeEach } from "vitest";
 import { screen, fireEvent, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -142,6 +142,23 @@ describe("NewRequestDialog", () => {
 
     expect(screen.getByLabelText("From")).toHaveValue("2026-07-15");
     expect(screen.getByLabelText("To")).toHaveValue("2026-07-15");
+  });
+
+  describe("without a preset day", () => {
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it("seeds From and To with the local day once the UTC date has moved on", () => {
+      vi.useFakeTimers({ toFake: ["Date"] });
+      // 20:00 on 13 Oct in Los Angeles, already 14 Oct in UTC.
+      vi.setSystemTime(new Date(2026, 9, 13, 20));
+
+      renderWithClient(<NewRequestDialog open onOpenChange={() => {}} />);
+
+      expect(screen.getByLabelText("From")).toHaveValue("2026-10-13");
+      expect(screen.getByLabelText("To")).toHaveValue("2026-10-13");
+    });
   });
 
   it("seeds To with initialEndDate when opened with a preset range", () => {
