@@ -33,7 +33,7 @@ function vac(
 }
 
 describe("groupVacationRequests", () => {
-  it("collapses a contiguous same-type run into one range", () => {
+  it("collapses the days of one Request into one range", () => {
     const groups = groupVacationRequests([
       vac({ id: "a", requestedDay: "2026-08-17" }),
       vac({ id: "b", requestedDay: "2026-08-18" }),
@@ -70,27 +70,57 @@ describe("groupVacationRequests", () => {
     expect(groups[0]).toMatchObject({ halfDay: true, dayCount: 2 });
   });
 
-  it("splits on a calendar gap", () => {
+  it("keeps a Request across a weekend and a month edge as one group with every id", () => {
     const groups = groupVacationRequests([
-      vac({ id: "a", requestedDay: "2026-08-17" }),
-      vac({ id: "b", requestedDay: "2026-08-18" }),
-      vac({ id: "c", requestedDay: "2026-08-20" }),
+      vac({ id: "a", requestedDay: "2026-10-29" }),
+      vac({ id: "b", requestedDay: "2026-10-30" }),
+      vac({ id: "c", requestedDay: "2026-11-02" }),
+      vac({ id: "d", requestedDay: "2026-11-03" }),
     ]);
 
-    expect(groups.map((g) => [g.from, g.to])).toEqual([
-      ["2026-08-17", "2026-08-18"],
-      ["2026-08-20", "2026-08-20"],
+    expect(groups).toHaveLength(1);
+    expect(groups[0]).toMatchObject({
+      id: "a",
+      from: "2026-10-29",
+      to: "2026-11-03",
+      dayCount: 4,
+      vacationIds: ["a", "b", "c", "d"],
+    });
+  });
+
+  it("keeps two Requests on adjacent days as two groups", () => {
+    const groups = groupVacationRequests([
+      vac({ id: "a", requestedDay: "2026-08-17", requestId: "r-1" }),
+      vac({ id: "b", requestedDay: "2026-08-18", requestId: "r-1" }),
+      vac({ id: "c", requestedDay: "2026-08-19", requestId: "r-2" }),
+    ]);
+
+    expect(groups.map((g) => g.vacationIds)).toEqual([["a", "b"], ["c"]]);
+  });
+
+  it("splits a partly approved Request into one group per state", () => {
+    const approvedAt = "2026-10-20T09:00:00.000Z";
+    const groups = groupVacationRequests([
+      vac({ id: "a", requestedDay: "2026-10-29", approvedAt }),
+      vac({ id: "b", requestedDay: "2026-10-30" }),
+      vac({ id: "c", requestedDay: "2026-11-02", approvedAt }),
+      vac({ id: "d", requestedDay: "2026-11-03" }),
+    ]);
+
+    expect(groups.map((g) => [g.status, g.vacationIds])).toEqual([
+      ["approved", ["a", "c"]],
+      ["pending", ["b", "d"]],
     ]);
   });
 
-  it("does not merge across status, so a partially-approved request splits", () => {
+  it("orders a Request's days however the rows arrive", () => {
     const groups = groupVacationRequests([
-      vac({ id: "a", requestedDay: "2026-08-17", approvedAt: "2026-08-01T09:00:00.000Z" }),
-      vac({ id: "b", requestedDay: "2026-08-18" }),
+      vac({ id: "c", requestedDay: "2026-11-02" }),
+      vac({ id: "a", requestedDay: "2026-10-29" }),
     ]);
 
-    expect(groups).toHaveLength(2);
-    expect(groups.map((g) => g.status)).toEqual(["approved", "pending"]);
+    expect(groups[0]).toMatchObject({ id: "a", from: "2026-10-29", to: "2026-11-02" });
+    expect(groups[0].vacationIds).toEqual(["a", "c"]);
   });
 
   it("does not merge different leave types on adjacent days", () => {

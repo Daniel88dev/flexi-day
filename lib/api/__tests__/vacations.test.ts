@@ -105,6 +105,15 @@ describe("vacations api", () => {
     expect(apiMock).toHaveBeenCalledWith("/api/vacation?year=2026&month=8");
   });
 
+  it("listVacations asks for whole Requests only when asked", async () => {
+    await listVacations({ year: 2026, month: 10, wholeRequests: true });
+    expect(apiMock).toHaveBeenCalledWith("/api/vacation?year=2026&month=10&wholeRequests=true");
+
+    apiMock.mockClear();
+    await listVacations({ year: 2026, month: 10 });
+    expect(apiMock).toHaveBeenCalledWith("/api/vacation?year=2026&month=10");
+  });
+
   it("createVacation passes on-behalf fields through untouched", async () => {
     await createVacation({
       groupId: "g-1",

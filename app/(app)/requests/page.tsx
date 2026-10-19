@@ -136,13 +136,14 @@ export default function RequestsPage() {
         viewableGroups[0]?.groupId ??
         null);
 
-  // Cancelled rows stay visible here (with who cancelled them on the detail);
-  // the calendar and dashboard keep their live-rows-only view.
+  // Cancelled rows and other-month days of a Request show only here; the
+  // calendar and dashboard keep their month-only, live-rows view.
   const vacationsQuery = useVacations({
     year,
     month,
     groupId: scopeGroupId,
     includeCancelled: true,
+    wholeRequests: true,
   });
   const approve = useApproveVacations();
   const reject = useRejectVacations();

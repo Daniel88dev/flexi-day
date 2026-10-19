@@ -14,6 +14,8 @@ export type ListVacationsParams = {
   groupId?: string | null;
   /** Include cancelled (soft-deleted) rows; the requests view sets this. */
   includeCancelled?: boolean;
+  /** Also return the other-month rows of every Request with a row in the month. */
+  wholeRequests?: boolean;
 };
 
 export function listVacations(params: ListVacationsParams = {}): Promise<VacationListItem[]> {
@@ -22,6 +24,7 @@ export function listVacations(params: ListVacationsParams = {}): Promise<Vacatio
   if (params.month !== undefined) q.set("month", String(params.month));
   if (params.groupId) q.set("groupId", params.groupId);
   if (params.includeCancelled) q.set("includeCancelled", "true");
+  if (params.wholeRequests) q.set("wholeRequests", "true");
   const qs = q.toString();
   return api<VacationListItem[]>(`/api/vacation${qs ? `?${qs}` : ""}`);
 }
