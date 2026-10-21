@@ -117,6 +117,7 @@ function WaitingOnYou({ query }: { query: ListQuery }) {
   const { t } = useTranslation();
   const approve = useApproveVacations();
   const reject = useRejectVacations();
+  const { openVacation } = useOpenVacationDetail();
   const items = query.data ?? [];
   const isMutating = approve.isPending || reject.isPending;
 
@@ -128,7 +129,13 @@ function WaitingOnYou({ query }: { query: ListQuery }) {
     <div className="flex flex-col gap-3.5">
       {items.map((a) => {
         const typeLabel = recordTypeLabel(t.calendarRecordTypes, a.vacationType);
-        const rowKey = a.vacationIds[0] ?? `${a.user.id}-${a.from}`;
+        const firstId = a.vacationIds[0];
+        const rowKey = firstId ?? `${a.user.id}-${a.from}`;
+        const meta = t.widgets.approvals.meta(
+          typeLabel,
+          formatRange(a.from, a.to, t.calendar.monthsShort),
+          a.businessDays
+        );
         return (
           <div key={rowKey} className="flex items-start gap-3">
             <AvatarBubble
@@ -138,14 +145,18 @@ function WaitingOnYou({ query }: { query: ListQuery }) {
               name={a.user.name}
             />
             <div className="min-w-0 flex-1">
-              <div className="text-[14.5px] font-semibold">{a.user.name}</div>
-              <div className="mb-2 text-[12.5px]" style={{ color: "var(--text-faint)" }}>
-                {t.widgets.approvals.meta(
-                  typeLabel,
-                  formatRange(a.from, a.to, t.calendar.monthsShort),
-                  a.businessDays
-                )}
-              </div>
+              <button
+                type="button"
+                onClick={() => firstId && openVacation(firstId)}
+                disabled={!firstId}
+                aria-label={t.calendar.openRequest(`${a.user.name} · ${meta}`)}
+                className="-mx-1.5 -mt-0.5 mb-1.5 flex w-[calc(100%+--spacing(3))] flex-col rounded-lg px-1.5 py-0.5 text-left transition-colors outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] enabled:hover:bg-[var(--surface-2)]"
+              >
+                <span className="text-[14.5px] font-semibold">{a.user.name}</span>
+                <span className="text-[12.5px]" style={{ color: "var(--text-faint)" }}>
+                  {meta}
+                </span>
+              </button>
               <div className="flex gap-2">
                 <button
                   type="button"

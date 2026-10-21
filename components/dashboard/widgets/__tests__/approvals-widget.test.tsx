@@ -110,6 +110,49 @@ describe("ApprovalsWidget", () => {
       expect(rejectMutate).toHaveBeenCalledWith({ ids: ["v-1", "v-2"] });
     });
 
+    it("opens the request detail when the requester's name is clicked", async () => {
+      const user = userEvent.setup();
+      renderWithClient(<ApprovalsWidget />);
+      await user.click(screen.getByText("Dana Holt"));
+      expect(replaceSpy).toHaveBeenCalledWith("/dashboard/?vacationId=v-1", { scroll: false });
+    });
+
+    it("opens the request detail from the meta line", async () => {
+      const user = userEvent.setup();
+      renderWithClient(<ApprovalsWidget />);
+      await user.click(screen.getByText(/Jun 22–23/));
+      expect(replaceSpy).toHaveBeenCalledWith("/dashboard/?vacationId=v-1", { scroll: false });
+    });
+
+    it.each(["Approve", "Decline"])("does not open the request detail on %s", async (label) => {
+      const user = userEvent.setup();
+      renderWithClient(<ApprovalsWidget />);
+      await user.click(screen.getByRole("button", { name: new RegExp(label) }));
+      expect(replaceSpy).not.toHaveBeenCalled();
+    });
+
+    it.each(["{Enter}", " "])("opens the request detail from the keyboard with %s", async (key) => {
+      const user = userEvent.setup();
+      renderWithClient(<ApprovalsWidget />);
+      const details = screen.getByRole("button", {
+        name: "Open request details: Dana Holt · Vacation · Jun 22–23 · 2 days",
+      });
+      await user.tab();
+      expect(details).toHaveFocus();
+      await user.keyboard(key);
+      expect(replaceSpy).toHaveBeenCalledWith("/dashboard/?vacationId=v-1", { scroll: false });
+    });
+
+    it("does not open anything for a row without a vacation id", async () => {
+      approvals = [{ ...sample[0], vacationIds: [] }];
+      const user = userEvent.setup();
+      renderWithClient(<ApprovalsWidget />);
+      const details = screen.getByRole("button", { name: /Open request details: Dana Holt/ });
+      expect(details).toBeDisabled();
+      await user.click(screen.getByText("Dana Holt"));
+      expect(replaceSpy).not.toHaveBeenCalled();
+    });
+
     it("shows both sections, each with its own empty state", () => {
       approvals = [];
       renderWithClient(<ApprovalsWidget />);
