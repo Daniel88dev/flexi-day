@@ -16,7 +16,6 @@ import {
   useGroups,
   useRejectVacations,
   useReportScope,
-  useVacations,
 } from "@/lib/api/queries";
 import {
   Select,
@@ -37,6 +36,21 @@ import { dayLengthLabel } from "@/lib/vacations/day-length";
 import { useOpenVacationDetail } from "@/lib/vacations/use-vacation-detail";
 import { vacationActionErrorMessage, type VacationAction } from "@/lib/vacations/action-error";
 import { cn } from "@/lib/utils";
+import { PrototypeSwitcher, useVariant } from "@/components/prototype-switcher";
+import {
+  MonthStrip,
+  StatePanel,
+  VARIANT_NAMES,
+  VARIANTS,
+  VariantA,
+  VariantB,
+  VariantC,
+  VariantDLabel,
+  defaultSelection,
+  selectionLabel,
+  useMonthsVacations,
+  type YearMonth,
+} from "./month-selector-prototype";
 import { formatIsoDate } from "@/lib/calendar/month-grid";
 import { useTranslation } from "@/lib/i18n/use-translation";
 import { recordTypeLabel } from "@/lib/i18n/record-type-label";
@@ -66,51 +80,10 @@ function formatDateRange(from: string, to: string, locale: string) {
   return from === to ? start : `${start} – ${formatDate(to, locale)}`;
 }
 
-function MonthPicker({
-  year,
-  month,
-  onChange,
-  months,
-}: {
-  year: number;
-  month: number;
-  onChange: (y: number, m: number) => void;
-  months: string[];
-}) {
-  return (
-    <div className="flex items-center gap-1">
-      <Button
-        variant="outline"
-        size="icon-sm"
-        onClick={() => {
-          if (month === 1) onChange(year - 1, 12);
-          else onChange(year, month - 1);
-        }}
-      >
-        ‹
-      </Button>
-      <span className="text-foreground/80 font-heading w-[110px] text-center text-sm font-medium">
-        {months[month - 1]} {year}
-      </span>
-      <Button
-        variant="outline"
-        size="icon-sm"
-        onClick={() => {
-          if (month === 12) onChange(year + 1, 1);
-          else onChange(year, month + 1);
-        }}
-      >
-        ›
-      </Button>
-    </div>
-  );
-}
-
 export default function RequestsPage() {
   const { t } = useTranslation();
-  const now = new Date();
-  const [year, setYear] = useState(now.getFullYear());
-  const [month, setMonth] = useState(now.getMonth() + 1);
+  const variant = useVariant(VARIANTS);
+  const [months, setMonthsRaw] = useState<YearMonth[]>(defaultSelection);
   const [filter, setFilter] = useState<Filter>("all");
 
   // The detail dialog lives in the app layout, keyed off `?vacationId=` — the
@@ -138,13 +111,7 @@ export default function RequestsPage() {
 
   // Cancelled rows and other-month days of a Request show only here; the
   // calendar and dashboard keep their month-only, live-rows view.
-  const vacationsQuery = useVacations({
-    year,
-    month,
-    groupId: scopeGroupId,
-    includeCancelled: true,
-    wholeRequests: true,
-  });
+  const vacationsQuery = useMonthsVacations(months, scopeGroupId);
   const approve = useApproveVacations();
   const reject = useRejectVacations();
   const cancel = useCancelVacations();
@@ -194,12 +161,21 @@ export default function RequestsPage() {
     return requests.filter((r) => r.status === filter);
   }, [requests, filter, userId]);
 
+  function setMonths(ms: YearMonth[]) {
+    setMonthsRaw(ms);
+    setActionError(null);
+  }
+
   return (
     <div className="space-y-6">
+      <StatePanel value={months} />
+      <PrototypeSwitcher variants={VARIANTS} names={VARIANT_NAMES} />
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="font-heading text-2xl font-bold">{t.requests.title}</h1>
-          <p className="text-muted-foreground mt-1 text-sm">{t.requests.subtitle}</p>
+          <p className="text-muted-foreground mt-1 text-sm">
+            Review and approve vacation requests for the selected months.
+          </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {viewableGroups.length > 0 ? (
@@ -223,18 +199,14 @@ export default function RequestsPage() {
               </SelectContent>
             </Select>
           ) : null}
-          <MonthPicker
-            year={year}
-            month={month}
-            months={t.calendar.monthsShort}
-            onChange={(y, m) => {
-              setYear(y);
-              setMonth(m);
-              setActionError(null);
-            }}
-          />
+          {variant === "A" ? <VariantA value={months} onChange={setMonths} /> : null}
+          {variant === "B" ? <VariantB value={months} onChange={setMonths} /> : null}
+          {variant === "C" ? <VariantC value={months} onChange={setMonths} /> : null}
+          {variant === "D" ? <VariantDLabel value={months} /> : null}
         </div>
       </div>
+
+      {variant === "D" ? <MonthStrip value={months} onChange={setMonths} /> : null}
 
       <div className="border-border flex flex-wrap gap-1 border-b pb-0">
         {(["all", "mine", "pending", "approved", "rejected", "cancelled"] as Filter[]).map((f) => (
@@ -280,9 +252,11 @@ export default function RequestsPage() {
         </div>
       ) : filtered.length === 0 ? (
         <div className="text-muted-foreground py-16 text-center text-sm">
-          {filter !== "all"
-            ? t.requests.emptyFiltered(t.requests.filters[filter])
-            : `${t.requests.empty}.`}
+          {months.length === 0
+            ? "Pick at least one month."
+            : filter !== "all"
+              ? `No ${t.requests.filters[filter].toLowerCase()} requests in ${selectionLabel(months)}.`
+              : `No requests in ${selectionLabel(months)}.`}
         </div>
       ) : (
         <div className="border-border overflow-hidden rounded-lg border">
