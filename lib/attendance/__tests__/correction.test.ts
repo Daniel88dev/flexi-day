@@ -89,8 +89,8 @@ describe("sessionDraft", () => {
 });
 
 describe("toPatch", () => {
-  const draft = (overrides: Partial<SessionDraft> = {}): SessionDraft => ({
-    ...sessionDraft(session(), PRAGUE),
+  const draft = (overrides: Partial<SessionDraft> = {}, base = session()): SessionDraft => ({
+    ...sessionDraft(base, PRAGUE),
     ...overrides,
   });
 
@@ -121,6 +121,46 @@ describe("toPatch", () => {
 
   it("clears the end when the field is emptied", () => {
     expect(toPatch(session(), draft({ endedAt: "" }), PRAGUE)).toEqual({ endedAt: null });
+  });
+
+  describe("on a session clocked to the second", () => {
+    // 09:11:37.482 to 01:11:37.482 the next morning in Prague, as the sweep leaves it.
+    const clocked = session({
+      startedAt: "2026-09-09T07:11:37.482Z",
+      endedAt: "2026-09-09T23:11:37.482Z",
+      closedBy: "SWEEP",
+    });
+    it("sends nothing when no field changed", () => {
+      expect(toPatch(clocked, draft({}, clocked), PRAGUE)).toBeNull();
+    });
+
+    it("leaves the clock-in out when only the clock-out changed", () => {
+      expect(toPatch(clocked, draft({ endedAt: "19:11" }, clocked), PRAGUE)).toEqual({
+        endedAt: "2026-09-09T17:11:00.000Z",
+      });
+    });
+
+    it("sends a clock-out read as the next morning on its minute", () => {
+      expect(toPatch(clocked, draft({ endedAt: "02:00" }, clocked), PRAGUE)).toEqual({
+        endedAt: "2026-09-10T00:00:00.000Z",
+      });
+    });
+
+    it("sends the clock-in on its minute when it changed", () => {
+      expect(toPatch(clocked, draft({ startedAt: "09:00" }, clocked), PRAGUE)).toEqual({
+        startedAt: "2026-09-09T07:00:00.000Z",
+      });
+    });
+
+    it("sends an untouched clock-out the moved clock-in puts on another day", () => {
+      const daytime = session({ endedAt: "2026-09-09T15:10:12.000Z" });
+
+      // A 17:10 clock-out under an 18:00 clock-in reads as the next morning.
+      expect(toPatch(daytime, draft({ startedAt: "18:00" }, daytime), PRAGUE)).toEqual({
+        startedAt: "2026-09-09T16:00:00.000Z",
+        endedAt: "2026-09-10T15:10:00.000Z",
+      });
+    });
   });
 });
 
@@ -272,6 +312,32 @@ describe("toBreakPatch", () => {
     expect(toBreakPatch(entry, overnight, "2026-09-09", PRAGUE)).toEqual({
       startedAt: "2026-09-09T23:00:00.000Z",
       endedAt: "2026-09-09T23:30:00.000Z",
+    });
+  });
+
+  describe("on a break clocked to the second", () => {
+    // 12:00:42.917 to 12:30:05.300 in Prague.
+    const clocked: AttendanceBreak = {
+      ...entry,
+      startedAt: "2026-09-09T10:00:42.917Z",
+      endedAt: "2026-09-09T10:30:05.300Z",
+    };
+
+    it("sends nothing when neither end changed", () => {
+      expect(toBreakPatch(clocked, draft("12:00", "12:30"), "2026-09-09", PRAGUE)).toBeNull();
+    });
+
+    it("leaves the start out when only the end changed", () => {
+      expect(toBreakPatch(clocked, draft("12:00", "12:45"), "2026-09-09", PRAGUE)).toEqual({
+        endedAt: "2026-09-09T10:45:00.000Z",
+      });
+    });
+
+    it("leaves a start alone that shares its minute with the clock-in", () => {
+      const early: AttendanceBreak = { ...clocked, startedAt: "2026-09-09T06:05:50.000Z" };
+      expect(toBreakPatch(early, draft("08:05", "12:45"), "2026-09-09", PRAGUE)).toEqual({
+        endedAt: "2026-09-09T10:45:00.000Z",
+      });
     });
   });
 

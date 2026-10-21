@@ -331,8 +331,11 @@ export const correctionErrors = (
   return { ...errors, ...breakErrors(resolved.breaks, resolved) };
 };
 
+// The form holds only minutes, so a clocked time's seconds must not read as an edit.
+const epochMinute = (iso: string) => Math.floor(Date.parse(iso) / 60_000);
+
 const changed = (next: string | null, current: string | null): boolean =>
-  next === null ? current !== null : current === null || next !== new Date(current).toISOString();
+  next === null ? current !== null : current === null || epochMinute(next) !== epochMinute(current);
 
 /**
  * What actually has to be sent for the session, or null when nothing moved.

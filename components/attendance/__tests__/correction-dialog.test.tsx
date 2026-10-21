@@ -448,6 +448,25 @@ describe("CorrectionDialog", () => {
     expect(correctBreak.mutateAsync).not.toHaveBeenCalled();
   });
 
+  it("leaves a clocked clock-in out of the patch when only the clock-out moved", async () => {
+    const user = userEvent.setup();
+    day.data = answer([
+      session({ startedAt: "2026-09-09T06:05:37.482Z", endedAt: "2026-09-09T15:10:12.000Z" }),
+    ]);
+    open();
+
+    await user.clear(screen.getByLabelText("Clock out"));
+    await user.type(screen.getByLabelText("Clock out"), "16:45");
+    await user.click(screen.getByRole("button", { name: "Save correction" }));
+
+    await waitFor(() => {
+      expect(correctSession.mutateAsync).toHaveBeenCalledWith({
+        sessionId: "session-1",
+        patch: { endedAt: "2026-09-09T14:45:00.000Z" },
+      });
+    });
+  });
+
   it("removes a break on its own", async () => {
     const user = userEvent.setup();
     day.data = answer([withBreak()]);
