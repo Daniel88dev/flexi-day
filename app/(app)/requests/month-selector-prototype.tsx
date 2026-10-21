@@ -371,29 +371,7 @@ export function VariantC({ value, onChange }: SelectorProps) {
   };
 
   return (
-    <div className="flex flex-col items-end gap-2">
-      <div className="bg-muted inline-flex rounded-lg p-0.5">
-        {(
-          [
-            ["this", "This month"],
-            ["next3", "Next 3 months"],
-            ["year", `${c.year}`],
-            ["custom", "Custom…"],
-          ] as const
-        ).map(([p, label]) => (
-          <button
-            key={p}
-            type="button"
-            onClick={() => pick(p)}
-            className={cn(
-              "rounded-md px-3 py-1 text-sm",
-              preset === p ? "bg-background font-medium shadow-sm" : "text-muted-foreground"
-            )}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
+    <div className="flex items-center gap-2">
       {preset === "custom" ? (
         <div className="flex items-center gap-2 text-sm">
           <span className="text-muted-foreground">From</span>
@@ -429,9 +407,29 @@ export function VariantC({ value, onChange }: SelectorProps) {
             </SelectContent>
           </Select>
         </div>
-      ) : (
-        <span className="text-muted-foreground text-xs">{selectionLabel(value)}</span>
-      )}
+      ) : null}
+      <div className="bg-muted inline-flex h-8 items-center rounded-4xl p-0.5">
+        {(
+          [
+            ["this", "This month"],
+            ["next3", "Next 3 months"],
+            ["year", `${c.year}`],
+            ["custom", "Custom…"],
+          ] as const
+        ).map(([p, label]) => (
+          <button
+            key={p}
+            type="button"
+            onClick={() => pick(p)}
+            className={cn(
+              "h-7 rounded-4xl px-3 text-sm",
+              preset === p ? "bg-background font-medium shadow-sm" : "text-muted-foreground"
+            )}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }
