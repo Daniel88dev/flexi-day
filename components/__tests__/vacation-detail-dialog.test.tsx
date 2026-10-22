@@ -15,6 +15,7 @@ const detail: VacationDetail = {
   rangeStart: "2026-08-12",
   rangeEnd: "2026-08-12",
   vacationIds: ["v-1"],
+  workingDays: 1,
   requestId: "r-1",
   startTime: null,
   endTime: null,
@@ -152,6 +153,60 @@ describe("VacationDetailDialog", () => {
 
     // The header description spans both days rather than a single date.
     expect(screen.getByText(/10 Aug 2026 –.*11 Aug 2026/)).toBeInTheDocument();
+  });
+
+  it("counts the working days of a full-day request from the backend", () => {
+    currentDetail = {
+      ...detail,
+      rangeStart: "2026-08-10",
+      rangeEnd: "2026-08-18",
+      vacationIds: ["v-1", "v-2", "v-3", "v-4", "v-5", "v-6", "v-7"],
+      workingDays: 7,
+    };
+    renderWithClient(<VacationDetailDialog vacationId="v-1" open onOpenChange={() => {}} />);
+
+    expect(screen.getByText("Full day · 7 working days")).toBeInTheDocument();
+  });
+
+  it("says working day in the singular for a one-day request", () => {
+    renderWithClient(<VacationDetailDialog vacationId="v-1" open onOpenChange={() => {}} />);
+
+    expect(screen.getByText("Full day · 1 working day")).toBeInTheDocument();
+  });
+
+  it("puts the count after the times of a timed full-day request", () => {
+    currentDetail = {
+      ...detail,
+      startTime: "08:00:00",
+      endTime: "16:00:00",
+      vacationIds: ["v-1", "v-2", "v-3"],
+      workingDays: 3,
+    };
+    renderWithClient(<VacationDetailDialog vacationId="v-1" open onOpenChange={() => {}} />);
+
+    expect(screen.getByText("08:00 – 16:00 · 3 working days")).toBeInTheDocument();
+  });
+
+  it("counts a multi-day half-day request in whole days", () => {
+    currentDetail = {
+      ...detail,
+      halfDay: true,
+      rangeStart: "2026-08-10",
+      rangeEnd: "2026-08-12",
+      vacationIds: ["v-1", "v-2", "v-3"],
+      workingDays: 3,
+    };
+    renderWithClient(<VacationDetailDialog vacationId="v-1" open onOpenChange={() => {}} />);
+
+    expect(screen.getByText("Half day · 3 days")).toBeInTheDocument();
+  });
+
+  it("shows a single half day without a count", () => {
+    currentDetail = { ...detail, halfDay: true };
+    renderWithClient(<VacationDetailDialog vacationId="v-1" open onOpenChange={() => {}} />);
+
+    expect(screen.getByText("Half day")).toBeInTheDocument();
+    expect(screen.queryByText(/working day|\d+ days?/)).not.toBeInTheDocument();
   });
 
   it("shows the stored day and its weekday", () => {

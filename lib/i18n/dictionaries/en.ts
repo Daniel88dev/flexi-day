@@ -792,6 +792,8 @@ export const en = {
     title: "Request details",
     fullDay: "Full day",
     halfDay: "Half day",
+    workingDays: (n: number) => `${n} ${n === 1 ? "working day" : "working days"}`,
+    days: (n: number) => `${n} ${n === 1 ? "day" : "days"}`,
     note: "Note",
     commentPlaceholder:
       "Write a comment, or add a reason for your decision — shown in the request history",

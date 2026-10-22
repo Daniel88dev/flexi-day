@@ -170,6 +170,8 @@ export type VacationDetail = VacationListItem & {
   rangeStart: IsoDate;
   rangeEnd: IsoDate;
   vacationIds: UUID[];
+  /** One per stored day, a half day included. Not the allowance, which charges a half day as 0.5. */
+  workingDays: number;
   /** The Request this day belongs to: every row from the same submission shares it. */
   requestId: UUID;
   history: VacationEvent[];
