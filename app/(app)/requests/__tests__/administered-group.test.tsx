@@ -64,7 +64,7 @@ vi.mock("@/lib/api/queries", () => ({
     isLoading: false,
     error: null,
   }),
-  useVacations: () => vacationsResult,
+  useVacationRange: () => vacationsResult,
   useReportScope: () => ({
     data: {
       groups: [
