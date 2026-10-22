@@ -204,6 +204,16 @@ export const qk = {
       includeCancelled ?? false,
       wholeRequests ?? false,
     ] as const,
+  vacationRange: (p: VacationRangeParams) =>
+    [
+      "vacations",
+      "range",
+      p.from,
+      p.to,
+      p.groupId ?? "mine",
+      p.includeCancelled ?? false,
+      p.wholeRequests ?? false,
+    ] as const,
   // Under the "vacations" prefix so every vacation invalidation refreshes it too.
   vacationCalendar: (year: number, month: number, groupId?: string | null) =>
     ["vacations", "calendar", year, month, groupId ?? "mine"] as const,
@@ -307,6 +317,15 @@ export function useVacations(
       params.includeCancelled,
       params.wholeRequests
     ),
+    queryFn: () => listVacations(params),
+  });
+}
+
+type VacationRangeParams = Extract<ListVacationsParams, { from: string }>;
+
+export function useVacationRange(params: VacationRangeParams) {
+  return useQuery({
+    queryKey: qk.vacationRange(params),
     queryFn: () => listVacations(params),
   });
 }

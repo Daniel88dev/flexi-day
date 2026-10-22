@@ -830,7 +830,7 @@ export const en = {
 
   requests: {
     title: "Requests",
-    subtitle: "Review and approve vacation requests for the selected month.",
+    subtitle: "Review and approve vacation requests for the selected months.",
     filters: {
       all: "All",
       mine: "Mine",
@@ -841,8 +841,20 @@ export const en = {
     },
     scopeLabel: "Show",
     scopeMine: "Only my requests",
-    empty: "No requests in this month",
-    emptyFiltered: (filter: string) => `No requests in this month (${filter}).`,
+    monthsLabel: "Months",
+    monthPresets: { this: "This month", next3: "Next 3 months", custom: "Custom…" },
+    rangeFrom: "From",
+    rangeTo: "to",
+    rangeFromLabel: "From",
+    rangeToLabel: "To",
+    empty: (range: string) => `No requests in ${range}`,
+    emptyFiltered: {
+      mine: (range: string) => `You have no requests in ${range}`,
+      pending: (range: string) => `No pending requests in ${range}`,
+      approved: (range: string) => `No approved requests in ${range}`,
+      rejected: (range: string) => `No rejected requests in ${range}`,
+      cancelled: (range: string) => `No cancelled requests in ${range}`,
+    },
     forbidden: "You don't have access to this group's requests.",
     loadFailed: "Could not load the requests. Try again in a moment.",
     columns: {

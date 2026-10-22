@@ -7,14 +7,17 @@ import type {
   VacationListItem,
 } from "./types";
 
+/** One month by `year`/`month` (the current one by default), or a half-open `from`/`to` range. */
+type ListVacationsWindow =
+  | { year?: number; month?: number; from?: never; to?: never }
+  | { from: string; to: string; year?: never; month?: never };
+
 /** With `groupId` the whole group's records come back instead of the caller's own. */
-export type ListVacationsParams = {
-  year?: number;
-  month?: number;
+export type ListVacationsParams = ListVacationsWindow & {
   groupId?: string | null;
   /** Include cancelled (soft-deleted) rows; the requests view sets this. */
   includeCancelled?: boolean;
-  /** Also return the other-month rows of every Request with a row in the month. */
+  /** Also return the out-of-window rows of every Request with a row in the window. */
   wholeRequests?: boolean;
 };
 
@@ -22,6 +25,8 @@ export function listVacations(params: ListVacationsParams = {}): Promise<Vacatio
   const q = new URLSearchParams();
   if (params.year !== undefined) q.set("year", String(params.year));
   if (params.month !== undefined) q.set("month", String(params.month));
+  if (params.from !== undefined) q.set("from", params.from);
+  if (params.to !== undefined) q.set("to", params.to);
   if (params.groupId) q.set("groupId", params.groupId);
   if (params.includeCancelled) q.set("includeCancelled", "true");
   if (params.wholeRequests) q.set("wholeRequests", "true");

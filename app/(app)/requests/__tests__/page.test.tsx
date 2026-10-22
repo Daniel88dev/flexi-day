@@ -1,8 +1,9 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
-import { screen, within } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import RequestsPage from "../page";
 import { renderWithClient } from "@/lib/test-utils";
+import { I18nProvider } from "@/lib/i18n/i18n-provider";
 import { ApiError } from "@/lib/api/client";
 import { AWAY_RECORD_TYPE, CalendarRecordType, type VacationListItem } from "@/lib/api/types";
 
@@ -67,7 +68,7 @@ vi.mock("@/lib/api/queries", () => ({
     isLoading: false,
     error: null,
   }),
-  useVacations: (params: unknown) => {
+  useVacationRange: (params: unknown) => {
     useVacationsSpy(params);
     return { data: listOverride ?? vacations, isLoading: false, error: null };
   },
@@ -465,5 +466,98 @@ describe("RequestsPage whole Request", () => {
     await user.click(screen.getByRole("button", { name: "Approve" }));
 
     expect(approveMutate).toHaveBeenCalledWith({ ids: ["w-2", "w-4"] }, expect.anything());
+  });
+});
+
+describe("RequestsPage month range", () => {
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date(2026, 9, 22, 12));
+    useVacationsSpy.mockClear();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    listOverride = null;
+    window.localStorage.removeItem("flexiday-locale");
+  });
+
+  it("opens on Next 3 months and lists them in one range request", () => {
+    renderWithClient(<RequestsPage />);
+
+    expect(screen.getByRole("tab", { name: "Next 3 months" })).toHaveAttribute(
+      "aria-selected",
+      "true"
+    );
+    expect(useVacationsSpy).toHaveBeenLastCalledWith({
+      from: "2026-10-01",
+      to: "2027-01-01",
+      groupId: "g-1",
+      includeCancelled: true,
+      wholeRequests: true,
+    });
+  });
+
+  it("asks for a custom range across a year boundary in one request", async () => {
+    const user = userEvent.setup();
+    renderWithClient(<RequestsPage />);
+
+    await user.click(screen.getByRole("tab", { name: "Custom…" }));
+    await user.click(screen.getByRole("combobox", { name: "From" }));
+    await user.click(screen.getByRole("option", { name: "Nov 2026" }));
+    await user.click(screen.getByRole("combobox", { name: "To" }));
+    await user.click(screen.getByRole("option", { name: "Jan 2027" }));
+
+    expect(useVacationsSpy).toHaveBeenLastCalledWith(
+      expect.objectContaining({ from: "2026-11-01", to: "2027-02-01" })
+    );
+  });
+
+  it("counts Requests from every month in the range on the tabs", () => {
+    listOverride = [
+      { ...day("m-1", "2026-10-14"), requestId: "r-oct" },
+      { ...day("m-2", "2026-12-03"), requestId: "r-dec" },
+    ];
+    renderWithClient(<RequestsPage />);
+
+    expect(screen.getByRole("button", { name: /^All/ })).toHaveTextContent("2");
+    expect(screen.getByRole("button", { name: /^Pending/ })).toHaveTextContent("2");
+  });
+
+  it("names the range in the empty and filtered-empty states", async () => {
+    listOverride = [];
+    const user = userEvent.setup();
+    renderWithClient(<RequestsPage />);
+
+    expect(
+      screen.getByText("Review and approve vacation requests for the selected months.")
+    ).toBeInTheDocument();
+    expect(screen.getByText("No requests in Oct – Dec 2026")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /^Pending/ }));
+    expect(screen.getByText("No pending requests in Oct – Dec 2026")).toBeInTheDocument();
+  });
+
+  it("names the range in Czech", async () => {
+    listOverride = [];
+    const user = userEvent.setup();
+    window.localStorage.setItem("flexiday-locale", "cs");
+    renderWithClient(
+      <I18nProvider>
+        <RequestsPage />
+      </I18nProvider>
+    );
+
+    await waitFor(() =>
+      expect(screen.getByText("V období Říj – Pro 2026 nejsou žádné žádosti")).toBeInTheDocument()
+    );
+    expect(
+      screen.getByText("Zkontrolujte a schvalte žádosti o dovolenou pro vybrané měsíce.")
+    ).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /^Čekající/ }));
+    expect(
+      screen.getByText("V období Říj – Pro 2026 nejsou žádné čekající žádosti")
+    ).toBeInTheDocument();
   });
 });

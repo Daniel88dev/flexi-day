@@ -36,6 +36,19 @@ describe("vacations api", () => {
     expect(apiMock).toHaveBeenCalledWith("/api/vacation?year=2026&month=8");
   });
 
+  it("listVacations sends a from/to range with the scope and list flags", async () => {
+    await listVacations({
+      from: "2026-11-01",
+      to: "2027-02-01",
+      groupId: "g-1",
+      includeCancelled: true,
+      wholeRequests: true,
+    });
+    expect(apiMock).toHaveBeenCalledWith(
+      "/api/vacation?from=2026-11-01&to=2027-02-01&groupId=g-1&includeCancelled=true&wholeRequests=true"
+    );
+  });
+
   it("listVacationCalendar asks the dashboard calendar route for one month", async () => {
     await listVacationCalendar({ year: 2026, month: 12 });
     expect(apiMock).toHaveBeenCalledWith("/api/vacation/calendar?year=2026&month=12");

@@ -16,7 +16,7 @@ import {
   useGroups,
   useRejectVacations,
   useReportScope,
-  useVacations,
+  useVacationRange,
 } from "@/lib/api/queries";
 import {
   Select,
@@ -37,6 +37,14 @@ import { dayLengthLabel } from "@/lib/vacations/day-length";
 import { useOpenVacationDetail } from "@/lib/vacations/use-vacation-detail";
 import { vacationActionErrorMessage, type VacationAction } from "@/lib/vacations/action-error";
 import { cn } from "@/lib/utils";
+import { MonthRangeSelect } from "@/components/requests/month-range-select";
+import {
+  presetRange,
+  rangeLabel,
+  rangeQuery,
+  type MonthSelection,
+  type YearMonth,
+} from "@/lib/vacations/month-range";
 import { formatIsoDate } from "@/lib/calendar/month-grid";
 import { useTranslation } from "@/lib/i18n/use-translation";
 import { recordTypeLabel } from "@/lib/i18n/record-type-label";
@@ -66,51 +74,16 @@ function formatDateRange(from: string, to: string, locale: string) {
   return from === to ? start : `${start} – ${formatDate(to, locale)}`;
 }
 
-function MonthPicker({
-  year,
-  month,
-  onChange,
-  months,
-}: {
-  year: number;
-  month: number;
-  onChange: (y: number, m: number) => void;
-  months: string[];
-}) {
-  return (
-    <div className="flex items-center gap-1">
-      <Button
-        variant="outline"
-        size="icon-sm"
-        onClick={() => {
-          if (month === 1) onChange(year - 1, 12);
-          else onChange(year, month - 1);
-        }}
-      >
-        ‹
-      </Button>
-      <span className="text-foreground/80 font-heading w-[110px] text-center text-sm font-medium">
-        {months[month - 1]} {year}
-      </span>
-      <Button
-        variant="outline"
-        size="icon-sm"
-        onClick={() => {
-          if (month === 12) onChange(year + 1, 1);
-          else onChange(year, month + 1);
-        }}
-      >
-        ›
-      </Button>
-    </div>
-  );
-}
-
 export default function RequestsPage() {
   const { t } = useTranslation();
-  const now = new Date();
-  const [year, setYear] = useState(now.getFullYear());
-  const [month, setMonth] = useState(now.getMonth() + 1);
+  const [today] = useState<YearMonth>(() => {
+    const now = new Date();
+    return { year: now.getFullYear(), month: now.getMonth() + 1 };
+  });
+  const [selection, setSelection] = useState<MonthSelection>(() => ({
+    preset: "next3",
+    range: presetRange("next3", today),
+  }));
   const [filter, setFilter] = useState<Filter>("all");
 
   // The detail dialog lives in the app layout, keyed off `?vacationId=` — the
@@ -136,11 +109,10 @@ export default function RequestsPage() {
         viewableGroups[0]?.groupId ??
         null);
 
-  // Cancelled rows and other-month days of a Request show only here; the
+  // Cancelled rows and out-of-range days of a Request show only here; the
   // calendar and dashboard keep their month-only, live-rows view.
-  const vacationsQuery = useVacations({
-    year,
-    month,
+  const vacationsQuery = useVacationRange({
+    ...rangeQuery(selection.range),
     groupId: scopeGroupId,
     includeCancelled: true,
     wholeRequests: true,
@@ -188,6 +160,8 @@ export default function RequestsPage() {
     return c;
   }, [requests, userId]);
 
+  const rangeText = rangeLabel(selection.range, t.calendar.monthsShort);
+
   const filtered = useMemo(() => {
     if (filter === "all") return requests;
     if (filter === "mine") return requests.filter((r) => r.userId === userId);
@@ -223,13 +197,11 @@ export default function RequestsPage() {
               </SelectContent>
             </Select>
           ) : null}
-          <MonthPicker
-            year={year}
-            month={month}
-            months={t.calendar.monthsShort}
-            onChange={(y, m) => {
-              setYear(y);
-              setMonth(m);
+          <MonthRangeSelect
+            value={selection}
+            today={today}
+            onChange={(next) => {
+              setSelection(next);
               setActionError(null);
             }}
           />
@@ -280,9 +252,9 @@ export default function RequestsPage() {
         </div>
       ) : filtered.length === 0 ? (
         <div className="text-muted-foreground py-16 text-center text-sm">
-          {filter !== "all"
-            ? t.requests.emptyFiltered(t.requests.filters[filter])
-            : `${t.requests.empty}.`}
+          {filter === "all"
+            ? t.requests.empty(rangeText)
+            : t.requests.emptyFiltered[filter](rangeText)}
         </div>
       ) : (
         <div className="border-border overflow-hidden rounded-lg border">

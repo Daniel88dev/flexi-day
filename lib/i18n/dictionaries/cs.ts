@@ -847,7 +847,7 @@ export const cs: Dictionary = {
 
   requests: {
     title: "Žádosti",
-    subtitle: "Zkontrolujte a schvalte žádosti o dovolenou pro vybraný měsíc.",
+    subtitle: "Zkontrolujte a schvalte žádosti o dovolenou pro vybrané měsíce.",
     filters: {
       all: "Vše",
       mine: "Moje",
@@ -858,8 +858,20 @@ export const cs: Dictionary = {
     },
     scopeLabel: "Zobrazit",
     scopeMine: "Jen moje žádosti",
-    empty: "V tomto měsíci nejsou žádné žádosti",
-    emptyFiltered: (filter: string) => `V tomto měsíci nejsou žádné žádosti (${filter}).`,
+    monthsLabel: "Měsíce",
+    monthPresets: { this: "Tento měsíc", next3: "Další 3 měsíce", custom: "Vlastní…" },
+    rangeFrom: "Od",
+    rangeTo: "do",
+    rangeFromLabel: "Od",
+    rangeToLabel: "Do",
+    empty: (range: string) => `V období ${range} nejsou žádné žádosti`,
+    emptyFiltered: {
+      mine: (range: string) => `V období ${range} nemáte žádné žádosti`,
+      pending: (range: string) => `V období ${range} nejsou žádné čekající žádosti`,
+      approved: (range: string) => `V období ${range} nejsou žádné schválené žádosti`,
+      rejected: (range: string) => `V období ${range} nejsou žádné zamítnuté žádosti`,
+      cancelled: (range: string) => `V období ${range} nejsou žádné zrušené žádosti`,
+    },
     forbidden: "K žádostem této skupiny nemáte přístup.",
     loadFailed: "Žádosti se nepodařilo načíst. Zkuste to za chvíli znovu.",
     columns: {
