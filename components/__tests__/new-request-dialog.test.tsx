@@ -67,6 +67,7 @@ const created: VacationDetail = {
   rangeStart: "2026-07-15",
   rangeEnd: "2026-07-15",
   vacationIds: ["v-1"],
+  workingDays: 1,
   requestId: "r-1",
   startTime: null,
   endTime: null,

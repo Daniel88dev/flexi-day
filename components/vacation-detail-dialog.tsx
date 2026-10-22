@@ -19,7 +19,12 @@ import {
   useRejectVacations,
   useVacation,
 } from "@/lib/api/queries";
-import { CALENDAR_RECORD_TYPE_COLORS, vacationStatus, type VacationStatus } from "@/lib/api/types";
+import {
+  CALENDAR_RECORD_TYPE_COLORS,
+  vacationStatus,
+  type VacationDetail,
+  type VacationStatus,
+} from "@/lib/api/types";
 import { dayLengthLabel } from "@/lib/vacations/day-length";
 import { mergeTimeline, type TimelineEntry, type TimelineKind } from "@/lib/vacations/timeline";
 import { vacationActionErrorMessage, type VacationAction } from "@/lib/vacations/action-error";
@@ -61,6 +66,12 @@ function formatDay(iso: string, locale: string) {
 function formatDayRange(startIso: string, endIso: string, locale: string) {
   const start = formatDay(startIso, locale);
   return startIso === endIso ? start : `${start} – ${formatDay(endIso, locale)}`;
+}
+
+function requestLengthLabel(detail: VacationDetail, labels: Dictionary["vacationDetail"]) {
+  const length = dayLengthLabel(detail, labels);
+  if (!detail.halfDay) return `${length} · ${labels.workingDays(detail.workingDays)}`;
+  return detail.workingDays > 1 ? `${length} · ${labels.days(detail.workingDays)}` : length;
 }
 
 function formatMoment(iso: string, locale: string) {
@@ -163,10 +174,7 @@ export function VacationDetailDialog({
                 {t.status[vacationStatus(detail)]}
               </span>
               <span className="text-muted-foreground text-xs">
-                {dayLengthLabel(detail, {
-                  halfDay: t.vacationDetail.halfDay,
-                  fullDay: t.vacationDetail.fullDay,
-                })}
+                {requestLengthLabel(detail, t.vacationDetail)}
               </span>
             </div>
 

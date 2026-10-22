@@ -808,6 +808,9 @@ export const cs: Dictionary = {
     title: "Detail žádosti",
     fullDay: "Celý den",
     halfDay: "Půlden",
+    workingDays: (n: number) =>
+      `${n} ${plural(n, "pracovní den", "pracovní dny", "pracovních dní")}`,
+    days: (n: number) => `${n} ${plural(n, "den", "dny", "dní")}`,
     note: "Poznámka",
     commentPlaceholder:
       "Napište komentář nebo přidejte důvod svého rozhodnutí — zobrazí se v historii žádosti",
