@@ -88,6 +88,19 @@ describe("MembersTab", () => {
     expect(within(rowOf("Olga Owner")).queryByText("Account deleted")).not.toBeInTheDocument();
   });
 
+  it("offers no permission toggles for a Deleted account while editing", () => {
+    membersData = [
+      member("u-owner", "Olga Owner", false),
+      { ...member("u-jana", "Jana Nováková", false), accountDeleted: true },
+    ];
+    renderWithClient(<MembersTab groupId="g-1" isAdmin />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Edit permissions" }));
+
+    expect(within(rowOf("Jana Nováková")).queryAllByRole("button")).toHaveLength(0);
+    expect(within(rowOf("Olga Owner")).getAllByRole("button")).toHaveLength(4);
+  });
+
   it("places the legend below the members table", () => {
     renderWithClient(<MembersTab groupId="g-1" isAdmin={false} />);
 

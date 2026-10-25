@@ -2,33 +2,60 @@
 
 import { useState } from "react";
 import { UsersRound } from "lucide-react";
+import { AccountDeletedLabel } from "@/components/account-deleted-label";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { pushToast } from "@/components/toast";
 import {
   useAttendanceSettings,
+  useEndEmployment,
   useEmployments,
   useUpdateEmploymentRequiredMinutes,
 } from "@/lib/api/queries";
+import { errorCode } from "@/lib/api/client";
 import type { EmploymentListItem } from "@/lib/api/employment";
 import { formatMinutes, parseMinutes } from "@/lib/attendance/duration";
+import { businessDateIn } from "@/lib/attendance/self-service";
 import { useTranslation } from "@/lib/i18n/use-translation";
 
 /**
- * The organization's roster, and the one field on it an admin sets: this
- * person's required time per day. Empty means the organization's own figure,
- * so clearing the box is how an override goes away.
+ * The organization's roster for its owner and org admins, on every plan, split
+ * into open and former Employments. With attendance on, each row also takes
+ * the person's own required time per day; empty means the organization's.
  */
 export function PeopleCard({ organizationId }: { organizationId: string | null }) {
   const { t } = useTranslation();
-  const settingsQuery = useAttendanceSettings(organizationId);
-  const settings = settingsQuery.data;
-  const query = useEmployments(organizationId, settings?.attendanceEnabled ?? false);
+  const settings = useAttendanceSettings(organizationId).data;
+  const query = useEmployments(organizationId);
 
-  // The override measures attendance and means nothing without it, so the card
-  // arrives with the feature rather than standing as a roster of its own.
-  if (!settings?.attendanceEnabled || query.isPending) return null;
+  if (query.isPending) return null;
+
+  const attendanceOn = settings?.attendanceEnabled ?? false;
+  // The backend reads "today" in this zone, UTC while attendance was never set up.
+  const timeZone = settings?.timezone ?? "UTC";
+  const open = query.data?.filter((employment) => !employment.ended) ?? [];
+  const former = query.data?.filter((employment) => employment.ended) ?? [];
+
+  const rows = (list: EmploymentListItem[]) =>
+    list.map((employment) => (
+      <PersonRow
+        key={employment.id}
+        employment={employment}
+        organizationId={organizationId}
+        requiredMinutesPerDay={attendanceOn ? (settings?.requiredMinutesPerDay ?? null) : null}
+        timeZone={timeZone}
+      />
+    ));
 
   return (
     <Card>
@@ -39,25 +66,46 @@ export function PeopleCard({ organizationId }: { organizationId: string | null }
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <p className="text-muted-foreground text-sm">{t.organization.people.lead}</p>
+        <p className="text-muted-foreground text-sm">
+          {t.organization.people.lead}
+          {attendanceOn ? ` ${t.organization.people.requiredLead}` : null}
+        </p>
 
-        {/* A roster that failed to load says so: an admin who came here to set
-            somebody's hours should not be met by a card that is simply absent. */}
+        {/* A roster that failed to load says so: an admin who came here to act
+            on somebody should not be met by a card that is simply absent. */}
         {query.error || !query.data ? (
           <p className="text-destructive text-sm">{t.organization.people.loadFailed}</p>
-        ) : query.data.length === 0 ? (
-          <p className="text-muted-foreground text-sm">{t.organization.people.empty}</p>
         ) : (
-          <ul className="divide-border divide-y">
-            {query.data.map((employment) => (
-              <PersonRow
-                key={employment.id}
-                employment={employment}
-                organizationId={organizationId}
-                requiredMinutesPerDay={settings.requiredMinutesPerDay}
-              />
-            ))}
-          </ul>
+          <>
+            <section className="space-y-1">
+              <h3
+                id="people-open"
+                className="text-muted-foreground text-xs font-semibold uppercase"
+              >
+                {t.organization.people.open}
+              </h3>
+              {open.length === 0 ? (
+                <p className="text-muted-foreground text-sm">{t.organization.people.empty}</p>
+              ) : (
+                <ul aria-labelledby="people-open" className="divide-border divide-y">
+                  {rows(open)}
+                </ul>
+              )}
+            </section>
+            {former.length > 0 ? (
+              <section className="space-y-1">
+                <h3
+                  id="people-former"
+                  className="text-muted-foreground text-xs font-semibold uppercase"
+                >
+                  {t.organization.people.former}
+                </h3>
+                <ul aria-labelledby="people-former" className="divide-border divide-y">
+                  {rows(former)}
+                </ul>
+              </section>
+            ) : null}
+          </>
         )}
       </CardContent>
     </Card>
@@ -68,6 +116,76 @@ function PersonRow({
   employment,
   organizationId,
   requiredMinutesPerDay,
+  timeZone,
+}: {
+  employment: EmploymentListItem;
+  organizationId: string | null;
+  /** Null while attendance is off: the field means nothing without it. */
+  requiredMinutesPerDay: number | null;
+  timeZone: string;
+}) {
+  const { t } = useTranslation();
+  const [ending, setEnding] = useState(false);
+
+  return (
+    <li className="flex flex-wrap items-center gap-3 py-3">
+      <div className="min-w-40 flex-1">
+        <p className="flex flex-wrap items-center gap-2 font-medium">
+          {employment.user.name}
+          {employment.accountDeleted ? <AccountDeletedLabel /> : null}
+          {employment.endedAt ? (
+            <span className="text-muted-foreground text-xs font-normal">
+              {t.organization.people.endedOn(
+                new Date(employment.endedAt).toLocaleDateString(t.common.dateLocale)
+              )}
+            </span>
+          ) : null}
+        </p>
+        {/* A Deleted account's address is a placeholder, not a way to reach anyone. */}
+        {employment.accountDeleted ? null : (
+          <p className="text-muted-foreground text-xs">{employment.email}</p>
+        )}
+      </div>
+
+      {requiredMinutesPerDay !== null ? (
+        <RequiredMinutes
+          employment={employment}
+          organizationId={organizationId}
+          requiredMinutesPerDay={requiredMinutesPerDay}
+        />
+      ) : null}
+
+      {/* Only a Deleted account for now: an Employment is one row per
+          organization, so ending a live person and adding them back would
+          overwrite the spell. */}
+      {employment.accountDeleted && !employment.ended ? (
+        <>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            className="text-destructive"
+            onClick={() => setEnding(true)}
+          >
+            {t.organization.people.end}
+          </Button>
+          <EndEmploymentDialog
+            open={ending}
+            onOpenChange={setEnding}
+            employment={employment}
+            organizationId={organizationId}
+            timeZone={timeZone}
+          />
+        </>
+      ) : null}
+    </li>
+  );
+}
+
+function RequiredMinutes({
+  employment,
+  organizationId,
+  requiredMinutesPerDay,
 }: {
   employment: EmploymentListItem;
   organizationId: string | null;
@@ -75,15 +193,12 @@ function PersonRow({
 }) {
   const { t } = useTranslation();
   const update = useUpdateEmploymentRequiredMinutes(organizationId);
-  const [value, setValue] = useState(() =>
-    employment.requiredMinutesPerDay === null ? "" : formatMinutes(employment.requiredMinutesPerDay)
-  );
-  const [error, setError] = useState<string | null>(null);
-
   const stored =
     employment.requiredMinutesPerDay === null
       ? ""
       : formatMinutes(employment.requiredMinutesPerDay);
+  const [value, setValue] = useState(stored);
+  const [error, setError] = useState<string | null>(null);
   const dirty = value.trim() !== stored;
 
   async function save() {
@@ -106,19 +221,7 @@ function PersonRow({
   }
 
   return (
-    <li className="flex flex-wrap items-center gap-3 py-3">
-      <div className="min-w-40 flex-1">
-        <p className="font-medium">
-          {employment.user.name}
-          {employment.ended ? (
-            <span className="text-muted-foreground ml-2 text-xs">
-              {t.organization.people.ended}
-            </span>
-          ) : null}
-        </p>
-        <p className="text-muted-foreground text-xs">{employment.email}</p>
-      </div>
-
+    <>
       <div className="flex items-center gap-2">
         <Input
           className="w-24 tabular-nums"
@@ -148,6 +251,101 @@ function PersonRow({
           t.organization.people.usingOrganization(formatMinutes(requiredMinutesPerDay))
         )}
       </p>
-    </li>
+    </>
+  );
+}
+
+function EndEmploymentDialog({
+  open,
+  onOpenChange,
+  employment,
+  organizationId,
+  timeZone,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  employment: EmploymentListItem;
+  organizationId: string | null;
+  timeZone: string;
+}) {
+  const { t } = useTranslation();
+  const copy = t.organization.people.endDialog;
+  const end = useEndEmployment(organizationId);
+  const today = businessDateIn(new Date(), timeZone);
+  const [endedOn, setEndedOn] = useState(today);
+  const [error, setError] = useState<string | null>(null);
+
+  async function submit() {
+    setError(null);
+    if (endedOn > today) {
+      setError(copy.futureDate);
+      return;
+    }
+
+    try {
+      await end.mutateAsync({ employmentId: employment.id, endedOn });
+      pushToast(copy.done(employment.user.name));
+      onOpenChange(false);
+    } catch (err) {
+      const code = errorCode(err);
+      setError(
+        code === "MANAGES_GROUP"
+          ? copy.managesGroup
+          : code === "END_DATE_IN_FUTURE"
+            ? copy.futureDate
+            : code === "END_DATE_BEFORE_START"
+              ? copy.beforeStart
+              : err instanceof Error
+                ? err.message
+                : copy.failed
+      );
+    }
+  }
+
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        if (!next) {
+          setEndedOn(today);
+          setError(null);
+        }
+        onOpenChange(next);
+      }}
+    >
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>{copy.title(employment.user.name)}</DialogTitle>
+          <DialogDescription>{copy.body}</DialogDescription>
+        </DialogHeader>
+        <div className="space-y-2">
+          <Label htmlFor={`end-${employment.id}`}>{copy.dateLabel}</Label>
+          <Input
+            id={`end-${employment.id}`}
+            type="date"
+            max={today}
+            value={endedOn}
+            onChange={(event) => {
+              setEndedOn(event.target.value);
+              setError(null);
+            }}
+          />
+          {error ? <p className="text-destructive text-sm">{error}</p> : null}
+        </div>
+        <DialogFooter>
+          <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
+            {t.common.cancel}
+          </Button>
+          <Button
+            type="button"
+            variant="destructive"
+            disabled={end.isPending || endedOn === ""}
+            onClick={() => void submit()}
+          >
+            {copy.confirm}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

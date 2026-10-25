@@ -61,7 +61,7 @@ import {
   type AttendanceSession,
   type AttendanceSessionEnd,
 } from "./attendance";
-import { listEmployments, updateEmploymentRequiredMinutes } from "./employment";
+import { endEmployment, listEmployments, updateEmploymentRequiredMinutes } from "./employment";
 import { captureSessionLocation } from "@/lib/attendance/geolocation";
 import {
   addOrganizationAdmin,
@@ -1354,6 +1354,27 @@ export function useUpdateEmploymentRequiredMinutes(organizationId?: string | nul
   });
 }
 
+/**
+ * End employment. The person leaves every group and loses their pending and
+ * future bookings, so member lists, Team attendance and every booking read go
+ * with the roster.
+ */
+export function useEndEmployment(organizationId?: string | null) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ employmentId, endedOn }: { employmentId: string; endedOn: string }) =>
+      endEmployment(employmentId, endedOn),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: qk.employments(organizationId) });
+      qc.invalidateQueries({ queryKey: qk.organization(organizationId) });
+      qc.invalidateQueries({ queryKey: ["group-users"] });
+      qc.invalidateQueries({ queryKey: ["attendance-team"] });
+      qc.invalidateQueries({ queryKey: qk.subscription() });
+      invalidateVacationDependants(qc);
+    },
+  });
+}
+
 export const useStartBreak = (organizationId?: string | null) =>
   useAttendanceWrite(() => startBreak(organizationId));
 
@@ -1418,6 +1439,8 @@ export function useRemoveGroupUser() {
     onSuccess: (_, vars) => {
       qc.invalidateQueries({ queryKey: qk.groupUsers(vars.groupId) });
       qc.invalidateQueries({ queryKey: qk.subscription() });
+      // The removal cancels the member's pending and future bookings there.
+      invalidateVacationDependants(qc);
     },
   });
 }

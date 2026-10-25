@@ -277,7 +277,7 @@ export function MembersTab({ groupId, isAdmin }: { groupId: string; isAdmin: boo
                     <TableCell>
                       <PermBadge
                         value={displayedValue(m, "viewAccess")}
-                        editing={editing}
+                        editing={editing && !m.accountDeleted}
                         disabled={saving}
                         onToggle={() => toggle(m, "viewAccess")}
                       />
@@ -285,7 +285,7 @@ export function MembersTab({ groupId, isAdmin }: { groupId: string; isAdmin: boo
                     <TableCell>
                       <PermBadge
                         value={displayedValue(m, "adminAccess")}
-                        editing={editing}
+                        editing={editing && !m.accountDeleted}
                         disabled={saving}
                         onToggle={() => toggle(m, "adminAccess")}
                       />
@@ -293,7 +293,7 @@ export function MembersTab({ groupId, isAdmin }: { groupId: string; isAdmin: boo
                     <TableCell>
                       <PermBadge
                         value={displayedValue(m, "approverAccess")}
-                        editing={editing}
+                        editing={editing && !m.accountDeleted}
                         disabled={saving}
                         onToggle={() => toggle(m, "approverAccess")}
                       />
@@ -301,7 +301,7 @@ export function MembersTab({ groupId, isAdmin }: { groupId: string; isAdmin: boo
                     <TableCell>
                       <PermBadge
                         value={displayedValue(m, "controlledUser")}
-                        editing={editing}
+                        editing={editing && !m.accountDeleted}
                         disabled={saving}
                         onToggle={() => toggle(m, "controlledUser")}
                       />

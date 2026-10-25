@@ -47,3 +47,17 @@ export function updateEmploymentRequiredMinutes(
     body: { requiredMinutesPerDay },
   });
 }
+
+export type EndedEmployment = Employment & { cancelledBookings: number };
+
+/**
+ * End employment: the person leaves every group of the organization and their
+ * pending and future bookings are cancelled. `endedOn` is the last day of the
+ * spell, today or earlier in the organization's zone.
+ */
+export function endEmployment(employmentId: string, endedOn: string): Promise<EndedEmployment> {
+  return api<EndedEmployment>(`/api/employment/${encodeURIComponent(employmentId)}/end`, {
+    method: "POST",
+    body: { endedOn },
+  });
+}
