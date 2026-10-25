@@ -62,7 +62,12 @@ import {
   type AttendanceSession,
   type AttendanceSessionEnd,
 } from "./attendance";
-import { endEmployment, listEmployments, updateEmploymentRequiredMinutes } from "./employment";
+import {
+  endEmployment,
+  eraseEmployment,
+  listEmployments,
+  updateEmploymentRequiredMinutes,
+} from "./employment";
 import {
   listOwnExportOrganizations,
   listRequestedExports,
@@ -1396,6 +1401,24 @@ export function useEndEmployment(organizationId?: string | null) {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: qk.employments(organizationId) });
       qc.invalidateQueries({ queryKey: qk.organization(organizationId) });
+      qc.invalidateQueries({ queryKey: ["group-users"] });
+      qc.invalidateQueries({ queryKey: ["attendance-team"] });
+      qc.invalidateQueries({ queryKey: qk.subscription() });
+      invalidateVacationDependants(qc);
+    },
+  });
+}
+
+export function useEraseEmployment(organizationId?: string | null) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ employmentId, confirmName }: { employmentId: string; confirmName: string }) =>
+      eraseEmployment(employmentId, confirmName),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: qk.employments(organizationId) });
+      qc.invalidateQueries({ queryKey: qk.organization(organizationId) });
+      qc.invalidateQueries({ queryKey: qk.requestedExports(organizationId) });
+      qc.invalidateQueries({ queryKey: qk.organizationExport(organizationId) });
       qc.invalidateQueries({ queryKey: ["group-users"] });
       qc.invalidateQueries({ queryKey: ["attendance-team"] });
       qc.invalidateQueries({ queryKey: qk.subscription() });

@@ -61,3 +61,15 @@ export function endEmployment(employmentId: string, endedOn: string): Promise<En
     body: { endedOn },
   });
 }
+
+/**
+ * Erase: removes everything the organization holds about a Deleted account,
+ * ending an open Employment first. `confirmName` is the name the admin typed;
+ * the backend refuses one that isn't the person's.
+ */
+export function eraseEmployment(employmentId: string, confirmName: string): Promise<void> {
+  return api<void>(`/api/employment/${encodeURIComponent(employmentId)}/erase`, {
+    method: "POST",
+    body: { confirmName },
+  });
+}
