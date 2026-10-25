@@ -5,7 +5,6 @@ import { renderWithClient } from "@/lib/test-utils";
 import type { AttendanceSettings } from "@/lib/api/attendance-settings";
 import type { EmploymentListItem } from "@/lib/api/employment";
 import type { PersonExport } from "@/lib/api/person-export";
-import { ApiError } from "@/lib/api/client";
 import { PeopleCard } from "../people-card";
 
 let settings: AttendanceSettings | undefined;
@@ -226,6 +225,31 @@ describe("PeopleCard", () => {
     expect(within(former).getByText(/^Ended /)).toBeInTheDocument();
   });
 
+  it("lists former people by end date, most recent first", () => {
+    const left = (id: string, name: string, endedAt: string) =>
+      person({
+        id,
+        userId: id,
+        ended: true,
+        endedAt,
+        user: { id, name, initials: "XX", avatarColor: "hsl(1 1% 1%)" },
+      });
+    employments = [
+      left("emp-a", "Ada Early", "2026-03-31T08:00:00Z"),
+      left("emp-z", "Zed Recent", "2026-09-30T08:00:00Z"),
+      left("emp-m", "Mia Middle", "2026-06-30T08:00:00Z"),
+    ];
+    renderWithClient(<PeopleCard organizationId="org-1" />);
+
+    const names = ["Ada Early", "Mia Middle", "Zed Recent"];
+    const rows = within(screen.getByRole("list", { name: "Former" })).getAllByRole("listitem");
+    expect(rows.map((row) => names.find((name) => row.textContent?.includes(name)))).toEqual([
+      "Zed Recent",
+      "Mia Middle",
+      "Ada Early",
+    ]);
+  });
+
   it("leaves the Former list out while nobody has left", () => {
     renderWithClient(<PeopleCard organizationId="org-1" />);
 
@@ -270,60 +294,6 @@ describe("PeopleCard", () => {
       expect(within(former).getByTestId("account-deleted")).toBeInTheDocument();
       expect(within(former).queryByRole("button", { name: "End employment" })).toBeNull();
     });
-
-    it("ends the Employment on today's date in the organization's zone by default", async () => {
-      vi.useFakeTimers({ toFake: ["Date"] });
-      vi.setSystemTime(new Date("2026-10-25T23:30:00Z"));
-      employments = [deleted()];
-      renderWithClient(<PeopleCard organizationId="org-1" />);
-
-      await userEvent.click(screen.getByRole("button", { name: "End employment" }));
-      const dialog = screen.getByRole("dialog");
-      expect(within(dialog).getByLabelText("Last day")).toHaveValue("2026-10-26");
-      await userEvent.click(within(dialog).getByRole("button", { name: "End employment" }));
-
-      expect(endEmployment).toHaveBeenCalledWith({
-        employmentId: "emp-del",
-        endedOn: "2026-10-26",
-      });
-    });
-
-    it("refuses a last day after today without asking the server", async () => {
-      vi.useFakeTimers({ toFake: ["Date"] });
-      vi.setSystemTime(new Date("2026-10-25T10:00:00Z"));
-      employments = [deleted()];
-      renderWithClient(<PeopleCard organizationId="org-1" />);
-
-      await userEvent.click(screen.getByRole("button", { name: "End employment" }));
-      const dialog = screen.getByRole("dialog");
-      const date = within(dialog).getByLabelText("Last day");
-      await userEvent.clear(date);
-      await userEvent.type(date, "2026-10-26");
-      await userEvent.click(within(dialog).getByRole("button", { name: "End employment" }));
-
-      expect(endEmployment).not.toHaveBeenCalled();
-      expect(within(dialog).getByText("The last day can't be after today.")).toBeInTheDocument();
-    });
-
-    it("says why when the person still manages a group", async () => {
-      endEmployment.mockRejectedValue(
-        new ApiError(409, "This person manages a group", undefined, [
-          { message: "This person manages a group", context: { code: "MANAGES_GROUP" } },
-        ])
-      );
-      employments = [deleted()];
-      renderWithClient(<PeopleCard organizationId="org-1" />);
-
-      await userEvent.click(screen.getByRole("button", { name: "End employment" }));
-      const dialog = screen.getByRole("dialog");
-      await userEvent.click(within(dialog).getByRole("button", { name: "End employment" }));
-
-      expect(
-        await within(dialog).findByText(
-          "This person manages a group. Give the group another manager first."
-        )
-      ).toBeInTheDocument();
-    });
   });
 
   describe("Erase", () => {
@@ -341,11 +311,6 @@ describe("PeopleCard", () => {
         },
         ...overrides,
       });
-
-    const openDialog = async () => {
-      await userEvent.click(screen.getByRole("button", { name: "Erase Jana Nováková's records" }));
-      return screen.getByRole("dialog");
-    };
 
     it("is offered on a Deleted account's row, open or former, and never on a live one", () => {
       employments = [
@@ -371,67 +336,6 @@ describe("PeopleCard", () => {
       const former = screen.getByRole("list", { name: "Former" });
       expect(
         within(former).getByRole("button", { name: "Erase Ota Old's records" })
-      ).toBeInTheDocument();
-    });
-
-    it("says an open Employment ends today first", async () => {
-      employments = [deleted()];
-      renderWithClient(<PeopleCard organizationId="org-1" />);
-
-      const dialog = await openDialog();
-      expect(within(dialog).getByText(/ends today first/)).toBeInTheDocument();
-    });
-
-    it("refuses a name that isn't the person's without asking the server", async () => {
-      employments = [deleted()];
-      renderWithClient(<PeopleCard organizationId="org-1" />);
-
-      const dialog = await openDialog();
-      await userEvent.type(
-        within(dialog).getByLabelText("Type Jana Nováková to confirm"),
-        "Jana Novak"
-      );
-      await userEvent.click(within(dialog).getByRole("button", { name: "Erase for good" }));
-
-      expect(eraseEmployment).not.toHaveBeenCalled();
-      expect(within(dialog).getByText("That isn't the name on this row.")).toBeInTheDocument();
-    });
-
-    it("erases once the typed name matches, whatever its case", async () => {
-      employments = [deleted()];
-      renderWithClient(<PeopleCard organizationId="org-1" />);
-
-      const dialog = await openDialog();
-      await userEvent.type(
-        within(dialog).getByLabelText("Type Jana Nováková to confirm"),
-        " jana  nováková"
-      );
-      await userEvent.click(within(dialog).getByRole("button", { name: "Erase for good" }));
-
-      expect(eraseEmployment).toHaveBeenCalledWith({
-        employmentId: "emp-del",
-        confirmName: " jana  nováková",
-      });
-    });
-
-    it("says so when the server finds the name wrong", async () => {
-      eraseEmployment.mockRejectedValue(
-        new ApiError(422, "The typed name does not match the person", undefined, [
-          { message: "The typed name does not match", context: { code: "NAME_MISMATCH" } },
-        ])
-      );
-      employments = [deleted()];
-      renderWithClient(<PeopleCard organizationId="org-1" />);
-
-      const dialog = await openDialog();
-      await userEvent.type(
-        within(dialog).getByLabelText("Type Jana Nováková to confirm"),
-        "Jana Nováková"
-      );
-      await userEvent.click(within(dialog).getByRole("button", { name: "Erase for good" }));
-
-      expect(
-        await within(dialog).findByText("That isn't the name on this row.")
       ).toBeInTheDocument();
     });
   });

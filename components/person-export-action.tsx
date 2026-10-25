@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Download, FileArchive, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { errorCopy } from "@/lib/api/client";
 import { pushToast } from "@/components/toast";
 import {
   followDownloadLink,
@@ -37,7 +38,10 @@ export function PersonExportAction({
       await onRequest();
       pushToast(copy.requested);
     } catch (err) {
-      pushToast(err instanceof Error ? err.message : copy.requestFailed, "danger");
+      pushToast(
+        errorCopy(err, { EXPORT_UNAVAILABLE: copy.unavailable }, copy.requestFailed),
+        "danger"
+      );
     }
   }
 
@@ -47,7 +51,18 @@ export function PersonExportAction({
       const { url } = await signPersonExportDownload(exportId);
       followDownloadLink(url);
     } catch (err) {
-      pushToast(err instanceof Error ? err.message : copy.downloadFailed, "danger");
+      pushToast(
+        errorCopy(
+          err,
+          {
+            EXPORT_EXPIRED: copy.expired,
+            EXPORT_UNAVAILABLE: copy.unavailable,
+            FORBIDDEN: copy.noAccess,
+          },
+          copy.downloadFailed
+        ),
+        "danger"
+      );
     } finally {
       setOpening(false);
     }
