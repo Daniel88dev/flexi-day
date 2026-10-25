@@ -71,6 +71,7 @@ describe("OrganizationDataExports", () => {
         export: {
           id: "exp-1",
           organizationId: "org-1",
+          scope: "PERSON",
           subjectUserId: "me",
           status: "PENDING",
           createdAt: "2026-10-25T10:00:00Z",
@@ -87,6 +88,7 @@ describe("OrganizationDataExports", () => {
         export: {
           id: "exp-1",
           organizationId: "org-1",
+          scope: "PERSON",
           subjectUserId: "me",
           status: "READY",
           createdAt: "2026-10-25T10:00:00Z",

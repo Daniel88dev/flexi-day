@@ -14,10 +14,19 @@ export type DeletionBlocker =
 
 export type DeletionConfirmation = "password" | "recent-sign-in";
 
+/** An organization that goes with the account, with the Deleted accounts that go with it. */
+export type OwnedOrganizationGoing = {
+  organizationId: UUID;
+  organizationName: string;
+  deletedAccounts: { userId: string; name: string }[];
+};
+
 export type AccountDeletionStatus = {
   canDelete: boolean;
   blockers: DeletionBlocker[];
   confirmation: DeletionConfirmation;
+  /** Absent from a backend that predates the Organization export. */
+  ownedOrganizations?: OwnedOrganizationGoing[];
 };
 
 export type DeletionRefusal = "PASSWORD_INVALID" | "REAUTH_REQUIRED" | "DELETION_BLOCKED";

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useId, useRef, useState } from "react";
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -19,6 +20,7 @@ import { pushToast } from "@/components/toast";
 import {
   FRESH_SIGN_IN_MS,
   deletionRefusal,
+  type AccountDeletionStatus,
   type DeletionBlocker,
 } from "@/lib/api/account-deletion";
 import {
@@ -34,6 +36,7 @@ import type { Dictionary } from "@/lib/i18n";
 import type { OrganizationSummary } from "@/lib/api/organization";
 import type { GroupListItem } from "@/lib/api/types";
 import { useTranslation } from "@/lib/i18n/use-translation";
+import { ORGANIZATION_EXPORT_ANCHOR } from "@/components/organization/organization-export-card";
 
 const LINK_PARAM = "delete-account";
 /** App Store review and the phone link here, so this exact URL is a contract. */
@@ -125,7 +128,7 @@ export function DeleteAccountCard({ layoutReady }: { layoutReady: boolean }) {
     window.location.replace(`/sign-in/?redirect=${encodeURIComponent(DELETE_ACCOUNT_LINK)}`);
   }
 
-  const ownedOrganizations = (organizationsQuery.data ?? []).filter((org) => org.isOwner);
+  const ownedOrganizations = goingWithAccount(status, organizationsQuery.data);
   const employers = employersOf(organizationsQuery.data, groupsQuery.data);
   const handedOver = handedOverGroups(organizationsQuery.data, groupsQuery.data, session?.user.id);
   const employersUnknown = organizationsQuery.isError || groupsQuery.isError;
@@ -237,10 +240,30 @@ export function DeleteAccountCard({ layoutReady }: { layoutReady: boolean }) {
             <li>{d.confirmAccount}</li>
             <li>{d.confirmSettings}</li>
             {ownedOrganizations.map((org) => (
-              <li key={org.id}>{d.confirmOrganization(org.name)}</li>
+              <li key={org.id}>
+                {d.confirmOrganization(org.name)}
+                {org.deletedAccounts.length > 0 ? (
+                  <span className="text-muted-foreground block">
+                    {d.confirmDeletedAccounts(org.deletedAccounts.join(", "))}
+                  </span>
+                ) : null}
+              </li>
             ))}
-            {organizationsQuery.isError ? <li>{d.confirmOwnedOrganizations}</li> : null}
+            {organizationsQuery.isError && !status?.ownedOrganizations ? (
+              <li>{d.confirmOwnedOrganizations}</li>
+            ) : null}
           </ul>
+          {ownedOrganizations.length > 0 ? (
+            <p className="text-sm">
+              <Link
+                href={`/organization/?organizationId=${encodeURIComponent(ownedOrganizations[0]!.id)}#${ORGANIZATION_EXPORT_ANCHOR}`}
+                className="text-primary font-medium underline underline-offset-2"
+              >
+                {d.confirmExportLink}
+              </Link>{" "}
+              <span className="text-muted-foreground">{d.confirmExportHint}</span>
+            </p>
+          ) : null}
           {employers.length > 0 || employersUnknown ? (
             <>
               <p className="text-sm">{d.confirmKeptIntro}</p>
@@ -276,6 +299,27 @@ export function DeleteAccountCard({ layoutReady }: { layoutReady: boolean }) {
       </Dialog>
     </Card>
   );
+}
+
+/**
+ * The organizations that go with the account, each with the names of the
+ * Deleted accounts that go with it. An older backend sends no list, so the
+ * owned organizations from the organization list stand in.
+ */
+function goingWithAccount(
+  status: AccountDeletionStatus | undefined,
+  organizations: OrganizationSummary[] | undefined
+): { id: string; name: string; deletedAccounts: string[] }[] {
+  if (status?.ownedOrganizations) {
+    return status.ownedOrganizations.map((org) => ({
+      id: org.organizationId,
+      name: org.organizationName,
+      deletedAccounts: org.deletedAccounts.map((account) => account.name),
+    }));
+  }
+  return (organizations ?? [])
+    .filter((org) => org.isOwner)
+    .map((org) => ({ id: org.id, name: org.name, deletedAccounts: [] }));
 }
 
 /**
