@@ -18,6 +18,7 @@ import { ConnectedAccountsCard } from "@/components/settings/connected-accounts-
 import { DeleteAccountCard } from "@/components/settings/delete-account-card";
 import { TwoFactorCard } from "@/components/settings/two-factor-card";
 import { YourDataCard } from "@/components/settings/your-data-card";
+import { OrganizationDataExports } from "@/components/settings/organization-data-exports";
 import { pushToast } from "@/components/toast";
 import { useMySettings, useReportScope, useUpdateMySettings } from "@/lib/api/queries";
 import type { DashboardCalendarView, DashboardScope } from "@/lib/api/types";
@@ -105,7 +106,9 @@ export default function SettingsPage() {
           sign-in, so a social-only account has nothing to enable. */}
       {offerPasswordChange ? <TwoFactorCard /> : null}
 
-      <YourDataCard />
+      <YourDataCard>
+        <OrganizationDataExports />
+      </YourDataCard>
 
       <Suspense fallback={null}>
         <DeleteAccountCard layoutReady={!accountsQuery.isPending} />

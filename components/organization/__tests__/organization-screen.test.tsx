@@ -41,6 +41,8 @@ vi.mock("@/lib/api/queries", () => ({
   // The people card likewise: it hangs off the same unresolved settings read.
   useEmployments: () => ({ data: undefined, isPending: true, error: null }),
   useUpdateEmploymentRequiredMinutes: () => ({ mutateAsync: vi.fn(), isPending: false }),
+  useRequestedExports: () => ({ data: undefined }),
+  useRequestPersonExport: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useAddOrganizationAdmin: () => ({ mutateAsync: addAdmin, isPending: false }),
   useRemoveOrganizationAdmin: () => ({ mutateAsync: removeAdmin, isPending: false }),
 }));

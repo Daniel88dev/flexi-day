@@ -63,6 +63,13 @@ import {
   type AttendanceSessionEnd,
 } from "./attendance";
 import { endEmployment, listEmployments, updateEmploymentRequiredMinutes } from "./employment";
+import {
+  listOwnExportOrganizations,
+  listRequestedExports,
+  requestOwnPersonExport,
+  requestPersonExport,
+  type PersonExport,
+} from "./person-export";
 import { captureSessionLocation } from "@/lib/attendance/geolocation";
 import {
   addOrganizationAdmin,
@@ -281,6 +288,9 @@ export const qk = {
   attendanceEvents: (sessionId: string) => ["attendance-events", sessionId] as const,
   employments: (organizationId?: string | null) =>
     ["employments", organizationId ?? "own"] as const,
+  requestedExports: (organizationId?: string | null) =>
+    ["person-exports", "requested", organizationId ?? "none"] as const,
+  ownExports: () => ["person-exports", "own"] as const,
   attendanceTeam: (params: TeamAttendanceParams) =>
     [
       "attendance-team",
@@ -1387,6 +1397,49 @@ export function useEndEmployment(organizationId?: string | null) {
       qc.invalidateQueries({ queryKey: qk.subscription() });
       invalidateVacationDependants(qc);
     },
+  });
+}
+
+/** How often a list with an export still being prepared asks again. */
+export const EXPORT_POLL_MS = 3000;
+
+const preparing = (exports: (PersonExport | null)[] | undefined) =>
+  exports?.some((entry) => entry?.status === "PENDING") ?? false;
+
+/** The Person exports the caller requested in the organization, polled while one is preparing. */
+export function useRequestedExports(organizationId: string | null) {
+  return useQuery({
+    queryKey: qk.requestedExports(organizationId),
+    queryFn: () => listRequestedExports(organizationId!),
+    enabled: !!organizationId,
+    refetchInterval: (query) => (preparing(query.state.data) ? EXPORT_POLL_MS : false),
+  });
+}
+
+/** The organizations the caller can export their own data from, polled while one is preparing. */
+export function useOwnExportOrganizations() {
+  return useQuery({
+    queryKey: qk.ownExports(),
+    queryFn: listOwnExportOrganizations,
+    refetchInterval: (query) =>
+      preparing(query.state.data?.map((entry) => entry.export)) ? EXPORT_POLL_MS : false,
+  });
+}
+
+/** An admin's export of one Employment. Every export list goes, the admin's own included. */
+export function useRequestPersonExport() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (employmentId: string) => requestPersonExport(employmentId),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["person-exports"] }),
+  });
+}
+
+export function useRequestOwnPersonExport() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (organizationId: string) => requestOwnPersonExport(organizationId),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["person-exports"] }),
   });
 }
 

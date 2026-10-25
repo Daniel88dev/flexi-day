@@ -4,6 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { renderWithClient } from "@/lib/test-utils";
 import type { AttendanceSettings } from "@/lib/api/attendance-settings";
 import type { EmploymentListItem } from "@/lib/api/employment";
+import type { PersonExport } from "@/lib/api/person-export";
 import { ApiError } from "@/lib/api/client";
 import { PeopleCard } from "../people-card";
 
@@ -13,6 +14,15 @@ let employmentsPending: boolean;
 let employmentsError: Error | null;
 const updateRequired = vi.fn();
 const endEmployment = vi.fn();
+let requestedExports: PersonExport[] | undefined;
+const requestExport = vi.fn();
+const signDownload = vi.fn();
+const followLink = vi.fn();
+
+vi.mock("@/lib/api/person-export", () => ({
+  signPersonExportDownload: (...args: unknown[]) => signDownload(...args),
+  followDownloadLink: (...args: unknown[]) => followLink(...args),
+}));
 
 vi.mock("@/lib/api/queries", () => ({
   useAttendanceSettings: () => ({ data: settings, isPending: false, error: null }),
@@ -26,7 +36,24 @@ vi.mock("@/lib/api/queries", () => ({
     isPending: false,
   }),
   useEndEmployment: () => ({ mutateAsync: endEmployment, isPending: false }),
+  useRequestedExports: () => ({ data: requestedExports }),
+  useRequestPersonExport: () => ({
+    mutateAsync: requestExport,
+    isPending: false,
+    variables: undefined,
+  }),
 }));
+
+const exported = (overrides: Partial<PersonExport> = {}): PersonExport => ({
+  id: "exp-1",
+  organizationId: "org-1",
+  subjectUserId: "user-1",
+  status: "PENDING",
+  createdAt: "2026-10-25T10:00:00Z",
+  readyAt: null,
+  expiresAt: null,
+  ...overrides,
+});
 
 const baseSettings = (overrides: Partial<AttendanceSettings> = {}): AttendanceSettings => ({
   organizationId: "org-1",
@@ -71,6 +98,11 @@ describe("PeopleCard", () => {
     updateRequired.mockResolvedValue(person({ requiredMinutesPerDay: 360 }));
     endEmployment.mockReset();
     endEmployment.mockResolvedValue({ ...person(), ended: true, cancelledBookings: 1 });
+    requestedExports = [];
+    requestExport.mockReset();
+    requestExport.mockResolvedValue(exported());
+    signDownload.mockReset();
+    followLink.mockReset();
   });
 
   afterEach(() => {
@@ -279,5 +311,70 @@ describe("PeopleCard", () => {
     renderWithClient(<PeopleCard organizationId="org-1" />);
 
     expect(screen.getByText("Nobody is employed here yet.")).toBeInTheDocument();
+  });
+
+  describe("Person export", () => {
+    it("offers Export on every row, live, deleted and former alike", async () => {
+      employments = [
+        person(),
+        person({
+          id: "emp-2",
+          userId: "user-2",
+          accountDeleted: true,
+          accountDeletedAt: "2026-10-20T10:00:00Z",
+          user: { id: "user-2", name: "Dana Deleted", initials: "DD", avatarColor: "hsl(1 1% 1%)" },
+        }),
+        person({
+          id: "emp-3",
+          userId: "user-3",
+          ended: true,
+          endedAt: "2026-09-30T10:00:00Z",
+          user: { id: "user-3", name: "Fred Former", initials: "FF", avatarColor: "hsl(1 1% 1%)" },
+        }),
+      ];
+      renderWithClient(<PeopleCard organizationId="org-1" />);
+
+      for (const name of ["Milo Member", "Dana Deleted", "Fred Former"]) {
+        expect(screen.getByRole("button", { name: `Export ${name}'s data` })).toBeEnabled();
+      }
+
+      await userEvent.click(screen.getByRole("button", { name: "Export Fred Former's data" }));
+      expect(requestExport).toHaveBeenCalledWith("emp-3");
+    });
+
+    it("shows Preparing while the export is built", () => {
+      requestedExports = [exported()];
+      renderWithClient(<PeopleCard organizationId="org-1" />);
+
+      const button = screen.getByRole("button", { name: "Export Milo Member's data" });
+      expect(button).toBeDisabled();
+      expect(button).toHaveTextContent("Preparing…");
+    });
+
+    it("turns into Download once ready, and follows a freshly signed link", async () => {
+      requestedExports = [
+        exported({
+          status: "READY",
+          readyAt: "2026-10-25T10:01:00Z",
+          expiresAt: "2026-11-01T10:01:00Z",
+        }),
+      ];
+      signDownload.mockResolvedValue({ url: "https://bucket/x.zip", expiresAt: "x" });
+      renderWithClient(<PeopleCard organizationId="org-1" />);
+
+      expect(screen.getByText("Available until 01/11/2026")).toBeInTheDocument();
+      await userEvent.click(screen.getByRole("button", { name: "Download Milo Member's export" }));
+
+      expect(signDownload).toHaveBeenCalledWith("exp-1");
+      expect(followLink).toHaveBeenCalledWith("https://bucket/x.zip");
+    });
+
+    it("says so when the build failed, and offers Export again", () => {
+      requestedExports = [exported({ status: "FAILED" })];
+      renderWithClient(<PeopleCard organizationId="org-1" />);
+
+      expect(screen.getByText("The export failed. Try again.")).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Export Milo Member's data" })).toBeEnabled();
+    });
   });
 });

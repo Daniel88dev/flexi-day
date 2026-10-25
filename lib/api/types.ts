@@ -463,7 +463,7 @@ export type HolidayCountry = {
 };
 
 export type NotificationKind =
-  "approval_requested" | "approval_decided" | "calendar_conflict" | "balance_low";
+  "approval_requested" | "approval_decided" | "calendar_conflict" | "balance_low" | "export_ready";
 
 export type AppNotification = {
   id: UUID;
