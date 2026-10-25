@@ -28,6 +28,7 @@ import {
   getGroup,
   listGroups,
   updateGroupHolidayCountry,
+  updateGroupManager,
   updateGroupQuotas,
   updateGroupWorkingDays,
 } from "./groups";
@@ -180,6 +181,7 @@ import type {
   SetGroupMirrorsInput,
   SetUserQuotaInput,
   UpdateGroupHolidayCountryInput,
+  UpdateGroupManagerInput,
   UpdateGroupQuotasInput,
   UpdateGroupUsersInput,
   UpdateGroupWorkingDaysInput,
@@ -740,6 +742,19 @@ export function useUpdateGroupHolidayCountry() {
     onSuccess: (_data, vars) => {
       qc.invalidateQueries({ queryKey: qk.groups() });
       qc.invalidateQueries({ queryKey: qk.group(vars.groupId) });
+    },
+  });
+}
+
+export function useUpdateGroupManager() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: UpdateGroupManagerInput) => updateGroupManager(input),
+    onSuccess: (_data, vars) => {
+      qc.invalidateQueries({ queryKey: qk.groups() });
+      qc.invalidateQueries({ queryKey: qk.group(vars.groupId) });
+      qc.invalidateQueries({ queryKey: qk.groupUsers(vars.groupId) });
+      qc.invalidateQueries({ queryKey: ["organization"] });
     },
   });
 }

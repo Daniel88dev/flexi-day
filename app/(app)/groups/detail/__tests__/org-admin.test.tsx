@@ -43,6 +43,11 @@ vi.mock("@/lib/api/queries", () => ({
   useSetGroupMirrors: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useSubscription: () => ({ data: undefined, isLoading: false, error: null }),
   useRemoveGroupUser: () => ({ mutateAsync: vi.fn(), isPending: false }),
+  useUpdateGroupManager: () => ({ mutateAsync: vi.fn(), isPending: false }),
+}));
+
+vi.mock("@/lib/auth-client", () => ({
+  useSession: () => ({ data: { user: { id: "org-admin" } }, isPending: false }),
 }));
 
 /**
@@ -88,5 +93,17 @@ describe("GroupDetailPage as an organization admin", () => {
 
     expect(screen.queryByRole("tab", { name: "Invites" })).not.toBeInTheDocument();
     expect(screen.queryByText(/administrator of Acme/i)).not.toBeInTheDocument();
+  });
+
+  it("offers Change manager to an org admin, and not to a group admin by flag", () => {
+    group.access = { ...group.access, canChangeManager: true };
+    const { unmount } = renderWithClient(<GroupDetailPage />);
+    expect(screen.getByRole("button", { name: "Change manager" })).toBeInTheDocument();
+    unmount();
+
+    group.access = { canView: true, canAdmin: true, viaOrgAdmin: false, isMember: true };
+    group.access.canChangeManager = false;
+    renderWithClient(<GroupDetailPage />);
+    expect(screen.queryByRole("button", { name: "Change manager" })).not.toBeInTheDocument();
   });
 });

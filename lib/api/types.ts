@@ -321,10 +321,14 @@ export type GroupAccess = {
   /** Authority came from administering the organization, not from a membership. */
   viaOrgAdmin: boolean;
   isMember: boolean;
+  /** Owner or delegated admin of the group's organization. Optional: the repos deploy independently. */
+  canChangeManager?: boolean;
 };
 
 export type GroupDetail = Group & {
   access: GroupAccess;
+  /** The manager's name, the frozen copy for a Deleted account. */
+  managerName?: string | null;
   /**
    * Whether the organization may attach files right now: a paid plan, grace
    * included. Optional because the repos deploy independently.
@@ -505,6 +509,11 @@ export type UpdateGroupWorkingDaysInput = {
 export type UpdateGroupHolidayCountryInput = {
   groupId: UUID;
   holidayCountry: string | null;
+};
+
+export type UpdateGroupManagerInput = {
+  groupId: UUID;
+  managerUserId: string;
 };
 
 /** Whose leave the dashboard calendar shows by default. */

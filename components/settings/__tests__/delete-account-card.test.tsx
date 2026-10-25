@@ -40,7 +40,10 @@ let sessionCreatedAt = new Date();
 const signOutMock = vi.fn();
 vi.mock("@/lib/auth-client", () => ({
   useSession: () => ({
-    data: { user: { email: "dana@example.com" }, session: { createdAt: sessionCreatedAt } },
+    data: {
+      user: { id: "u-dana", email: "dana@example.com" },
+      session: { createdAt: sessionCreatedAt },
+    },
   }),
   authClient: { signOut: () => signOutMock() },
 }));
@@ -208,6 +211,29 @@ describe("DeleteAccountCard", () => {
       )
     );
     expect(dialog).not.toHaveTextContent("Acme: your leave");
+  });
+
+  it("says which managed groups pass to their organization's owner", async () => {
+    getStatusMock.mockResolvedValue(PASSWORD_USER);
+    organizations = [{ id: "o1", name: "Acme", isOwner: true }];
+    groups = [
+      { ...groupIn("o1", "Acme"), groupName: "Own Team", managerUserId: "u-dana" },
+      { ...groupIn("o3", "Initech"), groupName: "Support", managerUserId: "u-dana" },
+      { ...groupIn("o4", "Globex"), groupName: "Sales", managerUserId: "u-other" },
+    ];
+    const user = userEvent.setup();
+    renderWithClient(<DeleteAccountCard layoutReady />);
+
+    await user.type(await screen.findByLabelText("Password"), "hunter22");
+    await user.click(screen.getByRole("button", { name: "Delete account" }));
+
+    const dialog = await screen.findByRole("dialog");
+    await waitFor(() =>
+      expect(dialog).toHaveTextContent(
+        "The groups you manage pass to their organization's owner: Support."
+      )
+    );
+    expect(dialog).not.toHaveTextContent("Own Team.");
   });
 
   it("names no organization for a user who owns none", async () => {

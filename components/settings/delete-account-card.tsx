@@ -127,6 +127,7 @@ export function DeleteAccountCard({ layoutReady }: { layoutReady: boolean }) {
 
   const ownedOrganizations = (organizationsQuery.data ?? []).filter((org) => org.isOwner);
   const employers = employersOf(organizationsQuery.data, groupsQuery.data);
+  const handedOver = handedOverGroups(organizationsQuery.data, groupsQuery.data, session?.user.id);
   const employersUnknown = organizationsQuery.isError || groupsQuery.isError;
 
   return (
@@ -251,6 +252,9 @@ export function DeleteAccountCard({ layoutReady }: { layoutReady: boolean }) {
               </ul>
             </>
           ) : null}
+          {handedOver.length > 0 ? (
+            <p className="text-sm">{d.confirmHandedOver(handedOver.join(", "))}</p>
+          ) : null}
           <p className="text-sm font-medium">{d.confirmIrreversible}</p>
           <DialogFooter>
             <Button
@@ -292,6 +296,19 @@ function employersOf(
     }
   }
   return [...byId].map(([id, name]) => ({ id, name }));
+}
+
+/** Groups the user manages in organizations they don't own, which pass to the owner. */
+function handedOverGroups(
+  organizations: OrganizationSummary[] | undefined,
+  groups: GroupListItem[] | undefined,
+  userId: string | undefined
+): string[] {
+  if (!organizations || !userId) return [];
+  const owned = new Set(organizations.filter((org) => org.isOwner).map((org) => org.id));
+  return (groups ?? [])
+    .filter((group) => group.managerUserId === userId && !owned.has(group.organizationId))
+    .map((group) => group.groupName);
 }
 
 function signedInRecently(createdAt: Date | string | undefined): boolean {
