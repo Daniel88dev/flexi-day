@@ -1163,6 +1163,17 @@ export const en = {
         generic: "Could not change your sign-in methods. Please try again.",
       },
     },
+    yourData: {
+      title: "Your data",
+      hint: "Download a copy of the data held about you.",
+      accountData: "Account data",
+      accountDataHint:
+        "Your profile, sign-in methods, sessions and devices, settings, notifications, calendar connections and birthday, in one JSON file. Passwords and tokens are left out.",
+      download: "Download my account data",
+      downloading: "Preparing…",
+      downloaded: "Account data downloaded.",
+      failed: "Could not download your account data.",
+    },
     deleteAccount: {
       title: "Delete account",
       hint: "Deleting your account removes it and everything tied to it. It can't be undone.",

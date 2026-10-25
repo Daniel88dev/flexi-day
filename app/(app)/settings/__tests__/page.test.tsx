@@ -54,6 +54,10 @@ vi.mock("@/components/settings/birthday-card", () => ({
   BirthdayCard: () => <div data-testid="birthday-card" />,
 }));
 
+vi.mock("@/components/settings/your-data-card", () => ({
+  YourDataCard: () => <div data-testid="your-data-card" />,
+}));
+
 vi.mock("@/components/settings/delete-account-card", () => ({
   DeleteAccountCard: ({ layoutReady }: { layoutReady: boolean }) => (
     <div data-testid="delete-account-card" data-layout-ready={String(layoutReady)} />
@@ -285,6 +289,14 @@ describe("SettingsPage", () => {
     expect(await screen.findByLabelText("Current password")).toBeInTheDocument();
     expect(card).toHaveAttribute("data-layout-ready", "true");
     expect(container.firstElementChild?.lastElementChild).toBe(card);
+  });
+
+  it("puts the Your data card right before the delete account card", () => {
+    renderWithClient(<SettingsPage />);
+
+    expect(screen.getByTestId("your-data-card").nextElementSibling).toBe(
+      screen.getByTestId("delete-account-card")
+    );
   });
 
   it("keeps the card hidden while the sign-in methods are still unknown", () => {
