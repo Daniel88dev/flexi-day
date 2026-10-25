@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { UsersRound } from "lucide-react";
 import { AccountDeletedLabel } from "@/components/account-deleted-label";
 import { PersonExportAction } from "@/components/person-export-action";
@@ -31,13 +31,21 @@ import type { PersonExport } from "@/lib/api/person-export";
 import { formatMinutes, parseMinutes } from "@/lib/attendance/duration";
 import { businessDateIn } from "@/lib/attendance/self-service";
 import { useTranslation } from "@/lib/i18n/use-translation";
+import { cn } from "@/lib/utils";
 
 /**
  * The organization's roster for its owner and org admins, on every plan, split
  * into open and former Employments. With attendance on, each row also takes
  * the person's own required time per day; empty means the organization's.
  */
-export function PeopleCard({ organizationId }: { organizationId: string | null }) {
+export function PeopleCard({
+  organizationId,
+  focusEmploymentId = null,
+}: {
+  organizationId: string | null;
+  /** Marked and scrolled into view, for the account deleted notice's link. */
+  focusEmploymentId?: string | null;
+}) {
   const { t } = useTranslation();
   const settings = useAttendanceSettings(organizationId).data;
   const query = useEmployments(organizationId);
@@ -65,6 +73,7 @@ export function PeopleCard({ organizationId }: { organizationId: string | null }
         exportEntry={exportOf.get(employment.userId)}
         requestingExport={requestExport.isPending && requestExport.variables === employment.id}
         onRequestExport={() => requestExport.mutateAsync(employment.id)}
+        focused={employment.id === focusEmploymentId}
       />
     ));
 
@@ -131,6 +140,7 @@ function PersonRow({
   exportEntry,
   requestingExport,
   onRequestExport,
+  focused,
 }: {
   employment: EmploymentListItem;
   organizationId: string | null;
@@ -140,12 +150,25 @@ function PersonRow({
   exportEntry: PersonExport | undefined;
   requestingExport: boolean;
   onRequestExport: () => Promise<unknown>;
+  focused: boolean;
 }) {
   const { t } = useTranslation();
   const [ending, setEnding] = useState(false);
+  const rowRef = useRef<HTMLLIElement>(null);
+
+  useEffect(() => {
+    if (focused) rowRef.current?.scrollIntoView({ block: "center" });
+  }, [focused]);
 
   return (
-    <li className="flex flex-wrap items-center gap-3 py-3">
+    <li
+      ref={rowRef}
+      aria-current={focused ? "true" : undefined}
+      className={cn(
+        "flex flex-wrap items-center gap-3 py-3",
+        focused && "bg-accent/60 -mx-2 rounded-md px-2"
+      )}
+    >
       <div className="min-w-40 flex-1">
         <p className="flex flex-wrap items-center gap-2 font-medium">
           {employment.user.name}

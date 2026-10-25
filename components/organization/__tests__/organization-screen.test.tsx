@@ -12,6 +12,12 @@ let detail: OrganizationDetail | undefined;
 let detailsById: Record<string, OrganizationDetail> | null;
 let candidates: { userId: string; user: { name: string }; groupNames: string[] }[];
 
+let search = new URLSearchParams();
+
+vi.mock("next/navigation", () => ({
+  useSearchParams: () => search,
+}));
+
 const addAdmin = vi.fn();
 const removeAdmin = vi.fn();
 const updateOrganization = vi.fn();
@@ -86,6 +92,7 @@ describe("OrganizationScreen", () => {
     organizationsError = null;
     detail = baseDetail();
     detailsById = null;
+    search = new URLSearchParams();
     candidates = [
       { userId: "cand-1", user: { name: "Cody Candidate" }, groupNames: ["Engineering"] },
     ];
@@ -133,6 +140,35 @@ describe("OrganizationScreen", () => {
     await user.click(screen.getByRole("button", { name: /Acme/ }));
     expect(screen.getByLabelText("Organization name")).toHaveValue("Acme");
     expect(screen.getByRole("button", { name: "Save changes" })).toBeDisabled();
+  });
+
+  it("opens on the organization a notification links to", async () => {
+    const user = userEvent.setup();
+    organizations = [
+      { id: "org-1", name: "Acme", isOwner: true },
+      { id: "org-2", name: "Globex", isOwner: false },
+    ];
+    detailsById = {
+      "org-1": baseDetail(),
+      "org-2": {
+        ...baseDetail(),
+        organization: { ...baseDetail().organization, id: "org-2", name: "Globex" },
+      },
+    };
+    search = new URLSearchParams("organizationId=org-2&employmentId=emp-9");
+
+    renderWithClient(<OrganizationScreen />);
+    expect(screen.getByLabelText("Organization name")).toHaveValue("Globex");
+
+    await user.click(screen.getByRole("button", { name: /Acme/ }));
+    expect(screen.getByLabelText("Organization name")).toHaveValue("Acme");
+  });
+
+  it("falls back to the first organization when the link names one the viewer lacks", () => {
+    search = new URLSearchParams("organizationId=org-gone");
+
+    renderWithClient(<OrganizationScreen />);
+    expect(screen.getByLabelText("Organization name")).toHaveValue("Acme");
   });
 
   it("shows the plan, its limits and the group list", () => {
