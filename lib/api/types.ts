@@ -351,6 +351,8 @@ export type GroupUser = {
 export type GroupUserListItem = GroupUser & {
   user: UserSummary;
   email: string;
+  /** The member deleted their account; `user.name` is the name the organization kept. */
+  accountDeleted: boolean;
 };
 
 export type UserYearQuota = {

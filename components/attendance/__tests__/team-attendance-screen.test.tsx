@@ -112,6 +112,7 @@ const person = (
   employmentId: `emp-${userId}`,
   userId,
   user: { id: userId, name, initials: name[0]!, avatarColor: "hsl(200 50% 50%)" },
+  accountDeleted: false,
   groups: [{ id: "eng", groupName: "Engineering" }],
   requiredMinutesPerDay: 480,
   requiredMinutesOverride: null,
@@ -167,6 +168,25 @@ describe("TeamAttendanceScreen", () => {
         { id: "sales", groupName: "Sales" },
       ],
     };
+  });
+
+  it("labels a person who deleted their account", () => {
+    teamQuery.data = team({
+      people: [
+        person("noah", "Noah Weber", plainWeek()),
+        person("jana", "Jana Nováková", plainWeek(), { accountDeleted: true }),
+      ],
+    });
+    renderWithClient(<TeamAttendanceScreen />);
+
+    const labels = screen.getAllByTestId("account-deleted");
+    expect(labels.length).toBeGreaterThan(0);
+    for (const label of labels) {
+      expect(label.closest("div")).toHaveTextContent("Jana Nováková");
+    }
+    for (const name of screen.getAllByText("Noah Weber")) {
+      expect(name.closest("div")).not.toHaveTextContent("Account deleted");
+    }
   });
 
   it("offers the group filter to an org admin, with the organization's groups", async () => {

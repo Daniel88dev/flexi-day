@@ -14,6 +14,7 @@ export const en = {
     dateLocale: "en-GB",
     loading: "Loading…",
     cancel: "Cancel",
+    accountDeleted: "Account deleted",
     save: "Save",
     saving: "Saving…",
     saved: "Saved",
@@ -1176,7 +1177,7 @@ export const en = {
     },
     deleteAccount: {
       title: "Delete account",
-      hint: "Deleting your account removes it and everything tied to it. It can't be undone.",
+      hint: "Deleting your account removes your sign-in and your personal data. The organizations you work in keep their records of your leave and attendance. It can't be undone.",
       loadFailed:
         "Could not check whether your account can be deleted. Reload the page to try again.",
       blockedIntro: "Your account can't be deleted yet:",
@@ -1202,14 +1203,16 @@ export const en = {
       confirmTitle: "Delete your account?",
       confirmIntro: "This removes for good:",
       confirmAccount: "your account and its sign-in methods",
-      confirmRecords:
-        "your leave and attendance records, including what your team and employer can see",
-      confirmAttachments: "the files attached to your requests",
-      confirmSettings: "your settings",
+      confirmSettings: "your settings, notifications, calendar connections and birthday",
       confirmOrganization: (organization: string) =>
         `the organization ${organization}, with its groups and subscription record`,
       confirmOwnedOrganizations:
         "any organization you own that has nobody else in it, with its groups and subscription record",
+      confirmKeptIntro: "Your employer keeps, until they end your employment or erase it:",
+      confirmKeptBy: (organization: string) =>
+        `${organization}: your leave, attendance and quotas, with their history`,
+      confirmKeptAnywhere:
+        "your leave, attendance and quotas in each place you work, with their history",
       confirmIrreversible: "This can't be undone.",
       confirmDelete: "Delete for good",
       deleting: "Deleting…",

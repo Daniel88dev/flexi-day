@@ -25,11 +25,14 @@ import {
   qk,
   useAccountDeletionStatus,
   useDeleteMyAccount,
+  useGroups,
   useOrganizations,
 } from "@/lib/api/queries";
 import { authClient, useSession } from "@/lib/auth-client";
 import { useOpenBillingPortal } from "@/lib/billing/use-open-billing-portal";
 import type { Dictionary } from "@/lib/i18n";
+import type { OrganizationSummary } from "@/lib/api/organization";
+import type { GroupListItem } from "@/lib/api/types";
 import { useTranslation } from "@/lib/i18n/use-translation";
 
 const LINK_PARAM = "delete-account";
@@ -51,6 +54,7 @@ export function DeleteAccountCard({ layoutReady }: { layoutReady: boolean }) {
   const { data: session } = useSession();
   const statusQuery = useAccountDeletionStatus();
   const organizationsQuery = useOrganizations();
+  const groupsQuery = useGroups();
   const deleteAccount = useDeleteMyAccount();
   const portal = useOpenBillingPortal();
   const titleId = useId();
@@ -122,6 +126,8 @@ export function DeleteAccountCard({ layoutReady }: { layoutReady: boolean }) {
   }
 
   const ownedOrganizations = (organizationsQuery.data ?? []).filter((org) => org.isOwner);
+  const employers = employersOf(organizationsQuery.data, groupsQuery.data);
+  const employersUnknown = organizationsQuery.isError || groupsQuery.isError;
 
   return (
     <Card
@@ -228,14 +234,23 @@ export function DeleteAccountCard({ layoutReady }: { layoutReady: boolean }) {
           </DialogHeader>
           <ul className="list-disc space-y-1 pl-5 text-sm">
             <li>{d.confirmAccount}</li>
-            <li>{d.confirmRecords}</li>
-            <li>{d.confirmAttachments}</li>
             <li>{d.confirmSettings}</li>
             {ownedOrganizations.map((org) => (
               <li key={org.id}>{d.confirmOrganization(org.name)}</li>
             ))}
             {organizationsQuery.isError ? <li>{d.confirmOwnedOrganizations}</li> : null}
           </ul>
+          {employers.length > 0 || employersUnknown ? (
+            <>
+              <p className="text-sm">{d.confirmKeptIntro}</p>
+              <ul className="list-disc space-y-1 pl-5 text-sm">
+                {employers.map((org) => (
+                  <li key={org.id}>{d.confirmKeptBy(org.name)}</li>
+                ))}
+                {employersUnknown ? <li>{d.confirmKeptAnywhere}</li> : null}
+              </ul>
+            </>
+          ) : null}
           <p className="text-sm font-medium">{d.confirmIrreversible}</p>
           <DialogFooter>
             <Button
@@ -257,6 +272,26 @@ export function DeleteAccountCard({ layoutReady }: { layoutReady: boolean }) {
       </Dialog>
     </Card>
   );
+}
+
+/**
+ * The organizations that keep the user's records: those they administer or
+ * belong to a group of, without the ones they own, which go with the account.
+ */
+function employersOf(
+  organizations: OrganizationSummary[] | undefined,
+  groups: GroupListItem[] | undefined
+): { id: string; name: string }[] {
+  if (!organizations) return [];
+  const owned = new Set(organizations.filter((org) => org.isOwner).map((org) => org.id));
+  const byId = new Map<string, string>();
+  for (const org of organizations) if (!org.isOwner) byId.set(org.id, org.name);
+  for (const group of groups ?? []) {
+    if (group.organization && !owned.has(group.organizationId)) {
+      byId.set(group.organizationId, group.organization.name);
+    }
+  }
+  return [...byId].map(([id, name]) => ({ id, name }));
 }
 
 function signedInRecently(createdAt: Date | string | undefined): boolean {

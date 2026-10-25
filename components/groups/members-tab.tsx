@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { Badge } from "@/components/ui/badge";
+import { AccountDeletedLabel } from "@/components/account-deleted-label";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -265,8 +266,11 @@ export function MembersTab({ groupId, isAdmin }: { groupId: string; isAdmin: boo
                                 {t.groups.manager}
                               </Badge>
                             ) : null}
+                            {m.accountDeleted ? <AccountDeletedLabel /> : null}
                           </div>
-                          <div className="text-muted-foreground truncate text-xs">{m.email}</div>
+                          {m.accountDeleted ? null : (
+                            <div className="text-muted-foreground truncate text-xs">{m.email}</div>
+                          )}
                         </div>
                       </div>
                     </TableCell>
