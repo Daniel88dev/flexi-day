@@ -11,8 +11,11 @@ import { ApiError, errorCode } from "./client";
 import {
   acceptDirectoryAgreement,
   enableDirectory,
+  getDirectoryProfile,
   getDirectoryState,
   listDirectoryOrganizations,
+  listDirectoryPeople,
+  listFormerDirectoryPeople,
 } from "./directory";
 import {
   approveVacation,
@@ -307,6 +310,10 @@ export const qk = {
   directoryState: (organizationId?: string | null) =>
     ["directory", "state", organizationId ?? "none"] as const,
   directoryOrganizations: () => ["directory", "organizations"] as const,
+  directoryPeople: (organizationId: string) => ["directory", "people", organizationId] as const,
+  directoryFormer: (organizationId: string) => ["directory", "former", organizationId] as const,
+  directoryProfile: (organizationId: string, employmentId: string) =>
+    ["directory", "profile", organizationId, employmentId] as const,
   organizationExport: (organizationId?: string | null) =>
     ["person-exports", "organization", organizationId ?? "none"] as const,
   attendanceTeam: (params: TeamAttendanceParams) =>
@@ -1612,6 +1619,31 @@ export function useDirectoryOrganizations() {
   return useQuery({
     queryKey: qk.directoryOrganizations(),
     queryFn: listDirectoryOrganizations,
+  });
+}
+
+export function useDirectoryPeople(organizationId: string | null) {
+  return useQuery({
+    queryKey: qk.directoryPeople(organizationId ?? ""),
+    queryFn: () => listDirectoryPeople(organizationId!),
+    enabled: !!organizationId,
+  });
+}
+
+/** Owner, org admins and HR; pass `enabled` from the list's `formerList`. */
+export function useFormerDirectoryPeople(organizationId: string | null, enabled: boolean) {
+  return useQuery({
+    queryKey: qk.directoryFormer(organizationId ?? ""),
+    queryFn: () => listFormerDirectoryPeople(organizationId!),
+    enabled: !!organizationId && enabled,
+  });
+}
+
+export function useDirectoryProfile(organizationId: string, employmentId: string) {
+  return useQuery({
+    queryKey: qk.directoryProfile(organizationId, employmentId),
+    queryFn: () => getDirectoryProfile(organizationId, employmentId),
+    enabled: !!organizationId && !!employmentId,
   });
 }
 

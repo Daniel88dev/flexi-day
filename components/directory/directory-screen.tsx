@@ -1,24 +1,28 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
-import { Check, Contact } from "lucide-react";
+import { useSearchParams } from "next/navigation";
+import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { NavBadge } from "@/components/shell/nav-badge";
-import { DirectoryAgreementBanner } from "@/components/directory/directory-agreement-banner";
+import { DirectoryList } from "@/components/directory/directory-list";
 import type { DirectoryOrganization } from "@/lib/api/directory";
 import { useDirectoryOrganizations } from "@/lib/api/queries";
 import { directoryHome } from "@/lib/directory/directory-access";
 import { useTranslation } from "@/lib/i18n/use-translation";
 
 /**
- * The directory page. Empty for now in a Directory organization; later
- * tickets fill it. Owners and org admins of an organization without it get
+ * The directory page: the list of the Directory organization the link names,
+ * else the first one. Owners and org admins of an organization without it get
  * the upsell, or a pointer to the Organization page on Enterprise.
  */
 export function DirectoryScreen() {
   const { t } = useTranslation();
   const organizations = useDirectoryOrganizations();
+  const linkedId = useSearchParams().get("organizationId");
+  const [chosen, setChosen] = useState<string | null>(null);
 
   if (organizations.isLoading) {
     return <p className="text-muted-foreground text-sm">{t.common.loading}</p>;
@@ -36,30 +40,14 @@ export function DirectoryScreen() {
       </div>
     );
   }
-  if (home.enabled) return <EnabledDirectory organization={home} />;
+  if (home.enabled) {
+    const enabled = organizations.data.filter((organization) => organization.enabled);
+    const current =
+      enabled.find((organization) => organization.organizationId === (chosen ?? linkedId)) ?? home;
+    return <DirectoryList organization={current} organizations={enabled} onSelect={setChosen} />;
+  }
   if (!home.writable) return <DirectoryUpsell />;
   return <DirectoryOff organization={home} />;
-}
-
-function EnabledDirectory({ organization }: { organization: DirectoryOrganization }) {
-  const { t } = useTranslation();
-  return (
-    <div className="space-y-6">
-      <h1 className="font-heading text-2xl font-bold">{t.directory.title}</h1>
-      {organization.role === "OWNER" ? (
-        <DirectoryAgreementBanner organizationId={organization.organizationId} />
-      ) : null}
-      <Card>
-        <CardContent className="flex flex-col items-center gap-2 py-10 text-center">
-          <Contact className="text-muted-foreground h-8 w-8" aria-hidden />
-          <p className="font-semibold">{t.directory.emptyTitle}</p>
-          <p className="text-muted-foreground max-w-md text-sm">
-            {t.directory.emptyBody(organization.name)}
-          </p>
-        </CardContent>
-      </Card>
-    </div>
-  );
 }
 
 function DirectoryUpsell() {

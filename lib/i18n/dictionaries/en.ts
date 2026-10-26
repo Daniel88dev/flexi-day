@@ -1754,9 +1754,6 @@ export const en = {
 
   directory: {
     title: "Directory",
-    emptyTitle: "No profiles yet",
-    emptyBody: (organization: string) =>
-      `The directory of ${organization} is on. Profiles of its people will show here.`,
     upsellLead:
       "Keep a profile for everyone your organization works with, including people without a Flexi Day account and external workers. You decide who sees which part of it.",
     upsellPoints: [
@@ -1773,6 +1770,57 @@ export const en = {
     toOrganization: "Go to the Organization page",
     unavailable: "The directory isn't on in any of your organizations.",
     loadFailed: "Could not load the directory",
+    organizationLabel: "Organization",
+    people: "People",
+    former: "Former",
+    searchLabel: "Search by name",
+    searchPlaceholder: "Search by name",
+    viewLabel: "View",
+    cards: "Cards",
+    table: "Table",
+    nameColumn: "Name",
+    startedColumn: "Started",
+    endedColumn: "Ended",
+    noPeople: "Nobody in the directory yet.",
+    noMatches: (query: string) => `Nobody matches “${query}”.`,
+    noFormer: "Nobody has left yet.",
+    markers: {
+      EXTERNAL_WORKER: "External worker",
+      NO_ACCOUNT: "No account",
+      ACCOUNT_DELETED: "Account deleted",
+      REJOINED: "Rejoined",
+    },
+    lapsed: {
+      title: "The directory is read-only on this plan",
+      body: "Everything stays readable. Adding and changing directory data needs the Enterprise plan.",
+      seePlans: "See plans",
+    },
+    profile: {
+      back: "Directory",
+      overview: "Overview",
+      record: "Record",
+      card: "Card",
+      name: "Name",
+      workContact: "Work contact",
+      noWorkContact: "No work contact yet.",
+      spell: "Employment",
+      started: "Started",
+      ended: "Ended",
+      current: "Current",
+      account: "Account",
+      accountStatus: "Status",
+      accountStatuses: {
+        ACTIVE: "Active",
+        NO_ACCOUNT: "No account",
+        DELETED: "Account deleted",
+      },
+      signInEmail: "Sign-in email",
+      directoryRoles: "Directory roles",
+      noDirectoryRoles: "None",
+      directoryRoleNames: { HR: "HR", LEADERSHIP: "Leadership" },
+      notFound: "This profile isn't available to you.",
+      loadFailed: "Could not load this profile",
+    },
   },
 
   billing: {

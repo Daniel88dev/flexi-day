@@ -1,5 +1,10 @@
+import { Suspense } from "react";
 import { DirectoryScreen } from "@/components/directory/directory-screen";
 
 export default function DirectoryPage() {
-  return <DirectoryScreen />;
+  return (
+    <Suspense fallback={null}>
+      <DirectoryScreen />
+    </Suspense>
+  );
 }

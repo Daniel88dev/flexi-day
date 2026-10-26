@@ -1768,9 +1768,6 @@ export const cs: Dictionary = {
 
   directory: {
     title: "Adresář",
-    emptyTitle: "Zatím žádné profily",
-    emptyBody: (organization: string) =>
-      `Adresář organizace ${organization} je zapnutý. Profily jejích lidí se objeví tady.`,
     upsellLead:
       "Veďte profil pro každého, s kým vaše organizace spolupracuje, včetně lidí bez účtu ve Flexi Day a externích spolupracovníků. Sami určíte, kdo uvidí kterou část.",
     upsellPoints: [
@@ -1787,6 +1784,57 @@ export const cs: Dictionary = {
     toOrganization: "Přejít na stránku Organizace",
     unavailable: "Adresář není zapnutý v žádné z vašich organizací.",
     loadFailed: "Adresář se nepodařilo načíst",
+    organizationLabel: "Organizace",
+    people: "Lidé",
+    former: "Bývalí",
+    searchLabel: "Hledat podle jména",
+    searchPlaceholder: "Hledat podle jména",
+    viewLabel: "Zobrazení",
+    cards: "Karty",
+    table: "Tabulka",
+    nameColumn: "Jméno",
+    startedColumn: "Nástup",
+    endedColumn: "Odchod",
+    noPeople: "V adresáři zatím nikdo není.",
+    noMatches: (query: string) => `Hledání „${query}“ nic nenašlo.`,
+    noFormer: "Zatím nikdo neodešel.",
+    markers: {
+      EXTERNAL_WORKER: "Externí spolupracovník",
+      NO_ACCOUNT: "Bez účtu",
+      ACCOUNT_DELETED: "Účet smazán",
+      REJOINED: "Opětovný nástup",
+    },
+    lapsed: {
+      title: "Na tomto tarifu je adresář jen ke čtení",
+      body: "Vše zůstává k nahlédnutí. Přidávat a měnit údaje v adresáři lze jen s tarifem Enterprise.",
+      seePlans: "Zobrazit tarify",
+    },
+    profile: {
+      back: "Adresář",
+      overview: "Přehled",
+      record: "Záznam",
+      card: "Karta",
+      name: "Jméno",
+      workContact: "Pracovní kontakt",
+      noWorkContact: "Pracovní kontakt zatím chybí.",
+      spell: "Pracovní vztah",
+      started: "Nástup",
+      ended: "Odchod",
+      current: "Trvá",
+      account: "Účet",
+      accountStatus: "Stav",
+      accountStatuses: {
+        ACTIVE: "Aktivní",
+        NO_ACCOUNT: "Bez účtu",
+        DELETED: "Účet smazán",
+      },
+      signInEmail: "Přihlašovací e-mail",
+      directoryRoles: "Role v adresáři",
+      noDirectoryRoles: "Žádné",
+      directoryRoleNames: { HR: "HR", LEADERSHIP: "Vedení" },
+      notFound: "Tento profil pro vás není dostupný.",
+      loadFailed: "Profil se nepodařilo načíst",
+    },
   },
 
   billing: {

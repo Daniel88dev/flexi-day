@@ -6,8 +6,11 @@ vi.mock("../client", () => ({ api: (...args: unknown[]) => apiMock(...args) }));
 import {
   acceptDirectoryAgreement,
   enableDirectory,
+  getDirectoryProfile,
   getDirectoryState,
   listDirectoryOrganizations,
+  listDirectoryPeople,
+  listFormerDirectoryPeople,
 } from "../directory";
 
 describe("directory API", () => {
@@ -41,5 +44,17 @@ describe("directory API", () => {
     apiMock.mockResolvedValue([]);
     await listDirectoryOrganizations();
     expect(apiMock).toHaveBeenCalledWith("/api/directory/organizations");
+  });
+
+  it("reads the directory list, the Former list and one profile of an organization", async () => {
+    apiMock.mockResolvedValue({});
+    await listDirectoryPeople("org 1");
+    await listFormerDirectoryPeople("org-1");
+    await getDirectoryProfile("org-1", "emp/1");
+    expect(apiMock.mock.calls.map(([path]) => path)).toEqual([
+      "/api/directory/org%201/people",
+      "/api/directory/org-1/former",
+      "/api/directory/org-1/people/emp%2F1",
+    ]);
   });
 });
