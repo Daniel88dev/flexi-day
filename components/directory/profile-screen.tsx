@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DirectoryLapsedBanner } from "@/components/directory/directory-lapsed-banner";
 import { DirectoryMarkers } from "@/components/directory/directory-markers";
 import { PersonAvatar } from "@/components/directory/person-avatar";
+import { ProfileActions } from "@/components/directory/profile-actions";
 import { ProfileHistorySheet } from "@/components/directory/profile-history-sheet";
 import { ApiError } from "@/lib/api/client";
 import type { DirectoryProfile } from "@/lib/api/directory";
@@ -83,6 +84,9 @@ export const canEditProfile = (profile: DirectoryProfile) =>
     profile.sections.job,
   ].some((section) => section?.level === "WRITE");
 
+const hasProfileActions = ({ actions }: DirectoryProfile) =>
+  !!actions && (actions.end || actions.export || actions.erase);
+
 function ProfileHeader({ profile }: { profile: DirectoryProfile }) {
   const { t } = useTranslation();
   const jobTitle = profile.sections.card?.jobTitle;
@@ -94,12 +98,12 @@ function ProfileHeader({ profile }: { profile: DirectoryProfile }) {
           photoUrl={profile.sections.photo?.photo?.fullUrl}
           size={72}
         />
-        <div className="min-w-0 flex-1 space-y-1">
+        <div className="min-w-48 flex-1 space-y-1">
           <h1 className="font-heading truncate text-2xl font-bold">{profile.name}</h1>
           {jobTitle ? <p className="text-muted-foreground text-sm">{jobTitle}</p> : null}
           <DirectoryMarkers markers={profile.markers} />
         </div>
-        {canEditProfile(profile) || profile.canReadHistory ? (
+        {canEditProfile(profile) || profile.canReadHistory || hasProfileActions(profile) ? (
           <div className="flex flex-wrap gap-2">
             {canEditProfile(profile) ? (
               <Button asChild variant="outline" size="sm">
@@ -110,6 +114,7 @@ function ProfileHeader({ profile }: { profile: DirectoryProfile }) {
               </Button>
             ) : null}
             {profile.canReadHistory ? <ProfileHistorySheet profile={profile} /> : null}
+            <ProfileActions profile={profile} />
           </div>
         ) : null}
       </CardContent>

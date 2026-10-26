@@ -15,6 +15,7 @@ const updateRequired = vi.fn();
 const endEmployment = vi.fn();
 const eraseEmployment = vi.fn();
 let requestedExports: PersonExport[] | undefined;
+let directoryEnabled = false;
 const requestExport = vi.fn();
 const signDownload = vi.fn();
 const followLink = vi.fn();
@@ -38,6 +39,7 @@ vi.mock("@/lib/api/queries", () => ({
   useEndEmployment: () => ({ mutateAsync: endEmployment, isPending: false }),
   useEraseEmployment: () => ({ mutateAsync: eraseEmployment, isPending: false }),
   useRequestedExports: () => ({ data: requestedExports }),
+  useDirectoryState: () => ({ data: { enabled: directoryEnabled } }),
   useRequestPersonExport: () => ({
     mutateAsync: requestExport,
     isPending: false,
@@ -293,6 +295,40 @@ describe("PeopleCard", () => {
       const former = screen.getByRole("list", { name: "Former" });
       expect(within(former).getByTestId("account-deleted")).toBeInTheDocument();
       expect(within(former).queryByRole("button", { name: "End employment" })).toBeNull();
+    });
+  });
+
+  describe("in a Directory organization", () => {
+    afterEach(() => {
+      directoryEnabled = false;
+    });
+
+    it("moves End employment, Export and Erase to the profile, which each row links", () => {
+      directoryEnabled = true;
+      employments = [
+        person({
+          id: "emp-del",
+          userId: "user-del",
+          accountDeleted: true,
+          accountDeletedAt: "2026-10-01T10:00:00Z",
+          user: { id: "user-del", name: "Karel Gone", initials: "KG", avatarColor: "#000" },
+        }),
+      ];
+      renderWithClient(<PeopleCard organizationId="org-1" />);
+
+      const row = within(screen.getByRole("list", { name: "Open" })).getByRole("listitem");
+      expect(within(row).queryByRole("button", { name: "End employment" })).toBeNull();
+      expect(within(row).queryByRole("button", { name: /erase/i })).toBeNull();
+      expect(within(row).queryByRole("button", { name: /export/i })).toBeNull();
+      expect(within(row).getByRole("link", { name: "Open Karel Gone's profile" })).toHaveAttribute(
+        "href",
+        "/directory/person?organizationId=org-1&employmentId=emp-del"
+      );
+      expect(
+        screen.getByText(
+          "The directory is on, so End employment, Export and Erase are on each person's profile."
+        )
+      ).toBeInTheDocument();
     });
   });
 

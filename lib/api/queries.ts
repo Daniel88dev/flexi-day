@@ -12,6 +12,7 @@ import {
   acceptDirectoryAgreement,
   enableDirectory,
   getDirectoryProfile,
+  getEndPreview,
   getProfileHistory,
   updateDirectoryProfile,
   type DirectoryProfilePatch,
@@ -334,6 +335,8 @@ export const qk = {
     ["directory", "profile", organizationId, employmentId] as const,
   directoryProfileHistory: (organizationId: string, employmentId: string) =>
     ["directory", "history", organizationId, employmentId] as const,
+  directoryEndPreview: (organizationId: string, employmentId: string) =>
+    ["directory", "end-preview", organizationId, employmentId] as const,
   directoryPermissions: (organizationId: string) =>
     ["directory", "permissions", organizationId] as const,
   directoryPermissionHistory: (organizationId: string) =>
@@ -1441,6 +1444,9 @@ export function useEndEmployment(organizationId?: string | null) {
       endEmployment(employmentId, endedOn),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: qk.employments(organizationId) });
+      // A preview of an ended record answers 409, so drop it rather than refetch it.
+      qc.removeQueries({ queryKey: ["directory", "end-preview"] });
+      qc.invalidateQueries({ queryKey: ["directory"] });
       qc.invalidateQueries({ queryKey: qk.organization(organizationId) });
       qc.invalidateQueries({ queryKey: ["group-users"] });
       qc.invalidateQueries({ queryKey: ["attendance-team"] });
@@ -1457,6 +1463,7 @@ export function useEraseEmployment(organizationId?: string | null) {
       eraseEmployment(employmentId, confirmName),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: qk.employments(organizationId) });
+      qc.invalidateQueries({ queryKey: ["directory"] });
       qc.invalidateQueries({ queryKey: qk.organization(organizationId) });
       qc.invalidateQueries({ queryKey: qk.requestedExports(organizationId) });
       qc.invalidateQueries({ queryKey: qk.organizationExport(organizationId) });
@@ -1680,6 +1687,16 @@ export function useProfileHistory(organizationId: string, employmentId: string, 
     queryKey: qk.directoryProfileHistory(organizationId, employmentId),
     queryFn: () => getProfileHistory(organizationId, employmentId),
     enabled: enabled && !!organizationId && !!employmentId,
+  });
+}
+
+/** Fetched when the End dialog opens, so it shows what End does now. */
+export function useEndPreview(organizationId: string, employmentId: string, enabled: boolean) {
+  return useQuery({
+    queryKey: qk.directoryEndPreview(organizationId, employmentId),
+    queryFn: () => getEndPreview(organizationId, employmentId),
+    enabled: enabled && !!organizationId && !!employmentId,
+    staleTime: 0,
   });
 }
 

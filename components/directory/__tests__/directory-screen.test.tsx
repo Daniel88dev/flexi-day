@@ -168,6 +168,39 @@ describe("DirectoryScreen", () => {
     expect(screen.getByRole("cell", { name: "Účetní" })).toBeInTheDocument();
   });
 
+  it("lets an admin narrow the list to people in no group", async () => {
+    const user = userEvent.setup();
+    people = {
+      people: [
+        person("Ada Novak", { noGroup: false }),
+        person("Jana Svobodová", { noGroup: true }),
+      ],
+      formerList: true,
+      settings: true,
+      noGroupFilter: true,
+    };
+    renderWithClient(<DirectoryScreen />);
+
+    await user.click(screen.getByRole("button", { name: "No group" }));
+
+    expect(screen.getByRole("button", { name: "No group" })).toHaveAttribute(
+      "aria-pressed",
+      "true"
+    );
+    const cards = screen.getByTestId("directory-cards");
+    expect(
+      within(cards)
+        .getAllByRole("link")
+        .map((link) => link.textContent)
+    ).toEqual([expect.stringContaining("Jana Svobodová")]);
+  });
+
+  it("offers the No group filter only when the list carries it", () => {
+    renderWithClient(<DirectoryScreen />);
+
+    expect(screen.queryByRole("button", { name: "No group" })).toBeNull();
+  });
+
   it("offers no Former tab to someone the list doesn't open it for", () => {
     renderWithClient(<DirectoryScreen />);
     expect(screen.queryByRole("tab", { name: "Former" })).not.toBeInTheDocument();

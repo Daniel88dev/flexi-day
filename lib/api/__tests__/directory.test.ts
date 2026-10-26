@@ -10,6 +10,7 @@ import {
   getDirectoryRoles,
   getPermissionHistory,
   getPermissionTable,
+  getEndPreview,
   getProfileHistory,
   setDirectoryRoles,
   updatePermissionCell,
@@ -75,6 +76,12 @@ describe("directory API", () => {
       method: "PATCH",
       body: { card: { jobTitle: null } },
     });
+  });
+
+  it("reads what End would do to a record", async () => {
+    apiMock.mockResolvedValue({});
+    await getEndPreview("org-1", "emp-1");
+    expect(apiMock).toHaveBeenCalledWith("/api/directory/org-1/people/emp-1/end-preview");
   });
 
   it("reads a profile's history", async () => {

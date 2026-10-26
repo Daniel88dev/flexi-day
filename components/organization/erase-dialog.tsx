@@ -30,11 +30,14 @@ export function EraseDialog({
   onOpenChange,
   employment,
   organizationId,
+  onErased,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  employment: EmploymentListItem;
+  employment: Pick<EmploymentListItem, "id" | "ended" | "user">;
   organizationId: string | null;
+  /** The record is gone: a page showing it should move on. */
+  onErased?: () => void;
 }) {
   const { t } = useTranslation();
   const copy = t.organization.people.eraseDialog;
@@ -54,6 +57,7 @@ export function EraseDialog({
       await erase.mutateAsync({ employmentId: employment.id, confirmName: typed });
       pushToast(copy.done(name));
       onOpenChange(false);
+      onErased?.();
     } catch (err) {
       setError(
         errorCopy(

@@ -44,10 +44,12 @@ export function DirectoryList({
 }) {
   const { t } = useTranslation();
   const [query, setQuery] = useState("");
+  const [noGroupOnly, setNoGroupOnly] = useState(false);
   const [view, setView] = useDirectoryView();
   const people = useDirectoryPeople(organization.organizationId);
   const formerList = people.data?.formerList ?? false;
   const settings = people.data?.settings ?? false;
+  const noGroupFilter = people.data?.noGroupFilter ?? false;
   const former = useFormerDirectoryPeople(organization.organizationId, formerList);
   const [chosenTab, setChosenTab] = useState("people");
   const tab =
@@ -58,7 +60,11 @@ export function DirectoryList({
   const peopleTab = (
     <PeopleView
       organizationId={organization.organizationId}
-      people={people.data?.people}
+      people={
+        noGroupFilter && noGroupOnly
+          ? people.data?.people.filter((person) => person.noGroup)
+          : people.data?.people
+      }
       loading={people.isLoading}
       failed={!!people.error}
       query={query}
@@ -113,6 +119,16 @@ export function DirectoryList({
               className="pl-9"
             />
           </div>
+          {noGroupFilter && tab === "people" ? (
+            <Button
+              size="sm"
+              variant={noGroupOnly ? "default" : "outline"}
+              aria-pressed={noGroupOnly}
+              onClick={() => setNoGroupOnly((on) => !on)}
+            >
+              {t.directory.noGroupFilter}
+            </Button>
+          ) : null}
           <div role="group" aria-label={t.directory.viewLabel} className="flex gap-1">
             <Button
               size="sm"

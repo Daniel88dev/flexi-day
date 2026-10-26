@@ -57,9 +57,24 @@ describe("useEndEmployment", () => {
       ["group-users"],
       ["attendance-team"],
       ["vacations"],
+      ["directory"],
     ]) {
       expect(invalidate).toHaveBeenCalledWith({ queryKey });
     }
+  });
+
+  it("drops the End preview, which an ended record no longer answers", async () => {
+    endEmploymentMock.mockResolvedValue({ id: "emp-1", ended: true, cancelledBookings: 0 });
+    const client = newClient();
+    client.setQueryData(qk.directoryEndPreview("org-1", "emp-1"), { employmentId: "emp-1" });
+    const { result } = renderHook(() => useEndEmployment("org-1"), {
+      wrapper: wrapperFor(client),
+    });
+
+    result.current.mutate({ employmentId: "emp-1", endedOn: "2026-10-24" });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(client.getQueryData(qk.directoryEndPreview("org-1", "emp-1"))).toBeUndefined();
   });
 });
 

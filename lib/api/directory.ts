@@ -83,6 +83,8 @@ export type DirectoryPerson = {
   photoUrl: string | null;
   user: { id: string; name: string; initials: string; avatarColor: string };
   markers: DirectoryMarker[];
+  /** In no group of the organization; sent to the owner and org admins only. */
+  noGroup?: boolean;
 };
 
 export type FormerDirectoryPerson = DirectoryPerson & { startedAt: string; endedAt: string };
@@ -93,6 +95,8 @@ export type DirectoryPeople = {
   formerList: boolean;
   /** The viewer may open Directory settings: the owner, org admins and HR. */
   settings: boolean;
+  /** The rows carry `noGroup`, so the No group filter shows: the owner and org admins. */
+  noGroupFilter?: boolean;
 };
 
 export type DirectorySectionLevel = "READ" | "WRITE";
@@ -164,6 +168,8 @@ export type DirectoryProfile = DirectoryPerson & {
   };
   /** The owner, org admins and HR read the profile history. */
   canReadHistory: boolean;
+  /** What the viewer may do to this record from its profile. */
+  actions?: ProfileActions;
   /** For the owner, org admins, HR and the person. */
   account?: {
     status: DirectoryAccountStatus;
@@ -299,6 +305,42 @@ export type ProfileHistoryEntry = {
   fields: string[];
   audience: DirectoryAudience;
 };
+
+export type ProfileActions = {
+  /** End employment, by the End act cell, on an open record that isn't the owner's. */
+  end: boolean;
+  /** The Person export: the owner and org admins, for a person with an account. */
+  export: boolean;
+  /** Erase: the owner and org admins, for a Deleted account. */
+  erase: boolean;
+};
+
+/** What End employment would do, for the End dialog. */
+export type EndPreview = {
+  employmentId: string;
+  /** Today in the organization's zone, the latest date End accepts. */
+  today: string;
+  /** The spell's first day, the earliest date End accepts. */
+  startedOn: string;
+  /** A Leaving date of today or earlier, else today. */
+  suggestedEndedOn: string;
+  /** Open records whose Reports to names this person, cleared by End. */
+  reportees: { employmentId: string; name: string }[];
+  groups: { id: string; name: string }[];
+  /** End is refused while the person manages any of these. */
+  managedGroups: { id: string; name: string }[];
+  cancelledBookings: number;
+  /** A delegated org-admin row End drops. */
+  organizationAdmin: boolean;
+  directoryRoles: DirectoryRoleName[];
+};
+
+/** Only for a viewer whose End act cell allows it. */
+export function getEndPreview(organizationId: string, employmentId: string): Promise<EndPreview> {
+  return api<EndPreview>(
+    directoryPath(organizationId, `people/${encodeURIComponent(employmentId)}/end-preview`)
+  );
+}
 
 /** Owner, org admins and HR only. */
 export function getProfileHistory(
