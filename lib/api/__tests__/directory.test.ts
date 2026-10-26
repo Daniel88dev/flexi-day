@@ -28,6 +28,8 @@ import {
   updateDirectoryGeneralSettings,
   getPreviousSpell,
   copyFromPreviousSpell,
+  getDirectoryChecklist,
+  hideDirectoryChecklist,
 } from "../directory";
 
 describe("directory API", () => {
@@ -39,12 +41,12 @@ describe("directory API", () => {
     expect(apiMock).toHaveBeenCalledWith("/api/organization/directory?organizationId=org%201");
   });
 
-  it("turns the directory on with the agreement version the owner saw", async () => {
+  it("turns the directory on with the agreement version the owner saw and Tell members", async () => {
     apiMock.mockResolvedValue({ enabled: true });
-    await enableDirectory("org-1", 1);
+    await enableDirectory("org-1", { agreementVersion: 1, tellMembers: true });
     expect(apiMock).toHaveBeenCalledWith(
       "/api/organization/directory/enable?organizationId=org-1",
-      { method: "POST", body: { agreementVersion: 1 } }
+      { method: "POST", body: { agreementVersion: 1, tellMembers: true } }
     );
   });
 
@@ -183,6 +185,16 @@ describe("directory API", () => {
         "/api/directory/org-1/people/emp%2F2/previous-spell/copy?language=cs",
         { method: "POST", body: { sections: ["contact", "photo"] } },
       ],
+    ]);
+  });
+
+  it("reads the setup checklist and hides it with a POST", async () => {
+    apiMock.mockResolvedValue({});
+    await getDirectoryChecklist("org 1");
+    await hideDirectoryChecklist("org 1");
+    expect(apiMock.mock.calls).toEqual([
+      ["/api/directory/org%201/checklist"],
+      ["/api/directory/org%201/checklist/hide", { method: "POST" }],
     ]);
   });
 });

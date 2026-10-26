@@ -14,6 +14,9 @@ import {
   deleteAllDirectoryData,
   disableDirectory,
   enableDirectory,
+  getDirectoryChecklist,
+  hideDirectoryChecklist,
+  type EnableDirectoryInput,
   getDirectoryProfile,
   getEndPreview,
   getProfileHistory,
@@ -374,6 +377,8 @@ export const qk = {
   directoryPermissionHistory: (organizationId: string) =>
     ["directory", "permissionHistory", organizationId] as const,
   directoryRoles: (organizationId: string) => ["directory", "roles", organizationId] as const,
+  directoryChecklist: (organizationId: string) =>
+    ["directory", "checklist", organizationId] as const,
   directoryGeneralSettings: (organizationId: string) =>
     ["directory", "general", organizationId] as const,
   directoryRetention: (organizationId: string) =>
@@ -1845,6 +1850,22 @@ export function usePermissionHistory(organizationId: string, enabled: boolean) {
   });
 }
 
+export function useDirectoryChecklist(organizationId: string, enabled: boolean) {
+  return useQuery({
+    queryKey: qk.directoryChecklist(organizationId),
+    queryFn: () => getDirectoryChecklist(organizationId),
+    enabled: enabled && !!organizationId,
+  });
+}
+
+export function useHideDirectoryChecklist(organizationId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => hideDirectoryChecklist(organizationId),
+    onSuccess: (checklist) => qc.setQueryData(qk.directoryChecklist(organizationId), checklist),
+  });
+}
+
 export function useDirectoryRoles(organizationId: string, enabled: boolean) {
   return useQuery({
     queryKey: qk.directoryRoles(organizationId),
@@ -2045,7 +2066,7 @@ export function useRemoveProfilePhoto(organizationId: string, employmentId: stri
 export function useEnableDirectory(organizationId: string | null) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (agreementVersion: number) => enableDirectory(organizationId!, agreementVersion),
+    mutationFn: (input: EnableDirectoryInput) => enableDirectory(organizationId!, input),
     onSuccess: (state) => {
       qc.setQueryData(qk.directoryState(organizationId), state);
       qc.invalidateQueries({ queryKey: ["directory"] });

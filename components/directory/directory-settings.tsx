@@ -12,13 +12,21 @@ import { PermissionTableEditor } from "@/components/directory/permission-table-e
 import type { DirectoryOrganization } from "@/lib/api/directory";
 import { useTranslation } from "@/lib/i18n/use-translation";
 
-type Panel = "permissions" | "roles" | "general" | "retention" | "lists" | "readLog";
+export type SettingsPanel = "permissions" | "roles" | "general" | "retention" | "lists" | "readLog";
+
+type Panel = SettingsPanel;
 
 /** The Directory settings tab, for the owner, org admins and HR. Later settings add a panel here. */
-export function DirectorySettings({ organization }: { organization: DirectoryOrganization }) {
+export function DirectorySettings({
+  organization,
+  initialPanel = "permissions",
+}: {
+  organization: DirectoryOrganization;
+  initialPanel?: SettingsPanel;
+}) {
   const { t } = useTranslation();
   const copy = t.directory.settings;
-  const [panel, setPanel] = useState<Panel>("permissions");
+  const [panel, setPanel] = useState<Panel>(initialPanel);
   // The Read log is for the owner and org admins; HR reads it only by also being one.
   const readsLog = organization.role === "OWNER" || organization.role === "ORGANIZATION_ADMIN";
   const panels: [Panel, string][] = [

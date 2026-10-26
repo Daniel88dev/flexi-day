@@ -470,7 +470,8 @@ export type NotificationKind =
   | "comment"
   | "session_auto_closed"
   | "export_ready"
-  | "account_deleted";
+  | "account_deleted"
+  | "directory_enabled";
 
 export type AppNotification = {
   id: UUID;

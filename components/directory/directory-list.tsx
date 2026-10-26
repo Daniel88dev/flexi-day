@@ -19,7 +19,8 @@ import { AddPersonAction } from "@/components/directory/add-person-dialog";
 import { DirectoryAgreementBanner } from "@/components/directory/directory-agreement-banner";
 import { DirectoryLapsedBanner } from "@/components/directory/directory-lapsed-banner";
 import { DirectoryMarkers } from "@/components/directory/directory-markers";
-import { DirectorySettings } from "@/components/directory/directory-settings";
+import { DirectoryChecklist } from "@/components/directory/directory-checklist";
+import { DirectorySettings, type SettingsPanel } from "@/components/directory/directory-settings";
 import { PersonAvatar } from "@/components/directory/person-avatar";
 import type {
   DirectoryOrganization,
@@ -57,6 +58,14 @@ export function DirectoryList({
   const noGroupFilter = people.data?.noGroupFilter ?? false;
   const former = useFormerDirectoryPeople(organization.organizationId, formerList);
   const [chosenTab, setChosenTab] = useState("people");
+  const [settingsPanel, setSettingsPanel] = useState<{ panel: SettingsPanel; opened: number }>({
+    panel: "permissions",
+    opened: 0,
+  });
+  const openSettings = (panel: SettingsPanel) => {
+    setSettingsPanel((current) => ({ panel, opened: current.opened + 1 }));
+    setChosenTab("settings");
+  };
   const tab =
     (chosenTab === "former" && !formerList) || (chosenTab === "settings" && !settings)
       ? "people"
@@ -116,6 +125,12 @@ export function DirectoryList({
         <DirectoryAgreementBanner organizationId={organization.organizationId} />
       ) : null}
       <DirectoryLapsedBanner organization={organization} />
+      {settings && tab !== "settings" ? (
+        <DirectoryChecklist
+          organizationId={organization.organizationId}
+          onOpenSettings={openSettings}
+        />
+      ) : null}
 
       {tab === "settings" ? null : (
         <div className="flex flex-wrap items-center gap-3">
@@ -206,7 +221,11 @@ export function DirectoryList({
           </TabsContent>
           {settings ? (
             <TabsContent value="settings" className="pt-4">
-              <DirectorySettings organization={organization} />
+              <DirectorySettings
+                key={settingsPanel.opened}
+                organization={organization}
+                initialPanel={settingsPanel.panel}
+              />
             </TabsContent>
           ) : null}
         </Tabs>

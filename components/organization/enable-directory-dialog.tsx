@@ -37,13 +37,15 @@ export function EnableDirectoryDialog({
   const router = useRouter();
   const enable = useEnableDirectory(state.organizationId);
   const [accepted, setAccepted] = useState(false);
+  const firstEnable = state.enabledAt === null;
+  const [tellMembers, setTellMembers] = useState(firstEnable);
   const [error, setError] = useState<string | null>(null);
   const version = state.agreement.currentVersion;
 
   async function submit() {
     setError(null);
     try {
-      await enable.mutateAsync(version);
+      await enable.mutateAsync({ agreementVersion: version, tellMembers });
       pushToast(copy.done);
       onOpenChange(false);
       router.push("/directory");
@@ -68,6 +70,7 @@ export function EnableDirectoryDialog({
       onOpenChange={(next) => {
         if (!next) {
           setAccepted(false);
+          setTellMembers(firstEnable);
           setError(null);
         }
         onOpenChange(next);
@@ -103,6 +106,18 @@ export function EnableDirectoryDialog({
             <Label htmlFor="acceptDirectoryAgreement">{copy.accept(organizationName)}</Label>
           </div>
           <p className="text-muted-foreground text-xs">{copy.recordHint}</p>
+        </div>
+
+        <div className="space-y-1">
+          <div className="flex items-center gap-2.5">
+            <Checkbox
+              id="tellDirectoryMembers"
+              checked={tellMembers}
+              onCheckedChange={(next) => setTellMembers(next === true)}
+            />
+            <Label htmlFor="tellDirectoryMembers">{copy.tellMembers}</Label>
+          </div>
+          <p className="text-muted-foreground text-xs">{copy.tellMembersHint}</p>
         </div>
 
         {error ? <p className="text-destructive text-sm">{error}</p> : null}
