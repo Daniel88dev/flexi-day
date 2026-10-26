@@ -444,6 +444,25 @@ describe("NewRequestDialog", () => {
     });
   });
 
+  it("leaves a Deleted account out of the member picker", async () => {
+    canAdmin = true;
+    members = [
+      member,
+      {
+        ...member,
+        userId: "u-deleted",
+        accountDeleted: true,
+        user: { ...member.user, id: "u-deleted", name: "Ola Gone" },
+      },
+    ];
+    renderWithClient(<NewRequestDialog open initialDate="2026-07-15" onOpenChange={() => {}} />);
+
+    fireEvent.click(screen.getByLabelText("For"));
+
+    expect(await screen.findByRole("option", { name: "Dana Holt" })).toBeInTheDocument();
+    expect(screen.queryByRole("option", { name: "Ola Gone" })).toBeNull();
+  });
+
   it("sends autoApprove false when the admin unchecks it", async () => {
     canAdmin = true;
     members = [member];

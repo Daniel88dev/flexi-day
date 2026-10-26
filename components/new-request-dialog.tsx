@@ -134,7 +134,7 @@ export function NewRequestDialog({
   // the self-exclusion cannot work and an admin could pick themselves.
   const members = session
     ? (membersQuery.data ?? []).filter(
-        (m) => m.controlledUser && !m.deletedAt && m.userId !== session.user.id
+        (m) => m.controlledUser && !m.deletedAt && !m.accountDeleted && m.userId !== session.user.id
       )
     : [];
 
