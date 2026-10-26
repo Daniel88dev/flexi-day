@@ -8,6 +8,7 @@ import {
   getGroup,
   listGroups,
   updateGroupHolidayCountry,
+  updateGroupManager,
   updateGroupQuotas,
   updateGroupWorkingDays,
 } from "../groups";
@@ -69,6 +70,14 @@ describe("groups api", () => {
     expect(apiMock).toHaveBeenCalledWith("/api/group/g-1/holiday-country", {
       method: "PUT",
       body: { holidayCountry: null },
+    });
+  });
+
+  it("updateGroupManager PUTs the new manager with the groupId in the path only", async () => {
+    await updateGroupManager({ groupId: "g-1", managerUserId: "u-2" });
+    expect(apiMock).toHaveBeenCalledWith("/api/group/g-1/manager", {
+      method: "PUT",
+      body: { managerUserId: "u-2" },
     });
   });
 });

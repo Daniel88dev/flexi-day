@@ -947,6 +947,24 @@ export const cs: Dictionary = {
       names.length === 1
         ? `${names[0]} už není členem skupiny, změny oprávnění se neuložily.`
         : `${names.join(", ")} už nejsou členy skupiny, změny jejich oprávnění se neuložily.`,
+    changeManager: {
+      button: "Změnit manažera",
+      title: "Změnit manažera skupiny",
+      current: (name: string, group: string) =>
+        `Skupinu ${group} teď spravuje ${name}. Vyberte člena, který ji převezme.`,
+      currentUnknown: (group: string) => `Vyberte člena, který převezme skupinu ${group}.`,
+      pick: "Nový manažer",
+      nobody: "Nikdo další ve skupině ji nemůže převzít. Nejdřív někoho pozvěte.",
+      note: "Manažer skupinu spravuje a schvaluje její žádosti. Oprávnění a schvalovatelé zůstanou, jak jsou.",
+      confirm: "Udělat manažerem",
+      changed: (name: string, group: string) => `Skupinu ${group} teď spravuje ${name}.`,
+      errors: {
+        notAMember: "Tento člověk už ve skupině není.",
+        accountDeleted: "Tento člověk smazal svůj účet.",
+        self: "Sami sebe manažerem jmenovat nemůžete.",
+        generic: "Manažera se nepodařilo změnit. Zkuste to znovu.",
+      },
+    },
     removeMember: "Odebrat",
     removeConfirm: (name: string) =>
       `Odebrat ${name} z této skupiny? Historie zůstane, ale ztratí přístup.`,
@@ -1201,7 +1219,7 @@ export const cs: Dictionary = {
       blockedIntro: "Účet zatím nelze smazat:",
       blockers: {
         groupHasMembers: (group: string, others: number) =>
-          `Spravujete skupinu ${group}, ve které ${plural(others, "zůstává", "zůstávají", "zůstává")} ${others} ${plural(others, "další člen", "další členové", "dalších členů")}. Nejprve je ze skupiny odeberte. Předat skupinu někomu jinému zatím nejde.`,
+          `Spravujete skupinu ${group} ve své organizaci. Ve skupině ${plural(others, "zůstává", "zůstávají", "zůstává")} ${others} ${plural(others, "další člen", "další členové", "dalších členů")}. Nejprve je ze skupiny odeberte.`,
         organizationHasMembers: (organization: string, others: number) =>
           `Vlastníte organizaci ${organization}, ve které ${plural(others, "pracuje", "pracují", "pracuje")} ${others} ${plural(others, "další člověk", "další lidé", "dalších lidí")}. Nejprve je z organizace odeberte. Předat organizaci někomu jinému zatím nejde.`,
         subscriptionRenewing: (organization: string) =>
@@ -1231,6 +1249,8 @@ export const cs: Dictionary = {
       confirmKeptBy: (organization: string) =>
         `${organization}: vaše volno, docházku a kvóty i s jejich historií`,
       confirmKeptAnywhere: "vaše volno, docházku a kvóty v každém zaměstnání, i s jejich historií",
+      confirmHandedOver: (groups: string) =>
+        `Skupiny, které spravujete, převezme vlastník jejich organizace: ${groups}.`,
       confirmIrreversible: "Tento krok nelze vrátit zpět.",
       confirmDelete: "Smazat natrvalo",
       deleting: "Mazání…",

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ShieldCheck } from "lucide-react";
 import { OrganizationBadge } from "@/components/billing/organization-badge";
+import { ChangeManager } from "@/components/groups/change-manager";
 import { InvitesTab } from "@/components/groups/invites-tab";
 import { MembersTab } from "@/components/groups/members-tab";
 import { MirroringTab } from "@/components/groups/mirroring-tab";
@@ -70,6 +71,7 @@ export default function GroupDetailPage() {
           ) : null}
           <OrganizationBadge organization={group?.organization ?? null} className="mt-2" />
         </div>
+        {group ? <ChangeManager group={group} /> : null}
       </div>
 
       {viaOrgAdmin && group?.organization ? (

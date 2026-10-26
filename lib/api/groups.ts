@@ -5,6 +5,7 @@ import type {
   GroupDetail,
   GroupListItem,
   UpdateGroupHolidayCountryInput,
+  UpdateGroupManagerInput,
   UpdateGroupQuotasInput,
   UpdateGroupWorkingDaysInput,
 } from "./types";
@@ -46,4 +47,9 @@ export function updateGroupHolidayCountry({
   ...body
 }: UpdateGroupHolidayCountryInput): Promise<Group> {
   return api<Group>(`/api/group/${groupId}/holiday-country`, { method: "PUT", body });
+}
+
+/** Org admins only: name a live member of the group as its manager. */
+export function updateGroupManager({ groupId, ...body }: UpdateGroupManagerInput): Promise<Group> {
+  return api<Group>(`/api/group/${groupId}/manager`, { method: "PUT", body });
 }

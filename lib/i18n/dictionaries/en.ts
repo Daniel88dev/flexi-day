@@ -929,6 +929,24 @@ export const en = {
       names.length === 1
         ? `${names[0]} is no longer in this group, so their permission changes were not saved.`
         : `${names.join(", ")} are no longer in this group, so their permission changes were not saved.`,
+    changeManager: {
+      button: "Change manager",
+      title: "Change the group's manager",
+      current: (name: string, group: string) =>
+        `${name} manages ${group} now. Pick the member who takes over.`,
+      currentUnknown: (group: string) => `Pick the member who takes over ${group}.`,
+      pick: "New manager",
+      nobody: "Nobody else in the group can take over. Invite someone first.",
+      note: "The manager administers the group and approves its requests. Permissions and approvers stay as they are.",
+      confirm: "Make manager",
+      changed: (name: string, group: string) => `${name} now manages ${group}.`,
+      errors: {
+        notAMember: "That person is no longer in the group.",
+        accountDeleted: "That person deleted their account.",
+        self: "You can't name yourself the manager.",
+        generic: "Could not change the manager. Please try again.",
+      },
+    },
     removeMember: "Remove",
     removeConfirm: (name: string) =>
       `Remove ${name} from this group? Their history stays, but they lose access.`,
@@ -1183,7 +1201,7 @@ export const en = {
       blockedIntro: "Your account can't be deleted yet:",
       blockers: {
         groupHasMembers: (group: string, others: number) =>
-          `You manage the group ${group}, which still has ${others} other ${others === 1 ? "member" : "members"}. Remove them from the group first. Handing a group over to someone else isn't available yet.`,
+          `You manage the group ${group} in your own organization, which still has ${others} other ${others === 1 ? "member" : "members"}. Remove them from the group first.`,
         organizationHasMembers: (organization: string, others: number) =>
           `You own the organization ${organization}, where ${others} other ${others === 1 ? "person still works" : "people still work"}. Remove them from the organization first. Handing an organization over to someone else isn't available yet.`,
         subscriptionRenewing: (organization: string) =>
@@ -1213,6 +1231,8 @@ export const en = {
         `${organization}: your leave, attendance and quotas, with their history`,
       confirmKeptAnywhere:
         "your leave, attendance and quotas in each place you work, with their history",
+      confirmHandedOver: (groups: string) =>
+        `The groups you manage pass to their organization's owner: ${groups}.`,
       confirmIrreversible: "This can't be undone.",
       confirmDelete: "Delete for good",
       deleting: "Deleting…",
