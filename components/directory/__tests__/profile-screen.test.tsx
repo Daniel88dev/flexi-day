@@ -9,6 +9,7 @@ import type {
   DirectoryOrganization,
   DirectoryProfile,
 } from "@/lib/api/directory";
+import { ShownSectionsProvider } from "@/lib/directory/shown-sections";
 import { ProfileScreen } from "../profile-screen";
 
 let profile: { data?: DirectoryProfile; error: unknown } = { error: null };
@@ -20,6 +21,28 @@ vi.mock("next/navigation", () => ({
 }));
 
 let history: { data?: unknown[]; error: unknown } = { data: [], error: null };
+
+const showMock = vi.fn();
+vi.mock("@/lib/api/directory", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/api/directory")>()),
+  showSensitiveSection: (...args: unknown[]) => showMock(...args),
+}));
+
+const czPhone = (e164: string, display: string) => ({
+  e164,
+  display,
+  country: { code: "CZ", name: "Czechia" },
+});
+
+const shownContact = (recorded: boolean) => ({
+  section: "CONTACT",
+  level: "WRITE",
+  recorded,
+  privatePhone: czPhone("+420777123456", "+420 777 123 456"),
+  privateEmail: "jana.home@example.test",
+  emergencyContact1: { name: "Karel Novák", phone: czPhone("+420602111222", "+420 602 111 222") },
+  emergencyContact2: null,
+});
 const historyCalls: boolean[] = [];
 
 vi.mock("@/lib/api/queries", () => ({
@@ -395,5 +418,101 @@ describe("ProfileScreen", () => {
     expect(within(drawer).getByText("Someone no longer here")).toBeInTheDocument();
     expect(within(drawer).getByText("Job: Employee number, Working time")).toBeInTheDocument();
     expect(historyCalls.at(-1)).toBe(true);
+  });
+
+  describe("the Sensitive sections", () => {
+    beforeEach(() => {
+      showMock.mockReset();
+    });
+
+    it("keeps Contact closed for someone else until Show, then opens it once with the read-log line", async () => {
+      const user = userEvent.setup();
+      showMock.mockResolvedValue(shownContact(true));
+      profile = {
+        data: jana({
+          sections: { card: card(), contact: { level: "WRITE" }, personal: { level: "WRITE" } },
+        }),
+        error: null,
+      };
+      renderWithClient(
+        <ShownSectionsProvider>
+          <ProfileScreen />
+        </ShownSectionsProvider>
+      );
+
+      await user.click(screen.getByRole("tab", { name: "Contact" }));
+      const region = screen.getByRole("region", { name: "Contact" });
+      expect(within(region).getByText("Hidden until you open it.")).toBeInTheDocument();
+      expect(showMock).not.toHaveBeenCalled();
+
+      await user.click(within(region).getByRole("button", { name: "Show" }));
+
+      expect(showMock).toHaveBeenCalledWith("org-1", "emp-jana", "contact", "en");
+      const opened = screen.getByRole("region", { name: "Contact" });
+      expect(
+        within(opened).getByText("Your view of this section is recorded in the read log.")
+      ).toBeInTheDocument();
+      expect(within(opened).getByRole("link", { name: "+420 777 123 456" })).toHaveAttribute(
+        "href",
+        "tel:+420777123456"
+      );
+      expect(within(opened).getByText(/Karel Novák/)).toBeInTheDocument();
+
+      await user.click(screen.getByRole("tab", { name: "Personal" }));
+      await user.click(screen.getByRole("tab", { name: "Contact" }));
+      expect(screen.getByText("jana.home@example.test")).toBeInTheDocument();
+      expect(showMock).toHaveBeenCalledTimes(1);
+    });
+
+    it("opens the person's own Contact without a Show button or the read-log line", async () => {
+      const user = userEvent.setup();
+      showMock.mockResolvedValue(shownContact(false));
+      profile = {
+        data: jana({ self: true, sections: { card: card(), contact: { level: "WRITE" } } }),
+        error: null,
+      };
+      renderWithClient(<ProfileScreen />);
+
+      await user.click(screen.getByRole("tab", { name: "Contact" }));
+
+      expect(await screen.findByText("jana.home@example.test")).toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: "Show" })).not.toBeInTheDocument();
+      expect(screen.queryByText(/recorded in the read log/)).not.toBeInTheDocument();
+    });
+
+    it("shows the Personal values once opened, and leaves the tab out when the Section is absent", async () => {
+      const user = userEvent.setup();
+      showMock.mockResolvedValue({
+        section: "PERSONAL",
+        level: "READ",
+        recorded: true,
+        homeAddress: {
+          line1: "Vinohradská 12",
+          line2: null,
+          postalCode: "120 00",
+          city: "Praha",
+          region: null,
+          country: { code: "CZ", name: "Czechia" },
+        },
+        dateOfBirth: "1990-04-17",
+      });
+      profile = {
+        data: jana({ sections: { card: card(), personal: { level: "READ" } } }),
+        error: null,
+      };
+      const { unmount } = renderWithClient(<ProfileScreen />);
+
+      await user.click(screen.getByRole("tab", { name: "Personal" }));
+      await user.click(screen.getByRole("button", { name: "Show" }));
+
+      expect(screen.getByText("120 00 Praha")).toBeInTheDocument();
+      expect(screen.getByText("Czechia")).toBeInTheDocument();
+      expect(screen.queryByRole("tab", { name: "Contact" })).not.toBeInTheDocument();
+      unmount();
+
+      profile = { data: jana({ markers: ["EXTERNAL_WORKER"] }), error: null };
+      renderWithClient(<ProfileScreen />);
+      expect(screen.queryByRole("tab", { name: "Personal" })).not.toBeInTheDocument();
+    });
   });
 });

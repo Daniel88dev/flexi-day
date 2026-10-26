@@ -12,6 +12,7 @@ import { DirectoryMarkers } from "@/components/directory/directory-markers";
 import { PersonAvatar } from "@/components/directory/person-avatar";
 import { ProfileActions } from "@/components/directory/profile-actions";
 import { ProfileHistorySheet } from "@/components/directory/profile-history-sheet";
+import { ContactTab, PersonalTab } from "@/components/directory/sensitive-section";
 import { ApiError } from "@/lib/api/client";
 import type { DirectoryProfile } from "@/lib/api/directory";
 import { useDirectoryOrganizations, useDirectoryProfile } from "@/lib/api/queries";
@@ -82,6 +83,8 @@ export const canEditProfile = (profile: DirectoryProfile) =>
     profile.sections.photo,
     profile.sections.workContact,
     profile.sections.job,
+    profile.sections.contact,
+    profile.sections.personal,
   ].some((section) => section?.level === "WRITE");
 
 const hasProfileActions = ({ actions }: DirectoryProfile) =>
@@ -134,6 +137,8 @@ function ProfileTabs({ profile }: { profile: DirectoryProfile }) {
       <TabsList>
         <TabsTrigger value="overview">{copy.overview}</TabsTrigger>
         {sections.job ? <TabsTrigger value="job">{copy.job}</TabsTrigger> : null}
+        {sections.contact ? <TabsTrigger value="contact">{copy.contact}</TabsTrigger> : null}
+        {sections.personal ? <TabsTrigger value="personal">{copy.personal}</TabsTrigger> : null}
         {hasRecord ? <TabsTrigger value="record">{copy.record}</TabsTrigger> : null}
       </TabsList>
       <TabsContent value="overview" className="space-y-4 pt-4">
@@ -170,6 +175,20 @@ function ProfileTabs({ profile }: { profile: DirectoryProfile }) {
       {sections.job ? (
         <TabsContent value="job" className="space-y-4 pt-4">
           <JobTab profile={profile} />
+        </TabsContent>
+      ) : null}
+      {sections.contact ? (
+        <TabsContent value="contact" className="space-y-4 pt-4">
+          <ProfileSection title={copy.contact}>
+            <ContactTab profile={profile} />
+          </ProfileSection>
+        </TabsContent>
+      ) : null}
+      {sections.personal ? (
+        <TabsContent value="personal" className="space-y-4 pt-4">
+          <ProfileSection title={copy.personal}>
+            <PersonalTab profile={profile} />
+          </ProfileSection>
         </TabsContent>
       ) : null}
       {hasRecord ? (

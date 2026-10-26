@@ -22,6 +22,10 @@ import {
   getProfilePhotoUpload,
   removeProfilePhoto,
   startProfilePhotoUpload,
+  showSensitiveSection,
+  getReadLog,
+  getDirectoryGeneralSettings,
+  updateDirectoryGeneralSettings,
 } from "../directory";
 
 describe("directory API", () => {
@@ -130,6 +134,40 @@ describe("directory API", () => {
       ],
       ["/api/directory/org-1/people/emp-1/photo/photo-1"],
       ["/api/directory/org-1/people/emp-1/photo", { method: "DELETE" }],
+    ]);
+  });
+
+  it("shows one Sensitive section with a POST, in the asked language", async () => {
+    apiMock.mockResolvedValue({});
+    await showSensitiveSection("org-1", "emp/1", "contact", "cs");
+    expect(apiMock).toHaveBeenCalledWith(
+      "/api/directory/org-1/people/emp%2F1/show/contact?language=cs",
+      {
+        method: "POST",
+      }
+    );
+  });
+
+  it("reads the read log with only the filters given", async () => {
+    apiMock.mockResolvedValue({});
+    await getReadLog("org-1");
+    await getReadLog("org-1", { employmentId: "emp-1", readerUserId: "u-1", before: "r-9" });
+    expect(apiMock.mock.calls).toEqual([
+      ["/api/directory/org-1/read-log"],
+      ["/api/directory/org-1/read-log?employmentId=emp-1&readerUserId=u-1&before=r-9"],
+    ]);
+  });
+
+  it("reads and saves the General settings", async () => {
+    apiMock.mockResolvedValue({});
+    await getDirectoryGeneralSettings("org-1");
+    await updateDirectoryGeneralSettings("org-1", { en: "Text", cs: null });
+    expect(apiMock.mock.calls).toEqual([
+      ["/api/directory/org-1/settings/general"],
+      [
+        "/api/directory/org-1/settings/general",
+        { method: "PUT", body: { emergencyContactNotice: { en: "Text", cs: null } } },
+      ],
     ]);
   });
 });
