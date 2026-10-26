@@ -23,6 +23,7 @@ export const cs: Dictionary = {
   common: {
     dateLocale: "cs-CZ",
     loading: "Načítání…",
+    accountDeleted: "Účet smazán",
     cancel: "Zrušit",
     save: "Uložit",
     saving: "Ukládání…",
@@ -1195,7 +1196,7 @@ export const cs: Dictionary = {
     },
     deleteAccount: {
       title: "Smazat účet",
-      hint: "Smazáním účtu odstraníte účet i vše, co k němu patří. Nelze to vrátit zpět.",
+      hint: "Smazáním účtu odstraníte své přihlášení a osobní údaje. Organizace, ve kterých pracujete, si ponechají záznamy o vašem volnu a docházce. Nelze to vrátit zpět.",
       loadFailed: "Nepodařilo se ověřit, zda lze účet smazat. Zkuste stránku načíst znovu.",
       blockedIntro: "Účet zatím nelze smazat:",
       blockers: {
@@ -1220,13 +1221,16 @@ export const cs: Dictionary = {
       confirmTitle: "Smazat účet?",
       confirmIntro: "Natrvalo se odstraní:",
       confirmAccount: "váš účet a jeho způsoby přihlášení",
-      confirmRecords: "vaše záznamy volna a docházky, včetně toho, co vidí váš tým a zaměstnavatel",
-      confirmAttachments: "soubory přiložené k vašim žádostem",
-      confirmSettings: "vaše nastavení",
+      confirmSettings: "vaše nastavení, oznámení, propojení kalendářů a narozeniny",
       confirmOrganization: (organization: string) =>
         `organizace ${organization} s jejími skupinami a záznamem o předplatném`,
       confirmOwnedOrganizations:
         "každá organizace, kterou vlastníte a ve které nikdo jiný není, s jejími skupinami a záznamem o předplatném",
+      confirmKeptIntro:
+        "Váš zaměstnavatel si ponechá, dokud vaše zaměstnání neukončí nebo záznamy nesmaže:",
+      confirmKeptBy: (organization: string) =>
+        `${organization}: vaše volno, docházku a kvóty i s jejich historií`,
+      confirmKeptAnywhere: "vaše volno, docházku a kvóty v každém zaměstnání, i s jejich historií",
       confirmIrreversible: "Tento krok nelze vrátit zpět.",
       confirmDelete: "Smazat natrvalo",
       deleting: "Mazání…",

@@ -15,6 +15,7 @@ const member = (userId: string, name: string, adminAccess: boolean) => ({
   approverAccess: false,
   controlledUser: true,
   email: `${userId}@example.com`,
+  accountDeleted: false,
   createdAt: "2026-01-01T00:00:00.000Z",
   updatedAt: "2026-01-01T00:00:00.000Z",
   user: { id: userId, name, initials: name.slice(0, 2), avatarColor: "hsl(1 65% 50%)" },
@@ -68,6 +69,23 @@ describe("MembersTab", () => {
     expect(
       legend.getByText(/group manager always has admin and approver rights/i)
     ).toBeInTheDocument();
+  });
+
+  it("labels a member who deleted their account and hides the placeholder address", () => {
+    membersData = [
+      member("u-owner", "Olga Owner", false),
+      {
+        ...member("u-jana", "Jana Nováková", false),
+        email: "u-jana@deleted.invalid",
+        accountDeleted: true,
+      },
+    ];
+    renderWithClient(<MembersTab groupId="g-1" isAdmin />);
+
+    const row = within(rowOf("Jana Nováková"));
+    expect(row.getByText("Account deleted")).toBeInTheDocument();
+    expect(row.queryByText("u-jana@deleted.invalid")).not.toBeInTheDocument();
+    expect(within(rowOf("Olga Owner")).queryByText("Account deleted")).not.toBeInTheDocument();
   });
 
   it("places the legend below the members table", () => {

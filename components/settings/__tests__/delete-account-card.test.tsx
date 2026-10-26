@@ -5,6 +5,7 @@ import { DeleteAccountCard } from "../delete-account-card";
 import { ApiError } from "@/lib/api/client";
 import type { AccountDeletionStatus } from "@/lib/api/account-deletion";
 import type { OrganizationSummary } from "@/lib/api/organization";
+import type { GroupListItem } from "@/lib/api/types";
 import { renderWithClient } from "@/lib/test-utils";
 
 const getStatusMock = vi.fn<() => Promise<AccountDeletionStatus>>();
@@ -20,6 +21,20 @@ vi.mock("@/lib/api/organization", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/api/organization")>()),
   listOrganizations: () => Promise.resolve(organizations),
 }));
+
+let groups: GroupListItem[] = [];
+vi.mock("@/lib/api/groups", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/api/groups")>()),
+  listGroups: () => Promise.resolve(groups),
+}));
+
+const groupIn = (organizationId: string, name: string) =>
+  ({
+    id: `g-${organizationId}`,
+    groupName: "Team",
+    organizationId,
+    organization: { id: organizationId, name },
+  }) as unknown as GroupListItem;
 
 let sessionCreatedAt = new Date();
 const signOutMock = vi.fn();
@@ -90,6 +105,7 @@ describe("DeleteAccountCard", () => {
     openPortalMock.mockReset();
     pushToastMock.mockReset();
     organizations = [];
+    groups = [];
     sessionCreatedAt = new Date();
     search = new URLSearchParams();
     // A plain stand-in: jsdom does not implement navigation.
@@ -134,7 +150,7 @@ describe("DeleteAccountCard", () => {
     expect(openPortalMock).toHaveBeenCalled();
   });
 
-  it("deletes a password user after a dialog that says what goes", async () => {
+  it("deletes a password user after a dialog that says what goes and what stays", async () => {
     getStatusMock.mockResolvedValue(PASSWORD_USER);
     deleteMock.mockResolvedValue(undefined);
     organizations = [
@@ -148,14 +164,22 @@ describe("DeleteAccountCard", () => {
     await user.click(screen.getByRole("button", { name: "Delete account" }));
 
     const dialog = await screen.findByRole("dialog", { name: "Delete your account?" });
-    expect(dialog).toHaveTextContent("your leave and attendance records");
-    expect(dialog).toHaveTextContent("the files attached to your requests");
+    expect(dialog).toHaveTextContent("your account and its sign-in methods");
+    expect(dialog).toHaveTextContent(
+      "your settings, notifications, calendar connections and birthday"
+    );
     await waitFor(() =>
       expect(dialog).toHaveTextContent(
         "the organization Acme, with its groups and subscription record"
       )
     );
-    expect(dialog).not.toHaveTextContent("Globex");
+    expect(dialog).toHaveTextContent(
+      "Your employer keeps, until they end your employment or erase it:"
+    );
+    expect(dialog).toHaveTextContent(
+      "Globex: your leave, attendance and quotas, with their history"
+    );
+    expect(dialog).not.toHaveTextContent("Acme: your leave");
     expect(dialog).toHaveTextContent("This can't be undone.");
     expect(deleteMock).not.toHaveBeenCalled();
 
@@ -165,6 +189,25 @@ describe("DeleteAccountCard", () => {
     await waitFor(() =>
       expect(replaceMock).toHaveBeenCalledWith("/sign-in/?notice=account-deleted")
     );
+  });
+
+  it("names the organization a plain member works in among what stays", async () => {
+    getStatusMock.mockResolvedValue(PASSWORD_USER);
+    organizations = [{ id: "o1", name: "Acme", isOwner: true }];
+    groups = [groupIn("o1", "Acme"), groupIn("o3", "Initech")];
+    const user = userEvent.setup();
+    renderWithClient(<DeleteAccountCard layoutReady />);
+
+    await user.type(await screen.findByLabelText("Password"), "hunter22");
+    await user.click(screen.getByRole("button", { name: "Delete account" }));
+
+    const dialog = await screen.findByRole("dialog");
+    await waitFor(() =>
+      expect(dialog).toHaveTextContent(
+        "Initech: your leave, attendance and quotas, with their history"
+      )
+    );
+    expect(dialog).not.toHaveTextContent("Acme: your leave");
   });
 
   it("names no organization for a user who owns none", async () => {
@@ -177,6 +220,7 @@ describe("DeleteAccountCard", () => {
 
     const dialog = await screen.findByRole("dialog");
     expect(dialog).not.toHaveTextContent("organization");
+    expect(dialog).not.toHaveTextContent("Your employer keeps");
   });
 
   it("shows a wrong password inline and deletes nothing", async () => {

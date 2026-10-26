@@ -21,6 +21,8 @@ export type EmploymentListItem = {
   endedAt: Iso | null;
   ended: boolean;
   requiredMinutesPerDay: number | null;
+  accountDeletedAt: Iso | null;
+  accountDeleted: boolean;
   user: UserSummary;
 };
 

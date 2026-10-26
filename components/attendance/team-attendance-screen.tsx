@@ -11,6 +11,7 @@ import {
   UserPen,
 } from "lucide-react";
 import { AvatarBubble } from "@/components/brand/avatar-bubble";
+import { AccountDeletedLabel } from "@/components/account-deleted-label";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -255,7 +256,10 @@ function Person({
         ) : null}
       </span>
       <div className="min-w-0">
-        <div className="truncate text-sm font-semibold">{person.user.name}</div>
+        <div className="flex items-center gap-1.5">
+          <span className="truncate text-sm font-semibold">{person.user.name}</span>
+          {person.accountDeleted ? <AccountDeletedLabel /> : null}
+        </div>
         <div className="truncate text-xs" style={{ color: "var(--text-muted)" }}>
           {subtitle}
         </div>

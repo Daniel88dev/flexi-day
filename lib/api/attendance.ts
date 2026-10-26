@@ -256,6 +256,8 @@ export type AttendanceTeamPerson = {
   employmentId: UUID;
   userId: UUID;
   user: UserSummary;
+  /** The person deleted their account; nothing is owed after that day. */
+  accountDeleted: boolean;
   /** The organization's live groups this person belongs to. Empty for a manager in none. */
   groups: AttendanceTeamGroup[];
   /** What their days were measured against: the override where there is one. */

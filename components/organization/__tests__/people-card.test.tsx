@@ -52,6 +52,8 @@ const person = (overrides: Partial<EmploymentListItem> = {}): EmploymentListItem
   endedAt: null,
   ended: false,
   requiredMinutesPerDay: null,
+  accountDeletedAt: null,
+  accountDeleted: false,
   user: { id: "user-1", name: "Milo Member", initials: "MM", avatarColor: "hsl(200 50% 50%)" },
   ...overrides,
 });
