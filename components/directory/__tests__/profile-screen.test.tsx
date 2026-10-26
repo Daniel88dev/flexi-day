@@ -58,6 +58,7 @@ const jana = (overrides: Partial<DirectoryProfile> = {}): DirectoryProfile => ({
   name: "Jana Member",
   jobTitle: null,
   image: null,
+  photoUrl: null,
   user: { id: "u-jana", name: "Jana Member", initials: "JM", avatarColor: "hsl(10, 65%, 50%)" },
   markers: [],
   self: false,
@@ -65,7 +66,7 @@ const jana = (overrides: Partial<DirectoryProfile> = {}): DirectoryProfile => ({
   canReadHistory: false,
   sections: {
     card: card(),
-    photo: { level: "READ" },
+    photo: { level: "READ", photo: null },
     workContact: { level: "READ", workEmail: null, workPhone: null },
   },
   ...overrides,
@@ -220,6 +221,29 @@ describe("ProfileScreen", () => {
     expect(container.querySelector("img")).toHaveAttribute("src", "https://cdn.test/jana.png");
   });
 
+  it("puts the full Profile photo in the header, ahead of the Account picture", () => {
+    profile = {
+      data: jana({
+        image: "https://cdn.test/jana.png",
+        photoUrl: "https://store.test/small.jpg",
+        sections: {
+          card: card(),
+          photo: {
+            level: "READ",
+            photo: {
+              smallUrl: "https://store.test/small.jpg",
+              fullUrl: "https://store.test/full.jpg",
+            },
+          },
+        },
+      }),
+      error: null,
+    };
+    const { container } = renderWithClient(<ProfileScreen />);
+
+    expect(container.querySelector("img")).toHaveAttribute("src", "https://store.test/full.jpg");
+  });
+
   it("shows the markers the API sends", () => {
     profile = { data: jana({ markers: ["EXTERNAL_WORKER", "NO_ACCOUNT"] }), error: null };
     renderWithClient(<ProfileScreen />);
@@ -319,6 +343,19 @@ describe("ProfileScreen", () => {
       "href",
       "/directory/person/edit?organizationId=org-1&employmentId=emp-jana"
     );
+  });
+
+  it("offers Edit profile to someone who writes only the Photo", () => {
+    profile = {
+      data: jana({
+        self: true,
+        sections: { card: card(), photo: { level: "WRITE", photo: null } },
+      }),
+      error: null,
+    };
+    renderWithClient(<ProfileScreen />);
+
+    expect(screen.getByRole("link", { name: /Edit profile/ })).toBeInTheDocument();
   });
 
   it("opens the profile history drawer for a viewer who reads it, with fields and no values", async () => {

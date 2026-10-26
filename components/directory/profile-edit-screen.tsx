@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, type FormEvent, type ReactNode } from "react";
+import { useMemo, useState, type ChangeEvent, type FormEvent, type ReactNode } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ChevronLeft, Lock } from "lucide-react";
@@ -9,9 +9,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { buttonVariants } from "@/components/ui/button";
 import { DirectoryLapsedBanner } from "@/components/directory/directory-lapsed-banner";
+import { PersonAvatar } from "@/components/directory/person-avatar";
 import { profileHref } from "@/components/directory/directory-list";
-import { ApiError, errorCopy } from "@/lib/api/client";
+import { ApiError, errorCode, errorCopy } from "@/lib/api/client";
 import {
   CONTRACT_TYPES,
   WORKING_TIMES,
@@ -22,8 +24,12 @@ import {
   useDirectoryOrganizations,
   useDirectoryPeople,
   useDirectoryProfile,
+  useRemoveProfilePhoto,
   useUpdateDirectoryProfile,
+  useUploadProfilePhoto,
 } from "@/lib/api/queries";
+import { PHOTO_PICKER_ACCEPT, photoFileProblem } from "@/lib/directory/profile-photo";
+import { cn } from "@/lib/utils";
 import { phoneCountryOptions } from "@/lib/directory/phone";
 import {
   buildProfilePatch,
@@ -95,7 +101,7 @@ function ProfileEditForm({ profile, lapsed }: { profile: DirectoryProfile; lapse
   const labels = t.directory.profile;
   const router = useRouter();
   const update = useUpdateDirectoryProfile(profile.organizationId, profile.employmentId);
-  const { card, workContact, job } = profile.sections;
+  const { card, photo, workContact, job } = profile.sections;
   const cardWrite = card?.level === "WRITE";
   const workContactWrite = workContact?.level === "WRITE";
   const jobWrite = job?.level === "WRITE";
@@ -158,6 +164,7 @@ function ProfileEditForm({ profile, lapsed }: { profile: DirectoryProfile; lapse
   const anchors = [
     { id: "record", title: copy.record },
     ...(card ? [{ id: "card", title: labels.card }] : []),
+    ...(photo ? [{ id: "photo", title: copy.photo.title }] : []),
     ...(workContact ? [{ id: "work-contact", title: labels.workContact }] : []),
     ...(job ? [{ id: "job", title: labels.job }] : []),
   ];
@@ -173,7 +180,7 @@ function ProfileEditForm({ profile, lapsed }: { profile: DirectoryProfile; lapse
             </a>
           ))}
         </nav>
-        {!cardWrite && !workContactWrite && !jobWrite ? (
+        {!cardWrite && !workContactWrite && !jobWrite && photo?.level !== "WRITE" ? (
           <p className="text-muted-foreground text-sm">{copy.nothingToEdit}</p>
         ) : null}
       </div>
@@ -232,6 +239,8 @@ function ProfileEditForm({ profile, lapsed }: { profile: DirectoryProfile; lapse
           </div>
         </EditSection>
       ) : null}
+
+      {photo ? <PhotoEditSection profile={profile} lapsed={lapsed} /> : null}
 
       {workContact ? (
         <EditSection
@@ -375,6 +384,105 @@ function ProfileEditForm({ profile, lapsed }: { profile: DirectoryProfile; lapse
     </form>
   );
 }
+
+/**
+ * The Profile photo: upload, replace and remove act at once, apart from the
+ * page's Save. A lapsed plan leaves only Remove.
+ */
+function PhotoEditSection({ profile, lapsed }: { profile: DirectoryProfile; lapsed: boolean }) {
+  const { t } = useTranslation();
+  const copy = t.directory.edit.photo;
+  const section = profile.sections.photo!;
+  const writable = section.level === "WRITE";
+  const upload = useUploadProfilePhoto(profile.organizationId, profile.employmentId);
+  const remove = useRemoveProfilePhoto(profile.organizationId, profile.employmentId);
+  const [problem, setProblem] = useState<string | null>(null);
+  const busy = upload.isPending || remove.isPending;
+  const current = section.photo;
+
+  const pick = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    const refused = photoFileProblem(file);
+    setProblem(refused ? copy.problems[refused]! : null);
+    if (!refused) upload.mutate(file);
+  };
+
+  const settled = upload.data;
+  const failure =
+    problem ??
+    (settled?.status === "REJECTED"
+      ? (copy.problems[settled.rejectionReason ?? ""] ?? copy.failed)
+      : null) ??
+    (upload.error ? (copy.problems[refusalKey(upload.error) ?? ""] ?? copy.failed) : null) ??
+    (remove.error ? (copy.problems[refusalKey(remove.error) ?? ""] ?? copy.removeFailed) : null);
+  const pickLabel = current ? copy.replace : copy.upload;
+
+  return (
+    <EditSection id="photo" title={copy.title} level={section.level} lapsed={lapsed}>
+      <div className="flex flex-wrap items-center gap-4">
+        <PersonAvatar person={profile} photoUrl={current?.fullUrl} size={72} />
+        <div className="space-y-2">
+          {!current ? <p className="text-muted-foreground text-sm">{copy.noPhoto}</p> : null}
+          {writable ? (
+            <div className="flex flex-wrap gap-2">
+              <label
+                htmlFor="profile-photo-file"
+                className={cn(
+                  buttonVariants({ variant: "outline", size: "sm" }),
+                  (lapsed || busy) && "pointer-events-none opacity-50"
+                )}
+              >
+                {upload.isPending ? copy.uploading : pickLabel}
+              </label>
+              <input
+                id="profile-photo-file"
+                type="file"
+                accept={PHOTO_PICKER_ACCEPT}
+                aria-label={pickLabel}
+                className="sr-only"
+                disabled={lapsed || busy}
+                onChange={pick}
+              />
+              {current ? (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  disabled={busy}
+                  onClick={() => {
+                    setProblem(null);
+                    remove.mutate();
+                  }}
+                >
+                  {remove.isPending ? copy.removing : copy.remove}
+                </Button>
+              ) : null}
+            </div>
+          ) : null}
+          {writable ? <p className="text-muted-foreground text-xs">{copy.hint}</p> : null}
+          {writable && lapsed ? (
+            <p className="text-muted-foreground text-xs">{copy.lapsed}</p>
+          ) : null}
+          {upload.isSuccess && settled === undefined ? (
+            <p className="text-muted-foreground text-xs">{copy.processing}</p>
+          ) : null}
+          {failure ? (
+            <p role="alert" className="text-destructive text-sm">
+              {failure}
+            </p>
+          ) : null}
+        </div>
+      </div>
+    </EditSection>
+  );
+}
+
+/** A refusal's `context.code`, or the `reason` the upload routes answer with. */
+const refusalKey = (error: unknown) =>
+  errorCode(error) ??
+  (error instanceof ApiError ? error.context<{ reason?: string }>()?.reason : undefined);
 
 function EditSection({
   id,

@@ -76,9 +76,12 @@ export const profileEditHref = (organizationId: string, employmentId: string) =>
 
 /** The viewer writes a Section the edit page holds. */
 export const canEditProfile = (profile: DirectoryProfile) =>
-  [profile.sections.card, profile.sections.workContact, profile.sections.job].some(
-    (section) => section?.level === "WRITE"
-  );
+  [
+    profile.sections.card,
+    profile.sections.photo,
+    profile.sections.workContact,
+    profile.sections.job,
+  ].some((section) => section?.level === "WRITE");
 
 function ProfileHeader({ profile }: { profile: DirectoryProfile }) {
   const { t } = useTranslation();
@@ -86,7 +89,11 @@ function ProfileHeader({ profile }: { profile: DirectoryProfile }) {
   return (
     <Card>
       <CardContent className="flex flex-wrap items-center gap-4 py-5">
-        <PersonAvatar person={profile} size={72} />
+        <PersonAvatar
+          person={profile}
+          photoUrl={profile.sections.photo?.photo?.fullUrl}
+          size={72}
+        />
         <div className="min-w-0 flex-1 space-y-1">
           <h1 className="font-heading truncate text-2xl font-bold">{profile.name}</h1>
           {jobTitle ? <p className="text-muted-foreground text-sm">{jobTitle}</p> : null}

@@ -8,6 +8,7 @@ const profile = (overrides: Partial<DirectoryProfile["sections"]> = {}): Directo
   name: "Ada Noaccount",
   jobTitle: "Agent",
   image: null,
+  photoUrl: null,
   user: { id: "emp-1", name: "Ada Noaccount", initials: "AN", avatarColor: "hsl(1, 1%, 1%)" },
   markers: [],
   self: false,

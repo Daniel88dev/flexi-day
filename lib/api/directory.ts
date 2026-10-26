@@ -1,5 +1,6 @@
 import type { Locale } from "@/lib/i18n/config";
 import { api } from "./client";
+import type { UploadTarget } from "./types";
 
 export type DirectoryAgreementState = {
   currentVersion: number;
@@ -78,6 +79,8 @@ export type DirectoryPerson = {
   jobTitle: string | null;
   /** The Account picture. */
   image: string | null;
+  /** The small Profile photo; null without one or without a read on the Photo Section. */
+  photoUrl: string | null;
   user: { id: string; name: string; initials: string; avatarColor: string };
   markers: DirectoryMarker[];
 };
@@ -139,6 +142,11 @@ export type DirectoryJobView = DirectorySectionView & {
   workingTime: WorkingTime | null;
 };
 
+/** Signed links that stay the same for an hour, so the browser caches the image. */
+export type ProfilePhotoLinks = { smallUrl: string; fullUrl: string };
+
+export type DirectoryPhotoView = DirectorySectionView & { photo: ProfilePhotoLinks | null };
+
 export type DirectoryAccountStatus = "ACTIVE" | "NO_ACCOUNT" | "DELETED";
 
 export type DirectoryProfile = DirectoryPerson & {
@@ -148,7 +156,7 @@ export type DirectoryProfile = DirectoryPerson & {
   /** A key only for each Section the viewer reads. */
   sections: {
     card?: DirectoryCardView;
-    photo?: DirectorySectionView;
+    photo?: DirectoryPhotoView;
     workContact?: DirectoryWorkContactView;
     job?: DirectoryJobView;
     contact?: DirectorySectionView;
@@ -226,6 +234,47 @@ export function updateDirectoryProfile(
     method: "PATCH",
     body: patch,
   });
+}
+
+export type ProfilePhotoUpload = {
+  id: string;
+  status: "UPLOADING" | "READY" | "REJECTED";
+  rejectionReason: "TYPE_MISMATCH" | "IMAGE_UNREADABLE" | null;
+};
+
+/** Registers a Profile photo upload and answers where the bytes go. */
+export function startProfilePhotoUpload(
+  organizationId: string,
+  employmentId: string,
+  input: { contentType: string; size: number }
+): Promise<{ photo: ProfilePhotoUpload; upload: UploadTarget }> {
+  return api(directoryPath(organizationId, `people/${encodeURIComponent(employmentId)}/photo`), {
+    method: "POST",
+    body: input,
+  });
+}
+
+export function getProfilePhotoUpload(
+  organizationId: string,
+  employmentId: string,
+  photoId: string
+): Promise<ProfilePhotoUpload> {
+  return api<ProfilePhotoUpload>(
+    directoryPath(
+      organizationId,
+      `people/${encodeURIComponent(employmentId)}/photo/${encodeURIComponent(photoId)}`
+    )
+  );
+}
+
+/** Removes the Profile photo and both its sizes; works on every plan. */
+export function removeProfilePhoto(organizationId: string, employmentId: string): Promise<void> {
+  return api<void>(
+    directoryPath(organizationId, `people/${encodeURIComponent(employmentId)}/photo`),
+    {
+      method: "DELETE",
+    }
+  );
 }
 
 export type ProfileHistorySection =

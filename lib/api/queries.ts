@@ -28,7 +28,12 @@ import {
   type DirectoryRoleName,
   type PermissionRow,
   type PermissionValue,
+  getProfilePhotoUpload,
+  removeProfilePhoto,
+  startProfilePhotoUpload,
+  type ProfilePhotoUpload,
 } from "./directory";
+import { waitForPhotoUpload } from "@/lib/directory/profile-photo";
 import {
   approveVacation,
   approveVacations,
@@ -1739,6 +1744,40 @@ export function useSetDirectoryRoles(organizationId: string) {
       setDirectoryRoles(organizationId, employmentId, roles),
     onSuccess: (roles) => {
       qc.setQueryData(qk.directoryRoles(organizationId), roles);
+      qc.invalidateQueries({ queryKey: ["directory"] });
+    },
+  });
+}
+
+/**
+ * Sends a picked file as the Profile photo: register, upload straight to the
+ * store, then wait for the processing to settle. Resolves with how it settled,
+ * or undefined while it is still processing after the wait.
+ */
+export function useUploadProfilePhoto(organizationId: string, employmentId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (file: File): Promise<ProfilePhotoUpload | undefined> => {
+      const { photo, upload } = await startProfilePhotoUpload(organizationId, employmentId, {
+        contentType: declaredContentType(file),
+        size: file.size,
+      });
+      await uploadToTarget(upload, file);
+      return waitForPhotoUpload(() =>
+        getProfilePhotoUpload(organizationId, employmentId, photo.id)
+      );
+    },
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: ["directory"] });
+    },
+  });
+}
+
+export function useRemoveProfilePhoto(organizationId: string, employmentId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => removeProfilePhoto(organizationId, employmentId),
+    onSettled: () => {
       qc.invalidateQueries({ queryKey: ["directory"] });
     },
   });

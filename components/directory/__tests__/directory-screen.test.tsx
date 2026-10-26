@@ -55,6 +55,7 @@ const person = (name: string, overrides: Partial<DirectoryPerson> = {}): Directo
   name,
   jobTitle: null,
   image: null,
+  photoUrl: null,
   user: { id: `user-${name}`, name, initials: name.slice(0, 2), avatarColor: "hsl(10, 65%, 50%)" },
   markers: [],
   ...overrides,
@@ -94,6 +95,25 @@ describe("DirectoryScreen", () => {
     );
     expect(screen.getByText("External worker")).toBeInTheDocument();
     expect(screen.queryByRole("table")).not.toBeInTheDocument();
+  });
+
+  it("shows the small Profile photo on a card, and the Account picture where there is none", () => {
+    people = {
+      people: [
+        person("Ada Novak", {
+          photoUrl: "https://store.test/ada-small.jpg",
+          image: "https://idp.test/ada.png",
+        }),
+        person("Jana Svobodová", { image: "https://idp.test/jana.png" }),
+      ],
+      formerList: false,
+      settings: false,
+    };
+    renderWithClient(<DirectoryScreen />);
+
+    const cards = screen.getByTestId("directory-cards");
+    const sources = [...cards.querySelectorAll("img")].map((img) => img.getAttribute("src"));
+    expect(sources).toEqual(["https://store.test/ada-small.jpg", "https://idp.test/jana.png"]);
   });
 
   it("remembers the Table view in the browser", async () => {
