@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type FormEvent, type ReactNode } from "react";
+import { useMemo, useState, type FormEvent, type ReactNode } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ChevronLeft, Lock } from "lucide-react";
@@ -24,9 +24,11 @@ import {
   useDirectoryProfile,
   useUpdateDirectoryProfile,
 } from "@/lib/api/queries";
+import { phoneCountryOptions } from "@/lib/directory/phone";
 import {
   buildProfilePatch,
   profileFormValues,
+  workPhoneInvalid,
   type ProfileFormValues,
 } from "@/lib/directory/profile-form";
 import { useTranslation } from "@/lib/i18n/use-translation";
@@ -88,13 +90,14 @@ export function ProfileEditScreen() {
 }
 
 function ProfileEditForm({ profile, lapsed }: { profile: DirectoryProfile; lapsed: boolean }) {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   const copy = t.directory.edit;
   const labels = t.directory.profile;
   const router = useRouter();
   const update = useUpdateDirectoryProfile(profile.organizationId, profile.employmentId);
-  const { card, job } = profile.sections;
+  const { card, workContact, job } = profile.sections;
   const cardWrite = card?.level === "WRITE";
+  const workContactWrite = workContact?.level === "WRITE";
   const jobWrite = job?.level === "WRITE";
   const nameEditable = cardWrite && !card?.nameFromAccount && !lapsed;
   const external = profile.markers.includes("EXTERNAL_WORKER");
@@ -103,12 +106,15 @@ function ProfileEditForm({ profile, lapsed }: { profile: DirectoryProfile; lapse
   const [initial] = useState(() => profileFormValues(profile));
   const [values, setValues] = useState(initial);
   const [nameError, setNameError] = useState(false);
+  const [phoneError, setPhoneError] = useState(false);
+  const countries = useMemo(() => phoneCountryOptions(locale), [locale]);
   const set = (field: keyof ProfileFormValues) => (value: string) =>
     setValues((current) => ({ ...current, [field]: value }));
 
   const patch = buildProfilePatch(initial, values, {
     name: nameEditable,
     card: cardWrite,
+    workContact: workContactWrite,
     job: jobWrite,
   });
   const dirty = Object.keys(patch).length > 0;
@@ -120,6 +126,11 @@ function ProfileEditForm({ profile, lapsed }: { profile: DirectoryProfile; lapse
       return;
     }
     setNameError(false);
+    if (workContactWrite && workPhoneInvalid(values)) {
+      setPhoneError(true);
+      return;
+    }
+    setPhoneError(false);
     if (!dirty) return;
     update.mutate(patch, {
       onSuccess: () => router.push(profileHref(profile.organizationId, profile.employmentId)),
@@ -147,6 +158,7 @@ function ProfileEditForm({ profile, lapsed }: { profile: DirectoryProfile; lapse
   const anchors = [
     { id: "record", title: copy.record },
     ...(card ? [{ id: "card", title: labels.card }] : []),
+    ...(workContact ? [{ id: "work-contact", title: labels.workContact }] : []),
     ...(job ? [{ id: "job", title: labels.job }] : []),
   ];
 
@@ -161,7 +173,7 @@ function ProfileEditForm({ profile, lapsed }: { profile: DirectoryProfile; lapse
             </a>
           ))}
         </nav>
-        {!cardWrite && !jobWrite ? (
+        {!cardWrite && !workContactWrite && !jobWrite ? (
           <p className="text-muted-foreground text-sm">{copy.nothingToEdit}</p>
         ) : null}
       </div>
@@ -217,6 +229,60 @@ function ProfileEditForm({ profile, lapsed }: { profile: DirectoryProfile; lapse
                 </option>
               ))}
             </SelectField>
+          </div>
+        </EditSection>
+      ) : null}
+
+      {workContact ? (
+        <EditSection
+          id="work-contact"
+          title={labels.workContact}
+          level={workContact.level}
+          lapsed={lapsed}
+        >
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2 sm:col-span-2">
+              <TextField
+                id="profile-work-email"
+                type="email"
+                label={labels.workEmail}
+                maxLength={254}
+                hint={copy.workEmailHint}
+                {...field("workEmail", workContactWrite)}
+              />
+              {workContactWrite && !lapsed && profile.account?.signInEmail ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => set("workEmail")(profile.account?.signInEmail ?? "")}
+                >
+                  {copy.useSignInEmail}
+                </Button>
+              ) : null}
+            </div>
+            <SelectField
+              id="profile-work-phone-country"
+              label={copy.phoneCountry}
+              {...field("workPhoneCountry", workContactWrite)}
+              clearable={false}
+            >
+              <option value="">{copy.noPhoneCountry}</option>
+              {countries.map((country) => (
+                <option key={country.code} value={country.code}>
+                  {country.label}
+                </option>
+              ))}
+            </SelectField>
+            <TextField
+              id="profile-work-phone"
+              type="tel"
+              label={labels.workPhone}
+              maxLength={40}
+              hint={copy.phoneHint}
+              error={phoneError ? copy.invalidPhone : null}
+              {...field("workPhoneNumber", workContactWrite)}
+            />
           </div>
         </EditSection>
       ) : null}
@@ -402,7 +468,9 @@ function FieldFrame({
   );
 }
 
-function TextField(props: FieldProps & { type?: "text" | "date"; maxLength?: number }) {
+function TextField(
+  props: FieldProps & { type?: "text" | "date" | "email" | "tel"; maxLength?: number }
+) {
   return (
     <FieldFrame {...props}>
       <Input

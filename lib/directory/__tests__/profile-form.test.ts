@@ -41,6 +41,9 @@ describe("profileFormValues", () => {
       name: "Ada Noaccount",
       jobTitle: "Agent",
       reportsTo: "emp-boss",
+      workEmail: "",
+      workPhoneCountry: "",
+      workPhoneNumber: "",
       legalName: "",
       employeeNumber: "A-1",
       startDate: "",
@@ -53,7 +56,7 @@ describe("profileFormValues", () => {
 });
 
 describe("buildProfilePatch", () => {
-  const can = { name: true, card: true, job: true };
+  const can = { name: true, card: true, workContact: true, job: true };
 
   it("returns only the fields that changed, trimmed, with an emptied field as null", () => {
     const before = profileFormValues(profile());
@@ -88,11 +91,56 @@ describe("buildProfilePatch", () => {
   it("leaves out a Section the viewer can't write", () => {
     const before = profileFormValues(profile());
     const after = { ...before, reportsTo: "", legalName: "Ada L." };
-    expect(buildProfilePatch(before, after, { name: false, card: false, job: true })).toEqual({
+    expect(
+      buildProfilePatch(before, after, { name: false, card: false, workContact: false, job: true })
+    ).toEqual({
       job: { legalName: "Ada L." },
     });
-    expect(buildProfilePatch(before, after, { name: false, card: true, job: false })).toEqual({
+    expect(
+      buildProfilePatch(before, after, { name: false, card: true, workContact: false, job: false })
+    ).toEqual({
       card: { reportsToEmploymentId: null },
     });
+  });
+
+  it("sends the work email lowercased and the work phone in E.164, only when they changed", () => {
+    const before = profileFormValues(
+      profile({
+        workContact: {
+          level: "WRITE",
+          workEmail: "ada@acme.test",
+          workPhone: {
+            e164: "+420601123456",
+            display: "+420 601 123 456",
+            country: { code: "CZ", name: "Czechia" },
+          },
+        },
+      })
+    );
+    expect(before).toMatchObject({ workPhoneCountry: "CZ", workPhoneNumber: "601 123 456" });
+    expect(
+      buildProfilePatch(
+        before,
+        { ...before, workEmail: " ADA@acme.test", workPhoneNumber: "601123456" },
+        can
+      )
+    ).toEqual({});
+    expect(
+      buildProfilePatch(
+        before,
+        { ...before, workEmail: "Ada.Work@Acme.test", workPhoneNumber: "+44 20 7946 0958" },
+        can
+      )
+    ).toEqual({ workContact: { workEmail: "ada.work@acme.test", workPhone: "+442079460958" } });
+    expect(
+      buildProfilePatch(before, { ...before, workEmail: "", workPhoneNumber: "" }, can)
+    ).toEqual({ workContact: { workEmail: null, workPhone: null } });
+    expect(
+      buildProfilePatch(
+        before,
+        { ...before, workEmail: "x@acme.test" },
+        { ...can, workContact: false }
+      )
+    ).toEqual({});
   });
 });

@@ -1,3 +1,4 @@
+import type { Locale } from "@/lib/i18n/config";
 import { api } from "./client";
 
 export type DirectoryAgreementState = {
@@ -113,6 +114,19 @@ export type DirectoryCardView = DirectorySectionView & {
   nameFromAccount: boolean;
 };
 
+/** ISO 3166-1 alpha-2 and its name in the language the request asked for. */
+export type DirectoryCountry = { code: string; name: string };
+
+/** A stored phone: E.164 for `tel:` links and the server's international display form. */
+export type DirectoryPhone = { e164: string; display: string; country: DirectoryCountry | null };
+
+export type DirectoryWorkContactView = DirectorySectionView & {
+  workEmail: string | null;
+  workPhone: DirectoryPhone | null;
+  /** Only for viewers who write Work contact: where the phone country picker starts. */
+  phoneCountryDefault?: DirectoryCountry | null;
+};
+
 export type DirectoryJobView = DirectorySectionView & {
   spell: { startedAt: string; endedAt: string | null };
   legalName: string | null;
@@ -135,7 +149,7 @@ export type DirectoryProfile = DirectoryPerson & {
   sections: {
     card?: DirectoryCardView;
     photo?: DirectorySectionView;
-    workContact?: DirectorySectionView;
+    workContact?: DirectoryWorkContactView;
     job?: DirectoryJobView;
     contact?: DirectorySectionView;
     personal?: DirectorySectionView;
@@ -164,13 +178,19 @@ export function listFormerDirectoryPeople(
   return api<FormerDirectoryPerson[]>(directoryPath(organizationId, "former"));
 }
 
+/** `language` names the countries in the answer; the backend falls back to the stored setting. */
+const profilePath = (organizationId: string, employmentId: string, language?: Locale) =>
+  directoryPath(
+    organizationId,
+    `people/${encodeURIComponent(employmentId)}${language ? `?language=${language}` : ""}`
+  );
+
 export function getDirectoryProfile(
   organizationId: string,
-  employmentId: string
+  employmentId: string,
+  language?: Locale
 ): Promise<DirectoryProfile> {
-  return api<DirectoryProfile>(
-    directoryPath(organizationId, `people/${encodeURIComponent(employmentId)}`)
-  );
+  return api<DirectoryProfile>(profilePath(organizationId, employmentId, language));
 }
 
 /** A value sets the field, `null` clears it, and a missing key leaves it alone. */
@@ -179,6 +199,11 @@ export type DirectoryProfilePatch = {
     name?: string;
     jobTitle?: string | null;
     reportsToEmploymentId?: string | null;
+  };
+  workContact?: {
+    workEmail?: string | null;
+    /** E.164 or international form; the backend stores E.164. */
+    workPhone?: string | null;
   };
   job?: {
     legalName?: string | null;
@@ -194,12 +219,13 @@ export type DirectoryProfilePatch = {
 export function updateDirectoryProfile(
   organizationId: string,
   employmentId: string,
-  patch: DirectoryProfilePatch
+  patch: DirectoryProfilePatch,
+  language?: Locale
 ): Promise<DirectoryProfile> {
-  return api<DirectoryProfile>(
-    directoryPath(organizationId, `people/${encodeURIComponent(employmentId)}`),
-    { method: "PATCH", body: patch }
-  );
+  return api<DirectoryProfile>(profilePath(organizationId, employmentId, language), {
+    method: "PATCH",
+    body: patch,
+  });
 }
 
 export type ProfileHistorySection =

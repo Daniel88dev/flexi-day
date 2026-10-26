@@ -9,6 +9,7 @@ import type {
   DirectoryOrganization,
   DirectoryPerson,
   DirectoryProfile,
+  DirectoryWorkContactView,
 } from "@/lib/api/directory";
 import { ProfileEditScreen } from "../profile-edit-screen";
 
@@ -63,6 +64,16 @@ const job = (overrides: Partial<DirectoryJobView> = {}): DirectoryJobView => ({
   probationEndDate: null,
   contractType: null,
   workingTime: null,
+  ...overrides,
+});
+
+const workContact = (
+  overrides: Partial<DirectoryWorkContactView> = {}
+): DirectoryWorkContactView => ({
+  level: "WRITE",
+  workEmail: null,
+  workPhone: null,
+  phoneCountryDefault: null,
   ...overrides,
 });
 
@@ -222,5 +233,133 @@ describe("ProfileEditScreen", () => {
     expect(screen.getByRole("alert")).toHaveTextContent(
       "Another current employee already has this employee number."
     );
+  });
+
+  describe("Work contact", () => {
+    it("starts the phone country on the server's default and saves the number in E.164", async () => {
+      const user = userEvent.setup();
+      profile = jana({
+        sections: {
+          card: card(),
+          workContact: workContact({ phoneCountryDefault: { code: "CZ", name: "Czechia" } }),
+        },
+      });
+      renderWithClient(<ProfileEditScreen />);
+
+      const region = screen.getByRole("region", { name: /Work contact/ });
+      expect(within(region).getByLabelText("Phone country")).toHaveValue("CZ");
+      await user.type(within(region).getByLabelText("Work phone"), "601 123 456");
+      await user.type(within(region).getByLabelText("Work email"), "jana.work@acme.test");
+      await user.click(screen.getByRole("button", { name: "Save changes" }));
+
+      expect(mutate).toHaveBeenCalledWith(
+        { workContact: { workEmail: "jana.work@acme.test", workPhone: "+420601123456" } },
+        expect.anything()
+      );
+    });
+
+    it("shows a stored phone as its country and national number, and saves a change", async () => {
+      const user = userEvent.setup();
+      profile = jana({
+        sections: {
+          workContact: workContact({
+            workEmail: "jana.work@acme.test",
+            workPhone: {
+              e164: "+420601123456",
+              display: "+420 601 123 456",
+              country: { code: "CZ", name: "Czechia" },
+            },
+          }),
+        },
+      });
+      renderWithClient(<ProfileEditScreen />);
+
+      expect(screen.getByLabelText("Phone country")).toHaveValue("CZ");
+      expect(screen.getByLabelText("Work phone")).toHaveValue("601 123 456");
+      await user.selectOptions(screen.getByLabelText("Phone country"), "SK");
+      await user.clear(screen.getByLabelText("Work phone"));
+      await user.type(screen.getByLabelText("Work phone"), "912 123 456");
+      await user.click(screen.getByRole("button", { name: "Save changes" }));
+
+      expect(mutate).toHaveBeenCalledWith(
+        { workContact: { workPhone: "+421912123456" } },
+        expect.anything()
+      );
+    });
+
+    it("fills the work email from the sign-in email in one click", async () => {
+      const user = userEvent.setup();
+      profile = jana({ sections: { workContact: workContact() } });
+      renderWithClient(<ProfileEditScreen />);
+
+      await user.click(screen.getByRole("button", { name: "Use sign-in email" }));
+
+      expect(screen.getByLabelText("Work email")).toHaveValue("jana@acme.test");
+    });
+
+    it("offers no sign-in email to a viewer who doesn't see it", () => {
+      profile = jana({ sections: { workContact: workContact() }, account: undefined });
+      renderWithClient(<ProfileEditScreen />);
+
+      expect(screen.queryByRole("button", { name: "Use sign-in email" })).not.toBeInTheDocument();
+    });
+
+    it("refuses an invalid phone number before saving", async () => {
+      const user = userEvent.setup();
+      profile = jana({
+        sections: {
+          workContact: workContact({ phoneCountryDefault: { code: "CZ", name: "Czechia" } }),
+        },
+      });
+      renderWithClient(<ProfileEditScreen />);
+
+      await user.type(screen.getByLabelText("Work phone"), "601 12");
+      await user.click(screen.getByRole("button", { name: "Save changes" }));
+
+      expect(
+        screen.getByText("Enter a valid phone number for the country you picked.")
+      ).toBeInTheDocument();
+      expect(mutate).not.toHaveBeenCalled();
+    });
+
+    it("greys Work contact for a reader, and offers Clear on a lapsed plan", async () => {
+      const user = userEvent.setup();
+      const stored = workContact({
+        workEmail: "jana.work@acme.test",
+        workPhone: {
+          e164: "+420601123456",
+          display: "+420 601 123 456",
+          country: { code: "CZ", name: "Czechia" },
+        },
+      });
+      profile = jana({ sections: { workContact: { ...stored, level: "READ" } } });
+      const { unmount } = renderWithClient(<ProfileEditScreen />);
+      expect(screen.getByLabelText("Work phone")).toBeDisabled();
+      expect(screen.queryByRole("button", { name: "Use sign-in email" })).not.toBeInTheDocument();
+      unmount();
+
+      organization = { ...organization, writable: false };
+      profile = jana({ sections: { workContact: stored } });
+      renderWithClient(<ProfileEditScreen />);
+      expect(screen.getByLabelText("Work email")).toBeDisabled();
+      await user.click(screen.getByRole("button", { name: "Clear: Work phone" }));
+      await user.click(screen.getByRole("button", { name: "Clear: Work email" }));
+      await user.click(screen.getByRole("button", { name: "Save changes" }));
+
+      expect(mutate).toHaveBeenCalledWith(
+        { workContact: { workEmail: null, workPhone: null } },
+        expect.anything()
+      );
+    });
+
+    it("explains a phone the server refuses", () => {
+      profile = jana({ sections: { workContact: workContact() } });
+      updateError = new ApiError(422, "bad", undefined, [
+        { message: "bad", context: { code: "INVALID_PHONE" } },
+      ]);
+      renderWithClient(<ProfileEditScreen />);
+
+      expect(screen.getByRole("alert")).toHaveTextContent("That isn't a valid phone number.");
+    });
   });
 });
