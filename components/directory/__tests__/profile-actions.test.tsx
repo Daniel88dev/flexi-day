@@ -25,6 +25,7 @@ vi.mock("@/lib/api/queries", () => ({
   useEraseEmployment: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useRequestedExports: () => ({ data: requestedExports }),
   useRequestPersonExport: () => ({ mutateAsync: vi.fn(), isPending: false, variables: null }),
+  useChangeWorkerType: () => ({ mutateAsync: vi.fn(), isPending: false }),
 }));
 
 const profile = (overrides: Partial<DirectoryProfile> = {}): DirectoryProfile => ({
@@ -134,6 +135,19 @@ describe("ProfileActions", () => {
     expect(screen.queryByRole("button", { name: /end employment/i })).toBeNull();
     expect(screen.getByRole("button", { name: /export/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /erase/i })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /change worker type/i })).toBeNull();
+  });
+
+  it("offers Change worker type when the act allows it", () => {
+    renderWithClient(
+      <ProfileActions
+        profile={profile({
+          actions: { end: false, export: false, erase: false, changeType: true },
+        })}
+      />
+    );
+
+    expect(screen.getByRole("button", { name: /change worker type/i })).toBeInTheDocument();
   });
 
   it("asks for the End preview only once the dialog opens", async () => {

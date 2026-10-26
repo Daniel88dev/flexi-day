@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { UsersRound } from "lucide-react";
 import { AccountDeletedLabel } from "@/components/account-deleted-label";
+import { Badge } from "@/components/ui/badge";
 import { EndEmploymentDialog } from "@/components/organization/end-employment-dialog";
 import { EraseDialog } from "@/components/organization/erase-dialog";
 import { PersonExportAction } from "@/components/person-export-action";
@@ -157,6 +158,7 @@ function PersonRow({
 }) {
   const { t } = useTranslation();
   const rowRef = useRef<HTMLLIElement>(null);
+  const external = employment.type === "external";
 
   useEffect(() => {
     if (focused) rowRef.current?.scrollIntoView({ block: "center" });
@@ -175,6 +177,11 @@ function PersonRow({
         <p className="flex flex-wrap items-center gap-2 font-medium">
           {employment.user.name}
           {employment.accountDeleted ? <AccountDeletedLabel /> : null}
+          {external ? (
+            <Badge variant="outline" data-testid="external-worker">
+              {t.directory.markers.EXTERNAL_WORKER}
+            </Badge>
+          ) : null}
           {employment.endedAt ? (
             <span className="text-muted-foreground text-xs font-normal">
               {t.organization.people.endedOn(
@@ -189,7 +196,7 @@ function PersonRow({
         )}
       </div>
 
-      {requiredMinutesPerDay !== null ? (
+      {requiredMinutesPerDay !== null && !external ? (
         <RequiredMinutes
           employment={employment}
           organizationId={organizationId}

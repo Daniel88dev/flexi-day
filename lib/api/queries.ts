@@ -18,9 +18,11 @@ import {
   updateDirectoryProfile,
   createDirectoryPerson,
   sendDirectoryInvite,
+  changeWorkerType,
   checkDirectoryEmail,
   type NewDirectoryPerson,
   type DirectoryProfilePatch,
+  type WorkerType,
   getDirectoryState,
   listDirectoryOrganizations,
   listDirectoryPeople,
@@ -1767,6 +1769,18 @@ export function useSendDirectoryInvite(organizationId: string, employmentId: str
 
 export function useCheckDirectoryEmail(organizationId: string) {
   return useMutation({ mutationFn: (email: string) => checkDirectoryEmail(organizationId, email) });
+}
+
+export function useChangeWorkerType(organizationId: string, employmentId: string) {
+  const qc = useQueryClient();
+  const { locale } = useTranslation();
+  return useMutation({
+    mutationFn: (type: WorkerType) => changeWorkerType(organizationId, employmentId, type, locale),
+    onSuccess: (profile) => {
+      qc.setQueryData([...qk.directoryProfile(organizationId, employmentId), locale], profile);
+      qc.invalidateQueries({ queryKey: ["directory"] });
+    },
+  });
 }
 
 export function useUpdateDirectoryProfile(organizationId: string, employmentId: string) {

@@ -220,6 +220,23 @@ describe("NewRequestDialog", () => {
     expect(await screen.findByText(/already booked: 24 Dec, 1 Jan\./)).toBeInTheDocument();
   });
 
+  it("explains that an External worker books only leave that draws on no allowance", async () => {
+    createMutate.mockRejectedValueOnce(
+      new ApiError(422, "External workers book only leave that draws on no allowance", undefined, [
+        { message: "refused", context: { code: "EXTERNAL_WORKER_ALLOWANCE" } },
+      ])
+    );
+    renderWithClient(<NewRequestDialog open initialDate="2026-12-24" onOpenChange={() => {}} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Submit Request" }));
+
+    expect(
+      await screen.findByText(
+        "As an external worker you can book only leave that draws on no allowance, such as non-paid leave."
+      )
+    ).toBeInTheDocument();
+  });
+
   it("falls back to a single day when initialEndDate is before initialDate", () => {
     renderWithClient(
       <NewRequestDialog
