@@ -1,5 +1,6 @@
 import type { Locale } from "@/lib/i18n/config";
 import { api } from "./client";
+import type { DirectoryEntryRef } from "./directory-lists";
 import type { UploadTarget } from "./types";
 
 export type DirectoryAgreementState = {
@@ -77,6 +78,9 @@ export type DirectoryPerson = {
   name: string;
   /** A Card field. */
   jobTitle: string | null;
+  /** Card fields; an archived entry still shows on the record that holds it. */
+  department?: DirectoryEntryRef | null;
+  location?: DirectoryEntryRef | null;
   /** The Account picture. */
   image: string | null;
   /** The small Profile photo; null without one or without a read on the Photo Section. */
@@ -119,6 +123,8 @@ export type DirectoryCardView = DirectorySectionView & {
   reportsTo: { employmentId: string; name: string | null } | null;
   /** A bound, open account supplies the name, so nobody edits it here. */
   nameFromAccount: boolean;
+  department?: DirectoryEntryRef | null;
+  location?: (DirectoryEntryRef & { country: DirectoryCountry | null }) | null;
 };
 
 /** ISO 3166-1 alpha-2 and its name in the language the request asked for. */
@@ -252,6 +258,8 @@ export type DirectoryProfilePatch = {
     name?: string;
     jobTitle?: string | null;
     reportsToEmploymentId?: string | null;
+    departmentId?: string | null;
+    locationId?: string | null;
   };
   workContact?: {
     workEmail?: string | null;

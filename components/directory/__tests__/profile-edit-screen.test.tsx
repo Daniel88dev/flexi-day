@@ -75,7 +75,12 @@ vi.mock("@/lib/api/queries", () => ({
     reset: vi.fn(),
   }),
   useRemoveProfilePhoto: () => ({ mutate: removePhoto, isPending: false, error: null }),
+  useDirectoryList: (_organizationId: string, kind: "departments" | "locations") => ({
+    data: { editable: false, writable: true, entries: lists[kind] },
+  }),
 }));
+
+let lists: Record<"departments" | "locations", { id: string; name: string; archived: boolean }[]>;
 
 const card = (overrides: Partial<DirectoryCardView> = {}): DirectoryCardView => ({
   level: "WRITE",
@@ -133,6 +138,7 @@ describe("ProfileEditScreen", () => {
     removePhoto.mockReset();
     uploadState = {};
     updateError = null;
+    lists = { departments: [], locations: [] };
     profile = jana();
     organization = {
       organizationId: "org-1",
@@ -216,6 +222,37 @@ describe("ProfileEditScreen", () => {
     expect(push).toHaveBeenCalledWith(
       "/directory/person?organizationId=org-1&employmentId=emp-jana"
     );
+  });
+
+  it("picks a Department and a Location, leaving archived entries out unless the record holds one", async () => {
+    const user = userEvent.setup();
+    mutate.mockImplementation((_patch, options: { onSuccess: () => void }) => options.onSuccess());
+    lists = {
+      departments: [
+        { id: "d-sales", name: "Sales", archived: true },
+        { id: "d-support", name: "Support", archived: false },
+        { id: "d-legal", name: "Legal", archived: true },
+      ],
+      locations: [{ id: "l-berlin", name: "Berlin", archived: false }],
+    };
+    profile = jana({
+      sections: {
+        ...jana().sections,
+        card: card({ department: { id: "d-sales", name: "Sales", archived: true } }),
+      },
+    });
+    renderWithClient(<ProfileEditScreen />);
+
+    const department = screen.getByLabelText("Department");
+    expect(
+      within(department)
+        .getAllByRole("option")
+        .map((option) => option.textContent)
+    ).toEqual(["None", "Sales (archived)", "Support"]);
+    expect(department).toHaveValue("d-sales");
+    await user.selectOptions(screen.getByLabelText("Location"), "Berlin");
+    await user.click(screen.getByRole("button", { name: "Save changes" }));
+    expect(mutate).toHaveBeenCalledWith({ card: { locationId: "l-berlin" } }, expect.anything());
   });
 
   it("leaves Reports to without the person themself", () => {

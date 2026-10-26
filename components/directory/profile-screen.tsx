@@ -16,6 +16,7 @@ import { ContactTab, PersonalTab } from "@/components/directory/sensitive-sectio
 import { ApiError } from "@/lib/api/client";
 import type { DirectoryProfile } from "@/lib/api/directory";
 import { useDirectoryOrganizations, useDirectoryProfile } from "@/lib/api/queries";
+import { entryLabel } from "@/lib/directory/entries";
 import { useTranslation } from "@/lib/i18n/use-translation";
 import { profileHref } from "@/components/directory/directory-list";
 
@@ -148,6 +149,23 @@ function ProfileTabs({ profile }: { profile: DirectoryProfile }) {
               rows={[
                 [copy.name, profile.name],
                 [copy.jobTitle, card.jobTitle ?? copy.notSet],
+                [
+                  copy.department,
+                  card.department
+                    ? entryLabel(card.department, t.directory.archivedEntry)
+                    : copy.notSet,
+                ],
+                [
+                  copy.location,
+                  card.location
+                    ? [
+                        entryLabel(card.location, t.directory.archivedEntry),
+                        card.location.country?.name,
+                      ]
+                        .filter(Boolean)
+                        .join(", ")
+                    : copy.notSet,
+                ],
                 [
                   copy.reportsTo,
                   card.reportsTo?.name ? (

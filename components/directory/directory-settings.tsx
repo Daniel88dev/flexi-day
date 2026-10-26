@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { DirectoryListsPanel } from "@/components/directory/directory-lists-panel";
 import { DirectoryRolesPanel } from "@/components/directory/directory-roles-panel";
 import { EmergencyNoticePanel } from "@/components/directory/emergency-notice-panel";
 import { PermissionHistory } from "@/components/directory/permission-history";
@@ -11,7 +12,7 @@ import { PermissionTableEditor } from "@/components/directory/permission-table-e
 import type { DirectoryOrganization } from "@/lib/api/directory";
 import { useTranslation } from "@/lib/i18n/use-translation";
 
-type Panel = "permissions" | "roles" | "general" | "retention" | "readLog";
+type Panel = "permissions" | "roles" | "general" | "retention" | "lists" | "readLog";
 
 /** The Directory settings tab, for the owner, org admins and HR. Later settings add a panel here. */
 export function DirectorySettings({ organization }: { organization: DirectoryOrganization }) {
@@ -25,6 +26,7 @@ export function DirectorySettings({ organization }: { organization: DirectoryOrg
     ["roles", copy.roles],
     ["general", copy.general],
     ["retention", copy.retention],
+    ["lists", copy.lists],
     ...(readsLog ? [["readLog", copy.readLog] as [Panel, string]] : []),
   ];
 
@@ -52,6 +54,8 @@ export function DirectorySettings({ organization }: { organization: DirectoryOrg
           <EmergencyNoticePanel organizationId={organization.organizationId} />
         ) : panel === "retention" ? (
           <RetentionPanel organizationId={organization.organizationId} />
+        ) : panel === "lists" ? (
+          <DirectoryListsPanel organizationId={organization.organizationId} />
         ) : (
           <ReadLogPanel organizationId={organization.organizationId} />
         )}

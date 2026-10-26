@@ -11,6 +11,9 @@ export type ProfileFormValues = {
   name: string;
   jobTitle: string;
   reportsTo: string;
+  /** Entry ids, `""` for none. */
+  department: string;
+  location: string;
   workEmail: string;
   /** ISO alpha-2 of the phone picker, `""` for none. */
   workPhoneCountry: string;
@@ -24,7 +27,12 @@ export type ProfileFormValues = {
   workingTime: string;
 };
 
-const CARD_FIELDS = { jobTitle: "jobTitle", reportsTo: "reportsToEmploymentId" } as const;
+const CARD_FIELDS = {
+  jobTitle: "jobTitle",
+  reportsTo: "reportsToEmploymentId",
+  department: "departmentId",
+  location: "locationId",
+} as const;
 const JOB_FIELDS = [
   "legalName",
   "employeeNumber",
@@ -46,6 +54,8 @@ export function profileFormValues(profile: DirectoryProfile): ProfileFormValues 
     name: profile.name,
     jobTitle: card?.jobTitle ?? "",
     reportsTo: card?.reportsTo?.employmentId ?? "",
+    department: card?.department?.id ?? "",
+    location: card?.location?.id ?? "",
     workEmail: workContact?.workEmail ?? "",
     workPhoneCountry: phone.country,
     workPhoneNumber: phone.number,

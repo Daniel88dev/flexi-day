@@ -130,6 +130,30 @@ describe("ProfileScreen", () => {
     );
   });
 
+  it("shows the Department and the Location with its country, an archived entry marked", () => {
+    profile = {
+      data: jana({
+        sections: {
+          card: card({
+            department: { id: "d-sales", name: "Sales", archived: true },
+            location: {
+              id: "l-berlin",
+              name: "Berlin",
+              archived: false,
+              country: { code: "DE", name: "Germany" },
+            },
+          }),
+        },
+      }),
+      error: null,
+    };
+    renderWithClient(<ProfileScreen />);
+
+    const section = within(screen.getByRole("region", { name: "Card" }));
+    expect(section.getByText("Sales (archived)")).toBeInTheDocument();
+    expect(section.getByText("Berlin, Germany")).toBeInTheDocument();
+  });
+
   it("shows the work email and the phone's display form as links, and says when both are empty", () => {
     profile = {
       data: jana({

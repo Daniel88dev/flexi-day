@@ -44,6 +44,14 @@ import {
   type ProfileHistorySection,
   type RetentionPeriod,
 } from "./directory";
+import {
+  addDirectoryListEntry,
+  deleteDirectoryListEntry,
+  getDirectoryList,
+  updateDirectoryListEntry,
+  type DirectoryListEntryChange,
+  type DirectoryListKind,
+} from "./directory-lists";
 import { waitForPhotoUpload } from "@/lib/directory/profile-photo";
 import {
   approveVacation,
@@ -366,6 +374,8 @@ export const qk = {
       filter.employmentId ?? "",
       filter.readerUserId ?? "",
     ] as const,
+  directoryList: (organizationId: string, kind: DirectoryListKind) =>
+    ["directory", "list", kind, organizationId] as const,
   organizationExport: (organizationId?: string | null) =>
     ["person-exports", "organization", organizationId ?? "none"] as const,
   attendanceTeam: (params: TeamAttendanceParams) =>
@@ -1861,6 +1871,49 @@ export function useReadLog(organizationId: string, filter: ReadLogFilter, enable
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (page) => page.nextBefore ?? undefined,
     enabled: enabled && !!organizationId,
+  });
+}
+
+/** A Department or Location list; Location countries follow the interface language. */
+export function useDirectoryList(
+  organizationId: string | null,
+  kind: DirectoryListKind,
+  enabled = true
+) {
+  const { locale, localeReady } = useTranslation();
+  return useQuery({
+    queryKey: [...qk.directoryList(organizationId ?? "", kind), locale],
+    queryFn: () => getDirectoryList(organizationId!, kind, locale),
+    enabled: enabled && localeReady && !!organizationId,
+  });
+}
+
+/** Entries show on records and in the filters, so every directory query refreshes. */
+export function useAddDirectoryListEntry(organizationId: string, kind: DirectoryListKind) {
+  const qc = useQueryClient();
+  const { locale } = useTranslation();
+  return useMutation({
+    mutationFn: (entry: { name: string; country?: string | null }) =>
+      addDirectoryListEntry(organizationId, kind, entry, locale),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["directory"] }),
+  });
+}
+
+export function useUpdateDirectoryListEntry(organizationId: string, kind: DirectoryListKind) {
+  const qc = useQueryClient();
+  const { locale } = useTranslation();
+  return useMutation({
+    mutationFn: ({ entryId, change }: { entryId: string; change: DirectoryListEntryChange }) =>
+      updateDirectoryListEntry(organizationId, kind, entryId, change, locale),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["directory"] }),
+  });
+}
+
+export function useDeleteDirectoryListEntry(organizationId: string, kind: DirectoryListKind) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (entryId: string) => deleteDirectoryListEntry(organizationId, kind, entryId),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["directory"] }),
   });
 }
 
