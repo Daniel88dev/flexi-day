@@ -19,6 +19,15 @@ import {
   listDirectoryOrganizations,
   listDirectoryPeople,
   listFormerDirectoryPeople,
+  getDirectoryRoles,
+  getPermissionHistory,
+  getPermissionTable,
+  setDirectoryRoles,
+  updatePermissionCell,
+  type DirectoryAudience,
+  type DirectoryRoleName,
+  type PermissionRow,
+  type PermissionValue,
 } from "./directory";
 import {
   approveVacation,
@@ -319,6 +328,11 @@ export const qk = {
     ["directory", "profile", organizationId, employmentId] as const,
   directoryProfileHistory: (organizationId: string, employmentId: string) =>
     ["directory", "history", organizationId, employmentId] as const,
+  directoryPermissions: (organizationId: string) =>
+    ["directory", "permissions", organizationId] as const,
+  directoryPermissionHistory: (organizationId: string) =>
+    ["directory", "permissionHistory", organizationId] as const,
+  directoryRoles: (organizationId: string) => ["directory", "roles", organizationId] as const,
   organizationExport: (organizationId?: string | null) =>
     ["person-exports", "organization", organizationId ?? "none"] as const,
   attendanceTeam: (params: TeamAttendanceParams) =>
@@ -1668,6 +1682,59 @@ export function useUpdateDirectoryProfile(organizationId: string, employmentId: 
       updateDirectoryProfile(organizationId, employmentId, patch),
     onSuccess: (profile) => {
       qc.setQueryData(qk.directoryProfile(organizationId, employmentId), profile);
+      qc.invalidateQueries({ queryKey: ["directory"] });
+    },
+  });
+}
+
+/** Owner, org admins and HR; pass `enabled` from the list's `settings`. */
+export function usePermissionTable(organizationId: string, enabled: boolean) {
+  return useQuery({
+    queryKey: qk.directoryPermissions(organizationId),
+    queryFn: () => getPermissionTable(organizationId),
+    enabled: enabled && !!organizationId,
+  });
+}
+
+export function usePermissionHistory(organizationId: string, enabled: boolean) {
+  return useQuery({
+    queryKey: qk.directoryPermissionHistory(organizationId),
+    queryFn: () => getPermissionHistory(organizationId),
+    enabled: enabled && !!organizationId,
+  });
+}
+
+export function useDirectoryRoles(organizationId: string, enabled: boolean) {
+  return useQuery({
+    queryKey: qk.directoryRoles(organizationId),
+    queryFn: () => getDirectoryRoles(organizationId),
+    enabled: enabled && !!organizationId,
+  });
+}
+
+/** Owner only. Access changes everywhere, so every directory query refreshes. */
+export function useUpdatePermissionCell(organizationId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (change: {
+      row: PermissionRow;
+      audience: DirectoryAudience;
+      value: PermissionValue;
+    }) => updatePermissionCell(organizationId, change),
+    onSuccess: (table) => {
+      qc.setQueryData(qk.directoryPermissions(organizationId), table);
+      qc.invalidateQueries({ queryKey: ["directory"] });
+    },
+  });
+}
+
+export function useSetDirectoryRoles(organizationId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ employmentId, roles }: { employmentId: string; roles: DirectoryRoleName[] }) =>
+      setDirectoryRoles(organizationId, employmentId, roles),
+    onSuccess: (roles) => {
+      qc.setQueryData(qk.directoryRoles(organizationId), roles);
       qc.invalidateQueries({ queryKey: ["directory"] });
     },
   });
