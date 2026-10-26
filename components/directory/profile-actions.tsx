@@ -229,7 +229,11 @@ function ExportAction({ profile }: { profile: DirectoryProfile }) {
   const { t } = useTranslation();
   const exports = useRequestedExports(profile.organizationId).data;
   const request = useRequestPersonExport();
-  const entry = exports?.find((row) => row.subjectUserId === profile.user.id);
+  const entry = exports?.find(
+    (row) =>
+      row.subjectEmploymentId === profile.employmentId ||
+      (row.subjectUserId !== null && row.subjectUserId === profile.user.id)
+  );
   return (
     <PersonExportAction
       entry={entry}

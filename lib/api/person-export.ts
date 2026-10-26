@@ -10,8 +10,10 @@ export type PersonExport = {
   id: UUID;
   organizationId: UUID;
   scope: PersonExportScope;
-  /** Null for an Organization export. */
+  /** Null for an Organization export and for a person without an account. */
   subjectUserId: string | null;
+  /** The Employment of a person without an account the export is about. */
+  subjectEmploymentId?: string | null;
   status: PersonExportStatus;
   createdAt: Iso;
   readyAt: Iso | null;

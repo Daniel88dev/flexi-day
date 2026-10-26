@@ -3,12 +3,14 @@ import { screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { renderWithClient } from "@/lib/test-utils";
 import type { DirectoryProfile, EndPreview } from "@/lib/api/directory";
+import type { PersonExport } from "@/lib/api/person-export";
 import { ProfileActions } from "../profile-actions";
 
 let preview: { data?: EndPreview; error: unknown; isLoading: boolean };
 const previewCalls: boolean[] = [];
 const endEmployment = vi.fn();
 const push = vi.fn();
+let requestedExports: PersonExport[] = [];
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push }),
@@ -21,7 +23,7 @@ vi.mock("@/lib/api/queries", () => ({
   },
   useEndEmployment: () => ({ mutateAsync: endEmployment, isPending: false }),
   useEraseEmployment: () => ({ mutateAsync: vi.fn(), isPending: false }),
-  useRequestedExports: () => ({ data: [] }),
+  useRequestedExports: () => ({ data: requestedExports }),
   useRequestPersonExport: () => ({ mutateAsync: vi.fn(), isPending: false, variables: null }),
 }));
 
@@ -72,7 +74,56 @@ describe("ProfileActions", () => {
     preview = { data: endPreview(), error: null, isLoading: false };
     previewCalls.length = 0;
     endEmployment.mockReset();
+    requestedExports = [];
     endEmployment.mockResolvedValue({});
+  });
+
+  it("finds a person without an account's export by their Employment", () => {
+    requestedExports = [
+      {
+        id: "x-other",
+        organizationId: "org-1",
+        scope: "PERSON",
+        subjectUserId: "u-someone",
+        subjectEmploymentId: null,
+        status: "READY",
+        createdAt: "2026-10-26T08:00:00.000Z",
+        readyAt: "2026-10-26T08:01:00.000Z",
+        expiresAt: "2026-11-02T08:01:00.000Z",
+      },
+      {
+        id: "x-petra",
+        organizationId: "org-1",
+        scope: "PERSON",
+        subjectUserId: null,
+        subjectEmploymentId: "emp-petra",
+        status: "READY",
+        createdAt: "2026-10-26T08:00:00.000Z",
+        readyAt: "2026-10-26T08:01:00.000Z",
+        expiresAt: "2026-11-02T08:01:00.000Z",
+      },
+    ];
+    renderWithClient(
+      <ProfileActions
+        profile={profile({
+          employmentId: "emp-petra",
+          name: "Petra Nová",
+          user: {
+            id: "emp-petra",
+            name: "Petra Nová",
+            initials: "PN",
+            avatarColor: "hsl(1, 65%, 50%)",
+          },
+          markers: ["NO_ACCOUNT"],
+          actions: { end: true, export: true, erase: true },
+        })}
+      />
+    );
+
+    expect(
+      screen.getByRole("button", { name: "Download Petra Nová's export" })
+    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /erase/i })).toBeInTheDocument();
   });
 
   it("offers only the actions the profile allows", () => {
