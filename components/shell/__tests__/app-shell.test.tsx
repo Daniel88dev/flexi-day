@@ -97,6 +97,26 @@ describe("AppShell", () => {
       ]);
     });
 
+    it("shows the owner of a Pro organization the Directory entry with an Enterprise chip", () => {
+      shellState.roles = roles.orgAdmin;
+      shellState.directoryOrganizations = [
+        {
+          organizationId: "org-1",
+          name: "Northwind",
+          role: "OWNER",
+          enabled: false,
+          writable: false,
+          newAgreementVersionReady: false,
+        },
+      ];
+      renderWithClient(<AppShell>x</AppShell>);
+
+      expect(sectionLabels()).toEqual(["Time off", "People", "Organization"]);
+      expect(sidebar().getByRole("link", { name: /Directory/ })).toHaveTextContent(
+        "DirectoryEnterprise"
+      );
+    });
+
     it("shows the Organization section for a group admin", () => {
       shellState.roles = roles.groupAdmin;
       renderWithClient(<AppShell>x</AppShell>);

@@ -191,6 +191,8 @@ export const cs: Dictionary = {
     myAttendance: "Moje docházka",
     teamAttendance: "Docházka týmu",
     support: "Podpora",
+    directory: "Adresář",
+    enterpriseChip: "Enterprise",
     organization: "Organizace",
     billing: "Fakturace",
     settings: "Nastavení",
@@ -200,6 +202,7 @@ export const cs: Dictionary = {
     sections: {
       timeOff: "Volno",
       attendance: "Docházka",
+      people: "Lidé",
       organization: "Organizace",
     },
   },
@@ -1587,6 +1590,49 @@ export const cs: Dictionary = {
     remove: "Odebrat",
     removing: "Odebírám…",
     removeFailed: "Správce se nepodařilo odebrat",
+    directory: {
+      title: "Adresář lidí",
+      lead: "Profil pro každého, s kým organizace spolupracuje, včetně lidí bez účtu a externích spolupracovníků. Sami určíte, kdo uvidí kterou část.",
+      on: "Zapnuto",
+      off: "Vypnuto",
+      since: (date: string) => `od ${date}`,
+      accepted: (version: number, name: string | null, date: string) =>
+        name
+          ? `Smlouva verze ${version}, přijal(a) ${name} dne ${date}.`
+          : `Smlouva verze ${version}, přijata dne ${date}.`,
+      turnOn: "Zapnout",
+      openDirectory: "Otevřít adresář",
+      ownerOnly: "Adresář může zapnout jen vlastník.",
+      planRequired: "Adresář lidí je součástí tarifu Enterprise.",
+      seePlans: "Zobrazit tarify",
+      dialog: {
+        title: (version: number) => `Smlouva k adresáři lidí · verze ${version}`,
+        summary: (people: number) =>
+          `${people} ${plural(people, "člověk", "lidé", "lidí")} se v adresáři objeví pod jménem svého účtu.`,
+        keepsEmployment: "Odebrání ze skupiny od teď už neukončí něčí pracovní poměr.",
+        draftNote:
+          "Tato smlouva je koncept. Flexi Day zpracovává data adresáře podle pokynů vaší organizace; plné znění doplníme před spuštěním adresáře.",
+        readAgreement: "Přečíst smlouvu k adresáři",
+        accept: (organization: string) => `Přijímám tuto smlouvu za ${organization}`,
+        recordHint: "Zaznamenáme, kdo smlouvu přijal, kdy a kterou verzi.",
+        cancel: "Zrušit",
+        confirm: "Přijmout a zapnout",
+        working: "Zapínám…",
+        done: "Adresář lidí je zapnutý",
+        failed: "Adresář se nepodařilo zapnout",
+        stale: "Smlouva se změnila. Zavřete okno a otevřete ho znovu, ať vidíte aktuální verzi.",
+        alreadyOn: "Adresář už je zapnutý.",
+      },
+      banner: {
+        title: (version: number) => `Je připravena verze ${version} smlouvy k adresáři`,
+        body: "Přečtěte si ji a přijměte ji za svou organizaci. Adresář mezitím funguje dál.",
+        read: "Přečíst smlouvu",
+        accept: (version: number) => `Přijmout verzi ${version}`,
+        accepting: "Přijímám…",
+        done: "Smlouva přijata",
+        failed: "Smlouvu se nepodařilo přijmout",
+      },
+    },
     export: {
       title: "Export organizace",
       lead: "Vše, co organizace uchovává: jedna složka za každého člověka a soubor organization.json se skupinami, členstvími, nastavením a událostmi skupin. Spustit ho může jen vlastník.",
@@ -1720,6 +1766,29 @@ export const cs: Dictionary = {
       `Tuto skupinu spravujete jako správce organizace ${name}. Nejste jejím členem, takže si zde nemůžete brát ani schvalovat volno.`,
   },
 
+  directory: {
+    title: "Adresář",
+    emptyTitle: "Zatím žádné profily",
+    emptyBody: (organization: string) =>
+      `Adresář organizace ${organization} je zapnutý. Profily jejích lidí se objeví tady.`,
+    upsellLead:
+      "Veďte profil pro každého, s kým vaše organizace spolupracuje, včetně lidí bez účtu ve Flexi Day a externích spolupracovníků. Sami určíte, kdo uvidí kterou část.",
+    upsellPoints: [
+      "Adresář karet s pracovní pozicí, oddělením, pracovištěm a nadřízeným",
+      "Pracovní, kontaktní a osobní údaje, citlivé z nich šifrované",
+      "Tabulka oprávnění, kterou nastavíte po sekcích a okruzích lidí",
+      "Doby uchování, exporty a záznam přístupů pro žádosti o ochranu údajů",
+    ],
+    seePlans: "Zobrazit tarify",
+    planNote: "Adresář lidí a profily zaměstnanců jsou součástí tarifu Enterprise.",
+    offOwner: "Adresář je vypnutý. Zapnete ho na stránce Organizace.",
+    offAdmin: (organization: string) =>
+      `Adresář organizace ${organization} je vypnutý. Zapnout ho může jen její vlastník.`,
+    toOrganization: "Přejít na stránku Organizace",
+    unavailable: "Adresář není zapnutý v žádné z vašich organizací.",
+    loadFailed: "Adresář se nepodařilo načíst",
+  },
+
   billing: {
     title: "Fakturace",
     subtitle: "Váš tarif, využití a platební údaje.",
@@ -1779,6 +1848,7 @@ export const cs: Dictionary = {
     featureAttachments: "Přílohy k žádostem (obrázky a PDF)",
     featureBirthdays: "Narozeniny v kalendáři skupiny",
     featureGroupEvents: "Skupinové události ve sdíleném kalendáři",
+    featureDirectory: "Adresář lidí a profily zaměstnanců",
     subscribe: "Předplatit",
     switchPlan: "Přejít na tento tarif",
     current: "Aktuální tarif",
@@ -1960,6 +2030,7 @@ export const cs: Dictionary = {
           "Vše z tarifu Pro",
           "Až 20 extra slotů pro skupiny",
           "Prioritní podpora",
+          "Adresář lidí a profily zaměstnanců",
         ],
         cta: "Zvolit Enterprise",
       },

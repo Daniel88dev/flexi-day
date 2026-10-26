@@ -22,6 +22,8 @@ import type { OrganizationDetail } from "@/lib/api/organization";
 import { AttendanceCard } from "@/components/organization/attendance-card";
 import { PeopleCard } from "@/components/organization/people-card";
 import { OrganizationExportCard } from "@/components/organization/organization-export-card";
+import { DirectoryCard } from "@/components/organization/directory-card";
+import { DirectoryAgreementBanner } from "@/components/directory/directory-agreement-banner";
 import { AvatarBubble } from "@/components/brand/avatar-bubble";
 import { useTranslation } from "@/lib/i18n/use-translation";
 import { cn } from "@/lib/utils";
@@ -136,10 +138,15 @@ function OrganizationDetailView({
 }) {
   return (
     <div className="space-y-4">
+      <DirectoryAgreementBanner organizationId={organizationId} />
       <div className="grid gap-4 md:grid-cols-2">
         <DetailsCard detail={detail} organizationId={organizationId} />
         <PlanCard detail={detail} />
         <SickDayBenefitCard detail={detail} organizationId={organizationId} />
+        <DirectoryCard
+          organizationId={organizationId}
+          organizationName={detail.organization.name}
+        />
       </div>
       <AttendanceCard detail={detail} organizationId={organizationId} />
       <PeopleCard organizationId={organizationId} focusEmploymentId={focusEmploymentId} />

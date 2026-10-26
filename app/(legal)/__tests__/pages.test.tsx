@@ -166,3 +166,15 @@ describe("Legal pages", () => {
     expect(screen.getByRole("heading", { level: 1, name: "Contact us" })).toBeInTheDocument();
   });
 });
+
+describe("Directory agreement page", () => {
+  it("renders the agreement as a draft with its version", async () => {
+    const { default: DirectoryAgreementPage } = await import("../directory-agreement/page");
+    render(<DirectoryAgreementPage />);
+    expect(
+      screen.getByRole("heading", { level: 1, name: "People directory agreement" })
+    ).toBeInTheDocument();
+    expect(screen.getByRole("note")).toHaveTextContent(/Draft\./);
+    expect(screen.getByText(/^Version 1\./)).toBeInTheDocument();
+  });
+});

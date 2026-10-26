@@ -1,7 +1,8 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { useAttendanceState } from "@/lib/api/queries";
+import { useAttendanceState, useDirectoryOrganizations } from "@/lib/api/queries";
+import { directoryNavEntry } from "@/lib/directory/directory-access";
 import { useTranslation } from "@/lib/i18n/use-translation";
 import { useSupportAdmin } from "@/lib/support/use-support-admin";
 import { useViewerRoles } from "@/lib/viewer/use-viewer-roles";
@@ -29,6 +30,7 @@ export function useShellNav(): ShellNav {
   const roles = useViewerRoles();
   const { supportAdmin } = useSupportAdmin();
   const attendance = useAttendanceState();
+  const directoryOrganizations = useDirectoryOrganizations();
 
   const access = {
     rolesLoading: roles.isLoading,
@@ -36,6 +38,7 @@ export function useShellNav(): ShellNav {
     supportAdmin,
     attendanceActive: attendance.data?.active ?? false,
     attendanceOpen: attendance.data?.openSession != null,
+    directory: directoryNavEntry(directoryOrganizations.data),
   };
   const sections = buildSections(t, access);
   const utility = buildUtilityLinks(t, access);

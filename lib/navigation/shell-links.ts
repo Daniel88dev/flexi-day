@@ -3,6 +3,7 @@ import {
   BarChart3,
   Building2,
   Calendar,
+  Contact,
   CreditCard,
   LayoutGrid,
   LifeBuoy,
@@ -13,10 +14,17 @@ import {
   UsersRound,
 } from "lucide-react";
 import type { Dictionary } from "@/lib/i18n";
+import type { DirectoryNavEntry } from "@/lib/directory/directory-access";
 
-export type NavLink = { href: string; label: string; icon: LucideIcon };
+export type NavLink = {
+  href: string;
+  label: string;
+  icon: LucideIcon;
+  /** A short chip beside the label, such as the plan a link needs. */
+  badge?: string;
+};
 
-export type NavSectionId = "timeOff" | "attendance" | "organization";
+export type NavSectionId = "timeOff" | "attendance" | "people" | "organization";
 
 export type NavSection = { id: NavSectionId; label: string; links: NavLink[] };
 
@@ -38,6 +46,8 @@ export type ShellAccess = {
    * the lapse that stranded it.
    */
   attendanceOpen: boolean;
+  /** The Directory entry of the People section, or null when the viewer gets none. */
+  directory: DirectoryNavEntry | null;
 };
 
 export const BOTTOM_BAR_CLOCK_INDEX = 2;
@@ -86,6 +96,20 @@ export function buildSections(t: Dictionary, access: ShellAccess): NavSection[] 
         : access.attendanceOpen
           ? [{ href: "/my-attendance", label: t.nav.myAttendance, icon: Timer }]
           : [],
+    },
+    {
+      id: "people",
+      label: t.nav.sections.people,
+      links: access.directory
+        ? [
+            {
+              href: "/directory",
+              label: t.nav.directory,
+              icon: Contact,
+              ...(access.directory.enterpriseChip ? { badge: t.nav.enterpriseChip } : {}),
+            },
+          ]
+        : [],
     },
     {
       id: "organization",

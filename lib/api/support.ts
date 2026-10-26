@@ -48,6 +48,20 @@ export type SupportOrganizationDetail = {
   };
   groups: SupportGroupListItem[];
   admins: { userId: string; email: string; isOwner: boolean; grantedAt: Iso | null }[];
+  /** State and counts only, never a Profile field. Absent from a backend that predates it. */
+  directory?: SupportDirectorySummary;
+};
+
+export type SupportDirectorySummary = {
+  enabled: boolean;
+  enabledAt: Iso | null;
+  disabledAt: Iso | null;
+  currentAgreementVersion: number;
+  acceptedAgreementVersion: number | null;
+  acceptedAt: Iso | null;
+  acceptances: number;
+  permissionCells: number;
+  people: { open: number; former: number };
 };
 
 export type SupportGroupMember = {

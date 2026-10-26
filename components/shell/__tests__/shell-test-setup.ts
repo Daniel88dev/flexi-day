@@ -1,4 +1,5 @@
 import type { GroupEventGroup, GroupEventRow } from "@/lib/api/group-events";
+import type { DirectoryOrganization } from "@/lib/api/directory";
 import type { ViewerRoles } from "@/lib/viewer/use-viewer-roles";
 
 const member: ViewerRoles = {
@@ -62,6 +63,7 @@ export const shellState = {
   /** Undefined stands for a viewer with no Employment, whose clock never renders. */
   clock: undefined as typeof clockState | undefined,
   groupEventGroups: groupEventGroups.none,
+  directoryOrganizations: undefined as DirectoryOrganization[] | undefined,
 };
 
 export function resetShellState() {
@@ -71,6 +73,7 @@ export function resetShellState() {
   shellState.roles = member;
   shellState.clock = undefined;
   shellState.groupEventGroups = groupEventGroups.none;
+  shellState.directoryOrganizations = undefined;
 }
 
 /** What the header widgets pull from the queries module; none of it matters to the shell. */
@@ -90,6 +93,7 @@ export const queryMocks = () => ({
   useDeleteAttachment: () => ({ mutateAsync: async () => {}, isPending: false }),
   useSubscription: () => ({ data: undefined, isPending: false }),
   useAttendanceState: () => ({ data: shellState.clock, isPending: false }),
+  useDirectoryOrganizations: () => ({ data: shellState.directoryOrganizations }),
   useClockIn: () => ({ mutate: () => {}, isPending: false, error: null }),
   useClockOut: () => ({ mutate: () => {}, isPending: false, error: null }),
   useStartBreak: () => ({ mutate: () => {}, isPending: false, error: null }),

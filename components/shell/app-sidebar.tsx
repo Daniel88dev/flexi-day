@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { PanelLeft, PanelLeftClose } from "lucide-react";
 import { Logo } from "@/components/brand/logo";
+import { NavBadge } from "@/components/shell/nav-badge";
 import {
   Sidebar,
   SidebarContent,
@@ -42,6 +43,9 @@ function NavItem({ link, isActive }: { link: NavLink; isActive: boolean }) {
         <Link href={link.href} aria-current={isActive ? "page" : undefined}>
           <Icon className="size-[18px]" />
           <span>{link.label}</span>
+          {link.badge ? (
+            <NavBadge className="group-data-[collapsible=icon]:hidden">{link.badge}</NavBadge>
+          ) : null}
         </Link>
       </SidebarMenuButton>
     </SidebarMenuItem>
