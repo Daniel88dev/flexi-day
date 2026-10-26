@@ -1182,6 +1182,17 @@ export const cs: Dictionary = {
         generic: "Způsoby přihlášení se nepodařilo změnit. Zkuste to prosím znovu.",
       },
     },
+    yourData: {
+      title: "Vaše data",
+      hint: "Stáhněte si kopii údajů, které o vás vedeme.",
+      accountData: "Údaje účtu",
+      accountDataHint:
+        "Váš profil, způsoby přihlášení, relace a zařízení, nastavení, oznámení, propojení kalendářů a narozeniny v jednom souboru JSON. Hesla a tokeny v něm nejsou.",
+      download: "Stáhnout údaje mého účtu",
+      downloading: "Připravuji…",
+      downloaded: "Údaje účtu jsou stažené.",
+      failed: "Údaje účtu se nepodařilo stáhnout.",
+    },
     deleteAccount: {
       title: "Smazat účet",
       hint: "Smazáním účtu odstraníte účet i vše, co k němu patří. Nelze to vrátit zpět.",
