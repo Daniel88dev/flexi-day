@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { UsersRound } from "lucide-react";
 import { AccountDeletedLabel } from "@/components/account-deleted-label";
+import { PersonExportAction } from "@/components/person-export-action";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -20,10 +21,13 @@ import {
   useAttendanceSettings,
   useEndEmployment,
   useEmployments,
+  useRequestPersonExport,
+  useRequestedExports,
   useUpdateEmploymentRequiredMinutes,
 } from "@/lib/api/queries";
 import { errorCode } from "@/lib/api/client";
 import type { EmploymentListItem } from "@/lib/api/employment";
+import type { PersonExport } from "@/lib/api/person-export";
 import { formatMinutes, parseMinutes } from "@/lib/attendance/duration";
 import { businessDateIn } from "@/lib/attendance/self-service";
 import { useTranslation } from "@/lib/i18n/use-translation";
@@ -37,8 +41,12 @@ export function PeopleCard({ organizationId }: { organizationId: string | null }
   const { t } = useTranslation();
   const settings = useAttendanceSettings(organizationId).data;
   const query = useEmployments(organizationId);
+  const exports = useRequestedExports(organizationId).data;
+  const requestExport = useRequestPersonExport();
 
   if (query.isPending) return null;
+
+  const exportOf = new Map(exports?.map((entry) => [entry.subjectUserId, entry]));
 
   const attendanceOn = settings?.attendanceEnabled ?? false;
   // The backend reads "today" in this zone, UTC while attendance was never set up.
@@ -54,6 +62,9 @@ export function PeopleCard({ organizationId }: { organizationId: string | null }
         organizationId={organizationId}
         requiredMinutesPerDay={attendanceOn ? (settings?.requiredMinutesPerDay ?? null) : null}
         timeZone={timeZone}
+        exportEntry={exportOf.get(employment.userId)}
+        requestingExport={requestExport.isPending && requestExport.variables === employment.id}
+        onRequestExport={() => requestExport.mutateAsync(employment.id)}
       />
     ));
 
@@ -117,12 +128,18 @@ function PersonRow({
   organizationId,
   requiredMinutesPerDay,
   timeZone,
+  exportEntry,
+  requestingExport,
+  onRequestExport,
 }: {
   employment: EmploymentListItem;
   organizationId: string | null;
   /** Null while attendance is off: the field means nothing without it. */
   requiredMinutesPerDay: number | null;
   timeZone: string;
+  exportEntry: PersonExport | undefined;
+  requestingExport: boolean;
+  onRequestExport: () => Promise<unknown>;
 }) {
   const { t } = useTranslation();
   const [ending, setEnding] = useState(false);
@@ -154,6 +171,16 @@ function PersonRow({
           requiredMinutesPerDay={requiredMinutesPerDay}
         />
       ) : null}
+
+      <PersonExportAction
+        entry={exportEntry}
+        labels={{
+          export: t.common.personExport.exportFor(employment.user.name),
+          download: t.common.personExport.downloadFor(employment.user.name),
+        }}
+        requesting={requestingExport}
+        onRequest={onRequestExport}
+      />
 
       {/* Only a Deleted account for now: an Employment is one row per
           organization, so ending a live person and adding them back would

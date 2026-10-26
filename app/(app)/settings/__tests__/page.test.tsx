@@ -5,6 +5,7 @@ import SettingsPage from "../page";
 import { ToastHost } from "@/components/toast";
 import { renderWithClient } from "@/lib/test-utils";
 
+import type { ReactNode } from "react";
 import type { UserSettings } from "@/lib/api/types";
 
 const updateMutate = vi.fn().mockResolvedValue({ emailNotifications: false });
@@ -55,7 +56,13 @@ vi.mock("@/components/settings/birthday-card", () => ({
 }));
 
 vi.mock("@/components/settings/your-data-card", () => ({
-  YourDataCard: () => <div data-testid="your-data-card" />,
+  YourDataCard: ({ children }: { children?: ReactNode }) => (
+    <div data-testid="your-data-card">{children}</div>
+  ),
+}));
+
+vi.mock("@/components/settings/organization-data-exports", () => ({
+  OrganizationDataExports: () => <div data-testid="organization-data-exports" />,
 }));
 
 vi.mock("@/components/settings/delete-account-card", () => ({
@@ -297,6 +304,14 @@ describe("SettingsPage", () => {
     expect(screen.getByTestId("your-data-card").nextElementSibling).toBe(
       screen.getByTestId("delete-account-card")
     );
+  });
+
+  it("lists the organization data exports inside the Your data card", () => {
+    renderWithClient(<SettingsPage />);
+
+    expect(
+      within(screen.getByTestId("your-data-card")).getByTestId("organization-data-exports")
+    ).toBeInTheDocument();
   });
 
   it("keeps the card hidden while the sign-in methods are still unknown", () => {
