@@ -1,0 +1,98 @@
+import { describe, expect, it } from "vitest";
+import type { DirectoryProfile } from "@/lib/api/directory";
+import { buildProfilePatch, profileFormValues } from "../profile-form";
+
+const profile = (overrides: Partial<DirectoryProfile["sections"]> = {}): DirectoryProfile => ({
+  employmentId: "emp-1",
+  organizationId: "org-1",
+  name: "Ada Noaccount",
+  jobTitle: "Agent",
+  image: null,
+  user: { id: "emp-1", name: "Ada Noaccount", initials: "AN", avatarColor: "hsl(1, 1%, 1%)" },
+  markers: [],
+  self: false,
+  ended: false,
+  canReadHistory: true,
+  sections: {
+    card: {
+      level: "WRITE",
+      jobTitle: "Agent",
+      reportsTo: { employmentId: "emp-boss", name: "Boss" },
+      nameFromAccount: false,
+    },
+    job: {
+      level: "WRITE",
+      spell: { startedAt: "2025-02-03T08:00:00.000Z", endedAt: null },
+      legalName: null,
+      employeeNumber: "A-1",
+      startDate: null,
+      leavingDate: null,
+      probationEndDate: null,
+      contractType: "PERMANENT",
+      workingTime: null,
+    },
+    ...overrides,
+  },
+});
+
+describe("profileFormValues", () => {
+  it("returns the stored values as form strings, with the start date left empty", () => {
+    expect(profileFormValues(profile())).toEqual({
+      name: "Ada Noaccount",
+      jobTitle: "Agent",
+      reportsTo: "emp-boss",
+      legalName: "",
+      employeeNumber: "A-1",
+      startDate: "",
+      leavingDate: "",
+      probationEndDate: "",
+      contractType: "PERMANENT",
+      workingTime: "",
+    });
+  });
+});
+
+describe("buildProfilePatch", () => {
+  const can = { name: true, card: true, job: true };
+
+  it("returns only the fields that changed, trimmed, with an emptied field as null", () => {
+    const before = profileFormValues(profile());
+    const after = {
+      ...before,
+      jobTitle: "  Team lead ",
+      employeeNumber: "",
+      startDate: "2024-03-01",
+    };
+    expect(buildProfilePatch(before, after, can)).toEqual({
+      card: { jobTitle: "Team lead" },
+      job: { employeeNumber: null, startDate: "2024-03-01" },
+    });
+  });
+
+  it("returns an empty patch when nothing changed, ignoring surrounding spaces", () => {
+    const before = profileFormValues(profile());
+    expect(buildProfilePatch(before, { ...before, jobTitle: " Agent " }, can)).toEqual({});
+  });
+
+  it("sends the name only where it is editable, and never as a clear", () => {
+    const before = profileFormValues(profile());
+    expect(buildProfilePatch(before, { ...before, name: "Ada Lovelace" }, can)).toEqual({
+      card: { name: "Ada Lovelace" },
+    });
+    expect(
+      buildProfilePatch(before, { ...before, name: "Ada Lovelace" }, { ...can, name: false })
+    ).toEqual({});
+    expect(buildProfilePatch(before, { ...before, name: "  " }, can)).toEqual({});
+  });
+
+  it("leaves out a Section the viewer can't write", () => {
+    const before = profileFormValues(profile());
+    const after = { ...before, reportsTo: "", legalName: "Ada L." };
+    expect(buildProfilePatch(before, after, { name: false, card: false, job: true })).toEqual({
+      job: { legalName: "Ada L." },
+    });
+    expect(buildProfilePatch(before, after, { name: false, card: true, job: false })).toEqual({
+      card: { reportsToEmploymentId: null },
+    });
+  });
+});

@@ -25,7 +25,7 @@ import type {
   FormerDirectoryPerson,
 } from "@/lib/api/directory";
 import { useDirectoryPeople, useFormerDirectoryPeople } from "@/lib/api/queries";
-import { matchesName, useDirectoryView } from "@/lib/directory/directory-view";
+import { matchesPerson, useDirectoryView } from "@/lib/directory/directory-view";
 import { useTranslation } from "@/lib/i18n/use-translation";
 
 export const profileHref = (organizationId: string, employmentId: string) =>
@@ -186,7 +186,7 @@ function PeopleView({
 }) {
   const { t } = useTranslation();
   if (!people) return <ListState loading={loading} failed={failed} />;
-  const shown = people.filter((person) => matchesName(person.name, query));
+  const shown = people.filter((person) => matchesPerson(person, query));
   if (shown.length === 0) return <EmptyState query={query} empty={t.directory.noPeople} />;
 
   if (view === "table") {
@@ -196,6 +196,7 @@ function PeopleView({
           <TableHeader>
             <TableRow>
               <TableHead>{t.directory.nameColumn}</TableHead>
+              <TableHead>{t.directory.jobTitleColumn}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -204,6 +205,7 @@ function PeopleView({
                 <TableCell>
                   <PersonLink organizationId={organizationId} person={person} size={28} />
                 </TableCell>
+                <TableCell className="text-muted-foreground">{person.jobTitle ?? ""}</TableCell>
               </TableRow>
             ))}
           </TableBody>
@@ -223,6 +225,11 @@ function PeopleView({
             <PersonAvatar person={person} size={44} />
             <span className="min-w-0 space-y-1">
               <span className="block truncate font-semibold">{person.name}</span>
+              {person.jobTitle ? (
+                <span className="text-muted-foreground block truncate text-sm">
+                  {person.jobTitle}
+                </span>
+              ) : null}
               <DirectoryMarkers markers={person.markers} />
             </span>
           </Link>
@@ -271,7 +278,7 @@ function FormerView({
   const { t } = useTranslation();
   if (!former) return <ListState loading={loading} failed={failed} />;
   const shown = former
-    .filter((person) => matchesName(person.name, query))
+    .filter((person) => matchesPerson(person, query))
     .sort((a, b) => b.endedAt.localeCompare(a.endedAt));
   if (shown.length === 0) return <EmptyState query={query} empty={t.directory.noFormer} />;
 
@@ -282,6 +289,7 @@ function FormerView({
         <TableHeader>
           <TableRow>
             <TableHead>{t.directory.nameColumn}</TableHead>
+            <TableHead>{t.directory.jobTitleColumn}</TableHead>
             <TableHead>{t.directory.startedColumn}</TableHead>
             <TableHead>{t.directory.endedColumn}</TableHead>
           </TableRow>
@@ -297,6 +305,7 @@ function FormerView({
                   {person.name}
                 </Link>
               </TableCell>
+              <TableCell className="text-muted-foreground">{person.jobTitle ?? ""}</TableCell>
               <TableCell>{date(person.startedAt)}</TableCell>
               <TableCell>
                 <span className="flex flex-wrap items-center gap-2">

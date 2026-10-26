@@ -49,6 +49,7 @@ const org = (overrides: Partial<DirectoryOrganization>): DirectoryOrganization =
 const person = (name: string, overrides: Partial<DirectoryPerson> = {}): DirectoryPerson => ({
   employmentId: `emp-${name}`,
   name,
+  jobTitle: null,
   image: null,
   user: { id: `user-${name}`, name, initials: name.slice(0, 2), avatarColor: "hsl(10, 65%, 50%)" },
   markers: [],
@@ -70,7 +71,7 @@ describe("DirectoryScreen", () => {
       people: [
         person("Ada Novak"),
         person("Eli Ext", { markers: ["EXTERNAL_WORKER"] }),
-        person("Jana Svobodová"),
+        person("Jana Svobodová", { jobTitle: "Účetní" }),
       ],
       formerList: false,
     };
@@ -109,7 +110,10 @@ describe("DirectoryScreen", () => {
     const user = userEvent.setup();
     renderWithClient(<DirectoryScreen />);
 
-    await user.type(screen.getByRole("searchbox", { name: "Search by name" }), "svobodova");
+    await user.type(
+      screen.getByRole("searchbox", { name: "Search by name or job title" }),
+      "svobodova"
+    );
     const cards = screen.getByTestId("directory-cards");
     expect(
       within(cards)
@@ -117,9 +121,26 @@ describe("DirectoryScreen", () => {
         .map((link) => link.textContent)
     ).toEqual([expect.stringContaining("Jana Svobodová")]);
 
-    await user.clear(screen.getByRole("searchbox", { name: "Search by name" }));
-    await user.type(screen.getByRole("searchbox", { name: "Search by name" }), "zed");
+    await user.clear(screen.getByRole("searchbox", { name: "Search by name or job title" }));
+    await user.type(screen.getByRole("searchbox", { name: "Search by name or job title" }), "zed");
     expect(screen.getByText("Nobody matches “zed”.")).toBeInTheDocument();
+  });
+
+  it("searches on job title too, and shows it on the card and in the table", async () => {
+    const user = userEvent.setup();
+    renderWithClient(<DirectoryScreen />);
+
+    await user.type(
+      screen.getByRole("searchbox", { name: "Search by name or job title" }),
+      "ucetni"
+    );
+    const cards = screen.getByTestId("directory-cards");
+    expect(within(cards).getAllByRole("link")).toHaveLength(1);
+    expect(within(cards).getByText("Účetní")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Table" }));
+    expect(screen.getByRole("columnheader", { name: "Job title" })).toBeInTheDocument();
+    expect(screen.getByRole("cell", { name: "Účetní" })).toBeInTheDocument();
   });
 
   it("offers no Former tab to someone the list doesn't open it for", () => {

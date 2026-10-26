@@ -3,7 +3,12 @@ import { screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { renderWithClient } from "@/lib/test-utils";
 import { ApiError } from "@/lib/api/client";
-import type { DirectoryOrganization, DirectoryProfile } from "@/lib/api/directory";
+import type {
+  DirectoryCardView,
+  DirectoryJobView,
+  DirectoryOrganization,
+  DirectoryProfile,
+} from "@/lib/api/directory";
 import { ProfileScreen } from "../profile-screen";
 
 let profile: { data?: DirectoryProfile; error: unknown } = { error: null };
@@ -14,22 +19,52 @@ vi.mock("next/navigation", () => ({
   useSearchParams: () => search,
 }));
 
+let history: { data?: unknown[]; error: unknown } = { data: [], error: null };
+const historyCalls: boolean[] = [];
+
 vi.mock("@/lib/api/queries", () => ({
   useDirectoryOrganizations: () => ({ data: organizations, isLoading: false, error: null }),
   useDirectoryProfile: () => ({ ...profile, isLoading: false }),
+  useProfileHistory: (_organizationId: string, _employmentId: string, enabled: boolean) => {
+    historyCalls.push(enabled);
+    return enabled ? { ...history, isLoading: false } : { data: undefined, error: null };
+  },
 }));
+
+const card = (overrides: Partial<DirectoryCardView> = {}): DirectoryCardView => ({
+  level: "READ",
+  jobTitle: null,
+  reportsTo: null,
+  nameFromAccount: true,
+  ...overrides,
+});
+
+const job = (overrides: Partial<DirectoryJobView> = {}): DirectoryJobView => ({
+  level: "READ",
+  spell: { startedAt: "2025-02-03T08:00:00.000Z", endedAt: null },
+  legalName: null,
+  employeeNumber: null,
+  startDate: null,
+  leavingDate: null,
+  probationEndDate: null,
+  contractType: null,
+  workingTime: null,
+  ...overrides,
+});
 
 const jana = (overrides: Partial<DirectoryProfile> = {}): DirectoryProfile => ({
   employmentId: "emp-jana",
   organizationId: "org-1",
   name: "Jana Member",
+  jobTitle: null,
   image: null,
   user: { id: "u-jana", name: "Jana Member", initials: "JM", avatarColor: "hsl(10, 65%, 50%)" },
   markers: [],
   self: false,
   ended: false,
+  canReadHistory: false,
   sections: {
-    card: { level: "READ" },
+    card: card(),
     photo: { level: "READ" },
     workContact: { level: "READ" },
   },
@@ -59,7 +94,12 @@ describe("ProfileScreen", () => {
     expect(screen.queryByRole("tab", { name: "Record" })).not.toBeInTheDocument();
     expect(screen.getByRole("region", { name: "Card" })).toBeInTheDocument();
     expect(screen.getByRole("region", { name: "Work contact" })).toBeInTheDocument();
-    expect(screen.queryByText(/Started|Sign-in email|Contact$|Personal|Job/)).toBeNull();
+    expect(
+      screen.queryByText(/Started|Sign-in email|Contact$|Personal|Employee number/)
+    ).toBeNull();
+    expect(screen.queryByRole("tab", { name: "Job" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /Edit profile/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Profile history/ })).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Directory" })).toHaveAttribute(
       "href",
       "/directory?organizationId=org-1"
@@ -67,7 +107,7 @@ describe("ProfileScreen", () => {
   });
 
   it("leaves out Work contact when the viewer can't read it", () => {
-    profile = { data: jana({ sections: { card: { level: "READ" } } }), error: null };
+    profile = { data: jana({ sections: { card: card() } }), error: null };
     renderWithClient(<ProfileScreen />);
 
     expect(screen.queryByRole("region", { name: "Work contact" })).not.toBeInTheDocument();
@@ -79,11 +119,8 @@ describe("ProfileScreen", () => {
       data: jana({
         self: true,
         sections: {
-          card: { level: "READ" },
-          job: {
-            level: "READ",
-            spell: { startedAt: "2025-02-03T08:00:00.000Z", endedAt: null },
-          },
+          card: card(),
+          job: job(),
         },
         account: { status: "ACTIVE", signInEmail: "jana@acme.test", directoryRoles: [] },
       }),
@@ -108,11 +145,8 @@ describe("ProfileScreen", () => {
     profile = {
       data: jana({
         sections: {
-          card: { level: "READ" },
-          job: {
-            level: "READ",
-            spell: { startedAt: "2025-02-03T08:00:00.000Z", endedAt: null },
-          },
+          card: card(),
+          job: job(),
         },
       }),
       error: null,
@@ -156,5 +190,122 @@ describe("ProfileScreen", () => {
     renderWithClient(<ProfileScreen />);
 
     expect(screen.getByText("This profile isn't available to you.")).toBeInTheDocument();
+  });
+
+  it("shows the job title under the name and the Card's Reports to as a link", () => {
+    profile = {
+      data: jana({
+        sections: {
+          card: card({
+            jobTitle: "Support specialist",
+            reportsTo: { employmentId: "emp-boss", name: "Marketa Boss" },
+          }),
+        },
+      }),
+      error: null,
+    };
+    renderWithClient(<ProfileScreen />);
+
+    const region = screen.getByRole("region", { name: "Card" });
+    expect(within(region).getByText("Support specialist")).toBeInTheDocument();
+    expect(within(region).getByRole("link", { name: "Marketa Boss" })).toHaveAttribute(
+      "href",
+      "/directory/person?organizationId=org-1&employmentId=emp-boss"
+    );
+    expect(screen.getAllByText("Support specialist")).toHaveLength(2);
+  });
+
+  it("shows a Job reader the Job tab, with legal name only when set and the employee-only fields for employees", async () => {
+    const user = userEvent.setup();
+    profile = {
+      data: jana({
+        sections: {
+          card: card(),
+          job: job({
+            employeeNumber: "A-0044",
+            startDate: "2024-03-01",
+            contractType: "FIXED_TERM",
+            workingTime: "PART_TIME",
+          }),
+        },
+      }),
+      error: null,
+    };
+    const { unmount } = renderWithClient(<ProfileScreen />);
+
+    await user.click(screen.getByRole("tab", { name: "Job" }));
+    const tab = screen.getByRole("tabpanel");
+    expect(within(tab).getByText("A-0044")).toBeInTheDocument();
+    expect(within(tab).getByText("01/03/2024")).toBeInTheDocument();
+    expect(within(tab).getByText("Fixed-term")).toBeInTheDocument();
+    expect(within(tab).getByText("Part-time")).toBeInTheDocument();
+    expect(within(tab).queryByText("Legal name")).not.toBeInTheDocument();
+    unmount();
+
+    profile = {
+      data: jana({
+        markers: ["EXTERNAL_WORKER"],
+        sections: { card: card(), job: job({ legalName: "Eli E. External" }) },
+      }),
+      error: null,
+    };
+    renderWithClient(<ProfileScreen />);
+    await user.click(screen.getByRole("tab", { name: "Job" }));
+    const external = screen.getByRole("tabpanel");
+    expect(within(external).getByText("Eli E. External")).toBeInTheDocument();
+    expect(within(external).queryByText("Contract type")).not.toBeInTheDocument();
+    expect(within(external).queryByText("Probation end date")).not.toBeInTheDocument();
+  });
+
+  it("offers Edit profile to a Card or Job writer", () => {
+    profile = {
+      data: jana({ sections: { card: card(), job: job({ level: "WRITE" }) } }),
+      error: null,
+    };
+    renderWithClient(<ProfileScreen />);
+
+    expect(screen.getByRole("link", { name: /Edit profile/ })).toHaveAttribute(
+      "href",
+      "/directory/person/edit?organizationId=org-1&employmentId=emp-jana"
+    );
+  });
+
+  it("opens the profile history drawer for a viewer who reads it, with fields and no values", async () => {
+    const user = userEvent.setup();
+    history = {
+      data: [
+        {
+          id: "h1",
+          at: "2026-10-01T09:20:00.000Z",
+          actorName: "Martin Svoboda",
+          section: "CARD",
+          fields: ["reportsTo"],
+          audience: "ORGANIZATION_ADMIN",
+        },
+        {
+          id: "h2",
+          at: "2026-09-05T12:02:00.000Z",
+          actorName: null,
+          section: "JOB",
+          fields: ["employeeNumber", "workingTime"],
+          audience: "OWNER",
+        },
+      ],
+      error: null,
+    };
+    profile = { data: jana({ canReadHistory: true }), error: null };
+    renderWithClient(<ProfileScreen />);
+    expect(historyCalls.at(-1)).toBe(false);
+
+    await user.click(screen.getByRole("button", { name: /Profile history/ }));
+
+    const drawer = screen.getByRole("dialog");
+    expect(within(drawer).getByText("Profile history · Jana Member")).toBeInTheDocument();
+    expect(within(drawer).getByText("Martin Svoboda")).toBeInTheDocument();
+    expect(within(drawer).getByText("as Org admin")).toBeInTheDocument();
+    expect(within(drawer).getByText("Card: Reports to")).toBeInTheDocument();
+    expect(within(drawer).getByText("Someone no longer here")).toBeInTheDocument();
+    expect(within(drawer).getByText("Job: Employee number, Working time")).toBeInTheDocument();
+    expect(historyCalls.at(-1)).toBe(true);
   });
 });
