@@ -16,6 +16,9 @@ import {
   getEndPreview,
   getProfileHistory,
   updateDirectoryProfile,
+  createDirectoryPerson,
+  checkDirectoryEmail,
+  type NewDirectoryPerson,
   type DirectoryProfilePatch,
   getDirectoryState,
   listDirectoryOrganizations,
@@ -1733,6 +1736,27 @@ export function useEndPreview(organizationId: string, employmentId: string, enab
     enabled: enabled && !!organizationId && !!employmentId,
     staleTime: 0,
   });
+}
+
+/** Add person; the new profile lands in the cache under the id it got, and the lists refresh. */
+export function useCreateDirectoryPerson(organizationId: string) {
+  const qc = useQueryClient();
+  const { locale } = useTranslation();
+  return useMutation({
+    mutationFn: (person: NewDirectoryPerson) =>
+      createDirectoryPerson(organizationId, person, locale),
+    onSuccess: (profile) => {
+      qc.setQueryData(
+        [...qk.directoryProfile(organizationId, profile.employmentId), locale],
+        profile
+      );
+      qc.invalidateQueries({ queryKey: ["directory"] });
+    },
+  });
+}
+
+export function useCheckDirectoryEmail(organizationId: string) {
+  return useMutation({ mutationFn: (email: string) => checkDirectoryEmail(organizationId, email) });
 }
 
 export function useUpdateDirectoryProfile(organizationId: string, employmentId: string) {

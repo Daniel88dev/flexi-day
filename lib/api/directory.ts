@@ -140,6 +140,8 @@ export type DirectoryPeople = {
   settings: boolean;
   /** The rows carry `noGroup`, so the No group filter shows: the owner and org admins. */
   noGroupFilter?: boolean;
+  /** The viewer holds the Create account-less person act, so Add person shows. */
+  addPerson?: boolean;
 };
 
 export type DirectorySectionLevel = "READ" | "WRITE";
@@ -335,6 +337,43 @@ export type DirectoryProfilePatch = {
     dateOfBirth?: string | null;
   };
 };
+
+export type WorkerType = "employee" | "external";
+
+/** Add person: a person without an account, with the Card fields the dialog offers. */
+export type NewDirectoryPerson = {
+  name: string;
+  type: WorkerType;
+  email?: string | null;
+  card?: {
+    jobTitle?: string;
+    departmentId?: string;
+    locationId?: string;
+    reportsToEmploymentId?: string;
+  };
+};
+
+export function createDirectoryPerson(
+  organizationId: string,
+  person: NewDirectoryPerson,
+  language?: Locale
+): Promise<DirectoryProfile> {
+  return api<DirectoryProfile>(
+    directoryPath(organizationId, `people${language ? `?language=${language}` : ""}`),
+    { method: "POST", body: person }
+  );
+}
+
+/** Whether an open Employment of the organization already holds the email. The email stays in the body. */
+export function checkDirectoryEmail(
+  organizationId: string,
+  email: string
+): Promise<{ available: boolean }> {
+  return api<{ available: boolean }>(directoryPath(organizationId, "people/email-check"), {
+    method: "POST",
+    body: { email },
+  });
+}
 
 export function updateDirectoryProfile(
   organizationId: string,

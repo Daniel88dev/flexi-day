@@ -20,6 +20,14 @@ vi.mock("next/navigation", () => ({
   useSearchParams: () => search,
 }));
 
+vi.mock("@/components/directory/add-person-dialog", () => ({
+  AddPersonAction: ({ people }: { people: unknown[] }) => (
+    <button type="button" data-testid="add-person">
+      Add person ({people.length})
+    </button>
+  ),
+}));
+
 vi.mock("@/components/directory/directory-settings", () => ({
   DirectorySettings: () => <div data-testid="directory-settings" />,
 }));
@@ -114,6 +122,16 @@ describe("DirectoryScreen", () => {
     const cards = screen.getByTestId("directory-cards");
     const sources = [...cards.querySelectorAll("img")].map((img) => img.getAttribute("src"));
     expect(sources).toEqual(["https://store.test/ada-small.jpg", "https://idp.test/jana.png"]);
+  });
+
+  it("offers Add person only when the list says the viewer may add", () => {
+    const { unmount } = renderWithClient(<DirectoryScreen />);
+    expect(screen.queryByTestId("add-person")).not.toBeInTheDocument();
+    unmount();
+
+    people = { ...people, addPerson: true };
+    renderWithClient(<DirectoryScreen />);
+    expect(screen.getByTestId("add-person")).toHaveTextContent("Add person (3)");
   });
 
   it("remembers the Table view in the browser", async () => {

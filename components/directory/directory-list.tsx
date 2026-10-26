@@ -15,6 +15,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { AddPersonAction } from "@/components/directory/add-person-dialog";
 import { DirectoryAgreementBanner } from "@/components/directory/directory-agreement-banner";
 import { DirectoryLapsedBanner } from "@/components/directory/directory-lapsed-banner";
 import { DirectoryMarkers } from "@/components/directory/directory-markers";
@@ -86,6 +87,9 @@ export function DirectoryList({
     <div className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <h1 className="font-heading text-2xl font-bold">{t.directory.title}</h1>
+        {people.data?.addPerson ? (
+          <AddPersonAction organization={organization} people={people.data.people} />
+        ) : null}
         {organizations.length > 1 ? (
           <div
             role="group"
