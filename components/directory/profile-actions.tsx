@@ -125,6 +125,11 @@ function EndForm({
     preview.directoryRoles.length > 0
       ? copy.endsRoles(preview.directoryRoles.map((role) => roleNames[role]).join(", "))
       : null,
+    preview.atEndSections && preview.atEndSections.length > 0
+      ? copy.clearsAtEnd(
+          preview.atEndSections.map((section) => t.directory.history.sections[section]).join(", ")
+        )
+      : null,
   ].filter((line): line is string => line !== null);
 
   async function submit() {

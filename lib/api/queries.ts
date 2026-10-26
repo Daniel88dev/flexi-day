@@ -35,9 +35,14 @@ import {
   startProfilePhotoUpload,
   type ProfilePhotoUpload,
   getDirectoryGeneralSettings,
+  getRetentionPreview,
+  getRetentionSettings,
   getReadLog,
   updateDirectoryGeneralSettings,
+  updateRetentionPeriod,
   type ReadLogFilter,
+  type ProfileHistorySection,
+  type RetentionPeriod,
 } from "./directory";
 import { waitForPhotoUpload } from "@/lib/directory/profile-photo";
 import {
@@ -349,6 +354,10 @@ export const qk = {
   directoryRoles: (organizationId: string) => ["directory", "roles", organizationId] as const,
   directoryGeneralSettings: (organizationId: string) =>
     ["directory", "general", organizationId] as const,
+  directoryRetention: (organizationId: string) =>
+    ["directory", "retention", organizationId] as const,
+  directoryRetentionPreview: (organizationId: string, section: string, period: string) =>
+    ["directory", "retention-preview", organizationId, section, period] as const,
   directoryReadLog: (organizationId: string, filter: ReadLogFilter) =>
     [
       "directory",
@@ -1800,6 +1809,47 @@ export function useUpdateDirectoryGeneralSettings(organizationId: string) {
       qc.setQueryData(qk.directoryGeneralSettings(organizationId), settings);
       qc.invalidateQueries({ queryKey: ["directory", "profile"] });
     },
+  });
+}
+
+/** Owner, org admins and HR read the Retention periods. */
+export function useRetentionSettings(organizationId: string, enabled: boolean) {
+  return useQuery({
+    queryKey: qk.directoryRetention(organizationId),
+    queryFn: () => getRetentionSettings(organizationId),
+    enabled: enabled && !!organizationId,
+  });
+}
+
+/** The owner and org admins; the notice's period and the End dialog follow the change. */
+export function useUpdateRetentionPeriod(organizationId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { section: ProfileHistorySection; period: RetentionPeriod }) =>
+      updateRetentionPeriod(organizationId, input),
+    onSuccess: (settings) => {
+      qc.setQueryData(qk.directoryRetention(organizationId), settings);
+      qc.invalidateQueries({ queryKey: qk.directoryGeneralSettings(organizationId) });
+      qc.invalidateQueries({ queryKey: ["directory", "profile"] });
+      qc.invalidateQueries({ queryKey: ["directory", "end-preview"] });
+    },
+  });
+}
+
+/** Who a shorter period would remove at the next nightly run; fetched only while asked. */
+export function useRetentionPreview(
+  organizationId: string,
+  input: { section: ProfileHistorySection; period: RetentionPeriod } | null
+) {
+  return useQuery({
+    queryKey: qk.directoryRetentionPreview(
+      organizationId,
+      input?.section ?? "",
+      input?.period ?? ""
+    ),
+    queryFn: () => getRetentionPreview(organizationId, input!),
+    enabled: !!organizationId && input !== null,
+    staleTime: 0,
   });
 }
 

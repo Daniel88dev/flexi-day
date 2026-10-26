@@ -36,6 +36,31 @@ vi.mock("@/lib/api/queries", () => ({
     isSuccess: false,
     error: null,
   }),
+  useRetentionSettings: () => ({
+    data: {
+      editable: false,
+      periods: {
+        CARD: "UNTIL_ERASED",
+        PHOTO: "YEAR_1",
+        WORK_CONTACT: "DAYS_30",
+        JOB: "UNTIL_ERASED",
+        CONTACT: "MONTHS_6",
+        PERSONAL: "YEARS_3",
+      },
+      defaults: {
+        CARD: "UNTIL_ERASED",
+        PHOTO: "YEAR_1",
+        WORK_CONTACT: "DAYS_30",
+        JOB: "UNTIL_ERASED",
+        CONTACT: "DAYS_30",
+        PERSONAL: "YEARS_3",
+      },
+    },
+    isLoading: false,
+    error: null,
+  }),
+  useUpdateRetentionPeriod: () => ({ mutate: vi.fn(), isPending: false, error: null }),
+  useRetentionPreview: () => ({ data: undefined, isLoading: false, error: null }),
   useReadLog: (_organizationId: string, filter: unknown) => {
     readLogFilters.push(filter);
     return { data: { pages: [readLog] }, error: null, hasNextPage: false };
@@ -287,10 +312,14 @@ describe("DirectorySettings", () => {
       expect(readLogFilters.at(-1)).toEqual({ employmentId: "emp-jana", readerUserId: "u-hana" });
     });
 
-    it("leaves the Read log out for HR who is not an org admin", () => {
+    it("leaves the Read log out for HR who is not an org admin, and shows them the retention periods", async () => {
+      const user = userEvent.setup();
       renderWithClient(<DirectorySettings organization={{ ...organization, role: "MEMBER" }} />);
 
       expect(screen.getByRole("button", { name: "General" })).toBeInTheDocument();
+      await user.click(screen.getByRole("button", { name: "Retention" }));
+      expect(screen.getByText("Retention periods")).toBeInTheDocument();
+      expect(screen.getByText("6 months")).toBeInTheDocument();
       expect(screen.queryByRole("button", { name: "Read log" })).not.toBeInTheDocument();
     });
   });

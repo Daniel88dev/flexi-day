@@ -55,12 +55,18 @@ export function ProfileHistorySheet({ profile }: { profile: DirectoryProfile }) 
                     {when(entry.at)}
                   </time>
                   <div className="space-y-0.5">
-                    <p>
-                      <span className="font-semibold">{entry.actorName ?? copy.unknownActor}</span>{" "}
-                      <span className="text-muted-foreground text-xs">
-                        {copy.as(copy.audiences[entry.audience])}
-                      </span>
-                    </p>
+                    {entry.actor === "RETENTION" || entry.audience === null ? (
+                      <p className="font-semibold">{copy.retention}</p>
+                    ) : (
+                      <p>
+                        <span className="font-semibold">
+                          {entry.actorName ?? copy.unknownActor}
+                        </span>{" "}
+                        <span className="text-muted-foreground text-xs">
+                          {copy.as(copy.audiences[entry.audience])}
+                        </span>
+                      </p>
+                    )}
                     <p>
                       {copy.sections[entry.section]}:{" "}
                       {entry.fields.map((field) => copy.fields[field] ?? field).join(", ")}

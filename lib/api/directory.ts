@@ -378,6 +378,59 @@ export function updateDirectoryGeneralSettings(
   });
 }
 
+/** How long a Section is kept after an Employment ends, shortest first. */
+export const RETENTION_PERIODS = [
+  "AT_END",
+  "DAYS_30",
+  "MONTHS_6",
+  "YEAR_1",
+  "YEARS_3",
+  "YEARS_5",
+  "YEARS_10",
+  "UNTIL_ERASED",
+] as const;
+export type RetentionPeriod = (typeof RETENTION_PERIODS)[number];
+
+export type RetentionSettings = {
+  /** The owner and org admins change these; HR reads them. */
+  editable: boolean;
+  periods: Record<ProfileHistorySection, RetentionPeriod>;
+  defaults: Record<ProfileHistorySection, RetentionPeriod>;
+};
+
+export type RetentionPreview = {
+  section: ProfileHistorySection;
+  period: RetentionPeriod;
+  /** People whose Section the next nightly run would remove under this period. */
+  affected: number;
+};
+
+export function getRetentionSettings(organizationId: string): Promise<RetentionSettings> {
+  return api<RetentionSettings>(directoryPath(organizationId, "settings/retention"));
+}
+
+/** The owner and org admins, on every plan. */
+export function updateRetentionPeriod(
+  organizationId: string,
+  input: { section: ProfileHistorySection; period: RetentionPeriod }
+): Promise<RetentionSettings> {
+  return api<RetentionSettings>(directoryPath(organizationId, "settings/retention"), {
+    method: "PUT",
+    body: input,
+  });
+}
+
+/** Changes nothing: counts who a period would remove at the next nightly run. */
+export function getRetentionPreview(
+  organizationId: string,
+  input: { section: ProfileHistorySection; period: RetentionPeriod }
+): Promise<RetentionPreview> {
+  const query = new URLSearchParams(input).toString();
+  return api<RetentionPreview>(
+    directoryPath(organizationId, `settings/retention/preview?${query}`)
+  );
+}
+
 export type ProfilePhotoUpload = {
   id: string;
   status: "UPLOADING" | "READY" | "REJECTED";
@@ -439,7 +492,9 @@ export type ProfileHistoryEntry = {
   section: ProfileHistorySection;
   /** Field names, never values. */
   fields: string[];
-  audience: DirectoryAudience;
+  /** RETENTION for a Retention purge, which names no person and no audience. */
+  actor?: "PERSON" | "RETENTION";
+  audience: DirectoryAudience | null;
 };
 
 export type ProfileActions = {
@@ -469,6 +524,8 @@ export type EndPreview = {
   /** A delegated org-admin row End drops. */
   organizationAdmin: boolean;
   directoryRoles: DirectoryRoleName[];
+  /** Sections set to "at end" that hold something; End empties them. */
+  atEndSections?: ProfileHistorySection[];
 };
 
 /** Only for a viewer whose End act cell allows it. */
