@@ -195,6 +195,52 @@ describe("DirectoryScreen", () => {
     ).toEqual([expect.stringContaining("Jana Svobodová")]);
   });
 
+  it("filters by department and location, and shows both on the card and in the table", async () => {
+    const user = userEvent.setup();
+    const support = { id: "d-support", name: "Support", archived: false };
+    const sales = { id: "d-sales", name: "Sales", archived: true };
+    const prague = { id: "l-prague", name: "Prague", archived: false };
+    people = {
+      people: [
+        person("Ada Novak", { department: support, location: prague }),
+        person("Eli Ext", { department: sales, location: null }),
+        person("Jana Svobodová", { department: support, location: null }),
+      ],
+      formerList: false,
+      settings: false,
+    };
+    renderWithClient(<DirectoryScreen />);
+
+    const cards = screen.getByTestId("directory-cards");
+    expect(within(cards).getByText("Support · Prague")).toBeInTheDocument();
+    expect(within(cards).getByText("Sales (archived)")).toBeInTheDocument();
+
+    const department = screen.getByRole("combobox", { name: "Department" });
+    expect(
+      within(department)
+        .getAllByRole("option")
+        .map((option) => option.textContent)
+    ).toEqual(["All departments", "Sales (archived)", "Support"]);
+    await user.selectOptions(department, "d-support");
+    expect(within(cards).getAllByRole("link")).toHaveLength(2);
+    await user.selectOptions(screen.getByRole("combobox", { name: "Location" }), "l-prague");
+    expect(within(cards).getAllByRole("link")).toHaveLength(1);
+    expect(within(cards).getByRole("link", { name: /Ada Novak/ })).toBeInTheDocument();
+
+    await user.selectOptions(department, "");
+    await user.click(screen.getByRole("button", { name: "Table" }));
+    const table = screen.getByRole("table");
+    expect(within(table).getByRole("columnheader", { name: "Department" })).toBeInTheDocument();
+    expect(within(table).getByRole("cell", { name: "Prague" })).toBeInTheDocument();
+  });
+
+  it("offers no department or location filter while nobody holds one", () => {
+    renderWithClient(<DirectoryScreen />);
+
+    expect(screen.queryByRole("combobox", { name: "Department" })).toBeNull();
+    expect(screen.queryByRole("combobox", { name: "Location" })).toBeNull();
+  });
+
   it("offers the No group filter only when the list carries it", () => {
     renderWithClient(<DirectoryScreen />);
 

@@ -21,6 +21,7 @@ import {
   type DirectorySectionLevel,
 } from "@/lib/api/directory";
 import {
+  useDirectoryList,
   useDirectoryOrganizations,
   useDirectoryPeople,
   useDirectoryProfile,
@@ -46,6 +47,7 @@ import {
 } from "@/lib/directory/sensitive-form";
 import { useShownSection } from "@/lib/directory/shown-sections";
 import { SensitiveGate } from "@/components/directory/sensitive-section";
+import { entryLabel, pickerEntries } from "@/lib/directory/entries";
 import {
   buildProfilePatch,
   profileFormValues,
@@ -125,6 +127,8 @@ function ProfileEditForm({ profile, lapsed }: { profile: DirectoryProfile; lapse
   const nameEditable = cardWrite && !card?.nameFromAccount && !lapsed;
   const external = profile.markers.includes("EXTERNAL_WORKER");
   const people = useDirectoryPeople(cardWrite ? profile.organizationId : null).data?.people;
+  const departments = useDirectoryList(profile.organizationId, "departments", cardWrite).data;
+  const locations = useDirectoryList(profile.organizationId, "locations", cardWrite).data;
 
   const [initial] = useState(() => profileFormValues(profile));
   const [values, setValues] = useState(initial);
@@ -337,6 +341,36 @@ function ProfileEditForm({ profile, lapsed }: { profile: DirectoryProfile; lapse
               {reportsToOptions.map((person) => (
                 <option key={person.employmentId} value={person.employmentId}>
                   {person.name}
+                </option>
+              ))}
+            </SelectField>
+            <SelectField
+              id="profile-department"
+              label={labels.department}
+              {...field("department", cardWrite)}
+            >
+              <option value="">{copy.noEntry}</option>
+              {pickerEntries(
+                departments?.entries ?? (card.department ? [card.department] : []),
+                card.department?.id ?? null
+              ).map((entry) => (
+                <option key={entry.id} value={entry.id}>
+                  {entryLabel(entry, t.directory.archivedEntry)}
+                </option>
+              ))}
+            </SelectField>
+            <SelectField
+              id="profile-location"
+              label={labels.location}
+              {...field("location", cardWrite)}
+            >
+              <option value="">{copy.noEntry}</option>
+              {pickerEntries(
+                locations?.entries ?? (card.location ? [card.location] : []),
+                card.location?.id ?? null
+              ).map((entry) => (
+                <option key={entry.id} value={entry.id}>
+                  {entryLabel(entry, t.directory.archivedEntry)}
                 </option>
               ))}
             </SelectField>

@@ -20,6 +20,8 @@ const profile = (overrides: Partial<DirectoryProfile["sections"]> = {}): Directo
       jobTitle: "Agent",
       reportsTo: { employmentId: "emp-boss", name: "Boss" },
       nameFromAccount: false,
+      department: { id: "d-sales", name: "Sales", archived: true },
+      location: null,
     },
     job: {
       level: "WRITE",
@@ -42,6 +44,8 @@ describe("profileFormValues", () => {
       name: "Ada Noaccount",
       jobTitle: "Agent",
       reportsTo: "emp-boss",
+      department: "d-sales",
+      location: "",
       workEmail: "",
       workPhoneCountry: "",
       workPhoneNumber: "",
@@ -87,6 +91,14 @@ describe("buildProfilePatch", () => {
       buildProfilePatch(before, { ...before, name: "Ada Lovelace" }, { ...can, name: false })
     ).toEqual({});
     expect(buildProfilePatch(before, { ...before, name: "  " }, can)).toEqual({});
+  });
+
+  it("sends a picked Department and Location by id, and an emptied one as null", () => {
+    const before = profileFormValues(profile());
+    expect(
+      buildProfilePatch(before, { ...before, department: "", location: "l-berlin" }, can)
+    ).toEqual({ card: { departmentId: null, locationId: "l-berlin" } });
+    expect(buildProfilePatch(before, { ...before }, can)).toEqual({});
   });
 
   it("leaves out a Section the viewer can't write", () => {

@@ -13,6 +13,10 @@ import type {
 } from "@/lib/api/directory";
 import { DirectorySettings } from "../directory-settings";
 
+vi.mock("../directory-lists-panel", () => ({
+  DirectoryListsPanel: () => <div data-testid="lists-panel" />,
+}));
+
 const updateCell = vi.fn();
 const setRoles = vi.fn();
 let table: PermissionTable;
@@ -322,5 +326,13 @@ describe("DirectorySettings", () => {
       expect(screen.getByText("6 months")).toBeInTheDocument();
       expect(screen.queryByRole("button", { name: "Read log" })).not.toBeInTheDocument();
     });
+  });
+
+  it("opens Departments and locations as its own panel, without the permission history", async () => {
+    renderWithClient(<DirectorySettings organization={organization} />);
+    await userEvent.click(screen.getByRole("button", { name: "Departments and locations" }));
+
+    expect(screen.getByTestId("lists-panel")).toBeInTheDocument();
+    expect(screen.queryByText("Permission history")).toBeNull();
   });
 });
