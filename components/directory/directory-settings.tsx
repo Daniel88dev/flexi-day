@@ -6,11 +6,12 @@ import { DirectoryRolesPanel } from "@/components/directory/directory-roles-pane
 import { EmergencyNoticePanel } from "@/components/directory/emergency-notice-panel";
 import { PermissionHistory } from "@/components/directory/permission-history";
 import { ReadLogPanel } from "@/components/directory/read-log-panel";
+import { RetentionPanel } from "@/components/directory/retention-panel";
 import { PermissionTableEditor } from "@/components/directory/permission-table-editor";
 import type { DirectoryOrganization } from "@/lib/api/directory";
 import { useTranslation } from "@/lib/i18n/use-translation";
 
-type Panel = "permissions" | "roles" | "general" | "readLog";
+type Panel = "permissions" | "roles" | "general" | "retention" | "readLog";
 
 /** The Directory settings tab, for the owner, org admins and HR. Later settings add a panel here. */
 export function DirectorySettings({ organization }: { organization: DirectoryOrganization }) {
@@ -23,6 +24,7 @@ export function DirectorySettings({ organization }: { organization: DirectoryOrg
     ["permissions", copy.permissions],
     ["roles", copy.roles],
     ["general", copy.general],
+    ["retention", copy.retention],
     ...(readsLog ? [["readLog", copy.readLog] as [Panel, string]] : []),
   ];
 
@@ -48,6 +50,8 @@ export function DirectorySettings({ organization }: { organization: DirectoryOrg
           <DirectoryRolesPanel organizationId={organization.organizationId} />
         ) : panel === "general" ? (
           <EmergencyNoticePanel organizationId={organization.organizationId} />
+        ) : panel === "retention" ? (
+          <RetentionPanel organizationId={organization.organizationId} />
         ) : (
           <ReadLogPanel organizationId={organization.organizationId} />
         )}

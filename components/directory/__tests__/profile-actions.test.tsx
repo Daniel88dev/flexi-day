@@ -119,6 +119,21 @@ describe("ProfileActions", () => {
     ]);
   });
 
+  it("names the Sections End removes because their retention is at end", async () => {
+    preview = {
+      data: endPreview({ atEndSections: ["PHOTO", "CONTACT"] }),
+      error: null,
+      isLoading: false,
+    };
+    renderWithClient(<ProfileActions profile={profile()} />);
+    const dialog = await openEnd();
+
+    const effects = within(dialog).getByRole("list", { name: /what happens/i });
+    expect(
+      within(effects).getByText("Removed now, as their retention is at end: Photo, Contact")
+    ).toBeInTheDocument();
+  });
+
   it("refuses a last day after today without asking the server", async () => {
     renderWithClient(<ProfileActions profile={profile()} />);
     const dialog = await openEnd();

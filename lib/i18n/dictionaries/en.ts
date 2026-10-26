@@ -1805,6 +1805,7 @@ export const en = {
         count === 1 ? "1 booked day is cancelled" : `${count} booked days are cancelled`,
       dropsAdmin: "Their org admin access ends",
       endsRoles: (roles: string) => `Their directory roles end: ${roles}`,
+      clearsAtEnd: (sections: string) => `Removed now, as their retention is at end: ${sections}`,
       managesGroups: (groups: string) =>
         `They manage ${groups}. Give each group another manager first.`,
       confirm: "End employment",
@@ -1896,6 +1897,7 @@ export const en = {
       loadFailed: "Could not load the profile history",
       as: (audience: string) => `as ${audience}`,
       unknownActor: "Someone no longer here",
+      retention: "Retention",
       audiences: {
         OWNER: "Owner",
         SELF: "Self",
@@ -2025,6 +2027,7 @@ export const en = {
       roles: "Directory roles",
       general: "General",
       readLog: "Read log",
+      retention: "Retention",
       permissionsIntro:
         "Who reads or writes each section, and who may do each act. When someone holds several audiences, the widest cell wins. Changes apply at once, with no approval step.",
       readOnlyNote: "Only the owner changes the table and the directory roles.",
@@ -2112,6 +2115,36 @@ export const en = {
         saveFailed: "Could not save the notice",
       },
       readLogReaders: "Owner, org admins",
+      retentionPanel: {
+        title: "Retention periods",
+        intro:
+          "How long each section is kept after someone leaves, counted from the later of their last day and the day the ending was recorded. A shorter period removes what is past it at the next nightly run. A longer one brings nothing back. The record itself stays until it is erased.",
+        section: "Section",
+        period: "Kept after leaving",
+        periodLabel: (section: string) => `Retention period for ${section}`,
+        defaultIs: (period: string) => `Default: ${period}`,
+        periods: {
+          AT_END: "At end",
+          DAYS_30: "30 days",
+          MONTHS_6: "6 months",
+          YEAR_1: "1 year",
+          YEARS_3: "3 years",
+          YEARS_5: "5 years",
+          YEARS_10: "10 years",
+          UNTIL_ERASED: "Until erased",
+        },
+        readOnly: "Only the owner and org admins change retention.",
+        loadFailed: "Could not load the retention periods",
+        saveFailed: "Could not change the retention period",
+        confirmTitle: (section: string) => `Shorten retention for ${section}?`,
+        counting: "Counting who this removes…",
+        countFailed: "Could not count who this removes.",
+        removes: (section: string, count: number) =>
+          count === 0
+            ? "The next nightly run removes nothing yet."
+            : `The next nightly run removes ${section} from ${count === 1 ? "1 person" : `${count} people`}. It can't be brought back.`,
+        confirm: "Shorten",
+      },
       readLogPanel: {
         title: "Read log",
         intro:

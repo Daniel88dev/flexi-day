@@ -1819,6 +1819,8 @@ export const cs: Dictionary = {
         `${count} ${plural(count, "zapsaný den se zruší", "zapsané dny se zruší", "zapsaných dnů se zruší")}`,
       dropsAdmin: "Skončí přístup správce organizace",
       endsRoles: (roles: string) => `Skončí role v adresáři: ${roles}`,
+      clearsAtEnd: (sections: string) =>
+        `Hned se odstraní, protože se uchovávají jen do odchodu: ${sections}`,
       managesGroups: (groups: string) =>
         `Osoba vede skupiny: ${groups}. Nejdřív každé skupině určete jiného vedoucího.`,
       confirm: "Ukončit pracovní poměr",
@@ -1910,6 +1912,7 @@ export const cs: Dictionary = {
       loadFailed: "Historii profilu se nepodařilo načíst",
       as: (audience: string) => `jako ${audience}`,
       unknownActor: "Někdo, kdo už tu není",
+      retention: "Lhůta uchování",
       audiences: {
         OWNER: "Vlastník",
         SELF: "Sám za sebe",
@@ -2038,6 +2041,7 @@ export const cs: Dictionary = {
       roles: "Role v adresáři",
       general: "Obecné",
       readLog: "Záznam o čtení",
+      retention: "Uchování údajů",
       permissionsIntro:
         "Kdo čte nebo upravuje kterou sekci a kdo smí provést který úkon. Když někdo patří do více okruhů, platí nejširší buňka. Změny platí hned, bez schvalování.",
       readOnlyNote: "Tabulku a role v adresáři mění jen vlastník.",
@@ -2126,6 +2130,36 @@ export const cs: Dictionary = {
         saveFailed: "Upozornění se nepodařilo uložit",
       },
       readLogReaders: "Vlastník, správci organizace",
+      retentionPanel: {
+        title: "Lhůty uchování",
+        intro:
+          "Jak dlouho se každá sekce uchovává po odchodu, počítáno od pozdějšího z posledního dne a dne, kdy byl odchod zapsán. Kratší lhůta odstraní při příštím nočním běhu, co je po ní. Delší nic nevrátí. Záznam sám zůstává, dokud ho nesmažete.",
+        section: "Sekce",
+        period: "Uchovává se po odchodu",
+        periodLabel: (section: string) => `Lhůta uchování pro sekci ${section}`,
+        defaultIs: (period: string) => `Výchozí: ${period}`,
+        periods: {
+          AT_END: "Do odchodu",
+          DAYS_30: "30 dní",
+          MONTHS_6: "6 měsíců",
+          YEAR_1: "1 rok",
+          YEARS_3: "3 roky",
+          YEARS_5: "5 let",
+          YEARS_10: "10 let",
+          UNTIL_ERASED: "Do smazání",
+        },
+        readOnly: "Lhůty uchování mění jen vlastník a správci organizace.",
+        loadFailed: "Lhůty uchování se nepodařilo načíst",
+        saveFailed: "Lhůtu uchování se nepodařilo změnit",
+        confirmTitle: (section: string) => `Zkrátit lhůtu uchování pro sekci ${section}?`,
+        counting: "Počítám, koho se to týká…",
+        countFailed: "Nepodařilo se spočítat, koho se to týká.",
+        removes: (section: string, count: number) =>
+          count === 0
+            ? "Příští noční běh zatím nic neodstraní."
+            : `Příští noční běh odstraní sekci ${section} u ${count} ${plural(count, "osoby", "osob", "osob")}. Vrátit to nejde.`,
+        confirm: "Zkrátit",
+      },
       readLogPanel: {
         title: "Záznam o čtení",
         intro:
