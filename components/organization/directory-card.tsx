@@ -6,11 +6,20 @@ import { Contact } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { DeleteDirectoryDataDialog } from "@/components/organization/delete-directory-data-dialog";
 import { EnableDirectoryDialog } from "@/components/organization/enable-directory-dialog";
+import { TurnOffDirectoryDialog } from "@/components/organization/turn-off-directory-dialog";
+import type { DirectoryState } from "@/lib/api/directory";
 import { useDirectoryState } from "@/lib/api/queries";
 import { useTranslation } from "@/lib/i18n/use-translation";
 
-/** The directory switch on the Organization page. Only the owner turns it on. */
+/** Turned off at some point and not emptied since: what Delete all is for. */
+const holdsOffData = (state: DirectoryState) =>
+  !state.enabled &&
+  state.enabledAt !== null &&
+  (!state.dataDeletedAt || (state.disabledAt !== null && state.disabledAt > state.dataDeletedAt));
+
+/** The directory switch on the Organization page. Only the owner turns it on or off. */
 export function DirectoryCard({
   organizationId,
   organizationName,
@@ -22,6 +31,8 @@ export function DirectoryCard({
   const copy = t.organization.directory;
   const state = useDirectoryState(organizationId);
   const [enabling, setEnabling] = useState(false);
+  const [turningOff, setTurningOff] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const data = state.data;
   const date = (iso: string) => new Date(iso).toLocaleDateString(t.common.dateLocale);
 
@@ -53,14 +64,31 @@ export function DirectoryCard({
                 )}
               </p>
             ) : null}
-            <Button asChild size="sm" variant="outline">
-              <Link href="/directory">{copy.openDirectory}</Link>
-            </Button>
+            <div className="flex flex-wrap gap-2">
+              <Button asChild size="sm" variant="outline">
+                <Link href="/directory">{copy.openDirectory}</Link>
+              </Button>
+              {data.isOwner && organizationId ? (
+                <Button size="sm" variant="outline" onClick={() => setTurningOff(true)}>
+                  {copy.turnOff}
+                </Button>
+              ) : null}
+            </div>
+            {data.isOwner && organizationId ? (
+              <TurnOffDirectoryDialog
+                open={turningOff}
+                onOpenChange={setTurningOff}
+                organizationId={organizationId}
+              />
+            ) : null}
           </>
         ) : (
           <>
             <div className="flex items-center gap-2 text-sm">
               <Badge variant="outline">{copy.off}</Badge>
+              {data.enabledAt && data.disabledAt ? (
+                <span>{copy.offSince(date(data.disabledAt))}</span>
+              ) : null}
             </div>
             <p className="text-muted-foreground text-sm">{copy.lead}</p>
             {!data.writable ? (
@@ -87,6 +115,29 @@ export function DirectoryCard({
                 state={data}
                 organizationName={organizationName}
               />
+            ) : null}
+            {data.dataDeletedAt && !holdsOffData(data) ? (
+              <p className="text-muted-foreground text-xs">
+                {copy.deletedOn(date(data.dataDeletedAt))}
+              </p>
+            ) : null}
+            {data.isOwner && organizationId && holdsOffData(data) ? (
+              <>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="text-destructive"
+                  onClick={() => setDeleting(true)}
+                >
+                  {copy.deleteAll}
+                </Button>
+                <DeleteDirectoryDataDialog
+                  open={deleting}
+                  onOpenChange={setDeleting}
+                  organizationId={organizationId}
+                  organizationName={organizationName}
+                />
+              </>
             ) : null}
           </>
         )}

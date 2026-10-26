@@ -27,6 +27,9 @@ import { formatMinutes, parseMinutes } from "@/lib/attendance/duration";
 import { useTranslation } from "@/lib/i18n/use-translation";
 import { cn } from "@/lib/utils";
 
+/** The People card's id, for links from the directory's turn-off dialog. */
+export const PEOPLE_CARD_ANCHOR = "people";
+
 /**
  * The organization's roster for its owner and org admins, on every plan, split
  * into open and former Employments. With attendance on, each row also takes
@@ -50,7 +53,18 @@ export function PeopleCard({
 
   if (query.isPending) return null;
 
-  const exportOf = new Map(exports?.map((entry) => [entry.subjectUserId, entry]));
+  const exportByUser = new Map(
+    exports?.filter((entry) => entry.subjectUserId).map((entry) => [entry.subjectUserId, entry])
+  );
+  const exportByEmployment = new Map(
+    exports
+      ?.filter((entry) => entry.subjectEmploymentId)
+      .map((entry) => [entry.subjectEmploymentId, entry])
+  );
+  const exportOf = (employment: EmploymentListItem) =>
+    employment.userId === null
+      ? exportByEmployment.get(employment.id)
+      : exportByUser.get(employment.userId);
 
   const attendanceOn = settings?.attendanceEnabled ?? false;
   // The backend reads "today" in this zone, UTC while attendance was never set up.
@@ -68,7 +82,7 @@ export function PeopleCard({
         organizationId={organizationId}
         requiredMinutesPerDay={attendanceOn ? (settings?.requiredMinutesPerDay ?? null) : null}
         timeZone={timeZone}
-        exportEntry={exportOf.get(employment.userId)}
+        exportEntry={exportOf(employment)}
         requestingExport={requestExport.isPending && requestExport.variables === employment.id}
         onRequestExport={() => requestExport.mutateAsync(employment.id)}
         focused={employment.id === focusEmploymentId}
@@ -77,7 +91,7 @@ export function PeopleCard({
     ));
 
   return (
-    <Card>
+    <Card id={PEOPLE_CARD_ANCHOR}>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <UsersRound className="h-4 w-4" aria-hidden />
@@ -91,6 +105,8 @@ export function PeopleCard({
         </p>
         {directoryOn ? (
           <p className="text-muted-foreground text-sm">{t.organization.people.inDirectory}</p>
+        ) : open.some((employment) => employment.noLink) ? (
+          <p className="text-muted-foreground text-sm">{t.organization.people.noLink}</p>
         ) : null}
 
         {/* A roster that failed to load says so: an admin who came here to act
@@ -177,6 +193,11 @@ function PersonRow({
         <p className="flex flex-wrap items-center gap-2 font-medium">
           {employment.user.name}
           {employment.accountDeleted ? <AccountDeletedLabel /> : null}
+          {employment.userId === null ? (
+            <Badge variant="outline" data-testid="no-account">
+              {t.directory.markers.NO_ACCOUNT}
+            </Badge>
+          ) : null}
           {external ? (
             <Badge variant="outline" data-testid="external-worker">
               {t.directory.markers.EXTERNAL_WORKER}
@@ -258,8 +279,9 @@ function RowActions({
         onRequest={onRequestExport}
       />
 
-      {/* Outside the directory only a Deleted account has an End here (T-482). */}
-      {employment.accountDeleted && !employment.ended ? (
+      {/* Outside the directory End is here for a Deleted account (T-482) and for
+          anyone no link holds, whom nothing else will end (T-514). */}
+      {(employment.accountDeleted || employment.noLink) && !employment.ended ? (
         <>
           <Button
             type="button"
@@ -280,7 +302,7 @@ function RowActions({
         </>
       ) : null}
 
-      {employment.accountDeleted ? (
+      {employment.accountDeleted || employment.userId === null ? (
         <>
           <Button
             type="button"

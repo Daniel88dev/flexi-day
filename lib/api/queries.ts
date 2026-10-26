@@ -11,6 +11,8 @@ import {
 import { ApiError, errorCode } from "./client";
 import {
   acceptDirectoryAgreement,
+  deleteAllDirectoryData,
+  disableDirectory,
   enableDirectory,
   getDirectoryProfile,
   getEndPreview,
@@ -2047,6 +2049,33 @@ export function useEnableDirectory(organizationId: string | null) {
     onSuccess: (state) => {
       qc.setQueryData(qk.directoryState(organizationId), state);
       qc.invalidateQueries({ queryKey: ["directory"] });
+    },
+  });
+}
+
+export function useDisableDirectory(organizationId: string | null) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => disableDirectory(organizationId!),
+    onSuccess: (state) => {
+      qc.setQueryData(qk.directoryState(organizationId), state);
+      qc.invalidateQueries({ queryKey: ["directory"] });
+      qc.invalidateQueries({ queryKey: qk.employments(organizationId) });
+    },
+  });
+}
+
+export function useDeleteAllDirectoryData(organizationId: string | null) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (confirmName: string) => deleteAllDirectoryData(organizationId!, confirmName),
+    onSuccess: (state) => {
+      qc.setQueryData(qk.directoryState(organizationId), state);
+      qc.invalidateQueries({ queryKey: ["directory"] });
+      qc.invalidateQueries({ queryKey: qk.employments(organizationId) });
+      qc.invalidateQueries({ queryKey: qk.requestedExports(organizationId) });
+      qc.invalidateQueries({ queryKey: qk.organizationExport(organizationId) });
+      qc.invalidateQueries({ queryKey: qk.organization(organizationId) });
     },
   });
 }

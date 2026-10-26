@@ -1618,6 +1618,48 @@ export const cs: Dictionary = {
       ownerOnly: "Adresář může zapnout jen vlastník.",
       planRequired: "Adresář lidí je součástí tarifu Enterprise.",
       seePlans: "Zobrazit tarify",
+      turnOff: "Vypnout",
+      offSince: (date: string) => `od ${date}`,
+      turnOffDialog: {
+        title: "Vypnout adresář lidí?",
+        body: "Nikomu neskončí pracovní poměr. Adresář se zavře pro všechny a jeho data zůstanou, dokud je nesmažete. Doby uchování dál běží.",
+        derived: "Odebrání z poslední skupiny od teď zase ukončí pracovní poměr.",
+        unlinked: (people: number) =>
+          `Lidí bez skupiny: ${people}. Zůstávají zaměstnaní, dokud jim pracovní poměr neukončíte.`,
+        reviewOnPeopleCard: "Projít je na kartě Lidé",
+        invites:
+          "Pozvánky do adresáře bez skupiny přestanou platit. Pozvánky do skupiny platí dál.",
+        roles: "Role HR a Vedení zůstanou uložené a do opětovného zapnutí nic neopravňují.",
+        confirm: "Vypnout",
+        working: "Vypínám…",
+        done: "Adresář lidí je vypnutý",
+        failed: "Adresář se nepodařilo vypnout",
+      },
+      deleteAll: "Smazat všechna data adresáře",
+      deletedOn: (date: string) => `Data adresáře smazána ${date}.`,
+      deleteDialog: {
+        title: "Smazat všechna data adresáře?",
+        body: "Tímto natrvalo odstraníte pro celou organizaci:",
+        removes: [
+          "všechna pole profilů včetně Kontaktu a Osobních údajů",
+          "profilové fotky",
+          "seznamy oddělení a pracovišť",
+          "role HR a Vedení",
+          "tabulku oprávnění a její historii",
+          "nastavení a pozastavení uchování a váš text upozornění k nouzovým kontaktům",
+          "exporty osob a organizace",
+          "všechny lidi bez účtu, současné i bývalé",
+        ],
+        keeps:
+          "Lidé s účtem si ponechají pracovní poměr, jméno, e-mail, typ pracovníka a data. Přijetí smlouvy, záznam o čtení a historie profilů zůstanou. Po opětovném zapnutí adresář začne s výchozí tabulkou oprávnění.",
+        nameLabel: (organization: string) => `Pro potvrzení napište ${organization}`,
+        nameMismatch: "To není název organizace.",
+        confirm: "Smazat všechna data adresáře",
+        working: "Mažu…",
+        done: "Data adresáře smazána",
+        failed: "Data adresáře se nepodařilo smazat",
+        directoryOn: "Nejdřív adresář vypněte.",
+      },
       dialog: {
         title: (version: number) => `Smlouva k adresáři lidí · verze ${version}`,
         summary: (people: number) =>
@@ -1664,6 +1706,7 @@ export const cs: Dictionary = {
         "Adresář je zapnutý, proto jsou Ukončení pracovního poměru, Export a Vymazání v profilu každého člověka.",
       openProfile: (name: string) => `Otevřít profil: ${name}`,
       profile: "Profil",
+      noLink: "Lidé bez skupiny zůstávají zaměstnaní, dokud jim pracovní poměr neukončíte.",
       end: "Ukončit pracovní poměr",
       endDialog: {
         title: (name: string) => `Ukončit pracovní poměr: ${name}`,
