@@ -74,9 +74,11 @@ export function ProfileScreen() {
 export const profileEditHref = (organizationId: string, employmentId: string) =>
   `/directory/person/edit?organizationId=${encodeURIComponent(organizationId)}&employmentId=${encodeURIComponent(employmentId)}`;
 
-/** The viewer writes the Card or the Job Section of this record. */
+/** The viewer writes a Section the edit page holds. */
 export const canEditProfile = (profile: DirectoryProfile) =>
-  profile.sections.card?.level === "WRITE" || profile.sections.job?.level === "WRITE";
+  [profile.sections.card, profile.sections.workContact, profile.sections.job].some(
+    (section) => section?.level === "WRITE"
+  );
 
 function ProfileHeader({ profile }: { profile: DirectoryProfile }) {
   const { t } = useTranslation();
@@ -149,7 +151,7 @@ function ProfileTabs({ profile }: { profile: DirectoryProfile }) {
         ) : null}
         {sections.workContact ? (
           <ProfileSection title={copy.workContact}>
-            <p className="text-muted-foreground text-sm">{copy.noWorkContact}</p>
+            <WorkContactFacts workContact={sections.workContact} />
           </ProfileSection>
         ) : null}
       </TabsContent>
@@ -164,6 +166,35 @@ function ProfileTabs({ profile }: { profile: DirectoryProfile }) {
         </TabsContent>
       ) : null}
     </Tabs>
+  );
+}
+
+function WorkContactFacts({
+  workContact,
+}: {
+  workContact: NonNullable<DirectoryProfile["sections"]["workContact"]>;
+}) {
+  const { t } = useTranslation();
+  const copy = t.directory.profile;
+  const { workEmail, workPhone } = workContact;
+  if (!workEmail && !workPhone) {
+    return <p className="text-muted-foreground text-sm">{copy.noWorkContact}</p>;
+  }
+  const link = (href: string, text: string) => (
+    <a href={href} className="text-primary hover:underline">
+      {text}
+    </a>
+  );
+  return (
+    <Facts
+      rows={[
+        [copy.workEmail, workEmail ? link(`mailto:${workEmail}`, workEmail) : copy.notSet],
+        [
+          copy.workPhone,
+          workPhone ? link(`tel:${workPhone.e164}`, workPhone.display) : copy.notSet,
+        ],
+      ]}
+    />
   );
 }
 

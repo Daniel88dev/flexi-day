@@ -66,7 +66,7 @@ const jana = (overrides: Partial<DirectoryProfile> = {}): DirectoryProfile => ({
   sections: {
     card: card(),
     photo: { level: "READ" },
-    workContact: { level: "READ" },
+    workContact: { level: "READ", workEmail: null, workPhone: null },
   },
   ...overrides,
 });
@@ -104,6 +104,57 @@ describe("ProfileScreen", () => {
       "href",
       "/directory?organizationId=org-1"
     );
+  });
+
+  it("shows the work email and the phone's display form as links, and says when both are empty", () => {
+    profile = {
+      data: jana({
+        sections: {
+          card: card(),
+          workContact: {
+            level: "READ",
+            workEmail: "jana.work@acme.test",
+            workPhone: {
+              e164: "+420601123456",
+              display: "+420 601 123 456",
+              country: { code: "CZ", name: "Czechia" },
+            },
+          },
+        },
+      }),
+      error: null,
+    };
+    const { unmount } = renderWithClient(<ProfileScreen />);
+
+    const region = screen.getByRole("region", { name: "Work contact" });
+    expect(within(region).getByRole("link", { name: "jana.work@acme.test" })).toHaveAttribute(
+      "href",
+      "mailto:jana.work@acme.test"
+    );
+    expect(within(region).getByRole("link", { name: "+420 601 123 456" })).toHaveAttribute(
+      "href",
+      "tel:+420601123456"
+    );
+    unmount();
+
+    profile = { data: jana(), error: null };
+    renderWithClient(<ProfileScreen />);
+    expect(screen.getByText("No work contact yet.")).toBeInTheDocument();
+  });
+
+  it("offers Edit profile to a viewer who writes only Work contact", () => {
+    profile = {
+      data: jana({
+        sections: {
+          card: card(),
+          workContact: { level: "WRITE", workEmail: null, workPhone: null },
+        },
+      }),
+      error: null,
+    };
+    renderWithClient(<ProfileScreen />);
+
+    expect(screen.getByRole("link", { name: /Edit profile/ })).toBeInTheDocument();
   });
 
   it("leaves out Work contact when the viewer can't read it", () => {

@@ -99,6 +99,7 @@ import {
   type PersonExport,
 } from "./person-export";
 import { captureSessionLocation } from "@/lib/attendance/geolocation";
+import { useTranslation } from "@/lib/i18n/use-translation";
 import {
   addOrganizationAdmin,
   getOrganization,
@@ -1658,11 +1659,13 @@ export function useFormerDirectoryPeople(organizationId: string | null, enabled:
   });
 }
 
+/** Country names in the answer follow the interface language, so the language is part of the key. */
 export function useDirectoryProfile(organizationId: string, employmentId: string) {
+  const { locale, localeReady } = useTranslation();
   return useQuery({
-    queryKey: qk.directoryProfile(organizationId, employmentId),
-    queryFn: () => getDirectoryProfile(organizationId, employmentId),
-    enabled: !!organizationId && !!employmentId,
+    queryKey: [...qk.directoryProfile(organizationId, employmentId), locale],
+    queryFn: () => getDirectoryProfile(organizationId, employmentId, locale),
+    enabled: localeReady && !!organizationId && !!employmentId,
   });
 }
 
@@ -1677,11 +1680,12 @@ export function useProfileHistory(organizationId: string, employmentId: string, 
 
 export function useUpdateDirectoryProfile(organizationId: string, employmentId: string) {
   const qc = useQueryClient();
+  const { locale } = useTranslation();
   return useMutation({
     mutationFn: (patch: DirectoryProfilePatch) =>
-      updateDirectoryProfile(organizationId, employmentId, patch),
+      updateDirectoryProfile(organizationId, employmentId, patch, locale),
     onSuccess: (profile) => {
-      qc.setQueryData(qk.directoryProfile(organizationId, employmentId), profile);
+      qc.setQueryData([...qk.directoryProfile(organizationId, employmentId), locale], profile);
       qc.invalidateQueries({ queryKey: ["directory"] });
     },
   });
