@@ -23,6 +23,8 @@ export type EmploymentListItem = {
   requiredMinutesPerDay: number | null;
   accountDeletedAt: Iso | null;
   accountDeleted: boolean;
+  /** Optional as a backend older than this build sends none. */
+  type?: "employee" | "external";
   user: UserSummary;
 };
 

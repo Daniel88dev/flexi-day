@@ -415,6 +415,24 @@ export function updateDirectoryProfile(
 }
 
 /**
+ * Change worker type. Turning a record external clears Contract type, Working
+ * time, Probation end date and Personal on the server; turning it back
+ * restores nothing.
+ */
+export function changeWorkerType(
+  organizationId: string,
+  employmentId: string,
+  type: WorkerType,
+  language?: Locale
+): Promise<DirectoryProfile> {
+  const query = language ? `?language=${language}` : "";
+  return api<DirectoryProfile>(
+    directoryPath(organizationId, `people/${encodeURIComponent(employmentId)}/worker-type${query}`),
+    { method: "PUT", body: { type } }
+  );
+}
+
+/**
  * Show: the values of one Sensitive section. For anyone but the person this
  * writes one read-log row, so call it only on the viewer's click.
  */
@@ -604,7 +622,8 @@ export type ProfileHistoryEntry = {
   id: string;
   at: string;
   actorName: string | null;
-  section: ProfileHistorySection;
+  /** A Section, or the Change worker type act, which records the field `type`. */
+  section: ProfileHistorySection | "CHANGE_WORKER_TYPE";
   /** Field names, never values. */
   fields: string[];
   /** RETENTION for a Retention purge, which names no person and no audience. */
@@ -623,6 +642,8 @@ export type ProfileActions = {
   hold?: boolean;
   /** Send directory invite: the act cell allows it, on an open record without an account. */
   invite?: boolean;
+  /** Change worker type: the act cell allows it, on an open record. */
+  changeType?: boolean;
 };
 
 /** The owner and org admins, on an ended record, on every plan. */

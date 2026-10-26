@@ -427,6 +427,14 @@ describe("ProfileScreen", () => {
           fields: ["employeeNumber", "workingTime"],
           audience: "OWNER",
         },
+        {
+          id: "h3",
+          at: "2026-09-01T08:00:00.000Z",
+          actorName: "Hana Hr",
+          section: "CHANGE_WORKER_TYPE",
+          fields: ["type"],
+          audience: "HR",
+        },
       ],
       error: null,
     };
@@ -443,6 +451,7 @@ describe("ProfileScreen", () => {
     expect(within(drawer).getByText("Card: Reports to")).toBeInTheDocument();
     expect(within(drawer).getByText("Someone no longer here")).toBeInTheDocument();
     expect(within(drawer).getByText("Job: Employee number, Working time")).toBeInTheDocument();
+    expect(within(drawer).getByText("Changed the worker type")).toBeInTheDocument();
     expect(historyCalls.at(-1)).toBe(true);
   });
 

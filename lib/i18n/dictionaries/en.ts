@@ -215,6 +215,9 @@ export const en = {
     endBreak: "End break",
     working: "Working…",
     inactiveTitle: "Clocking in is off",
+    externalTitle: "No attendance for external workers",
+    externalBody:
+      "You work here as an external worker, so there is nothing to clock and no required time. Your earlier history stays readable.",
     inactiveBody:
       "Attendance is paused for your organization, so there is nothing to clock. Your history stays readable. Ask an org admin about it.",
     inactiveOpenBody:
@@ -759,6 +762,8 @@ export const en = {
       `Some days in that range are already booked: ${days}. Please pick different dates.`,
     conflictGeneric: "Some days in that range are already booked. Please pick different dates.",
     createFailed: "Could not create vacation",
+    externalWorkerAllowance:
+      "As an external worker you can book only leave that draws on no allowance, such as non-paid leave.",
     forMember: "For",
     myself: "Myself",
     approveImmediately: "Approve immediately",
@@ -1871,6 +1876,28 @@ export const en = {
         failed: "Could not send the invite",
       },
     },
+    workerType: {
+      action: "Change worker type",
+      toExternalTitle: (name: string) => `Make ${name} an external worker`,
+      toEmployeeTitle: (name: string) => `Make ${name} an employee`,
+      clears: "These fields are cleared now:",
+      externalEffects:
+        "External workers can't clock in, owe no required time and don't appear in Team attendance. Their allowances go to zero, so they book only leave that draws on no allowance.",
+      employeeEffects:
+        "The fields cleared when they became an external worker start empty. Set their allowances again in each group.",
+      cancel: "Cancel",
+      toExternal: "Make external worker",
+      toEmployee: "Make employee",
+      saving: "Saving…",
+      doneExternal: (name: string) => `${name} is now an external worker`,
+      doneEmployee: (name: string) => `${name} is now an employee`,
+      errors: {
+        WORKER_TYPE_DENIED: "You can't change this person's worker type.",
+        EMPLOYMENT_ENDED: "This person no longer works here.",
+        DIRECTORY_OFF: "The directory is off.",
+        failed: "Could not change the worker type",
+      },
+    },
     end: {
       action: "End employment",
       actionExternal: "End engagement",
@@ -2006,6 +2033,7 @@ export const en = {
       loadFailed: "Could not load the profile history",
       as: (audience: string) => `as ${audience}`,
       unknownActor: "Someone no longer here",
+      workerTypeChanged: "Changed the worker type",
       retention: "Retention",
       audiences: {
         OWNER: "Owner",

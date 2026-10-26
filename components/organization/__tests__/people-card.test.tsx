@@ -155,6 +155,14 @@ describe("PeopleCard", () => {
     expect(screen.getByLabelText("Required per day — Milo Member")).toHaveValue("6:00");
   });
 
+  it("tags an External worker and offers no required time for them", () => {
+    employments = [person({ type: "external" })];
+    renderWithClient(<PeopleCard organizationId="org-1" />);
+
+    expect(screen.getByText("External worker")).toBeInTheDocument();
+    expect(screen.queryByLabelText("Required per day — Milo Member")).toBeNull();
+  });
+
   it("saves a new override as minutes", async () => {
     renderWithClient(<PeopleCard organizationId="org-1" />);
 

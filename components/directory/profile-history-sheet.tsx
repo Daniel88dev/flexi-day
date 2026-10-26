@@ -67,10 +67,14 @@ export function ProfileHistorySheet({ profile }: { profile: DirectoryProfile }) 
                         </span>
                       </p>
                     )}
-                    <p>
-                      {copy.sections[entry.section]}:{" "}
-                      {entry.fields.map((field) => copy.fields[field] ?? field).join(", ")}
-                    </p>
+                    {entry.section === "CHANGE_WORKER_TYPE" ? (
+                      <p>{copy.workerTypeChanged}</p>
+                    ) : (
+                      <p>
+                        {copy.sections[entry.section]}:{" "}
+                        {entry.fields.map((field) => copy.fields[field] ?? field).join(", ")}
+                      </p>
+                    )}
                   </div>
                 </li>
               ))}

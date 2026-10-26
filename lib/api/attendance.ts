@@ -70,8 +70,10 @@ export type AttendanceState = {
   employmentId: UUID;
   /** Employed here once, not any more: history stays readable, writes are refused. */
   employmentEnded: boolean;
-  /** Switched on *and* on a live paid plan. The only thing a lapse changes. */
+  /** Switched on *and* on a live paid plan, and the person isn't an External worker. */
   active: boolean;
+  /** External workers keep no attendance. Optional as a backend older than this build sends none. */
+  externalWorker?: boolean;
   locationEnabled: boolean;
   /** Which of their own days the person may correct. Admins never meet it. */
   selfService: SelfServiceWindow;

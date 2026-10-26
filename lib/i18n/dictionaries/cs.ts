@@ -222,6 +222,9 @@ export const cs: Dictionary = {
     endBreak: "Ukončit pauzu",
     working: "Pracuje se…",
     inactiveTitle: "Evidence docházky je vypnutá",
+    externalTitle: "Externí pracovníci docházku nevedou",
+    externalBody:
+      "Pracuješ tu jako externí pracovník, takže není co zaznamenávat a nemáš povinný čas. Dřívější historie zůstává čitelná.",
     inactiveBody:
       "Docházka je pro tvoji organizaci pozastavená, takže není co zaznamenávat. Historie zůstává čitelná. Zeptej se správce organizace.",
     inactiveOpenBody:
@@ -774,6 +777,8 @@ export const cs: Dictionary = {
       `Některé dny v tomto rozsahu jsou již rezervované: ${days}. Vyberte prosím jiná data.`,
     conflictGeneric: "Některé dny v tomto rozsahu jsou již rezervované. Vyberte prosím jiná data.",
     createFailed: "Nepodařilo se vytvořit žádost",
+    externalWorkerAllowance:
+      "Jako externí pracovník můžeš čerpat jen volno, které z žádného nároku neubírá, třeba neplacené volno.",
     forMember: "Pro",
     myself: "Sebe",
     approveImmediately: "Rovnou schválit",
@@ -1884,6 +1889,28 @@ export const cs: Dictionary = {
         failed: "Pozvánku se nepodařilo odeslat",
       },
     },
+    workerType: {
+      action: "Změnit typ pracovníka",
+      toExternalTitle: (name: string) => `Udělat z ${name} externího pracovníka`,
+      toEmployeeTitle: (name: string) => `Udělat z ${name} zaměstnance`,
+      clears: "Tato pole se teď vymažou:",
+      externalEffects:
+        "Externí pracovníci se nepřihlašují do docházky, nemají povinný čas a nejsou v docházce týmu. Jejich nároky klesnou na nulu, takže mohou čerpat jen volno, které z žádného nároku neubírá.",
+      employeeEffects:
+        "Pole vymazaná při změně na externího pracovníka začínají prázdná. Nároky jim znovu nastavte v každé skupině.",
+      cancel: "Zrušit",
+      toExternal: "Udělat externím pracovníkem",
+      toEmployee: "Udělat zaměstnancem",
+      saving: "Ukládám…",
+      doneExternal: (name: string) => `${name} je teď externí pracovník`,
+      doneEmployee: (name: string) => `${name} je teď zaměstnanec`,
+      errors: {
+        WORKER_TYPE_DENIED: "Typ pracovníka u této osoby měnit nemůžete.",
+        EMPLOYMENT_ENDED: "Tato osoba už tu nepracuje.",
+        DIRECTORY_OFF: "Adresář je vypnutý.",
+        failed: "Typ pracovníka se nepodařilo změnit",
+      },
+    },
     end: {
       action: "Ukončit pracovní poměr",
       actionExternal: "Ukončit spolupráci",
@@ -2020,6 +2047,7 @@ export const cs: Dictionary = {
       loadFailed: "Historii profilu se nepodařilo načíst",
       as: (audience: string) => `jako ${audience}`,
       unknownActor: "Někdo, kdo už tu není",
+      workerTypeChanged: "Změnil typ pracovníka",
       retention: "Lhůta uchování",
       audiences: {
         OWNER: "Vlastník",

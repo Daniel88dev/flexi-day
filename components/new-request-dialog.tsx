@@ -33,7 +33,7 @@ import {
   useGroupUsers,
   useVacation,
 } from "@/lib/api/queries";
-import { ApiError } from "@/lib/api/client";
+import { ApiError, errorCode } from "@/lib/api/client";
 import { planLimitFromError } from "@/lib/billing/plan-limit-error";
 import { CalendarRecordType, sickDayBenefitActive, type UserSummary } from "@/lib/api/types";
 import {
@@ -253,6 +253,10 @@ export function NewRequestDialog({
             ? t.billing.readOnlyGroup
             : t.billing.memberLimitReached(planLimit.limit)
         );
+        return;
+      }
+      if (errorCode(err) === "EXTERNAL_WORKER_ALLOWANCE") {
+        setError(t.newRequest.externalWorkerAllowance);
         return;
       }
       const msg = err instanceof Error ? err.message : t.newRequest.createFailed;
