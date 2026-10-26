@@ -235,11 +235,16 @@ export function ClockWidget({
     // action left rather than stranding a session that would otherwise run to
     // its ceiling and be swept.
     const stranded = state.openSession !== null;
+    const external = state.externalWorker === true;
     return (
       <div className="flex flex-col gap-4" data-clock-state="inactive">
-        <Notice icon={<Lock />} title={t.clock.inactiveTitle}>
+        <Notice icon={<Lock />} title={external ? t.clock.externalTitle : t.clock.inactiveTitle}>
           <p style={{ color: "var(--text-muted)" }}>
-            {stranded ? t.clock.inactiveOpenBody : t.clock.inactiveBody}
+            {external
+              ? t.clock.externalBody
+              : stranded
+                ? t.clock.inactiveOpenBody
+                : t.clock.inactiveBody}
           </p>
           {stranded ? (
             <Button

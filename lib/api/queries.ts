@@ -2,6 +2,7 @@
 
 import {
   queryOptions,
+  useInfiniteQuery,
   useMutation,
   useQueries,
   useQuery,
@@ -10,11 +11,26 @@ import {
 import { ApiError, errorCode } from "./client";
 import {
   acceptDirectoryAgreement,
+  deleteAllDirectoryData,
+  disableDirectory,
   enableDirectory,
+  getDirectoryChecklist,
+  hideDirectoryChecklist,
+  type EnableDirectoryInput,
   getDirectoryProfile,
+  getEndPreview,
   getProfileHistory,
   updateDirectoryProfile,
+  createDirectoryPerson,
+  sendDirectoryInvite,
+  changeWorkerType,
+  copyFromPreviousSpell,
+  getPreviousSpell,
+  checkDirectoryEmail,
+  type NewDirectoryPerson,
   type DirectoryProfilePatch,
+  type WorkerType,
+  type CopyableSectionKey,
   getDirectoryState,
   listDirectoryOrganizations,
   listDirectoryPeople,
@@ -32,7 +48,25 @@ import {
   removeProfilePhoto,
   startProfilePhotoUpload,
   type ProfilePhotoUpload,
+  getDirectoryGeneralSettings,
+  getRetentionPreview,
+  getRetentionSettings,
+  getReadLog,
+  updateDirectoryGeneralSettings,
+  updateRetentionPeriod,
+  setRetentionHold,
+  type ReadLogFilter,
+  type ProfileHistorySection,
+  type RetentionPeriod,
 } from "./directory";
+import {
+  addDirectoryListEntry,
+  deleteDirectoryListEntry,
+  getDirectoryList,
+  updateDirectoryListEntry,
+  type DirectoryListEntryChange,
+  type DirectoryListKind,
+} from "./directory-lists";
 import { waitForPhotoUpload } from "@/lib/directory/profile-photo";
 import {
   approveVacation,
@@ -105,6 +139,7 @@ import {
 } from "./person-export";
 import { captureSessionLocation } from "@/lib/attendance/geolocation";
 import { useTranslation } from "@/lib/i18n/use-translation";
+import type { Locale } from "@/lib/i18n/config";
 import {
   addOrganizationAdmin,
   getOrganization,
@@ -330,15 +365,38 @@ export const qk = {
   directoryOrganizations: () => ["directory", "organizations"] as const,
   directoryPeople: (organizationId: string) => ["directory", "people", organizationId] as const,
   directoryFormer: (organizationId: string) => ["directory", "former", organizationId] as const,
-  directoryProfile: (organizationId: string, employmentId: string) =>
-    ["directory", "profile", organizationId, employmentId] as const,
+  /** Country names in the answer follow the interface language, so the language is in the key. */
+  directoryProfile: (organizationId: string, employmentId: string, locale: Locale) =>
+    ["directory", "profile", organizationId, employmentId, locale] as const,
   directoryProfileHistory: (organizationId: string, employmentId: string) =>
     ["directory", "history", organizationId, employmentId] as const,
+  directoryEndPreview: (organizationId: string, employmentId: string) =>
+    ["directory", "end-preview", organizationId, employmentId] as const,
+  directoryPreviousSpell: (organizationId: string, employmentId: string) =>
+    ["directory", "previous-spell", organizationId, employmentId] as const,
   directoryPermissions: (organizationId: string) =>
     ["directory", "permissions", organizationId] as const,
   directoryPermissionHistory: (organizationId: string) =>
-    ["directory", "permissionHistory", organizationId] as const,
+    ["directory", "permission-history", organizationId] as const,
   directoryRoles: (organizationId: string) => ["directory", "roles", organizationId] as const,
+  directoryChecklist: (organizationId: string) =>
+    ["directory", "checklist", organizationId] as const,
+  directoryGeneralSettings: (organizationId: string) =>
+    ["directory", "general", organizationId] as const,
+  directoryRetention: (organizationId: string) =>
+    ["directory", "retention", organizationId] as const,
+  directoryRetentionPreview: (organizationId: string, section: string, period: string) =>
+    ["directory", "retention-preview", organizationId, section, period] as const,
+  directoryReadLog: (organizationId: string, filter: ReadLogFilter) =>
+    [
+      "directory",
+      "read-log",
+      organizationId,
+      filter.employmentId ?? "",
+      filter.readerUserId ?? "",
+    ] as const,
+  directoryList: (organizationId: string, kind: DirectoryListKind, locale: Locale) =>
+    ["directory", "list", organizationId, kind, locale] as const,
   organizationExport: (organizationId?: string | null) =>
     ["person-exports", "organization", organizationId ?? "none"] as const,
   attendanceTeam: (params: TeamAttendanceParams) =>
@@ -1441,6 +1499,9 @@ export function useEndEmployment(organizationId?: string | null) {
       endEmployment(employmentId, endedOn),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: qk.employments(organizationId) });
+      // A preview of an ended record answers 409, so drop it rather than refetch it.
+      qc.removeQueries({ queryKey: ["directory", "end-preview"] });
+      qc.invalidateQueries({ queryKey: ["directory"] });
       qc.invalidateQueries({ queryKey: qk.organization(organizationId) });
       qc.invalidateQueries({ queryKey: ["group-users"] });
       qc.invalidateQueries({ queryKey: ["attendance-team"] });
@@ -1457,6 +1518,7 @@ export function useEraseEmployment(organizationId?: string | null) {
       eraseEmployment(employmentId, confirmName),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: qk.employments(organizationId) });
+      qc.invalidateQueries({ queryKey: ["directory"] });
       qc.invalidateQueries({ queryKey: qk.organization(organizationId) });
       qc.invalidateQueries({ queryKey: qk.requestedExports(organizationId) });
       qc.invalidateQueries({ queryKey: qk.organizationExport(organizationId) });
@@ -1664,11 +1726,10 @@ export function useFormerDirectoryPeople(organizationId: string | null, enabled:
   });
 }
 
-/** Country names in the answer follow the interface language, so the language is part of the key. */
 export function useDirectoryProfile(organizationId: string, employmentId: string) {
   const { locale, localeReady } = useTranslation();
   return useQuery({
-    queryKey: [...qk.directoryProfile(organizationId, employmentId), locale],
+    queryKey: qk.directoryProfile(organizationId, employmentId, locale),
     queryFn: () => getDirectoryProfile(organizationId, employmentId, locale),
     enabled: localeReady && !!organizationId && !!employmentId,
   });
@@ -1683,6 +1744,80 @@ export function useProfileHistory(organizationId: string, employmentId: string, 
   });
 }
 
+/** Fetched when the End dialog opens, so it shows what End does now. */
+export function useEndPreview(organizationId: string, employmentId: string, enabled: boolean) {
+  return useQuery({
+    queryKey: qk.directoryEndPreview(organizationId, employmentId),
+    queryFn: () => getEndPreview(organizationId, employmentId),
+    enabled: enabled && !!organizationId && !!employmentId,
+    staleTime: 0,
+  });
+}
+
+/** Add person; the new profile lands in the cache under the id it got, and the lists refresh. */
+export function useCreateDirectoryPerson(organizationId: string) {
+  const qc = useQueryClient();
+  const { locale } = useTranslation();
+  return useMutation({
+    mutationFn: (person: NewDirectoryPerson) =>
+      createDirectoryPerson(organizationId, person, locale),
+    onSuccess: (profile) => {
+      qc.setQueryData(qk.directoryProfile(organizationId, profile.employmentId, locale), profile);
+      qc.invalidateQueries({ queryKey: ["directory"] });
+    },
+  });
+}
+
+export function useSendDirectoryInvite(organizationId: string, employmentId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (groupId: string | null) =>
+      sendDirectoryInvite(organizationId, employmentId, groupId),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["directory"] }),
+  });
+}
+
+export function useCheckDirectoryEmail(organizationId: string) {
+  return useMutation({ mutationFn: (email: string) => checkDirectoryEmail(organizationId, email) });
+}
+
+/** What Copy from previous spell can bring over; fetched when its dialog opens. */
+export function usePreviousSpell(organizationId: string, employmentId: string, enabled: boolean) {
+  return useQuery({
+    queryKey: qk.directoryPreviousSpell(organizationId, employmentId),
+    queryFn: () => getPreviousSpell(organizationId, employmentId),
+    enabled: enabled && !!organizationId && !!employmentId,
+    staleTime: 0,
+  });
+}
+
+/** Copy from previous spell; the profile lands in the cache, photos and lists refresh. */
+export function useCopyFromPreviousSpell(organizationId: string, employmentId: string) {
+  const qc = useQueryClient();
+  const { locale } = useTranslation();
+  return useMutation({
+    mutationFn: (sections: CopyableSectionKey[]) =>
+      copyFromPreviousSpell(organizationId, employmentId, sections, locale),
+    onSuccess: (profile) => {
+      qc.setQueryData(qk.directoryProfile(organizationId, employmentId, locale), profile);
+      qc.removeQueries({ queryKey: qk.directoryPreviousSpell(organizationId, employmentId) });
+      qc.invalidateQueries({ queryKey: ["directory"] });
+    },
+  });
+}
+
+export function useChangeWorkerType(organizationId: string, employmentId: string) {
+  const qc = useQueryClient();
+  const { locale } = useTranslation();
+  return useMutation({
+    mutationFn: (type: WorkerType) => changeWorkerType(organizationId, employmentId, type, locale),
+    onSuccess: (profile) => {
+      qc.setQueryData(qk.directoryProfile(organizationId, employmentId, locale), profile);
+      qc.invalidateQueries({ queryKey: ["directory"] });
+    },
+  });
+}
+
 export function useUpdateDirectoryProfile(organizationId: string, employmentId: string) {
   const qc = useQueryClient();
   const { locale } = useTranslation();
@@ -1690,7 +1825,7 @@ export function useUpdateDirectoryProfile(organizationId: string, employmentId: 
     mutationFn: (patch: DirectoryProfilePatch) =>
       updateDirectoryProfile(organizationId, employmentId, patch, locale),
     onSuccess: (profile) => {
-      qc.setQueryData([...qk.directoryProfile(organizationId, employmentId), locale], profile);
+      qc.setQueryData(qk.directoryProfile(organizationId, employmentId, locale), profile);
       qc.invalidateQueries({ queryKey: ["directory"] });
     },
   });
@@ -1710,6 +1845,22 @@ export function usePermissionHistory(organizationId: string, enabled: boolean) {
     queryKey: qk.directoryPermissionHistory(organizationId),
     queryFn: () => getPermissionHistory(organizationId),
     enabled: enabled && !!organizationId,
+  });
+}
+
+export function useDirectoryChecklist(organizationId: string, enabled: boolean) {
+  return useQuery({
+    queryKey: qk.directoryChecklist(organizationId),
+    queryFn: () => getDirectoryChecklist(organizationId),
+    enabled: enabled && !!organizationId,
+  });
+}
+
+export function useHideDirectoryChecklist(organizationId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => hideDirectoryChecklist(organizationId),
+    onSuccess: (checklist) => qc.setQueryData(qk.directoryChecklist(organizationId), checklist),
   });
 }
 
@@ -1746,6 +1897,133 @@ export function useSetDirectoryRoles(organizationId: string) {
       qc.setQueryData(qk.directoryRoles(organizationId), roles);
       qc.invalidateQueries({ queryKey: ["directory"] });
     },
+  });
+}
+
+/** Owner, org admins and HR read the General settings. */
+export function useDirectoryGeneralSettings(organizationId: string, enabled: boolean) {
+  return useQuery({
+    queryKey: qk.directoryGeneralSettings(organizationId),
+    queryFn: () => getDirectoryGeneralSettings(organizationId),
+    enabled: enabled && !!organizationId,
+  });
+}
+
+/** The owner and org admins; a changed notice reaches open profiles on their next read. */
+export function useUpdateDirectoryGeneralSettings(organizationId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (notice: { en?: string | null; cs?: string | null }) =>
+      updateDirectoryGeneralSettings(organizationId, notice),
+    onSuccess: (settings) => {
+      qc.setQueryData(qk.directoryGeneralSettings(organizationId), settings);
+      qc.invalidateQueries({ queryKey: ["directory", "profile"] });
+    },
+  });
+}
+
+/** Owner, org admins and HR read the Retention periods. */
+export function useRetentionSettings(organizationId: string, enabled: boolean) {
+  return useQuery({
+    queryKey: qk.directoryRetention(organizationId),
+    queryFn: () => getRetentionSettings(organizationId),
+    enabled: enabled && !!organizationId,
+  });
+}
+
+/** The owner and org admins; the notice's period and the End dialog follow the change. */
+export function useUpdateRetentionPeriod(organizationId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { section: ProfileHistorySection; period: RetentionPeriod }) =>
+      updateRetentionPeriod(organizationId, input),
+    onSuccess: (settings) => {
+      qc.setQueryData(qk.directoryRetention(organizationId), settings);
+      qc.invalidateQueries({ queryKey: qk.directoryGeneralSettings(organizationId) });
+      qc.invalidateQueries({ queryKey: ["directory", "profile"] });
+      qc.invalidateQueries({ queryKey: ["directory", "former"] });
+      qc.invalidateQueries({ queryKey: ["directory", "end-preview"] });
+    },
+  });
+}
+
+/** Sets (`true`) or lifts (`false`) the Retention hold on one ended Employment. */
+export function useSetRetentionHold(organizationId: string, employmentId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (on: boolean) => setRetentionHold(organizationId, employmentId, on),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["directory"] }),
+  });
+}
+
+/** Who a shorter period would remove at the next nightly run; fetched only while asked. */
+export function useRetentionPreview(
+  organizationId: string,
+  input: { section: ProfileHistorySection; period: RetentionPeriod } | null
+) {
+  return useQuery({
+    queryKey: qk.directoryRetentionPreview(
+      organizationId,
+      input?.section ?? "",
+      input?.period ?? ""
+    ),
+    queryFn: () => getRetentionPreview(organizationId, input!),
+    enabled: !!organizationId && input !== null,
+    staleTime: 0,
+  });
+}
+
+/** The owner and org admins; pages back from the newest row. */
+export function useReadLog(organizationId: string, filter: ReadLogFilter, enabled: boolean) {
+  return useInfiniteQuery({
+    queryKey: qk.directoryReadLog(organizationId, filter),
+    queryFn: ({ pageParam }) => getReadLog(organizationId, { ...filter, before: pageParam }),
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (page) => page.nextBefore ?? undefined,
+    enabled: enabled && !!organizationId,
+  });
+}
+
+/** A Department or Location list; Location countries follow the interface language. */
+export function useDirectoryList(
+  organizationId: string | null,
+  kind: DirectoryListKind,
+  enabled = true
+) {
+  const { locale, localeReady } = useTranslation();
+  return useQuery({
+    queryKey: qk.directoryList(organizationId ?? "", kind, locale),
+    queryFn: () => getDirectoryList(organizationId!, kind, locale),
+    enabled: enabled && localeReady && !!organizationId,
+  });
+}
+
+/** Entries show on records and in the filters, so every directory query refreshes. */
+export function useAddDirectoryListEntry(organizationId: string, kind: DirectoryListKind) {
+  const qc = useQueryClient();
+  const { locale } = useTranslation();
+  return useMutation({
+    mutationFn: (entry: { name: string; country?: string | null }) =>
+      addDirectoryListEntry(organizationId, kind, entry, locale),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["directory"] }),
+  });
+}
+
+export function useUpdateDirectoryListEntry(organizationId: string, kind: DirectoryListKind) {
+  const qc = useQueryClient();
+  const { locale } = useTranslation();
+  return useMutation({
+    mutationFn: ({ entryId, change }: { entryId: string; change: DirectoryListEntryChange }) =>
+      updateDirectoryListEntry(organizationId, kind, entryId, change, locale),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["directory"] }),
+  });
+}
+
+export function useDeleteDirectoryListEntry(organizationId: string, kind: DirectoryListKind) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (entryId: string) => deleteDirectoryListEntry(organizationId, kind, entryId),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["directory"] }),
   });
 }
 
@@ -1786,10 +2064,37 @@ export function useRemoveProfilePhoto(organizationId: string, employmentId: stri
 export function useEnableDirectory(organizationId: string | null) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (agreementVersion: number) => enableDirectory(organizationId!, agreementVersion),
+    mutationFn: (input: EnableDirectoryInput) => enableDirectory(organizationId!, input),
     onSuccess: (state) => {
       qc.setQueryData(qk.directoryState(organizationId), state);
       qc.invalidateQueries({ queryKey: ["directory"] });
+    },
+  });
+}
+
+export function useDisableDirectory(organizationId: string | null) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => disableDirectory(organizationId!),
+    onSuccess: (state) => {
+      qc.setQueryData(qk.directoryState(organizationId), state);
+      qc.invalidateQueries({ queryKey: ["directory"] });
+      qc.invalidateQueries({ queryKey: qk.employments(organizationId) });
+    },
+  });
+}
+
+export function useDeleteAllDirectoryData(organizationId: string | null) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (confirmName: string) => deleteAllDirectoryData(organizationId!, confirmName),
+    onSuccess: (state) => {
+      qc.setQueryData(qk.directoryState(organizationId), state);
+      qc.invalidateQueries({ queryKey: ["directory"] });
+      qc.invalidateQueries({ queryKey: qk.employments(organizationId) });
+      qc.invalidateQueries({ queryKey: qk.requestedExports(organizationId) });
+      qc.invalidateQueries({ queryKey: qk.organizationExport(organizationId) });
+      qc.invalidateQueries({ queryKey: qk.organization(organizationId) });
     },
   });
 }

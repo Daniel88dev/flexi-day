@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { screen, within } from "@testing-library/react";
+import { fireEvent, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { renderWithClient } from "@/lib/test-utils";
 import { ApiError } from "@/lib/api/client";
@@ -14,6 +14,8 @@ import type {
 import { ProfileEditScreen } from "../profile-edit-screen";
 
 let profile: DirectoryProfile;
+const fireDate = (input: HTMLElement, value: string) =>
+  fireEvent.change(input, { target: { value } });
 let organization: DirectoryOrganization;
 let updateError: unknown = null;
 const mutate = vi.fn();
@@ -22,6 +24,23 @@ const uploadPhoto = vi.fn();
 const removePhoto = vi.fn();
 let uploadState: { data?: unknown; error?: unknown } = {};
 const search = new URLSearchParams("organizationId=org-1&employmentId=emp-jana");
+
+const showMock = vi.fn();
+vi.mock("@/lib/api/directory", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/api/directory")>()),
+  showSensitiveSection: (...args: unknown[]) => showMock(...args),
+}));
+
+const cz = { code: "CZ", name: "Czechia" };
+const shownContact = {
+  section: "CONTACT",
+  level: "WRITE",
+  recorded: true,
+  privatePhone: { e164: "+420777123456", display: "+420 777 123 456", country: cz },
+  privateEmail: "jana@home.test",
+  emergencyContact1: null,
+  emergencyContact2: null,
+};
 
 vi.mock("next/navigation", () => ({
   useSearchParams: () => search,
@@ -56,7 +75,12 @@ vi.mock("@/lib/api/queries", () => ({
     reset: vi.fn(),
   }),
   useRemoveProfilePhoto: () => ({ mutate: removePhoto, isPending: false, error: null }),
+  useDirectoryList: (_organizationId: string, kind: "departments" | "locations") => ({
+    data: { editable: false, writable: true, entries: lists[kind] },
+  }),
 }));
+
+let lists: Record<"departments" | "locations", { id: string; name: string; archived: boolean }[]>;
 
 const card = (overrides: Partial<DirectoryCardView> = {}): DirectoryCardView => ({
   level: "WRITE",
@@ -114,6 +138,7 @@ describe("ProfileEditScreen", () => {
     removePhoto.mockReset();
     uploadState = {};
     updateError = null;
+    lists = { departments: [], locations: [] };
     profile = jana();
     organization = {
       organizationId: "org-1",
@@ -175,6 +200,75 @@ describe("ProfileEditScreen", () => {
     expect(mutate).toHaveBeenCalledWith({ card: { name: "Ada Lovelace" } }, expect.anything());
   });
 
+  describe("the sign-in email of a person without an account", () => {
+    const accountless = (signInEmail: string | null) =>
+      jana({
+        sections: { card: card({ nameFromAccount: false }), job: job() },
+        account: { status: "NO_ACCOUNT", signInEmail, directoryRoles: [] },
+        markers: ["NO_ACCOUNT"],
+      });
+
+    it("lets a Card writer set it, lowercased", async () => {
+      const user = userEvent.setup();
+      profile = accountless(null);
+      renderWithClient(<ProfileEditScreen />);
+
+      const email = screen.getByLabelText("Sign-in email");
+      expect(email).toBeEnabled();
+      expect(screen.getByText("A directory invite goes to this address.")).toBeInTheDocument();
+      await user.type(email, "Ada@Example.test");
+      await user.click(screen.getByRole("button", { name: "Save changes" }));
+
+      expect(mutate).toHaveBeenCalledWith(
+        { card: { email: "ada@example.test" } },
+        expect.anything()
+      );
+    });
+
+    it("refuses an address that isn't one before saving", async () => {
+      const user = userEvent.setup();
+      profile = accountless(null);
+      renderWithClient(<ProfileEditScreen />);
+
+      await user.type(screen.getByLabelText("Sign-in email"), "not-an-email");
+      await user.click(screen.getByRole("button", { name: "Save changes" }));
+
+      expect(screen.getByText("That isn't an email address.")).toBeInTheDocument();
+      expect(mutate).not.toHaveBeenCalled();
+    });
+
+    it("stays read-only for a reader of the Card and once the person left", () => {
+      profile = { ...accountless("ada@example.test"), ended: true };
+      renderWithClient(<ProfileEditScreen />);
+      expect(screen.getByLabelText("Sign-in email")).toBeDisabled();
+    });
+
+    it("offers only Clear on a lapsed plan", async () => {
+      const user = userEvent.setup();
+      organization = { ...organization, writable: false };
+      profile = accountless("ada@example.test");
+      renderWithClient(<ProfileEditScreen />);
+
+      expect(screen.getByLabelText("Sign-in email")).toBeDisabled();
+      await user.click(screen.getByRole("button", { name: "Clear: Sign-in email" }));
+      await user.click(screen.getByRole("button", { name: "Save changes" }));
+
+      expect(mutate).toHaveBeenCalledWith({ card: { email: null } }, expect.anything());
+    });
+
+    it("says when another open Employment uses the address", () => {
+      profile = accountless("ada@example.test");
+      updateError = new ApiError(409, "Taken", {}, [
+        { message: "Taken", context: { code: "EMPLOYMENT_EMAIL_TAKEN" } },
+      ]);
+      renderWithClient(<ProfileEditScreen />);
+
+      expect(
+        screen.getByText("Someone in the organization already uses this email.")
+      ).toBeInTheDocument();
+    });
+  });
+
   it("saves only the fields that changed and goes back to the profile", async () => {
     const user = userEvent.setup();
     mutate.mockImplementation((_patch, options: { onSuccess: () => void }) => options.onSuccess());
@@ -197,6 +291,37 @@ describe("ProfileEditScreen", () => {
     expect(push).toHaveBeenCalledWith(
       "/directory/person?organizationId=org-1&employmentId=emp-jana"
     );
+  });
+
+  it("picks a Department and a Location, leaving archived entries out unless the record holds one", async () => {
+    const user = userEvent.setup();
+    mutate.mockImplementation((_patch, options: { onSuccess: () => void }) => options.onSuccess());
+    lists = {
+      departments: [
+        { id: "d-sales", name: "Sales", archived: true },
+        { id: "d-support", name: "Support", archived: false },
+        { id: "d-legal", name: "Legal", archived: true },
+      ],
+      locations: [{ id: "l-berlin", name: "Berlin", archived: false }],
+    };
+    profile = jana({
+      sections: {
+        ...jana().sections,
+        card: card({ department: { id: "d-sales", name: "Sales", archived: true } }),
+      },
+    });
+    renderWithClient(<ProfileEditScreen />);
+
+    const department = screen.getByLabelText("Department");
+    expect(
+      within(department)
+        .getAllByRole("option")
+        .map((option) => option.textContent)
+    ).toEqual(["None", "Sales (archived)", "Support"]);
+    expect(department).toHaveValue("d-sales");
+    await user.selectOptions(screen.getByLabelText("Location"), "Berlin");
+    await user.click(screen.getByRole("button", { name: "Save changes" }));
+    expect(mutate).toHaveBeenCalledWith({ card: { locationId: "l-berlin" } }, expect.anything());
   });
 
   it("leaves Reports to without the person themself", () => {
@@ -469,6 +594,145 @@ describe("ProfileEditScreen", () => {
       renderWithClient(<ProfileEditScreen />);
 
       expect(screen.getByRole("alert")).toHaveTextContent("That isn't a valid phone number.");
+    });
+  });
+
+  describe("the Sensitive sections", () => {
+    beforeEach(() => {
+      showMock.mockReset();
+      showMock.mockResolvedValue(shownContact);
+    });
+
+    it("keeps Contact closed until Show, then edits it with the notice and sends only what changed", async () => {
+      const user = userEvent.setup();
+      profile = jana({
+        sections: {
+          card: card(),
+          contact: {
+            level: "WRITE",
+            notice: "Acme keeps them for 30 days.",
+            phoneCountryDefault: cz,
+          },
+        },
+      });
+      renderWithClient(<ProfileEditScreen />);
+
+      const region = screen.getByRole("region", { name: /Contact/ });
+      expect(within(region).getByText("Hidden until you open it.")).toBeInTheDocument();
+      expect(within(region).queryByLabelText("Private email")).not.toBeInTheDocument();
+      expect(showMock).not.toHaveBeenCalled();
+
+      await user.click(within(region).getByRole("button", { name: "Show" }));
+
+      expect(showMock).toHaveBeenCalledTimes(1);
+      expect(await within(region).findByLabelText("Private email")).toHaveValue("jana@home.test");
+      expect(within(region).getByText(/recorded in the read log/)).toBeInTheDocument();
+      expect(within(region).getByText("Acme keeps them for 30 days.")).toBeInTheDocument();
+      expect(within(region).getByLabelText("Private email")).toHaveValue("jana@home.test");
+      await user.type(within(region).getByLabelText("Emergency contact 1: name"), "Karel");
+      await user.type(within(region).getByLabelText("Emergency contact 1: phone"), "602 111 222");
+      await user.click(screen.getByRole("button", { name: "Save changes" }));
+
+      expect(mutate).toHaveBeenCalledWith(
+        { contact: { emergencyContact1: { name: "Karel", phone: "+420602111222" } } },
+        expect.anything()
+      );
+    });
+
+    it("offers Clear on the shown Contact fields on a lapsed plan and sends only the cleared one", async () => {
+      const user = userEvent.setup();
+      organization = { ...organization, writable: false };
+      profile = jana({
+        sections: { contact: { level: "WRITE", notice: "x", phoneCountryDefault: cz } },
+      });
+      renderWithClient(<ProfileEditScreen />);
+
+      const region = screen.getByRole("region", { name: /Contact/ });
+      await user.click(within(region).getByRole("button", { name: "Show" }));
+      expect(await within(region).findByLabelText("Private email")).toBeDisabled();
+      expect(
+        within(region).queryByRole("button", { name: /Clear: Emergency contact 1/ })
+      ).not.toBeInTheDocument();
+
+      await user.click(within(region).getByRole("button", { name: "Clear: Private email" }));
+      await user.click(screen.getByRole("button", { name: "Save changes" }));
+
+      expect(mutate).toHaveBeenCalledWith({ contact: { privateEmail: null } }, expect.anything());
+    });
+
+    it("caps the date of birth at the browser's day, not the UTC one", async () => {
+      vi.useFakeTimers({ toFake: ["Date"] });
+      vi.setSystemTime(new Date("2026-10-14T03:00:00.000Z"));
+      showMock.mockResolvedValue({
+        section: "PERSONAL",
+        level: "WRITE",
+        recorded: false,
+        homeAddress: null,
+        dateOfBirth: null,
+      });
+      profile = jana({ self: true, sections: { personal: { level: "WRITE" } } });
+      renderWithClient(<ProfileEditScreen />);
+
+      expect(await screen.findByLabelText("Date of birth")).toHaveAttribute("max", "2026-10-13");
+      vi.useRealTimers();
+    });
+
+    it("refuses a half-filled emergency contact before saving", async () => {
+      const user = userEvent.setup();
+      profile = jana({ self: true, sections: { contact: { level: "WRITE", notice: "x" } } });
+      renderWithClient(<ProfileEditScreen />);
+
+      const region = screen.getByRole("region", { name: /Contact/ });
+      await user.type(await within(region).findByLabelText("Emergency contact 2: name"), "Ema");
+      await user.click(screen.getByRole("button", { name: "Save changes" }));
+
+      expect(
+        within(region).getByText("Fill in both the name and the phone, or neither.")
+      ).toBeInTheDocument();
+      expect(mutate).not.toHaveBeenCalled();
+      expect(screen.queryByRole("button", { name: "Show" })).not.toBeInTheDocument();
+    });
+
+    it("writes the home address and date of birth, and asks for line 1, city and country", async () => {
+      const user = userEvent.setup();
+      showMock.mockResolvedValue({
+        section: "PERSONAL",
+        level: "WRITE",
+        recorded: true,
+        homeAddress: null,
+        dateOfBirth: null,
+      });
+      profile = jana({ sections: { personal: { level: "WRITE" } } });
+      renderWithClient(<ProfileEditScreen />);
+
+      const region = screen.getByRole("region", { name: /Personal/ });
+      await user.click(within(region).getByRole("button", { name: "Show" }));
+      await user.type(await within(region).findByLabelText("City"), "Praha");
+      await user.click(screen.getByRole("button", { name: "Save changes" }));
+      expect(within(region).getByText(/Line 1, city and country are needed/)).toBeInTheDocument();
+      expect(mutate).not.toHaveBeenCalled();
+
+      await user.type(within(region).getByLabelText("Address line 1"), "Vinohradská 12");
+      await user.selectOptions(within(region).getByLabelText("Country"), "CZ");
+      fireDate(within(region).getByLabelText("Date of birth"), "1990-04-17");
+      await user.click(screen.getByRole("button", { name: "Save changes" }));
+
+      expect(mutate).toHaveBeenCalledWith(
+        {
+          personal: {
+            homeAddress: {
+              line1: "Vinohradská 12",
+              line2: null,
+              postalCode: null,
+              city: "Praha",
+              region: null,
+              country: "CZ",
+            },
+            dateOfBirth: "1990-04-17",
+          },
+        },
+        expect.anything()
+      );
     });
   });
 });

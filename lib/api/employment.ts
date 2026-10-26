@@ -15,7 +15,8 @@ export type Employment = {
 
 export type EmploymentListItem = {
   id: UUID;
-  userId: UUID;
+  /** Null for a person without an account; `user.id` is then the Employment's id. */
+  userId: UUID | null;
   email: string;
   startedAt: Iso;
   endedAt: Iso | null;
@@ -23,7 +24,11 @@ export type EmploymentListItem = {
   requiredMinutesPerDay: number | null;
   accountDeletedAt: Iso | null;
   accountDeleted: boolean;
+  /** Optional as a backend older than this build sends none. */
+  type?: "employee" | "external";
   user: UserSummary;
+  /** Org admins only: open, and no group, admin grant or ownership holds it. */
+  noLink?: boolean;
 };
 
 /**

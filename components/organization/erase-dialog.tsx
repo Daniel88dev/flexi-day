@@ -17,24 +17,21 @@ import { errorCopy } from "@/lib/api/client";
 import type { EmploymentListItem } from "@/lib/api/employment";
 import { useEraseEmployment } from "@/lib/api/queries";
 import { useTranslation } from "@/lib/i18n/use-translation";
-
-/** The backend's rule too: case and extra spaces don't make a typed name wrong. */
-const sameName = (typed: string, expected: string) => {
-  const normalize = (value: string) =>
-    value.normalize("NFC").trim().replace(/\s+/g, " ").toLocaleLowerCase();
-  return normalize(typed) === normalize(expected);
-};
+import { sameName } from "@/lib/same-name";
 
 export function EraseDialog({
   open,
   onOpenChange,
   employment,
   organizationId,
+  onErased,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  employment: EmploymentListItem;
+  employment: Pick<EmploymentListItem, "id" | "ended" | "user">;
   organizationId: string | null;
+  /** The record is gone: a page showing it should move on. */
+  onErased?: () => void;
 }) {
   const { t } = useTranslation();
   const copy = t.organization.people.eraseDialog;
@@ -54,6 +51,7 @@ export function EraseDialog({
       await erase.mutateAsync({ employmentId: employment.id, confirmName: typed });
       pushToast(copy.done(name));
       onOpenChange(false);
+      onErased?.();
     } catch (err) {
       setError(
         errorCopy(

@@ -15,10 +15,12 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { AddPersonAction } from "@/components/directory/add-person-dialog";
 import { DirectoryAgreementBanner } from "@/components/directory/directory-agreement-banner";
 import { DirectoryLapsedBanner } from "@/components/directory/directory-lapsed-banner";
 import { DirectoryMarkers } from "@/components/directory/directory-markers";
-import { DirectorySettings } from "@/components/directory/directory-settings";
+import { DirectoryChecklist } from "@/components/directory/directory-checklist";
+import { DirectorySettings, type SettingsPanel } from "@/components/directory/directory-settings";
 import { PersonAvatar } from "@/components/directory/person-avatar";
 import type {
   DirectoryOrganization,
@@ -27,10 +29,12 @@ import type {
 } from "@/lib/api/directory";
 import { useDirectoryPeople, useFormerDirectoryPeople } from "@/lib/api/queries";
 import { matchesPerson, useDirectoryView } from "@/lib/directory/directory-view";
+import { entryFilterOptions, entryLabel, matchesEntries } from "@/lib/directory/entries";
+import type { DirectoryEntryRef } from "@/lib/api/directory-lists";
 import { useTranslation } from "@/lib/i18n/use-translation";
-
-export const profileHref = (organizationId: string, employmentId: string) =>
-  `/directory/person?organizationId=${encodeURIComponent(organizationId)}&employmentId=${encodeURIComponent(employmentId)}`;
+import { useSectionLabel } from "@/components/directory/profile-retention";
+import { formatDate, formatDay } from "@/lib/directory/format";
+import { profileHref } from "@/lib/directory/routes";
 
 /** The directory of one Directory organization: People and, for the owner, org admins and HR, Former. */
 export function DirectoryList({
@@ -44,21 +48,42 @@ export function DirectoryList({
 }) {
   const { t } = useTranslation();
   const [query, setQuery] = useState("");
+  const [noGroupOnly, setNoGroupOnly] = useState(false);
+  const [filters, setFilters] = useState({ departmentId: "", locationId: "" });
   const [view, setView] = useDirectoryView();
   const people = useDirectoryPeople(organization.organizationId);
   const formerList = people.data?.formerList ?? false;
   const settings = people.data?.settings ?? false;
+  const noGroupFilter = people.data?.noGroupFilter ?? false;
   const former = useFormerDirectoryPeople(organization.organizationId, formerList);
   const [chosenTab, setChosenTab] = useState("people");
+  const [settingsPanel, setSettingsPanel] = useState<{ panel: SettingsPanel; opened: number }>({
+    panel: "permissions",
+    opened: 0,
+  });
+  const openSettings = (panel: SettingsPanel) => {
+    setSettingsPanel((current) => ({ panel, opened: current.opened + 1 }));
+    setChosenTab("settings");
+  };
   const tab =
     (chosenTab === "former" && !formerList) || (chosenTab === "settings" && !settings)
       ? "people"
       : chosenTab;
 
+  const rows = [...(people.data?.people ?? []), ...(former.data ?? [])];
+  const departmentOptions = entryFilterOptions(rows, "department");
+  const locationOptions = entryFilterOptions(rows, "location");
+  const filtered = <T extends DirectoryPerson>(list: T[] | undefined) =>
+    list?.filter((person) => matchesEntries(person, filters));
+
   const peopleTab = (
     <PeopleView
       organizationId={organization.organizationId}
-      people={people.data?.people}
+      people={filtered(
+        noGroupFilter && noGroupOnly
+          ? people.data?.people.filter((person) => person.noGroup)
+          : people.data?.people
+      )}
       loading={people.isLoading}
       failed={!!people.error}
       query={query}
@@ -70,6 +95,9 @@ export function DirectoryList({
     <div className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <h1 className="font-heading text-2xl font-bold">{t.directory.title}</h1>
+        {people.data?.addPerson ? (
+          <AddPersonAction organization={organization} people={people.data.people} />
+        ) : null}
         {organizations.length > 1 ? (
           <div
             role="group"
@@ -96,6 +124,12 @@ export function DirectoryList({
         <DirectoryAgreementBanner organizationId={organization.organizationId} />
       ) : null}
       <DirectoryLapsedBanner organization={organization} />
+      {settings && tab !== "settings" ? (
+        <DirectoryChecklist
+          organizationId={organization.organizationId}
+          onOpenSettings={openSettings}
+        />
+      ) : null}
 
       {tab === "settings" ? null : (
         <div className="flex flex-wrap items-center gap-3">
@@ -113,6 +147,30 @@ export function DirectoryList({
               className="pl-9"
             />
           </div>
+          <EntryFilter
+            label={t.directory.departmentFilter}
+            all={t.directory.allDepartments}
+            options={departmentOptions}
+            value={filters.departmentId}
+            onChange={(departmentId) => setFilters((current) => ({ ...current, departmentId }))}
+          />
+          <EntryFilter
+            label={t.directory.locationFilter}
+            all={t.directory.allLocations}
+            options={locationOptions}
+            value={filters.locationId}
+            onChange={(locationId) => setFilters((current) => ({ ...current, locationId }))}
+          />
+          {noGroupFilter && tab === "people" ? (
+            <Button
+              size="sm"
+              variant={noGroupOnly ? "default" : "outline"}
+              aria-pressed={noGroupOnly}
+              onClick={() => setNoGroupOnly((on) => !on)}
+            >
+              {t.directory.noGroupFilter}
+            </Button>
+          ) : null}
           <div role="group" aria-label={t.directory.viewLabel} className="flex gap-1">
             <Button
               size="sm"
@@ -154,7 +212,7 @@ export function DirectoryList({
           <TabsContent value="former" className="pt-4">
             <FormerView
               organizationId={organization.organizationId}
-              former={former.data}
+              former={filtered(former.data)}
               loading={former.isLoading}
               failed={!!former.error}
               query={query}
@@ -162,7 +220,11 @@ export function DirectoryList({
           </TabsContent>
           {settings ? (
             <TabsContent value="settings" className="pt-4">
-              <DirectorySettings organization={organization} />
+              <DirectorySettings
+                key={settingsPanel.opened}
+                organization={organization}
+                initialPanel={settingsPanel.panel}
+              />
             </TabsContent>
           ) : null}
         </Tabs>
@@ -172,6 +234,53 @@ export function DirectoryList({
     </div>
   );
 }
+
+function EntryFilter({
+  label,
+  all,
+  options,
+  value,
+  onChange,
+}: {
+  label: string;
+  all: string;
+  options: DirectoryEntryRef[];
+  value: string;
+  onChange: (id: string) => void;
+}) {
+  const { t } = useTranslation();
+  if (options.length === 0 && value === "") return null;
+  return (
+    <select
+      aria-label={label}
+      className="border-border bg-background h-8 rounded-md border px-2 text-sm"
+      value={value}
+      onChange={(event) => onChange(event.target.value)}
+    >
+      <option value="">{all}</option>
+      {options.map((entry) => (
+        <option key={entry.id} value={entry.id}>
+          {entryLabel(entry, t.directory.archivedEntry)}
+        </option>
+      ))}
+    </select>
+  );
+}
+
+/** "Department · Location", either left out when unset. */
+function CardEntries({ person }: { person: DirectoryPerson }) {
+  const { t } = useTranslation();
+  const parts = [person.department, person.location].flatMap((entry) =>
+    entry ? [entryLabel(entry, t.directory.archivedEntry)] : []
+  );
+  if (parts.length === 0) return null;
+  return <span className="text-muted-foreground block truncate text-xs">{parts.join(" · ")}</span>;
+}
+
+const entryText = (
+  entry: DirectoryEntryRef | null | undefined,
+  archived: (name: string) => string
+) => (entry ? entryLabel(entry, archived) : "");
 
 function ListState({ loading, failed }: { loading: boolean; failed: boolean }) {
   const { t } = useTranslation();
@@ -217,6 +326,8 @@ function PeopleView({
             <TableRow>
               <TableHead>{t.directory.nameColumn}</TableHead>
               <TableHead>{t.directory.jobTitleColumn}</TableHead>
+              <TableHead>{t.directory.departmentColumn}</TableHead>
+              <TableHead>{t.directory.locationColumn}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -226,6 +337,12 @@ function PeopleView({
                   <PersonLink organizationId={organizationId} person={person} size={28} />
                 </TableCell>
                 <TableCell className="text-muted-foreground">{person.jobTitle ?? ""}</TableCell>
+                <TableCell className="text-muted-foreground">
+                  {entryText(person.department, t.directory.archivedEntry)}
+                </TableCell>
+                <TableCell className="text-muted-foreground">
+                  {entryText(person.location, t.directory.archivedEntry)}
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>
@@ -250,6 +367,7 @@ function PeopleView({
                   {person.jobTitle}
                 </span>
               ) : null}
+              <CardEntries person={person} />
               <DirectoryMarkers markers={person.markers} />
             </span>
           </Link>
@@ -296,13 +414,13 @@ function FormerView({
   query: string;
 }) {
   const { t } = useTranslation();
+  const sectionLabel = useSectionLabel();
   if (!former) return <ListState loading={loading} failed={failed} />;
-  const shown = former
-    .filter((person) => matchesPerson(person, query))
-    .sort((a, b) => b.endedAt.localeCompare(a.endedAt));
+  // The server orders the list by end date, which a viewer without Job never gets.
+  const shown = former.filter((person) => matchesPerson(person, query));
   if (shown.length === 0) return <EmptyState query={query} empty={t.directory.noFormer} />;
 
-  const date = (value: string) => new Date(value).toLocaleDateString(t.common.dateLocale);
+  const date = (value: string | null) => (value ? formatDate(value, t.common.dateLocale) : "");
   return (
     <Card>
       <Table data-testid="directory-former">
@@ -310,8 +428,10 @@ function FormerView({
           <TableRow>
             <TableHead>{t.directory.nameColumn}</TableHead>
             <TableHead>{t.directory.jobTitleColumn}</TableHead>
+            <TableHead>{t.directory.departmentColumn}</TableHead>
             <TableHead>{t.directory.startedColumn}</TableHead>
             <TableHead>{t.directory.endedColumn}</TableHead>
+            <TableHead>{t.directory.retention.nextRemovalColumn}</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -326,12 +446,20 @@ function FormerView({
                 </Link>
               </TableCell>
               <TableCell className="text-muted-foreground">{person.jobTitle ?? ""}</TableCell>
+              <TableCell className="text-muted-foreground">
+                {entryText(person.department, t.directory.archivedEntry)}
+              </TableCell>
               <TableCell>{date(person.startedAt)}</TableCell>
               <TableCell>
                 <span className="flex flex-wrap items-center gap-2">
                   {date(person.endedAt)}
-                  <DirectoryMarkers markers={person.markers} />
+                  <DirectoryMarkers markers={person.markers} hold={person.hold} />
                 </span>
+              </TableCell>
+              <TableCell className="text-muted-foreground">
+                {person.nextRemoval
+                  ? `${sectionLabel(person.nextRemoval.section)} · ${formatDay(person.nextRemoval.date, t.common.dateLocale)}`
+                  : ""}
               </TableCell>
             </TableRow>
           ))}

@@ -2,8 +2,9 @@
 
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import type { PermissionHistoryEntry } from "@/lib/api/directory";
+import type { PermissionHistoryEntry, PermissionValue } from "@/lib/api/directory";
 import { usePermissionHistory } from "@/lib/api/queries";
+import { formatDateTime } from "@/lib/directory/format";
 import { useTranslation } from "@/lib/i18n/use-translation";
 
 /** Every change to the Permission table and the Directory roles, newest first. */
@@ -11,11 +12,7 @@ export function PermissionHistory({ organizationId }: { organizationId: string }
   const { t } = useTranslation();
   const copy = t.directory.settings.history;
   const history = usePermissionHistory(organizationId, true);
-  const when = (value: string) =>
-    new Date(value).toLocaleString(t.common.dateLocale, {
-      dateStyle: "short",
-      timeStyle: "short",
-    });
+  const when = (value: string) => formatDateTime(value, t.common.dateLocale);
 
   return (
     <Card>
@@ -59,9 +56,9 @@ function HistoryLine({ entry }: { entry: PermissionHistoryEntry }) {
   const { t } = useTranslation();
   const copy = t.directory.settings;
   if (entry.kind === "CELL") {
-    const value = (v: string | null) => (v === null ? "–" : (copy.values[v] ?? v));
+    const value = (v: PermissionValue | null) => (v === null ? "–" : copy.values[v]);
     return copy.history.cell(
-      copy.rows[entry.row] ?? entry.row,
+      copy.rows[entry.row],
       t.directory.history.audiences[entry.audience],
       value(entry.before),
       value(entry.after)

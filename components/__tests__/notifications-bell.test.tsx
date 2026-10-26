@@ -114,6 +114,28 @@ describe("NotificationsBell", () => {
     );
   });
 
+  it("links the directory notice to the member's own profile", async () => {
+    notifications = [
+      notification({
+        id: "n-directory",
+        type: "directory_enabled",
+        title: "Acme turned on the people directory",
+        body: "Check your profile and add your contact details.",
+        href: "/directory/person/?organizationId=org-1&employmentId=emp-1",
+      }),
+    ];
+    renderWithClient(<NotificationsBell />);
+
+    await userEvent.click(screen.getByRole("button", { name: /Notifications/i }));
+
+    const link = screen.getByRole("link", { name: /Acme turned on the people directory/ });
+    expect(link).toHaveAttribute(
+      "href",
+      "/directory/person?organizationId=org-1&employmentId=emp-1"
+    );
+    expect(link).toHaveTextContent("Check your profile and add your contact details.");
+  });
+
   it("removes a single notification without following it", async () => {
     notifications = [notification()];
     renderWithClient(<NotificationsBell />);

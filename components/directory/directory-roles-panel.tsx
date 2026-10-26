@@ -14,6 +14,7 @@ import {
 import { errorCopy } from "@/lib/api/client";
 import { DIRECTORY_ROLE_NAMES, type DirectoryRoleName } from "@/lib/api/directory";
 import { useDirectoryRoles, useSetDirectoryRoles } from "@/lib/api/queries";
+import { LapsedNote } from "@/components/directory/directory-lapsed-banner";
 import { useTranslation } from "@/lib/i18n/use-translation";
 
 /** HR and Leadership: the owner assigns them, org admins and HR see who holds them. */
@@ -108,7 +109,7 @@ export function DirectoryRolesPanel({ organizationId }: { organizationId: string
         {roles.data && !roles.data.editable ? (
           <p className="text-muted-foreground text-sm">{copy.readOnlyNote}</p>
         ) : roles.data && !roles.data.writable ? (
-          <p className="text-sm text-amber-700 dark:text-amber-400">{copy.rolesLapsedNote}</p>
+          <LapsedNote>{copy.rolesLapsedNote}</LapsedNote>
         ) : null}
         {update.error ? (
           <p role="alert" className="text-destructive text-sm">

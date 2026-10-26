@@ -151,6 +151,15 @@ describe("ClockWidget", () => {
     );
   });
 
+  it("tells an External worker they keep no attendance, with no clock", () => {
+    query.data = state({ active: false, externalWorker: true });
+    renderWithClient(<ClockWidget />);
+
+    expect(screen.getByText("No attendance for external workers")).toBeInTheDocument();
+    expect(screen.queryByText("Clocking in is off")).toBeNull();
+    expect(screen.queryByRole("button", { name: "Clock in" })).toBeNull();
+  });
+
   it("still offers a clock-out when the lapse caught a session open", () => {
     query.data = state({ active: false, openSession: openSession() });
     renderWithClient(<ClockWidget />);

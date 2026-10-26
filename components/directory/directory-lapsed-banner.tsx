@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import Link from "next/link";
 import { Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -13,9 +14,9 @@ export function DirectoryLapsedBanner({ organization }: { organization: Director
     <div
       role="status"
       data-testid="directory-lapsed"
-      className="flex flex-wrap items-center gap-3 rounded-[var(--radius)] border border-amber-500/40 bg-amber-500/10 px-4 py-3"
+      className="flex flex-wrap items-center gap-3 rounded-[var(--radius)] border border-[color:var(--warm)]/40 bg-[var(--warm-soft)] px-4 py-3"
     >
-      <Lock className="h-4 w-4 shrink-0 text-amber-600" aria-hidden />
+      <Lock className="h-4 w-4 shrink-0 text-[color:var(--warm)]" aria-hidden />
       <div className="min-w-0 flex-1">
         <p className="text-sm font-semibold">{copy.title}</p>
         <p className="text-muted-foreground text-xs">{copy.body}</p>
@@ -27,4 +28,9 @@ export function DirectoryLapsedBanner({ organization }: { organization: Director
       ) : null}
     </div>
   );
+}
+
+/** A settings panel's line while the plan has lapsed. */
+export function LapsedNote({ children }: { children: ReactNode }) {
+  return <p className="text-sm text-[color:var(--warm)]">{children}</p>;
 }

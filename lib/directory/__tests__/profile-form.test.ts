@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { DirectoryProfile } from "@/lib/api/directory";
-import { buildProfilePatch, profileFormValues } from "../profile-form";
+import { buildProfilePatch, profileFormValues, workPhoneInvalid } from "../profile-form";
 
 const profile = (overrides: Partial<DirectoryProfile["sections"]> = {}): DirectoryProfile => ({
   employmentId: "emp-1",
@@ -20,6 +20,8 @@ const profile = (overrides: Partial<DirectoryProfile["sections"]> = {}): Directo
       jobTitle: "Agent",
       reportsTo: { employmentId: "emp-boss", name: "Boss" },
       nameFromAccount: false,
+      department: { id: "d-sales", name: "Sales", archived: true },
+      location: null,
     },
     job: {
       level: "WRITE",
@@ -40,8 +42,11 @@ describe("profileFormValues", () => {
   it("returns the stored values as form strings, with the start date left empty", () => {
     expect(profileFormValues(profile())).toEqual({
       name: "Ada Noaccount",
+      signInEmail: "",
       jobTitle: "Agent",
       reportsTo: "emp-boss",
+      department: "d-sales",
+      location: "",
       workEmail: "",
       workPhoneCountry: "",
       workPhoneNumber: "",
@@ -87,6 +92,36 @@ describe("buildProfilePatch", () => {
       buildProfilePatch(before, { ...before, name: "Ada Lovelace" }, { ...can, name: false })
     ).toEqual({});
     expect(buildProfilePatch(before, { ...before, name: "  " }, can)).toEqual({});
+  });
+
+  it("sends the sign-in email lowercased where it is editable, and an emptied one as null", () => {
+    const before = { ...profileFormValues(profile()), signInEmail: "ada@acme.test" };
+    expect(
+      buildProfilePatch(
+        before,
+        { ...before, signInEmail: " Ada.N@Acme.test " },
+        { ...can, email: true }
+      )
+    ).toEqual({ card: { email: "ada.n@acme.test" } });
+    expect(
+      buildProfilePatch(before, { ...before, signInEmail: "" }, { ...can, email: true })
+    ).toEqual({ card: { email: null } });
+    expect(buildProfilePatch(before, { ...before, signInEmail: "x@acme.test" }, can)).toEqual({});
+    expect(
+      buildProfilePatch(
+        before,
+        { ...before, signInEmail: "ADA@acme.test" },
+        { ...can, email: true }
+      )
+    ).toEqual({});
+  });
+
+  it("sends a picked Department and Location by id, and an emptied one as null", () => {
+    const before = profileFormValues(profile());
+    expect(
+      buildProfilePatch(before, { ...before, department: "", location: "l-berlin" }, can)
+    ).toEqual({ card: { departmentId: null, locationId: "l-berlin" } });
+    expect(buildProfilePatch(before, { ...before }, can)).toEqual({});
   });
 
   it("leaves out a Section the viewer can't write", () => {
@@ -143,5 +178,26 @@ describe("buildProfilePatch", () => {
         { ...can, workContact: false }
       )
     ).toEqual({});
+  });
+});
+
+describe("workPhoneInvalid", () => {
+  const values = (workPhoneCountry: string, workPhoneNumber: string) => ({
+    ...profileFormValues(profile()),
+    workPhoneCountry,
+    workPhoneNumber,
+  });
+
+  it("returns false for an empty phone", () => {
+    expect(workPhoneInvalid(values("CZ", ""))).toBe(false);
+  });
+
+  it("returns false for a number valid in the picked country", () => {
+    expect(workPhoneInvalid(values("CZ", "601 123 456"))).toBe(false);
+  });
+
+  it("returns true for text that is no phone number", () => {
+    expect(workPhoneInvalid(values("CZ", "call me"))).toBe(true);
+    expect(workPhoneInvalid(values("CZ", "12"))).toBe(true);
   });
 });

@@ -4,6 +4,7 @@ import type {
   PermissionTableCell,
   PermissionValue,
 } from "@/lib/api/directory";
+import { SECTION_WIRE_NAMES } from "@/lib/directory/sections";
 
 export const PERMISSION_AUDIENCES: DirectoryAudience[] = [
   "OWNER",
@@ -16,14 +17,7 @@ export const PERMISSION_AUDIENCES: DirectoryAudience[] = [
   "ORGANIZATION_ADMIN",
 ];
 
-export const SECTION_PERMISSION_ROWS: PermissionRow[] = [
-  "CARD",
-  "PHOTO",
-  "WORK_CONTACT",
-  "JOB",
-  "CONTACT",
-  "PERSONAL",
-];
+export const SECTION_PERMISSION_ROWS: PermissionRow[] = SECTION_WIRE_NAMES;
 
 export const ACT_PERMISSION_ROWS: PermissionRow[] = [
   "CREATE_ACCOUNTLESS_PERSON",

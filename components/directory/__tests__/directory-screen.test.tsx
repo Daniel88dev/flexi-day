@@ -20,14 +20,35 @@ vi.mock("next/navigation", () => ({
   useSearchParams: () => search,
 }));
 
+vi.mock("@/components/directory/add-person-dialog", () => ({
+  AddPersonAction: ({ people }: { people: unknown[] }) => (
+    <button type="button" data-testid="add-person">
+      Add person ({people.length})
+    </button>
+  ),
+}));
+
 vi.mock("@/components/directory/directory-settings", () => ({
-  DirectorySettings: () => <div data-testid="directory-settings" />,
+  DirectorySettings: ({ initialPanel }: { initialPanel?: string }) => (
+    <div data-testid="directory-settings" data-panel={initialPanel} />
+  ),
 }));
 
 vi.mock("@/lib/api/queries", () => ({
   useDirectoryOrganizations: () => ({ data: organizations, isLoading: false, error: null }),
   useDirectoryState: () => ({ data: undefined }),
   useAcceptDirectoryAgreement: () => ({ mutateAsync: vi.fn(), isPending: false }),
+  useDirectoryChecklist: () => ({
+    data: {
+      hidden: false,
+      items: [
+        { key: "departments", done: false },
+        { key: "locations", done: true },
+      ],
+      reviewPermissions: true,
+    },
+  }),
+  useHideDirectoryChecklist: () => ({ mutate: vi.fn(), isPending: false }),
   useDirectoryPeople: (organizationId: string | null) => ({
     data: organizationId ? people : undefined,
     isLoading: false,
@@ -116,6 +137,16 @@ describe("DirectoryScreen", () => {
     expect(sources).toEqual(["https://store.test/ada-small.jpg", "https://idp.test/jana.png"]);
   });
 
+  it("offers Add person only when the list says the viewer may add", () => {
+    const { unmount } = renderWithClient(<DirectoryScreen />);
+    expect(screen.queryByTestId("add-person")).not.toBeInTheDocument();
+    unmount();
+
+    people = { ...people, addPerson: true };
+    renderWithClient(<DirectoryScreen />);
+    expect(screen.getByTestId("add-person")).toHaveTextContent("Add person (3)");
+  });
+
   it("remembers the Table view in the browser", async () => {
     const user = userEvent.setup();
     const { unmount } = renderWithClient(<DirectoryScreen />);
@@ -168,17 +199,96 @@ describe("DirectoryScreen", () => {
     expect(screen.getByRole("cell", { name: "Účetní" })).toBeInTheDocument();
   });
 
+  it("lets an admin narrow the list to people in no group", async () => {
+    const user = userEvent.setup();
+    people = {
+      people: [
+        person("Ada Novak", { noGroup: false }),
+        person("Jana Svobodová", { noGroup: true }),
+      ],
+      formerList: true,
+      settings: true,
+      noGroupFilter: true,
+    };
+    renderWithClient(<DirectoryScreen />);
+
+    await user.click(screen.getByRole("button", { name: "No group" }));
+
+    expect(screen.getByRole("button", { name: "No group" })).toHaveAttribute(
+      "aria-pressed",
+      "true"
+    );
+    const cards = screen.getByTestId("directory-cards");
+    expect(
+      within(cards)
+        .getAllByRole("link")
+        .map((link) => link.textContent)
+    ).toEqual([expect.stringContaining("Jana Svobodová")]);
+  });
+
+  it("filters by department and location, and shows both on the card and in the table", async () => {
+    const user = userEvent.setup();
+    const support = { id: "d-support", name: "Support", archived: false };
+    const sales = { id: "d-sales", name: "Sales", archived: true };
+    const prague = { id: "l-prague", name: "Prague", archived: false };
+    people = {
+      people: [
+        person("Ada Novak", { department: support, location: prague }),
+        person("Eli Ext", { department: sales, location: null }),
+        person("Jana Svobodová", { department: support, location: null }),
+      ],
+      formerList: false,
+      settings: false,
+    };
+    renderWithClient(<DirectoryScreen />);
+
+    const cards = screen.getByTestId("directory-cards");
+    expect(within(cards).getByText("Support · Prague")).toBeInTheDocument();
+    expect(within(cards).getByText("Sales (archived)")).toBeInTheDocument();
+
+    const department = screen.getByRole("combobox", { name: "Department" });
+    expect(
+      within(department)
+        .getAllByRole("option")
+        .map((option) => option.textContent)
+    ).toEqual(["All departments", "Sales (archived)", "Support"]);
+    await user.selectOptions(department, "d-support");
+    expect(within(cards).getAllByRole("link")).toHaveLength(2);
+    await user.selectOptions(screen.getByRole("combobox", { name: "Location" }), "l-prague");
+    expect(within(cards).getAllByRole("link")).toHaveLength(1);
+    expect(within(cards).getByRole("link", { name: /Ada Novak/ })).toBeInTheDocument();
+
+    await user.selectOptions(department, "");
+    await user.click(screen.getByRole("button", { name: "Table" }));
+    const table = screen.getByRole("table");
+    expect(within(table).getByRole("columnheader", { name: "Department" })).toBeInTheDocument();
+    expect(within(table).getByRole("cell", { name: "Prague" })).toBeInTheDocument();
+  });
+
+  it("offers no department or location filter while nobody holds one", () => {
+    renderWithClient(<DirectoryScreen />);
+
+    expect(screen.queryByRole("combobox", { name: "Department" })).toBeNull();
+    expect(screen.queryByRole("combobox", { name: "Location" })).toBeNull();
+  });
+
+  it("offers the No group filter only when the list carries it", () => {
+    renderWithClient(<DirectoryScreen />);
+
+    expect(screen.queryByRole("button", { name: "No group" })).toBeNull();
+  });
+
   it("offers no Former tab to someone the list doesn't open it for", () => {
     renderWithClient(<DirectoryScreen />);
     expect(screen.queryByRole("tab", { name: "Former" })).not.toBeInTheDocument();
   });
 
-  it("lists the Former tab latest end first, one row per spell", async () => {
+  it("lists the Former tab in the server's order, latest end first, one row per spell", async () => {
     const user = userEvent.setup();
     people = { ...people, formerList: true };
     former = [
-      leaver("Petra Early", "2025-11-30T12:00:00.000Z"),
       leaver("Rita Late", "2026-05-31T12:00:00.000Z"),
+      leaver("Petra Early", "2025-11-30T12:00:00.000Z"),
       leaver("Rita Late", "2024-06-30T12:00:00.000Z"),
     ];
     former[2]!.employmentId = "emp-rita-first";
@@ -194,6 +304,59 @@ describe("DirectoryScreen", () => {
     ]);
   });
 
+  it("shows each former row's next removal and the hold, account deleted and rejoined markers", async () => {
+    const user = userEvent.setup();
+    people = { ...people, formerList: true };
+    former = [
+      { ...leaver("Rita Late", "2026-05-31T12:00:00.000Z"), nextRemoval: null, hold: true },
+      {
+        ...leaver("Petra Early", "2025-11-30T12:00:00.000Z"),
+        markers: ["ACCOUNT_DELETED", "REJOINED"],
+        nextRemoval: { section: "contact", date: "2026-11-24" },
+        hold: false,
+      },
+    ];
+    former[1]!.employmentId = "emp-petra";
+    renderWithClient(<DirectoryScreen />);
+
+    await user.click(screen.getByRole("tab", { name: "Former" }));
+
+    const table = screen.getByTestId("directory-former");
+    expect(within(table).getByRole("columnheader", { name: "Next removal" })).toBeInTheDocument();
+    const [rita, petra] = within(table).getAllByRole("row").slice(1);
+    const cells = (row: HTMLElement) =>
+      within(row)
+        .getAllByRole("cell")
+        .map((cell) => cell.textContent);
+    expect(cells(petra!).at(-1)).toBe("Contact · 24/11/2026");
+    expect(within(petra!).getByTestId("marker-ACCOUNT_DELETED")).toHaveTextContent(
+      "Account deleted"
+    );
+    expect(within(petra!).getByTestId("marker-REJOINED")).toHaveTextContent("Rejoined");
+    expect(within(petra!).queryByTestId("marker-HOLD")).not.toBeInTheDocument();
+    expect(cells(rita!).at(-1)).toBe("");
+    expect(within(rita!).getByTestId("marker-HOLD")).toHaveTextContent("Hold");
+  });
+
+  it("shows no spell dates on a Former row when the viewer can't read Job", async () => {
+    const user = userEvent.setup();
+    people = { ...people, formerList: true };
+    former = [
+      { ...leaver("Rita Late", "2026-05-31T12:00:00.000Z"), startedAt: null, endedAt: null },
+    ];
+    renderWithClient(<DirectoryScreen />);
+
+    await user.click(screen.getByRole("tab", { name: "Former" }));
+
+    const [row] = within(screen.getByTestId("directory-former")).getAllByRole("row").slice(1);
+    const cells = within(row!)
+      .getAllByRole("cell")
+      .map((cell) => cell.textContent);
+    expect(cells[0]).toBe("Rita Late");
+    expect(cells[3]).toBe("");
+    expect(cells[4]).toBe("");
+  });
+
   it("opens Directory settings for the viewers the list allows, without the search row", async () => {
     const user = userEvent.setup();
     people = { ...people, formerList: true, settings: true };
@@ -205,9 +368,26 @@ describe("DirectoryScreen", () => {
     expect(screen.queryByRole("searchbox")).not.toBeInTheDocument();
   });
 
-  it("offers no Directory settings tab to a member", () => {
+  it("offers no Directory settings tab and no checklist to a member", () => {
     renderWithClient(<DirectoryScreen />);
     expect(screen.queryByRole("tab", { name: "Directory settings" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: "Set up the directory" })).not.toBeInTheDocument();
+  });
+
+  it("shows the setup checklist to settings viewers and opens the panel an item names", async () => {
+    const user = userEvent.setup();
+    people = { ...people, settings: true };
+    renderWithClient(<DirectoryScreen />);
+
+    expect(screen.getByRole("region", { name: "Set up the directory" })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Review who sees what" }));
+
+    expect(screen.getByTestId("directory-settings")).toHaveAttribute("data-panel", "permissions");
+    expect(screen.queryByRole("region", { name: "Set up the directory" })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("tab", { name: "People" }));
+    await user.click(screen.getByRole("button", { name: "Add departments" }));
+    expect(screen.getByTestId("directory-settings")).toHaveAttribute("data-panel", "lists");
   });
 
   it("shows a lapsed organization's banner, with See plans for an admin", () => {

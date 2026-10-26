@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { DirectoryOrganization } from "@/lib/api/directory";
-import { directoryHome, directoryNavEntry } from "../directory-access";
+import { administers, directoryHome, directoryNavEntry } from "../directory-access";
 
 const org = (overrides: Partial<DirectoryOrganization>): DirectoryOrganization => ({
   organizationId: "org-1",
@@ -76,5 +76,16 @@ describe("directoryHome", () => {
 
   it("opens nothing for a member without a Directory organization", () => {
     expect(directoryHome([org({})])).toBeNull();
+  });
+});
+
+describe("administers", () => {
+  it("returns true for the owner and an org admin", () => {
+    expect(administers({ role: "OWNER" })).toBe(true);
+    expect(administers({ role: "ORGANIZATION_ADMIN" })).toBe(true);
+  });
+
+  it("returns false for a member", () => {
+    expect(administers({ role: "MEMBER" })).toBe(false);
   });
 });

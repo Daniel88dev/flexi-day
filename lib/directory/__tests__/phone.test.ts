@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { phoneCountryOptions, phoneFormFields, phoneFromForm } from "../phone";
+import { countryOptions, phoneCountryOptions, phoneFormFields, phoneFromForm } from "../phone";
 
 describe("phoneFromForm", () => {
   it("reads a national number in the picked country as E.164", () => {
@@ -55,5 +55,14 @@ describe("phoneCountryOptions", () => {
     expect(phoneCountryOptions("en")).toContainEqual({ code: "CZ", label: "Czechia (+420)" });
     const labels = czech.map((option) => option.label);
     expect(labels).toEqual([...labels].sort((a, b) => a.localeCompare(b, "cs")));
+  });
+});
+
+describe("countryOptions", () => {
+  it("names every country without a calling code, sorted in the interface language", () => {
+    expect(countryOptions("cs")).toContainEqual({ code: "CZ", label: "Česko" });
+    expect(countryOptions("en")).toContainEqual({ code: "DE", label: "Germany" });
+    const labels = countryOptions("en").map((option) => option.label);
+    expect(labels).toEqual([...labels].sort((a, b) => a.localeCompare(b, "en")));
   });
 });

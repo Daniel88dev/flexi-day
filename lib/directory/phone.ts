@@ -52,3 +52,11 @@ export function phoneCountryOptions(locale: string): { code: string; label: stri
     }))
     .sort((a, b) => a.label.localeCompare(b.label, locale));
 }
+
+/** Every country the address picker offers, named in the interface language. */
+export function countryOptions(locale: string): { code: string; label: string }[] {
+  const names = new Intl.DisplayNames([locale], { type: "region", fallback: "code" });
+  return getCountries()
+    .map((code) => ({ code, label: names.of(code) ?? code }))
+    .sort((a, b) => a.label.localeCompare(b.label, locale));
+}

@@ -79,16 +79,16 @@ export function JoinInvite() {
   }
 
   const invite = preview.data;
-  const isMember = joinedAlready || (groups.data ?? []).some((g) => g.id === invite.groupId);
+  const groupId = invite.groupId;
+  const groupName = invite.groupName ?? "";
+  const isMember =
+    groupId !== null && (joinedAlready || (groups.data ?? []).some((g) => g.id === groupId));
 
   if (signedIn && isMember) {
     return (
-      <AuthCard
-        title={t.join.alreadyMemberTitle}
-        description={t.join.alreadyMember(invite.groupName)}
-      >
+      <AuthCard title={t.join.alreadyMemberTitle} description={t.join.alreadyMember(groupName)}>
         <Button asChild size="lg" className="w-full gap-2 rounded-full">
-          <Link href={groupHref(invite.groupId)}>
+          <Link href={groupHref(groupId)}>
             {t.join.openGroup} <ArrowRight className="h-[18px] w-[18px]" />
           </Link>
         </Button>
@@ -105,10 +105,16 @@ export function JoinInvite() {
     );
   }
 
-  const title = t.join.title(invite.groupName);
-  const description = invite.inviterName
-    ? t.join.invitedBy(invite.inviterName)
-    : t.join.invitedByUnknown;
+  const title =
+    groupId === null ? t.join.directoryTitle(invite.organizationName) : t.join.title(groupName);
+  const description =
+    groupId === null
+      ? invite.inviterName
+        ? t.join.directoryInvitedBy(invite.inviterName, invite.organizationName)
+        : t.join.directoryInvitedByUnknown(invite.organizationName)
+      : invite.inviterName
+        ? t.join.invitedBy(invite.inviterName)
+        : t.join.invitedByUnknown;
 
   if (!session) {
     // The sign-up response set the session cookie; the session store has to
@@ -163,6 +169,7 @@ export function JoinInvite() {
         <JoinSignUp
           token={token}
           invitedEmail={invite.invitedEmail}
+          initialName={invite.personName ?? ""}
           signInHref={signInHref}
           onSignedUp={handleSignedUp}
           onClosed={setJoinClosed}
@@ -207,6 +214,7 @@ export function JoinInvite() {
     } catch (err) {
       const code = errorCode(err);
       if (code === "ALREADY_MEMBER") return setJoinedAlready(true);
+      if (code === "ALREADY_EMPLOYED") return setJoinError(t.join.alreadyEmployed);
       const closedStatus = closedStatusOf(code);
       if (closedStatus) return setJoinClosed(closedStatus);
       setJoinError(planLimitMessage(err, t) ?? t.join.failed);
@@ -225,7 +233,11 @@ export function JoinInvite() {
           onClick={handleJoin}
           disabled={joinGroup.isPending}
         >
-          {joinGroup.isPending ? t.join.joining : t.join.join}{" "}
+          {joinGroup.isPending
+            ? t.join.joining
+            : groupId === null
+              ? t.join.directoryJoin
+              : t.join.join}{" "}
           <ArrowRight className="h-[18px] w-[18px]" />
         </Button>
       </div>

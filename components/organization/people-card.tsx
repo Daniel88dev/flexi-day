@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { UsersRound } from "lucide-react";
 import { AccountDeletedLabel } from "@/components/account-deleted-label";
+import { Badge } from "@/components/ui/badge";
 import { EndEmploymentDialog } from "@/components/organization/end-employment-dialog";
 import { EraseDialog } from "@/components/organization/erase-dialog";
 import { PersonExportAction } from "@/components/person-export-action";
@@ -12,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { pushToast } from "@/components/toast";
 import {
   useAttendanceSettings,
+  useDirectoryState,
   useEmployments,
   useRequestPersonExport,
   useRequestedExports,
@@ -19,9 +22,13 @@ import {
 } from "@/lib/api/queries";
 import type { EmploymentListItem } from "@/lib/api/employment";
 import type { PersonExport } from "@/lib/api/person-export";
+import { profileHref } from "@/lib/directory/routes";
 import { formatMinutes, parseMinutes } from "@/lib/attendance/duration";
 import { useTranslation } from "@/lib/i18n/use-translation";
 import { cn } from "@/lib/utils";
+
+/** The People card's id, for links from the directory's turn-off dialog. */
+export const PEOPLE_CARD_ANCHOR = "people";
 
 /**
  * The organization's roster for its owner and org admins, on every plan, split
@@ -41,10 +48,23 @@ export function PeopleCard({
   const query = useEmployments(organizationId);
   const exports = useRequestedExports(organizationId).data;
   const requestExport = useRequestPersonExport();
+  // While the directory is on, a person's End, Export and Erase sit on their profile.
+  const directoryOn = useDirectoryState(organizationId).data?.enabled ?? false;
 
   if (query.isPending) return null;
 
-  const exportOf = new Map(exports?.map((entry) => [entry.subjectUserId, entry]));
+  const exportByUser = new Map(
+    exports?.filter((entry) => entry.subjectUserId).map((entry) => [entry.subjectUserId, entry])
+  );
+  const exportByEmployment = new Map(
+    exports
+      ?.filter((entry) => entry.subjectEmploymentId)
+      .map((entry) => [entry.subjectEmploymentId, entry])
+  );
+  const exportOf = (employment: EmploymentListItem) =>
+    employment.userId === null
+      ? exportByEmployment.get(employment.id)
+      : exportByUser.get(employment.userId);
 
   const attendanceOn = settings?.attendanceEnabled ?? false;
   // The backend reads "today" in this zone, UTC while attendance was never set up.
@@ -62,15 +82,16 @@ export function PeopleCard({
         organizationId={organizationId}
         requiredMinutesPerDay={attendanceOn ? (settings?.requiredMinutesPerDay ?? null) : null}
         timeZone={timeZone}
-        exportEntry={exportOf.get(employment.userId)}
+        exportEntry={exportOf(employment)}
         requestingExport={requestExport.isPending && requestExport.variables === employment.id}
         onRequestExport={() => requestExport.mutateAsync(employment.id)}
         focused={employment.id === focusEmploymentId}
+        directoryOn={directoryOn}
       />
     ));
 
   return (
-    <Card>
+    <Card id={PEOPLE_CARD_ANCHOR}>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <UsersRound className="h-4 w-4" aria-hidden />
@@ -82,6 +103,11 @@ export function PeopleCard({
           {t.organization.people.lead}
           {attendanceOn ? ` ${t.organization.people.requiredLead}` : null}
         </p>
+        {directoryOn ? (
+          <p className="text-muted-foreground text-sm">{t.organization.people.inDirectory}</p>
+        ) : open.some((employment) => employment.noLink) ? (
+          <p className="text-muted-foreground text-sm">{t.organization.people.noLink}</p>
+        ) : null}
 
         {/* A roster that failed to load says so: an admin who came here to act
             on somebody should not be met by a card that is simply absent. */}
@@ -133,6 +159,7 @@ function PersonRow({
   requestingExport,
   onRequestExport,
   focused,
+  directoryOn,
 }: {
   employment: EmploymentListItem;
   organizationId: string | null;
@@ -143,11 +170,11 @@ function PersonRow({
   requestingExport: boolean;
   onRequestExport: () => Promise<unknown>;
   focused: boolean;
+  directoryOn: boolean;
 }) {
   const { t } = useTranslation();
-  const [ending, setEnding] = useState(false);
-  const [erasing, setErasing] = useState(false);
   const rowRef = useRef<HTMLLIElement>(null);
+  const external = employment.type === "external";
 
   useEffect(() => {
     if (focused) rowRef.current?.scrollIntoView({ block: "center" });
@@ -166,6 +193,16 @@ function PersonRow({
         <p className="flex flex-wrap items-center gap-2 font-medium">
           {employment.user.name}
           {employment.accountDeleted ? <AccountDeletedLabel /> : null}
+          {employment.userId === null ? (
+            <Badge variant="outline" data-testid="no-account">
+              {t.directory.markers.NO_ACCOUNT}
+            </Badge>
+          ) : null}
+          {external ? (
+            <Badge variant="outline" data-testid="external-worker">
+              {t.directory.markers.EXTERNAL_WORKER}
+            </Badge>
+          ) : null}
           {employment.endedAt ? (
             <span className="text-muted-foreground text-xs font-normal">
               {t.organization.people.endedOn(
@@ -180,7 +217,7 @@ function PersonRow({
         )}
       </div>
 
-      {requiredMinutesPerDay !== null ? (
+      {requiredMinutesPerDay !== null && !external ? (
         <RequiredMinutes
           employment={employment}
           organizationId={organizationId}
@@ -188,6 +225,50 @@ function PersonRow({
         />
       ) : null}
 
+      {directoryOn && organizationId ? (
+        <Button asChild size="sm" variant="outline">
+          <Link
+            href={profileHref(organizationId, employment.id)}
+            aria-label={t.organization.people.openProfile(employment.user.name)}
+          >
+            {t.organization.people.profile}
+          </Link>
+        </Button>
+      ) : (
+        <RowActions
+          employment={employment}
+          organizationId={organizationId}
+          timeZone={timeZone}
+          exportEntry={exportEntry}
+          requestingExport={requestingExport}
+          onRequestExport={onRequestExport}
+        />
+      )}
+    </li>
+  );
+}
+
+function RowActions({
+  employment,
+  organizationId,
+  timeZone,
+  exportEntry,
+  requestingExport,
+  onRequestExport,
+}: {
+  employment: EmploymentListItem;
+  organizationId: string | null;
+  timeZone: string;
+  exportEntry: PersonExport | undefined;
+  requestingExport: boolean;
+  onRequestExport: () => Promise<unknown>;
+}) {
+  const { t } = useTranslation();
+  const [ending, setEnding] = useState(false);
+  const [erasing, setErasing] = useState(false);
+
+  return (
+    <>
       <PersonExportAction
         entry={exportEntry}
         labels={{
@@ -198,10 +279,9 @@ function PersonRow({
         onRequest={onRequestExport}
       />
 
-      {/* Only a Deleted account for now: an Employment is one row per
-          organization, so ending a live person and adding them back would
-          overwrite the spell. */}
-      {employment.accountDeleted && !employment.ended ? (
+      {/* Outside the directory End is here for a Deleted account (T-482) and for
+          anyone no link holds, whom nothing else will end (T-514). */}
+      {(employment.accountDeleted || employment.noLink) && !employment.ended ? (
         <>
           <Button
             type="button"
@@ -222,7 +302,7 @@ function PersonRow({
         </>
       ) : null}
 
-      {employment.accountDeleted ? (
+      {employment.accountDeleted || employment.userId === null ? (
         <>
           <Button
             type="button"
@@ -242,7 +322,7 @@ function PersonRow({
           />
         </>
       ) : null}
-    </li>
+    </>
   );
 }
 

@@ -9,6 +9,7 @@ import type {
   DirectoryOrganization,
   DirectoryProfile,
 } from "@/lib/api/directory";
+import { ShownSectionsProvider } from "@/lib/directory/shown-sections";
 import { ProfileScreen } from "../profile-screen";
 
 let profile: { data?: DirectoryProfile; error: unknown } = { error: null };
@@ -20,9 +21,33 @@ vi.mock("next/navigation", () => ({
 }));
 
 let history: { data?: unknown[]; error: unknown } = { data: [], error: null };
+
+const showMock = vi.fn();
+vi.mock("@/lib/api/directory", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/api/directory")>()),
+  showSensitiveSection: (...args: unknown[]) => showMock(...args),
+}));
+
+const czPhone = (e164: string, display: string) => ({
+  e164,
+  display,
+  country: { code: "CZ", name: "Czechia" },
+});
+
+const shownContact = (recorded: boolean) => ({
+  section: "CONTACT",
+  level: "WRITE",
+  recorded,
+  privatePhone: czPhone("+420777123456", "+420 777 123 456"),
+  privateEmail: "jana.home@example.test",
+  emergencyContact1: { name: "Karel Novák", phone: czPhone("+420602111222", "+420 602 111 222") },
+  emergencyContact2: null,
+});
 const historyCalls: boolean[] = [];
 
+const holdMock = vi.fn();
 vi.mock("@/lib/api/queries", () => ({
+  useSetRetentionHold: () => ({ mutateAsync: holdMock, isPending: false }),
   useDirectoryOrganizations: () => ({ data: organizations, isLoading: false, error: null }),
   useDirectoryProfile: () => ({ ...profile, isLoading: false }),
   useProfileHistory: (_organizationId: string, _employmentId: string, enabled: boolean) => {
@@ -105,6 +130,48 @@ describe("ProfileScreen", () => {
       "href",
       "/directory?organizationId=org-1"
     );
+  });
+
+  it("shows the Copy from previous spell banner only when the profile offers it", () => {
+    profile = {
+      data: jana({
+        actions: { end: false, export: false, erase: false, copyFromPreviousSpell: true },
+      }),
+      error: null,
+    };
+    const { unmount } = renderWithClient(<ProfileScreen />);
+    expect(screen.getByTestId("copy-previous-spell")).toHaveTextContent(
+      /copy from previous spell/i
+    );
+    unmount();
+
+    profile = { data: jana(), error: null };
+    renderWithClient(<ProfileScreen />);
+    expect(screen.queryByTestId("copy-previous-spell")).not.toBeInTheDocument();
+  });
+
+  it("shows the Department and the Location with its country, an archived entry marked", () => {
+    profile = {
+      data: jana({
+        sections: {
+          card: card({
+            department: { id: "d-sales", name: "Sales", archived: true },
+            location: {
+              id: "l-berlin",
+              name: "Berlin",
+              archived: false,
+              country: { code: "DE", name: "Germany" },
+            },
+          }),
+        },
+      }),
+      error: null,
+    };
+    renderWithClient(<ProfileScreen />);
+
+    const section = within(screen.getByRole("region", { name: "Card" }));
+    expect(section.getByText("Sales (archived)")).toBeInTheDocument();
+    expect(section.getByText("Berlin, Germany")).toBeInTheDocument();
   });
 
   it("shows the work email and the phone's display form as links, and says when both are empty", () => {
@@ -378,6 +445,14 @@ describe("ProfileScreen", () => {
           fields: ["employeeNumber", "workingTime"],
           audience: "OWNER",
         },
+        {
+          id: "h3",
+          at: "2026-09-01T08:00:00.000Z",
+          actorName: "Hana Hr",
+          section: "CHANGE_WORKER_TYPE",
+          fields: ["type"],
+          audience: "HR",
+        },
       ],
       error: null,
     };
@@ -394,6 +469,198 @@ describe("ProfileScreen", () => {
     expect(within(drawer).getByText("Card: Reports to")).toBeInTheDocument();
     expect(within(drawer).getByText("Someone no longer here")).toBeInTheDocument();
     expect(within(drawer).getByText("Job: Employee number, Working time")).toBeInTheDocument();
+    expect(within(drawer).getByText("Changed the worker type")).toBeInTheDocument();
     expect(historyCalls.at(-1)).toBe(true);
+  });
+
+  describe("the Sensitive sections", () => {
+    beforeEach(() => {
+      showMock.mockReset();
+    });
+
+    it("keeps Contact closed for someone else until Show, then opens it once with the read-log line", async () => {
+      const user = userEvent.setup();
+      showMock.mockResolvedValue(shownContact(true));
+      profile = {
+        data: jana({
+          sections: { card: card(), contact: { level: "WRITE" }, personal: { level: "WRITE" } },
+        }),
+        error: null,
+      };
+      renderWithClient(
+        <ShownSectionsProvider>
+          <ProfileScreen />
+        </ShownSectionsProvider>
+      );
+
+      await user.click(screen.getByRole("tab", { name: "Contact" }));
+      const region = screen.getByRole("region", { name: "Contact" });
+      expect(within(region).getByText("Hidden until you open it.")).toBeInTheDocument();
+      expect(showMock).not.toHaveBeenCalled();
+
+      await user.click(within(region).getByRole("button", { name: "Show" }));
+
+      expect(showMock).toHaveBeenCalledWith("org-1", "emp-jana", "contact", "en");
+      const opened = screen.getByRole("region", { name: "Contact" });
+      expect(
+        within(opened).getByText("Your view of this section is recorded in the read log.")
+      ).toBeInTheDocument();
+      expect(within(opened).getByRole("link", { name: "+420 777 123 456" })).toHaveAttribute(
+        "href",
+        "tel:+420777123456"
+      );
+      expect(within(opened).getByText(/Karel Novák/)).toBeInTheDocument();
+
+      await user.click(screen.getByRole("tab", { name: "Personal" }));
+      await user.click(screen.getByRole("tab", { name: "Contact" }));
+      expect(screen.getByText("jana.home@example.test")).toBeInTheDocument();
+      expect(showMock).toHaveBeenCalledTimes(1);
+    });
+
+    it("opens the person's own Contact without a Show button or the read-log line", async () => {
+      const user = userEvent.setup();
+      showMock.mockResolvedValue(shownContact(false));
+      profile = {
+        data: jana({ self: true, sections: { card: card(), contact: { level: "WRITE" } } }),
+        error: null,
+      };
+      renderWithClient(<ProfileScreen />);
+
+      await user.click(screen.getByRole("tab", { name: "Contact" }));
+
+      expect(await screen.findByText("jana.home@example.test")).toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: "Show" })).not.toBeInTheDocument();
+      expect(screen.queryByText(/recorded in the read log/)).not.toBeInTheDocument();
+    });
+
+    it("shows the Personal values once opened, and leaves the tab out when the Section is absent", async () => {
+      const user = userEvent.setup();
+      showMock.mockResolvedValue({
+        section: "PERSONAL",
+        level: "READ",
+        recorded: true,
+        homeAddress: {
+          line1: "Vinohradská 12",
+          line2: null,
+          postalCode: "120 00",
+          city: "Praha",
+          region: null,
+          country: { code: "CZ", name: "Czechia" },
+        },
+        dateOfBirth: "1990-04-17",
+      });
+      profile = {
+        data: jana({ sections: { card: card(), personal: { level: "READ" } } }),
+        error: null,
+      };
+      const { unmount } = renderWithClient(<ProfileScreen />);
+
+      await user.click(screen.getByRole("tab", { name: "Personal" }));
+      await user.click(screen.getByRole("button", { name: "Show" }));
+
+      expect(screen.getByText("120 00 Praha")).toBeInTheDocument();
+      expect(screen.getByText("Czechia")).toBeInTheDocument();
+      expect(screen.queryByRole("tab", { name: "Contact" })).not.toBeInTheDocument();
+      unmount();
+
+      profile = { data: jana({ markers: ["EXTERNAL_WORKER"] }), error: null };
+      renderWithClient(<ProfileScreen />);
+      expect(screen.queryByRole("tab", { name: "Personal" })).not.toBeInTheDocument();
+    });
+  });
+  describe("retention on a former profile", () => {
+    const former = (overrides: Partial<DirectoryProfile> = {}) =>
+      jana({
+        ended: true,
+        sections: {
+          card: card(),
+          photo: { level: "READ", photo: null },
+          workContact: { level: "READ", workEmail: null, workPhone: null },
+          contact: { level: "READ" },
+        },
+        retention: {
+          hold: null,
+          sections: {
+            card: { status: "KEPT_UNTIL_ERASED" },
+            photo: { status: "REMOVES_ON", date: "2027-09-30" },
+            workContact: { status: "REMOVED_ON", date: "2026-10-20" },
+            contact: { status: "REMOVES_ON", date: "2026-11-24" },
+          },
+        },
+        ...overrides,
+      });
+
+    beforeEach(() => holdMock.mockReset().mockResolvedValue({ hold: null }));
+
+    it("shows each Section's removal date before a purge and the purge's date after it", () => {
+      profile = { data: former(), error: null };
+      renderWithClient(<ProfileScreen />);
+
+      const retention = screen.getByRole("region", { name: "Retention" });
+      const line = (section: string) =>
+        within(retention).getByText(section).closest("div")?.textContent;
+      expect(line("Card")).toBe("CardKept until erased");
+      expect(line("Photo")).toBe("PhotoRemoved on 30/09/2027");
+      expect(line("Work contact")).toBe("Work contactRemoved by retention on 20/10/2026");
+      expect(line("Contact")).toBe("ContactRemoved on 24/11/2026");
+      expect(within(retention).getByText("No retention hold.")).toBeInTheDocument();
+      expect(
+        within(retention).queryByRole("button", { name: "Set retention hold" })
+      ).not.toBeInTheDocument();
+    });
+
+    it("lets an admin set the hold at once", async () => {
+      const user = userEvent.setup();
+      profile = {
+        data: former({ actions: { end: false, export: false, erase: false, hold: true } }),
+        error: null,
+      };
+      renderWithClient(<ProfileScreen />);
+
+      await user.click(screen.getByRole("button", { name: "Set retention hold" }));
+      expect(holdMock).toHaveBeenCalledWith(true);
+    });
+
+    it("shows who set the hold and when, and lifts it only after a confirm", async () => {
+      const user = userEvent.setup();
+      profile = {
+        data: former({
+          actions: { end: false, export: false, erase: false, hold: true },
+          retention: {
+            hold: {
+              setAt: "2026-10-26T09:00:00.000Z",
+              setBy: { userId: "u-dana", name: "Dana Delegate" },
+            },
+            sections: { card: { status: "KEPT_UNTIL_ERASED" }, contact: { status: "ON_HOLD" } },
+          },
+        }),
+        error: null,
+      };
+      renderWithClient(<ProfileScreen />);
+
+      const retention = screen.getByRole("region", { name: "Retention" });
+      expect(
+        within(retention).getByText(
+          "Retention hold on since 26/10/2026, set by Dana Delegate. Nothing is removed while it is on."
+        )
+      ).toBeInTheDocument();
+      expect(within(retention).getByText("Contact").closest("div")?.textContent).toBe(
+        "ContactKept by the retention hold"
+      );
+
+      await user.click(within(retention).getByRole("button", { name: "Lift retention hold" }));
+      const dialog = screen.getByRole("dialog");
+      expect(
+        within(dialog).getByText("Lift the retention hold on Jana Member?")
+      ).toBeInTheDocument();
+      expect(holdMock).not.toHaveBeenCalled();
+      await user.click(within(dialog).getByRole("button", { name: "Lift hold" }));
+      expect(holdMock).toHaveBeenCalledWith(false);
+    });
+
+    it("leaves the Retention block off an open profile", () => {
+      renderWithClient(<ProfileScreen />);
+      expect(screen.queryByRole("region", { name: "Retention" })).not.toBeInTheDocument();
+    });
   });
 });

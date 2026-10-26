@@ -4,18 +4,28 @@ import userEvent from "@testing-library/user-event";
 import { renderWithClient } from "@/lib/test-utils";
 import type {
   DirectoryOrganization,
+  DirectoryGeneralSettings,
   DirectoryRoles,
+  ReadLogPage,
   PermissionHistoryEntry,
   PermissionTable,
   PermissionTableCell,
 } from "@/lib/api/directory";
 import { DirectorySettings } from "../directory-settings";
 
+vi.mock("../directory-lists-panel", () => ({
+  DirectoryListsPanel: () => <div data-testid="lists-panel" />,
+}));
+
 const updateCell = vi.fn();
 const setRoles = vi.fn();
 let table: PermissionTable;
 let roles: DirectoryRoles;
 let history: PermissionHistoryEntry[] = [];
+const updateNotice = vi.fn();
+let general: DirectoryGeneralSettings;
+let readLog: ReadLogPage;
+const readLogFilters: unknown[] = [];
 
 vi.mock("@/lib/api/queries", () => ({
   usePermissionTable: () => ({ data: table, isLoading: false, error: null }),
@@ -23,6 +33,42 @@ vi.mock("@/lib/api/queries", () => ({
   useDirectoryRoles: () => ({ data: roles, isLoading: false, error: null }),
   useUpdatePermissionCell: () => ({ mutate: updateCell, isPending: false, error: null }),
   useSetDirectoryRoles: () => ({ mutate: setRoles, isPending: false, error: null }),
+  useDirectoryGeneralSettings: () => ({ data: general, isLoading: false, error: null }),
+  useUpdateDirectoryGeneralSettings: () => ({
+    mutate: updateNotice,
+    isPending: false,
+    isSuccess: false,
+    error: null,
+  }),
+  useRetentionSettings: () => ({
+    data: {
+      editable: false,
+      periods: {
+        CARD: "UNTIL_ERASED",
+        PHOTO: "YEAR_1",
+        WORK_CONTACT: "DAYS_30",
+        JOB: "UNTIL_ERASED",
+        CONTACT: "MONTHS_6",
+        PERSONAL: "YEARS_3",
+      },
+      defaults: {
+        CARD: "UNTIL_ERASED",
+        PHOTO: "YEAR_1",
+        WORK_CONTACT: "DAYS_30",
+        JOB: "UNTIL_ERASED",
+        CONTACT: "DAYS_30",
+        PERSONAL: "YEARS_3",
+      },
+    },
+    isLoading: false,
+    error: null,
+  }),
+  useUpdateRetentionPeriod: () => ({ mutate: vi.fn(), isPending: false, error: null }),
+  useRetentionPreview: () => ({ data: undefined, isLoading: false, error: null }),
+  useReadLog: (_organizationId: string, filter: unknown) => {
+    readLogFilters.push(filter);
+    return { data: { pages: [readLog] }, error: null, hasNextPage: false };
+  },
 }));
 
 const organization: DirectoryOrganization = {
@@ -194,5 +240,99 @@ describe("DirectorySettings", () => {
       expect(screen.getByText("Hana Human")).toBeInTheDocument();
       expect(screen.queryByText("Leo Lead")).toBeNull();
     });
+  });
+
+  describe("the General and Read log panels", () => {
+    beforeEach(() => {
+      updateNotice.mockReset();
+      readLogFilters.length = 0;
+      general = {
+        editable: true,
+        emergencyContactNotice: { en: null, cs: "Vlastní text {period}." },
+        defaults: { en: "Default {organization} {period}.", cs: "Výchozí {period}." },
+        period: { en: "30 days", cs: "30 dní" },
+      };
+      readLog = {
+        entries: [
+          {
+            id: "r1",
+            kind: "read",
+            at: "2026-10-26T09:00:00.000Z",
+            reader: { userId: "u-hana", name: "Hana Human" },
+            person: { employmentId: "emp-jana", name: "Jana Member" },
+            sections: ["CONTACT"],
+            audience: "HR",
+          },
+          {
+            id: "r2",
+            kind: "export",
+            at: "2026-10-25T09:00:00.000Z",
+            reader: { userId: "u-olga", name: "Olga Owner" },
+            person: { employmentId: "emp-gone", name: null },
+            sections: null,
+            audience: "OWNER",
+          },
+        ],
+        nextBefore: null,
+        people: [{ employmentId: "emp-jana", name: "Jana Member" }],
+        readers: [
+          { userId: "u-hana", name: "Hana Human" },
+          { userId: "u-olga", name: "Olga Owner" },
+        ],
+      };
+    });
+
+    it("edits the notice per language and sends null for a text set back to the default", async () => {
+      const user = userEvent.setup();
+      renderWithClient(<DirectorySettings organization={organization} />);
+      await user.click(screen.getByRole("button", { name: "General" }));
+
+      expect(screen.getByLabelText("English")).toHaveValue("Default {organization} {period}.");
+      expect(screen.getByLabelText("Czech")).toHaveValue("Vlastní text {period}.");
+      expect(screen.getByText(/now 30 days/)).toBeInTheDocument();
+      await user.clear(screen.getByLabelText("English"));
+      await user.type(screen.getByLabelText("English"), "Our text");
+      await user.click(screen.getByRole("button", { name: "Use the default: Czech" }));
+      expect(screen.getByLabelText("Czech")).toHaveValue("Výchozí {period}.");
+      await user.click(screen.getByRole("button", { name: "Save notice" }));
+
+      expect(updateNotice).toHaveBeenCalledWith({ en: "Our text", cs: null });
+    });
+
+    it("shows the read log to the owner with names, never values, and filters by person and reader", async () => {
+      const user = userEvent.setup();
+      renderWithClient(<DirectorySettings organization={organization} />);
+      await user.click(screen.getByRole("button", { name: "Read log" }));
+
+      const rows = screen.getAllByRole("row").slice(1);
+      expect(within(rows[0]!).getByText("Hana Human")).toBeInTheDocument();
+      expect(within(rows[0]!).getByText("Opened Contact")).toBeInTheDocument();
+      expect(within(rows[0]!).getByText("HR")).toBeInTheDocument();
+      expect(within(rows[1]!).getByText("Exported")).toBeInTheDocument();
+      expect(within(rows[1]!).getByText("An erased person")).toBeInTheDocument();
+
+      await user.selectOptions(screen.getByLabelText("Person"), "emp-jana");
+      await user.selectOptions(screen.getByLabelText("Reader"), "u-hana");
+      expect(readLogFilters.at(-1)).toEqual({ employmentId: "emp-jana", readerUserId: "u-hana" });
+    });
+
+    it("leaves the Read log out for HR who is not an org admin, and shows them the retention periods", async () => {
+      const user = userEvent.setup();
+      renderWithClient(<DirectorySettings organization={{ ...organization, role: "MEMBER" }} />);
+
+      expect(screen.getByRole("button", { name: "General" })).toBeInTheDocument();
+      await user.click(screen.getByRole("button", { name: "Retention" }));
+      expect(screen.getByText("Retention periods")).toBeInTheDocument();
+      expect(screen.getByText("6 months")).toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: "Read log" })).not.toBeInTheDocument();
+    });
+  });
+
+  it("opens Departments and locations as its own panel, without the permission history", async () => {
+    renderWithClient(<DirectorySettings organization={organization} />);
+    await userEvent.click(screen.getByRole("button", { name: "Departments and locations" }));
+
+    expect(screen.getByTestId("lists-panel")).toBeInTheDocument();
+    expect(screen.queryByText("Permission history")).toBeNull();
   });
 });

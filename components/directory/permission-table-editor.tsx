@@ -11,6 +11,7 @@ import {
   permissionGrid,
   type PermissionLine,
 } from "@/lib/directory/permission-table";
+import { LapsedNote } from "@/components/directory/directory-lapsed-banner";
 import { useTranslation } from "@/lib/i18n/use-translation";
 
 /** The organization's Permission table: the owner edits it, org admins and HR read it. */
@@ -36,7 +37,7 @@ export function PermissionTableEditor({ organizationId }: { organizationId: stri
             {!table.data.editable ? (
               <p className="text-muted-foreground text-sm">{copy.readOnlyNote}</p>
             ) : !table.data.writable ? (
-              <p className="text-sm text-amber-700 dark:text-amber-400">{copy.lapsedNote}</p>
+              <LapsedNote>{copy.lapsedNote}</LapsedNote>
             ) : null}
             {update.error ? (
               <p role="alert" className="text-destructive text-sm">
@@ -117,7 +118,7 @@ function Line({
 }: GridProps & { line: PermissionLine }) {
   const { t } = useTranslation();
   const copy = t.directory.settings;
-  const rowName = copy.rows[line.row] ?? line.row;
+  const rowName = copy.rows[line.row];
   return (
     <tr className="border-t">
       <th scope="row" className="py-2 pr-2 text-left font-semibold">
@@ -135,7 +136,7 @@ function Line({
             </td>
           );
         }
-        const valueName = copy.values[cell.value] ?? cell.value;
+        const valueName = copy.values[cell.value];
         if (cell.fixed) {
           return (
             <td key={audience} className="px-1 py-1 text-center">
@@ -169,7 +170,7 @@ function Line({
             >
               {cellOptions(cell, writable).map((option) => (
                 <option key={option.value} value={option.value} disabled={option.disabled}>
-                  {copy.values[option.value] ?? option.value}
+                  {copy.values[option.value]}
                 </option>
               ))}
             </select>

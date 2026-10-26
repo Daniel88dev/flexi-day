@@ -15,6 +15,7 @@ const updateRequired = vi.fn();
 const endEmployment = vi.fn();
 const eraseEmployment = vi.fn();
 let requestedExports: PersonExport[] | undefined;
+let directoryEnabled = false;
 const requestExport = vi.fn();
 const signDownload = vi.fn();
 const followLink = vi.fn();
@@ -38,6 +39,7 @@ vi.mock("@/lib/api/queries", () => ({
   useEndEmployment: () => ({ mutateAsync: endEmployment, isPending: false }),
   useEraseEmployment: () => ({ mutateAsync: eraseEmployment, isPending: false }),
   useRequestedExports: () => ({ data: requestedExports }),
+  useDirectoryState: () => ({ data: { enabled: directoryEnabled } }),
   useRequestPersonExport: () => ({
     mutateAsync: requestExport,
     isPending: false,
@@ -151,6 +153,14 @@ describe("PeopleCard", () => {
     renderWithClient(<PeopleCard organizationId="org-1" />);
 
     expect(screen.getByLabelText("Required per day — Milo Member")).toHaveValue("6:00");
+  });
+
+  it("tags an External worker and offers no required time for them", () => {
+    employments = [person({ type: "external" })];
+    renderWithClient(<PeopleCard organizationId="org-1" />);
+
+    expect(screen.getByText("External worker")).toBeInTheDocument();
+    expect(screen.queryByLabelText("Required per day — Milo Member")).toBeNull();
   });
 
   it("saves a new override as minutes", async () => {
@@ -293,6 +303,112 @@ describe("PeopleCard", () => {
       const former = screen.getByRole("list", { name: "Former" });
       expect(within(former).getByTestId("account-deleted")).toBeInTheDocument();
       expect(within(former).queryByRole("button", { name: "End employment" })).toBeNull();
+    });
+  });
+
+  describe("in a Directory organization", () => {
+    afterEach(() => {
+      directoryEnabled = false;
+    });
+
+    it("moves End employment, Export and Erase to the profile, which each row links", () => {
+      directoryEnabled = true;
+      employments = [
+        person({
+          id: "emp-del",
+          userId: "user-del",
+          accountDeleted: true,
+          accountDeletedAt: "2026-10-01T10:00:00Z",
+          user: { id: "user-del", name: "Karel Gone", initials: "KG", avatarColor: "#000" },
+        }),
+      ];
+      renderWithClient(<PeopleCard organizationId="org-1" />);
+
+      const row = within(screen.getByRole("list", { name: "Open" })).getByRole("listitem");
+      expect(within(row).queryByRole("button", { name: "End employment" })).toBeNull();
+      expect(within(row).queryByRole("button", { name: /erase/i })).toBeNull();
+      expect(within(row).queryByRole("button", { name: /export/i })).toBeNull();
+      expect(within(row).getByRole("link", { name: "Open Karel Gone's profile" })).toHaveAttribute(
+        "href",
+        "/directory/person?organizationId=org-1&employmentId=emp-del"
+      );
+      expect(
+        screen.getByText(
+          "The directory is on, so End employment, Export and Erase are on each person's profile."
+        )
+      ).toBeInTheDocument();
+    });
+  });
+
+  describe("people no link holds, with the directory off", () => {
+    const accountless = (overrides: Partial<EmploymentListItem> = {}) =>
+      person({
+        id: "emp-petra",
+        userId: null,
+        email: "petra@example.test",
+        noLink: true,
+        user: { id: "emp-petra", name: "Petra Nová", initials: "PN", avatarColor: "#111" },
+        ...overrides,
+      });
+    const removed = person({
+      id: "emp-ivan",
+      userId: "user-ivan",
+      noLink: true,
+      user: { id: "user-ivan", name: "Ivan Removed", initials: "IR", avatarColor: "#222" },
+    });
+
+    it("marks a person without an account and offers End, Export and Erase", () => {
+      employments = [
+        accountless(),
+        accountless({
+          id: "emp-eva",
+          type: "external",
+          user: { id: "emp-eva", name: "Eva External", initials: "EE", avatarColor: "#333" },
+        }),
+      ];
+      renderWithClient(<PeopleCard organizationId="org-1" />);
+
+      const [petra, eva] = within(screen.getByRole("list", { name: "Open" })).getAllByRole(
+        "listitem"
+      );
+      expect(within(eva!).getByTestId("external-worker")).toBeInTheDocument();
+      expect(within(petra!).getByTestId("no-account")).toHaveTextContent("No account");
+      expect(within(petra!).getByRole("button", { name: "End employment" })).toBeInTheDocument();
+      expect(
+        within(petra!).getByRole("button", { name: "Export Petra Nová's data" })
+      ).toBeInTheDocument();
+      expect(
+        within(petra!).getByRole("button", { name: "Erase Petra Nová's records" })
+      ).toBeInTheDocument();
+      expect(
+        screen.getByText("People in no group stay employed until you end them.")
+      ).toBeInTheDocument();
+    });
+
+    it("offers End on an account holder in no group, but not Erase", () => {
+      employments = [person(), removed];
+      renderWithClient(<PeopleCard organizationId="org-1" />);
+
+      const [milo, ivan] = within(screen.getByRole("list", { name: "Open" })).getAllByRole(
+        "listitem"
+      );
+      expect(within(ivan!).getByText("Ivan Removed")).toBeInTheDocument();
+      expect(within(ivan!).getByRole("button", { name: "End employment" })).toBeInTheDocument();
+      expect(within(ivan!).queryByRole("button", { name: /^Erase/ })).toBeNull();
+      expect(within(ivan!).queryByTestId("no-account")).toBeNull();
+      expect(within(milo!).queryByRole("button", { name: "End employment" })).toBeNull();
+    });
+
+    it("finds a person without an account's export by their Employment", () => {
+      employments = [accountless()];
+      requestedExports = [
+        exported({ id: "exp-petra", subjectUserId: null, subjectEmploymentId: "emp-petra" }),
+        exported({ subjectUserId: null, subjectEmploymentId: "emp-other", status: "FAILED" }),
+      ];
+      renderWithClient(<PeopleCard organizationId="org-1" />);
+
+      const row = within(screen.getByRole("list", { name: "Open" })).getByRole("listitem");
+      expect(within(row).getByText("Preparing…")).toBeInTheDocument();
     });
   });
 

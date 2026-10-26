@@ -9,8 +9,13 @@ import { phoneFormFields, phoneFromForm } from "@/lib/directory/phone";
 /** The edit page's fields as text, `""` meaning empty. */
 export type ProfileFormValues = {
   name: string;
+  /** Editable only on an open record without an account. */
+  signInEmail: string;
   jobTitle: string;
   reportsTo: string;
+  /** Entry ids, `""` for none. */
+  department: string;
+  location: string;
   workEmail: string;
   /** ISO alpha-2 of the phone picker, `""` for none. */
   workPhoneCountry: string;
@@ -24,7 +29,12 @@ export type ProfileFormValues = {
   workingTime: string;
 };
 
-const CARD_FIELDS = { jobTitle: "jobTitle", reportsTo: "reportsToEmploymentId" } as const;
+const CARD_FIELDS = {
+  jobTitle: "jobTitle",
+  reportsTo: "reportsToEmploymentId",
+  department: "departmentId",
+  location: "locationId",
+} as const;
 const JOB_FIELDS = [
   "legalName",
   "employeeNumber",
@@ -44,8 +54,11 @@ export function profileFormValues(profile: DirectoryProfile): ProfileFormValues 
   );
   return {
     name: profile.name,
+    signInEmail: profile.account?.signInEmail ?? "",
     jobTitle: card?.jobTitle ?? "",
     reportsTo: card?.reportsTo?.employmentId ?? "",
+    department: card?.department?.id ?? "",
+    location: card?.location?.id ?? "",
     workEmail: workContact?.workEmail ?? "",
     workPhoneCountry: phone.country,
     workPhoneNumber: phone.number,
@@ -79,7 +92,7 @@ export const workPhoneInvalid = (values: ProfileFormValues) =>
 export function buildProfilePatch(
   before: ProfileFormValues,
   after: ProfileFormValues,
-  can: { name: boolean; card: boolean; workContact: boolean; job: boolean }
+  can: { name: boolean; email?: boolean; card: boolean; workContact: boolean; job: boolean }
 ): DirectoryProfilePatch {
   const card: NonNullable<DirectoryProfilePatch["card"]> = {};
   const workContact: NonNullable<DirectoryProfilePatch["workContact"]> = {};
@@ -87,6 +100,10 @@ export function buildProfilePatch(
 
   const name = valueOf(after.name);
   if (can.name && name !== null && name !== valueOf(before.name)) card.name = name;
+  if (can.email) {
+    const email = valueOf(after.signInEmail)?.toLowerCase() ?? null;
+    if ((valueOf(before.signInEmail)?.toLowerCase() ?? null) !== email) card.email = email;
+  }
   if (can.card) {
     for (const [field, key] of Object.entries(CARD_FIELDS) as [
       keyof typeof CARD_FIELDS,

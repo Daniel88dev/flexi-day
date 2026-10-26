@@ -11,6 +11,7 @@ import { DirectoryList } from "@/components/directory/directory-list";
 import type { DirectoryOrganization } from "@/lib/api/directory";
 import { useDirectoryOrganizations } from "@/lib/api/queries";
 import { directoryHome } from "@/lib/directory/directory-access";
+import { organizationHref } from "@/lib/directory/routes";
 import { useTranslation } from "@/lib/i18n/use-translation";
 
 /**
@@ -88,7 +89,7 @@ function DirectoryOff({ organization }: { organization: DirectoryOrganization })
           : t.directory.offAdmin(organization.name)}
       </p>
       <Button asChild variant="outline">
-        <Link href={`/organization?organizationId=${organization.organizationId}`}>
+        <Link href={organizationHref(organization.organizationId)}>
           {t.directory.toOrganization}
         </Link>
       </Button>
