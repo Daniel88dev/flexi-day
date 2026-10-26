@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { Building2, HeartPulse, ShieldCheck, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -27,11 +28,20 @@ import { cn } from "@/lib/utils";
 export function OrganizationScreen() {
   const { t } = useTranslation();
   const organizationsQuery = useOrganizations();
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const params = useSearchParams();
+  const linkedId = params.get("organizationId");
+  const focusEmploymentId = params.get("employmentId");
+  // A pick belongs to the link it was made under, so following a new link wins over it.
+  const [selected, setSelected] = useState<{ id: string; linkedId: string | null } | null>(null);
+  const selectedId = selected?.linkedId === linkedId ? selected.id : null;
+  const setSelectedId = (id: string) => setSelected({ id, linkedId });
 
   const organizations = organizationsQuery.data ?? [];
+  const linked = organizations.some((organization) => organization.id === linkedId)
+    ? linkedId
+    : null;
   // Owned organizations sort first, so the default is the viewer's own.
-  const activeId = selectedId ?? organizations[0]?.id ?? null;
+  const activeId = selectedId ?? linked ?? organizations[0]?.id ?? null;
   const detailQuery = useOrganization(activeId);
 
   if (organizationsQuery.isLoading) {
@@ -106,6 +116,7 @@ export function OrganizationScreen() {
           key={activeId}
           detail={detailQuery.data}
           organizationId={activeId}
+          focusEmploymentId={activeId === linked ? focusEmploymentId : null}
         />
       )}
     </div>
@@ -115,9 +126,12 @@ export function OrganizationScreen() {
 function OrganizationDetailView({
   detail,
   organizationId,
+  focusEmploymentId,
 }: {
   detail: OrganizationDetail;
   organizationId: string | null;
+  /** The People card row a notification links to. */
+  focusEmploymentId: string | null;
 }) {
   return (
     <div className="space-y-4">
@@ -127,7 +141,7 @@ function OrganizationDetailView({
         <SickDayBenefitCard detail={detail} organizationId={organizationId} />
       </div>
       <AttendanceCard detail={detail} organizationId={organizationId} />
-      <PeopleCard organizationId={organizationId} />
+      <PeopleCard organizationId={organizationId} focusEmploymentId={focusEmploymentId} />
       <GroupsCard detail={detail} />
       <AdminsCard detail={detail} organizationId={organizationId} />
     </div>

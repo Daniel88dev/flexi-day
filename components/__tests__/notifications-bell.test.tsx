@@ -83,6 +83,37 @@ describe("NotificationsBell", () => {
     );
   });
 
+  it("links an account deleted notice to its People card row or group member list", async () => {
+    notifications = [
+      notification({
+        id: "n-admin",
+        type: "account_deleted",
+        title: "Jana Nováková deleted their account",
+        body: "Their employment in Acme is still open.",
+        href: "/organization/?organizationId=org-1&employmentId=emp-1",
+      }),
+      notification({
+        id: "n-manager",
+        type: "account_deleted",
+        title: "Petr Novák deleted their account",
+        body: "Their employment in Acme is still open.",
+        href: "/groups/detail/?groupId=g-1&tab=members",
+      }),
+    ];
+    renderWithClient(<NotificationsBell />);
+
+    await userEvent.click(screen.getByRole("button", { name: /Notifications/i }));
+
+    expect(screen.getByRole("link", { name: /Jana Nováková deleted/ })).toHaveAttribute(
+      "href",
+      "/organization?organizationId=org-1&employmentId=emp-1"
+    );
+    expect(screen.getByRole("link", { name: /Petr Novák deleted/ })).toHaveAttribute(
+      "href",
+      "/groups/detail?groupId=g-1&tab=members"
+    );
+  });
+
   it("removes a single notification without following it", async () => {
     notifications = [notification()];
     renderWithClient(<NotificationsBell />);

@@ -109,6 +109,30 @@ describe("PeopleCard", () => {
     vi.useRealTimers();
   });
 
+  it("marks and scrolls to the row a notification links to", () => {
+    const scrollIntoView = vi.fn();
+    Element.prototype.scrollIntoView = scrollIntoView;
+    employments = [
+      person(),
+      person({
+        id: "emp-2",
+        userId: "user-2",
+        accountDeleted: true,
+        accountDeletedAt: "2026-10-20T10:00:00Z",
+        user: { id: "user-2", name: "Jana Nováková", initials: "JN", avatarColor: "hsl(1 1% 1%)" },
+      }),
+    ];
+
+    renderWithClient(<PeopleCard organizationId="org-1" focusEmploymentId="emp-2" />);
+
+    const rows = within(screen.getByRole("list", { name: "Open" })).getAllByRole("listitem");
+    expect(rows[1]).toHaveAttribute("aria-current", "true");
+    expect(rows[1]).toHaveTextContent("Jana Nováková");
+    expect(rows[0]).not.toHaveAttribute("aria-current");
+    expect(scrollIntoView).toHaveBeenCalledTimes(1);
+    expect(scrollIntoView.mock.contexts[0]).toBe(rows[1]);
+  });
+
   it("lists the roster with the organization's figure standing in", () => {
     renderWithClient(<PeopleCard organizationId="org-1" />);
 
