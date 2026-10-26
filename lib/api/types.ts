@@ -562,8 +562,12 @@ export type InviteStatus = "open" | "used" | "expired" | "revoked";
 
 /** What the invite link's holder sees before joining. Public, needs no session. */
 export type InvitePreview = {
-  groupId: UUID;
-  groupName: string;
+  /** Null on a directory invite that names no group. */
+  groupId: UUID | null;
+  groupName: string | null;
+  organizationName: string;
+  /** The name the organization holds for the person the invite claims; fills the sign-up form. */
+  personName: string | null;
   inviterName: string | null;
   invitedEmail: string;
   status: InviteStatus;

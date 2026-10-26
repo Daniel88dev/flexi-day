@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { EraseDialog } from "@/components/organization/erase-dialog";
 import { PersonExportAction } from "@/components/person-export-action";
+import { InviteAction } from "@/components/directory/invite-action";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -26,12 +27,15 @@ import {
 } from "@/lib/api/queries";
 import { useTranslation } from "@/lib/i18n/use-translation";
 
-/** End employment, Export and Erase in the profile header, each only when `actions` allows it. */
+/** Send invite, End employment, Export and Erase in the profile header, each only when `actions` allows it. */
 export function ProfileActions({ profile }: { profile: DirectoryProfile }) {
   const actions = profile.actions;
-  if (!actions || (!actions.end && !actions.export && !actions.erase)) return null;
+  if (!actions || (!actions.invite && !actions.end && !actions.export && !actions.erase)) {
+    return null;
+  }
   return (
     <>
+      {actions.invite ? <InviteAction profile={profile} /> : null}
       {actions.end ? <EndAction profile={profile} /> : null}
       {actions.export ? <ExportAction profile={profile} /> : null}
       {actions.erase ? <EraseAction profile={profile} /> : null}

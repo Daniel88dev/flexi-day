@@ -42,6 +42,7 @@ describe("profileFormValues", () => {
   it("returns the stored values as form strings, with the start date left empty", () => {
     expect(profileFormValues(profile())).toEqual({
       name: "Ada Noaccount",
+      signInEmail: "",
       jobTitle: "Agent",
       reportsTo: "emp-boss",
       department: "d-sales",
@@ -91,6 +92,28 @@ describe("buildProfilePatch", () => {
       buildProfilePatch(before, { ...before, name: "Ada Lovelace" }, { ...can, name: false })
     ).toEqual({});
     expect(buildProfilePatch(before, { ...before, name: "  " }, can)).toEqual({});
+  });
+
+  it("sends the sign-in email lowercased where it is editable, and an emptied one as null", () => {
+    const before = { ...profileFormValues(profile()), signInEmail: "ada@acme.test" };
+    expect(
+      buildProfilePatch(
+        before,
+        { ...before, signInEmail: " Ada.N@Acme.test " },
+        { ...can, email: true }
+      )
+    ).toEqual({ card: { email: "ada.n@acme.test" } });
+    expect(
+      buildProfilePatch(before, { ...before, signInEmail: "" }, { ...can, email: true })
+    ).toEqual({ card: { email: null } });
+    expect(buildProfilePatch(before, { ...before, signInEmail: "x@acme.test" }, can)).toEqual({});
+    expect(
+      buildProfilePatch(
+        before,
+        { ...before, signInEmail: "ADA@acme.test" },
+        { ...can, email: true }
+      )
+    ).toEqual({});
   });
 
   it("sends a picked Department and Location by id, and an emptied one as null", () => {

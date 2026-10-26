@@ -17,6 +17,7 @@ import {
   getProfileHistory,
   updateDirectoryProfile,
   createDirectoryPerson,
+  sendDirectoryInvite,
   checkDirectoryEmail,
   type NewDirectoryPerson,
   type DirectoryProfilePatch,
@@ -1752,6 +1753,15 @@ export function useCreateDirectoryPerson(organizationId: string) {
       );
       qc.invalidateQueries({ queryKey: ["directory"] });
     },
+  });
+}
+
+export function useSendDirectoryInvite(organizationId: string, employmentId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (groupId: string | null) =>
+      sendDirectoryInvite(organizationId, employmentId, groupId),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["directory"] }),
   });
 }
 
