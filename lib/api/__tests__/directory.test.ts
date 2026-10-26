@@ -7,7 +7,12 @@ import {
   acceptDirectoryAgreement,
   enableDirectory,
   getDirectoryProfile,
+  getDirectoryRoles,
+  getPermissionHistory,
+  getPermissionTable,
   getProfileHistory,
+  setDirectoryRoles,
+  updatePermissionCell,
   updateDirectoryProfile,
   getDirectoryState,
   listDirectoryOrganizations,
@@ -73,5 +78,33 @@ describe("directory API", () => {
     apiMock.mockResolvedValue([]);
     await getProfileHistory("org-1", "emp-1");
     expect(apiMock).toHaveBeenCalledWith("/api/directory/org-1/people/emp-1/history");
+  });
+
+  it("reads the Permission table, its history and the Directory roles", async () => {
+    apiMock.mockResolvedValue({});
+    await getPermissionTable("org 1");
+    await getPermissionHistory("org-1");
+    await getDirectoryRoles("org-1");
+    expect(apiMock.mock.calls.map(([path]) => path)).toEqual([
+      "/api/directory/org%201/permissions",
+      "/api/directory/org-1/permissions/history",
+      "/api/directory/org-1/roles",
+    ]);
+  });
+
+  it("changes one cell with a PATCH and sets a person's roles with a PUT", async () => {
+    apiMock.mockResolvedValue({});
+    await updatePermissionCell("org-1", { row: "JOB", audience: "HR", value: "READ" });
+    await setDirectoryRoles("org-1", "emp/1", ["HR", "LEADERSHIP"]);
+    expect(apiMock.mock.calls).toEqual([
+      [
+        "/api/directory/org-1/permissions",
+        { method: "PATCH", body: { row: "JOB", audience: "HR", value: "READ" } },
+      ],
+      [
+        "/api/directory/org-1/roles/emp%2F1",
+        { method: "PUT", body: { roles: ["HR", "LEADERSHIP"] } },
+      ],
+    ]);
   });
 });

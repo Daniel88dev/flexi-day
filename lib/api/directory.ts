@@ -87,6 +87,8 @@ export type DirectoryPeople = {
   people: DirectoryPerson[];
   /** The viewer may open the Former list: the owner, org admins and HR. */
   formerList: boolean;
+  /** The viewer may open Directory settings: the owner, org admins and HR. */
+  settings: boolean;
 };
 
 export type DirectorySectionLevel = "READ" | "WRITE";
@@ -144,7 +146,7 @@ export type DirectoryProfile = DirectoryPerson & {
   account?: {
     status: DirectoryAccountStatus;
     signInEmail: string | null;
-    directoryRoles: ("HR" | "LEADERSHIP")[];
+    directoryRoles: DirectoryRoleName[];
   };
 };
 
@@ -230,5 +232,107 @@ export function getProfileHistory(
 ): Promise<ProfileHistoryEntry[]> {
   return api<ProfileHistoryEntry[]>(
     directoryPath(organizationId, `people/${encodeURIComponent(employmentId)}/history`)
+  );
+}
+
+export type DirectoryRoleName = "HR" | "LEADERSHIP";
+export const DIRECTORY_ROLE_NAMES: DirectoryRoleName[] = ["HR", "LEADERSHIP"];
+
+export type PermissionRow =
+  | ProfileHistorySection
+  | "CREATE_ACCOUNTLESS_PERSON"
+  | "SEND_DIRECTORY_INVITE"
+  | "CHANGE_WORKER_TYPE"
+  | "END_EMPLOYMENT"
+  | "MANAGE_DEPARTMENTS_AND_LOCATIONS";
+
+export type PermissionValue = "NONE" | "READ" | "WRITE" | "ALLOWED" | "NO";
+
+export type PermissionTableCell = {
+  row: PermissionRow;
+  audience: DirectoryAudience;
+  value: PermissionValue;
+  /** The owner can't change it. */
+  fixed: boolean;
+  /** The values the owner may set. */
+  options: PermissionValue[];
+};
+
+export type PermissionTable = {
+  /** Only the owner edits the table and assigns roles. */
+  editable: boolean;
+  /** The plan passes the directory gate; while it doesn't, cells may only narrow. */
+  writable: boolean;
+  cells: PermissionTableCell[];
+};
+
+export type DirectoryRoles = {
+  editable: boolean;
+  writable: boolean;
+  /** Open Employments with a live account, the only ones that may hold a role. */
+  people: { employmentId: string; name: string; roles: DirectoryRoleName[] }[];
+};
+
+export type RoleChangeReason = "OWNER" | "EMPLOYMENT_ENDED" | "ACCOUNT_DELETED";
+
+export type PermissionHistoryEntry =
+  | {
+      kind: "CELL";
+      id: string;
+      at: string;
+      actorName: string | null;
+      row: PermissionRow;
+      audience: DirectoryAudience;
+      before: PermissionValue | null;
+      after: PermissionValue;
+    }
+  | {
+      kind: "ROLE";
+      id: string;
+      at: string;
+      actorName: string | null;
+      role: DirectoryRoleName;
+      employmentId: string | null;
+      personName: string | null;
+      before: boolean;
+      after: boolean;
+      reason: RoleChangeReason;
+    };
+
+/** Owner, org admins and HR. */
+export function getPermissionTable(organizationId: string): Promise<PermissionTable> {
+  return api<PermissionTable>(directoryPath(organizationId, "permissions"));
+}
+
+/** Owner only. */
+export function updatePermissionCell(
+  organizationId: string,
+  change: { row: PermissionRow; audience: DirectoryAudience; value: PermissionValue }
+): Promise<PermissionTable> {
+  return api<PermissionTable>(directoryPath(organizationId, "permissions"), {
+    method: "PATCH",
+    body: change,
+  });
+}
+
+/** Owner, org admins and HR. */
+export function getPermissionHistory(organizationId: string): Promise<PermissionHistoryEntry[]> {
+  return api<PermissionHistoryEntry[]>(directoryPath(organizationId, "permissions/history"));
+}
+
+/** Owner, org admins and HR. */
+export function getDirectoryRoles(organizationId: string): Promise<DirectoryRoles> {
+  return api<DirectoryRoles>(directoryPath(organizationId, "roles"));
+}
+
+/** Owner only; `roles` is the whole set the person holds afterwards. */
+export function setDirectoryRoles(
+  organizationId: string,
+  employmentId: string,
+  roles: DirectoryRoleName[]
+): Promise<DirectoryRoles> {
+  return api<DirectoryRoles>(
+    directoryPath(organizationId, `roles/${encodeURIComponent(employmentId)}`),
+    { method: "PUT", body: { roles } }
   );
 }

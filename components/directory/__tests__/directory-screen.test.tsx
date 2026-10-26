@@ -12,12 +12,16 @@ import { DIRECTORY_VIEW_KEY } from "@/lib/directory/directory-view";
 import { DirectoryScreen } from "../directory-screen";
 
 let organizations: DirectoryOrganization[] = [];
-let people: DirectoryPeople = { people: [], formerList: false };
+let people: DirectoryPeople = { people: [], formerList: false, settings: false };
 let former: FormerDirectoryPerson[] = [];
 let search = new URLSearchParams();
 
 vi.mock("next/navigation", () => ({
   useSearchParams: () => search,
+}));
+
+vi.mock("@/components/directory/directory-settings", () => ({
+  DirectorySettings: () => <div data-testid="directory-settings" />,
 }));
 
 vi.mock("@/lib/api/queries", () => ({
@@ -74,6 +78,7 @@ describe("DirectoryScreen", () => {
         person("Jana Svobodová", { jobTitle: "Účetní" }),
       ],
       formerList: false,
+      settings: false,
     };
     former = [];
   });
@@ -167,6 +172,22 @@ describe("DirectoryScreen", () => {
       "Petra Early",
       "Rita Late",
     ]);
+  });
+
+  it("opens Directory settings for the viewers the list allows, without the search row", async () => {
+    const user = userEvent.setup();
+    people = { ...people, formerList: true, settings: true };
+    renderWithClient(<DirectoryScreen />);
+
+    await user.click(screen.getByRole("tab", { name: "Directory settings" }));
+
+    expect(screen.getByTestId("directory-settings")).toBeInTheDocument();
+    expect(screen.queryByRole("searchbox")).not.toBeInTheDocument();
+  });
+
+  it("offers no Directory settings tab to a member", () => {
+    renderWithClient(<DirectoryScreen />);
+    expect(screen.queryByRole("tab", { name: "Directory settings" })).not.toBeInTheDocument();
   });
 
   it("shows a lapsed organization's banner, with See plans for an admin", () => {

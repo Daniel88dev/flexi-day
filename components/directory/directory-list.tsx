@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { LayoutGrid, Search, Table2 } from "lucide-react";
+import { LayoutGrid, Search, Settings, Table2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -18,6 +18,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DirectoryAgreementBanner } from "@/components/directory/directory-agreement-banner";
 import { DirectoryLapsedBanner } from "@/components/directory/directory-lapsed-banner";
 import { DirectoryMarkers } from "@/components/directory/directory-markers";
+import { DirectorySettings } from "@/components/directory/directory-settings";
 import { PersonAvatar } from "@/components/directory/person-avatar";
 import type {
   DirectoryOrganization,
@@ -46,7 +47,13 @@ export function DirectoryList({
   const [view, setView] = useDirectoryView();
   const people = useDirectoryPeople(organization.organizationId);
   const formerList = people.data?.formerList ?? false;
+  const settings = people.data?.settings ?? false;
   const former = useFormerDirectoryPeople(organization.organizationId, formerList);
+  const [chosenTab, setChosenTab] = useState("people");
+  const tab =
+    (chosenTab === "former" && !formerList) || (chosenTab === "settings" && !settings)
+      ? "people"
+      : chosenTab;
 
   const peopleTab = (
     <PeopleView
@@ -90,48 +97,56 @@ export function DirectoryList({
       ) : null}
       <DirectoryLapsedBanner organization={organization} />
 
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="relative min-w-56 flex-1 sm:max-w-sm">
-          <Search
-            className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2"
-            aria-hidden
-          />
-          <Input
-            type="search"
-            aria-label={t.directory.searchLabel}
-            placeholder={t.directory.searchPlaceholder}
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            className="pl-9"
-          />
+      {tab === "settings" ? null : (
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="relative min-w-56 flex-1 sm:max-w-sm">
+            <Search
+              className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2"
+              aria-hidden
+            />
+            <Input
+              type="search"
+              aria-label={t.directory.searchLabel}
+              placeholder={t.directory.searchPlaceholder}
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              className="pl-9"
+            />
+          </div>
+          <div role="group" aria-label={t.directory.viewLabel} className="flex gap-1">
+            <Button
+              size="sm"
+              variant={view === "cards" ? "default" : "outline"}
+              aria-pressed={view === "cards"}
+              onClick={() => setView("cards")}
+            >
+              <LayoutGrid className="h-4 w-4" aria-hidden />
+              {t.directory.cards}
+            </Button>
+            <Button
+              size="sm"
+              variant={view === "table" ? "default" : "outline"}
+              aria-pressed={view === "table"}
+              onClick={() => setView("table")}
+            >
+              <Table2 className="h-4 w-4" aria-hidden />
+              {t.directory.table}
+            </Button>
+          </div>
         </div>
-        <div role="group" aria-label={t.directory.viewLabel} className="flex gap-1">
-          <Button
-            size="sm"
-            variant={view === "cards" ? "default" : "outline"}
-            aria-pressed={view === "cards"}
-            onClick={() => setView("cards")}
-          >
-            <LayoutGrid className="h-4 w-4" aria-hidden />
-            {t.directory.cards}
-          </Button>
-          <Button
-            size="sm"
-            variant={view === "table" ? "default" : "outline"}
-            aria-pressed={view === "table"}
-            onClick={() => setView("table")}
-          >
-            <Table2 className="h-4 w-4" aria-hidden />
-            {t.directory.table}
-          </Button>
-        </div>
-      </div>
+      )}
 
-      {formerList ? (
-        <Tabs defaultValue="people">
+      {formerList || settings ? (
+        <Tabs value={tab} onValueChange={setChosenTab}>
           <TabsList>
             <TabsTrigger value="people">{t.directory.people}</TabsTrigger>
-            <TabsTrigger value="former">{t.directory.former}</TabsTrigger>
+            {formerList ? <TabsTrigger value="former">{t.directory.former}</TabsTrigger> : null}
+            {settings ? (
+              <TabsTrigger value="settings">
+                <Settings className="h-4 w-4" aria-hidden />
+                {t.directory.settings.tab}
+              </TabsTrigger>
+            ) : null}
           </TabsList>
           <TabsContent value="people" className="pt-4">
             {peopleTab}
@@ -145,6 +160,11 @@ export function DirectoryList({
               query={query}
             />
           </TabsContent>
+          {settings ? (
+            <TabsContent value="settings" className="pt-4">
+              <DirectorySettings organization={organization} />
+            </TabsContent>
+          ) : null}
         </Tabs>
       ) : (
         peopleTab
