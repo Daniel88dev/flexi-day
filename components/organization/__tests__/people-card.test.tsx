@@ -14,6 +14,7 @@ let employmentsPending: boolean;
 let employmentsError: Error | null;
 const updateRequired = vi.fn();
 const endEmployment = vi.fn();
+const eraseEmployment = vi.fn();
 let requestedExports: PersonExport[] | undefined;
 const requestExport = vi.fn();
 const signDownload = vi.fn();
@@ -36,6 +37,7 @@ vi.mock("@/lib/api/queries", () => ({
     isPending: false,
   }),
   useEndEmployment: () => ({ mutateAsync: endEmployment, isPending: false }),
+  useEraseEmployment: () => ({ mutateAsync: eraseEmployment, isPending: false }),
   useRequestedExports: () => ({ data: requestedExports }),
   useRequestPersonExport: () => ({
     mutateAsync: requestExport,
@@ -99,6 +101,8 @@ describe("PeopleCard", () => {
     updateRequired.mockResolvedValue(person({ requiredMinutesPerDay: 360 }));
     endEmployment.mockReset();
     endEmployment.mockResolvedValue({ ...person(), ended: true, cancelledBookings: 1 });
+    eraseEmployment.mockReset();
+    eraseEmployment.mockResolvedValue(undefined);
     requestedExports = [];
     requestExport.mockReset();
     requestExport.mockResolvedValue(exported());
@@ -318,6 +322,116 @@ describe("PeopleCard", () => {
         await within(dialog).findByText(
           "This person manages a group. Give the group another manager first."
         )
+      ).toBeInTheDocument();
+    });
+  });
+
+  describe("Erase", () => {
+    const deleted = (overrides: Partial<EmploymentListItem> = {}) =>
+      person({
+        id: "emp-del",
+        userId: "user-del",
+        accountDeleted: true,
+        accountDeletedAt: "2026-10-20T08:00:00Z",
+        user: {
+          id: "user-del",
+          name: "Jana Nováková",
+          initials: "JN",
+          avatarColor: "hsl(9 9% 9%)",
+        },
+        ...overrides,
+      });
+
+    const openDialog = async () => {
+      await userEvent.click(screen.getByRole("button", { name: "Erase Jana Nováková's records" }));
+      return screen.getByRole("dialog");
+    };
+
+    it("is offered on a Deleted account's row, open or former, and never on a live one", () => {
+      employments = [
+        person(),
+        deleted(),
+        deleted({
+          id: "emp-del-2",
+          userId: "user-del-2",
+          ended: true,
+          endedAt: "2026-10-21T08:00:00Z",
+          user: { id: "user-del-2", name: "Ota Old", initials: "OO", avatarColor: "hsl(1 1% 1%)" },
+        }),
+      ];
+      renderWithClient(<PeopleCard organizationId="org-1" />);
+
+      const [live, gone] = within(screen.getByRole("list", { name: "Open" })).getAllByRole(
+        "listitem"
+      );
+      expect(
+        within(gone!).getByRole("button", { name: "Erase Jana Nováková's records" })
+      ).toBeInTheDocument();
+      expect(within(live!).queryByRole("button", { name: /^Erase/ })).toBeNull();
+      const former = screen.getByRole("list", { name: "Former" });
+      expect(
+        within(former).getByRole("button", { name: "Erase Ota Old's records" })
+      ).toBeInTheDocument();
+    });
+
+    it("says an open Employment ends today first", async () => {
+      employments = [deleted()];
+      renderWithClient(<PeopleCard organizationId="org-1" />);
+
+      const dialog = await openDialog();
+      expect(within(dialog).getByText(/ends today first/)).toBeInTheDocument();
+    });
+
+    it("refuses a name that isn't the person's without asking the server", async () => {
+      employments = [deleted()];
+      renderWithClient(<PeopleCard organizationId="org-1" />);
+
+      const dialog = await openDialog();
+      await userEvent.type(
+        within(dialog).getByLabelText("Type Jana Nováková to confirm"),
+        "Jana Novak"
+      );
+      await userEvent.click(within(dialog).getByRole("button", { name: "Erase for good" }));
+
+      expect(eraseEmployment).not.toHaveBeenCalled();
+      expect(within(dialog).getByText("That isn't the name on this row.")).toBeInTheDocument();
+    });
+
+    it("erases once the typed name matches, whatever its case", async () => {
+      employments = [deleted()];
+      renderWithClient(<PeopleCard organizationId="org-1" />);
+
+      const dialog = await openDialog();
+      await userEvent.type(
+        within(dialog).getByLabelText("Type Jana Nováková to confirm"),
+        " jana  nováková"
+      );
+      await userEvent.click(within(dialog).getByRole("button", { name: "Erase for good" }));
+
+      expect(eraseEmployment).toHaveBeenCalledWith({
+        employmentId: "emp-del",
+        confirmName: " jana  nováková",
+      });
+    });
+
+    it("says so when the server finds the name wrong", async () => {
+      eraseEmployment.mockRejectedValue(
+        new ApiError(422, "The typed name does not match the person", undefined, [
+          { message: "The typed name does not match", context: { code: "NAME_MISMATCH" } },
+        ])
+      );
+      employments = [deleted()];
+      renderWithClient(<PeopleCard organizationId="org-1" />);
+
+      const dialog = await openDialog();
+      await userEvent.type(
+        within(dialog).getByLabelText("Type Jana Nováková to confirm"),
+        "Jana Nováková"
+      );
+      await userEvent.click(within(dialog).getByRole("button", { name: "Erase for good" }));
+
+      expect(
+        await within(dialog).findByText("That isn't the name on this row.")
       ).toBeInTheDocument();
     });
   });
