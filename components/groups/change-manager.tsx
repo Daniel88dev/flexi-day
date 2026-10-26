@@ -13,7 +13,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { errorCode } from "@/lib/api/client";
+import { errorCopy } from "@/lib/api/client";
 import { useGroupUsers, useUpdateGroupManager } from "@/lib/api/queries";
 import type { GroupDetail } from "@/lib/api/types";
 import { useSession } from "@/lib/auth-client";
@@ -131,14 +131,13 @@ function ChangeManagerDialog({ group }: { group: GroupDetail }) {
 }
 
 function refusal(err: unknown, c: Dictionary["groupDetail"]["changeManager"]): string {
-  switch (errorCode(err)) {
-    case "NOT_A_MEMBER":
-      return c.errors.notAMember;
-    case "ACCOUNT_DELETED":
-      return c.errors.accountDeleted;
-    case "CANNOT_NAME_SELF":
-      return c.errors.self;
-    default:
-      return c.errors.generic;
-  }
+  return errorCopy(
+    err,
+    {
+      NOT_A_MEMBER: c.errors.notAMember,
+      ACCOUNT_DELETED: c.errors.accountDeleted,
+      CANNOT_NAME_SELF: c.errors.self,
+    },
+    c.errors.generic
+  );
 }

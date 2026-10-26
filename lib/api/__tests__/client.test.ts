@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { ApiError, api, errorCode } from "../client";
+import { ApiError, api, errorCode, errorCopy } from "../client";
 
 function mockFetchOnce(status: number, body: unknown) {
   const text = typeof body === "string" ? body : JSON.stringify(body);
@@ -76,5 +76,24 @@ describe("errorCode", () => {
 
   it("returns undefined for an error that is not from the API", () => {
     expect(errorCode(new TypeError("Failed to fetch"))).toBeUndefined();
+  });
+});
+
+describe("errorCopy", () => {
+  const refusal = (code?: string) =>
+    new ApiError(422, "Server wording", undefined, [
+      { message: "Server wording", context: code ? { code } : {} },
+    ]);
+
+  it("gives the copy for a known code", () => {
+    expect(errorCopy(refusal("NAME_MISMATCH"), { NAME_MISMATCH: "Wrong name" }, "Failed")).toBe(
+      "Wrong name"
+    );
+  });
+
+  it("falls back for an unknown code, no code or a network error, never the server's message", () => {
+    expect(errorCopy(refusal("OTHER"), { NAME_MISMATCH: "Wrong name" }, "Failed")).toBe("Failed");
+    expect(errorCopy(refusal(), {}, "Failed")).toBe("Failed");
+    expect(errorCopy(new TypeError("Failed to fetch"), {}, "Failed")).toBe("Failed");
   });
 });

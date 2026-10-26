@@ -7,17 +7,23 @@ const listRequestedMock = vi.fn();
 const requestMock = vi.fn();
 const getOrganizationMock = vi.fn();
 const requestOrganizationMock = vi.fn();
+const listOwnMock = vi.fn();
+const requestOwnMock = vi.fn();
 vi.mock("../person-export", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../person-export")>()),
   listRequestedExports: (...args: unknown[]) => listRequestedMock(...args),
   requestPersonExport: (...args: unknown[]) => requestMock(...args),
   getOrganizationExport: (...args: unknown[]) => getOrganizationMock(...args),
   requestOrganizationExport: (...args: unknown[]) => requestOrganizationMock(...args),
+  listOwnExportOrganizations: (...args: unknown[]) => listOwnMock(...args),
+  requestOwnPersonExport: (...args: unknown[]) => requestOwnMock(...args),
 }));
 
 import {
   useOrganizationExport,
+  useOwnExportOrganizations,
   useRequestOrganizationExport,
+  useRequestOwnPersonExport,
   useRequestPersonExport,
   useRequestedExports,
 } from "../queries";
@@ -67,6 +73,47 @@ describe("useRequestPersonExport", () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(requestMock).toHaveBeenCalledWith("emp-1");
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: ["person-exports"] });
+  });
+});
+
+describe("useOwnExportOrganizations", () => {
+  it("asks again while one of the caller's own exports is preparing, and stops once it is ready", async () => {
+    const organization = (status: "PENDING" | "READY") => ({
+      organizationId: "org-1",
+      organizationName: "Acme",
+      employmentId: "emp-1",
+      startedAt: "2026-01-05T08:00:00Z",
+      endedAt: null,
+      export: entry(status),
+    });
+    listOwnMock
+      .mockResolvedValueOnce([organization("PENDING")])
+      .mockResolvedValue([organization("READY")]);
+    const { result } = renderHook(() => useOwnExportOrganizations(), {
+      wrapper: wrapperFor(newClient()),
+    });
+
+    await waitFor(() => expect(result.current.data?.[0]?.export?.status).toBe("READY"), {
+      timeout: 5000,
+    });
+    expect(listOwnMock).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe("useRequestOwnPersonExport", () => {
+  it("refreshes every export list once the request lands", async () => {
+    requestOwnMock.mockResolvedValue(entry("PENDING"));
+    const client = newClient();
+    const invalidate = vi.spyOn(client, "invalidateQueries");
+    const { result } = renderHook(() => useRequestOwnPersonExport(), {
+      wrapper: wrapperFor(client),
+    });
+
+    result.current.mutate("org-1");
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(requestOwnMock).toHaveBeenCalledWith("org-1");
     expect(invalidate).toHaveBeenCalledWith({ queryKey: ["person-exports"] });
   });
 });

@@ -44,6 +44,20 @@ export const errorCode = (error: unknown): string | undefined => {
   return typeof code === "string" ? code : undefined;
 };
 
+/**
+ * The copy for a refusal: the line `known` holds for its `context.code`, else
+ * `fallback`. Never the server's own message, which is English and meant for
+ * logs.
+ */
+export const errorCopy = (
+  error: unknown,
+  known: Partial<Record<string, string>>,
+  fallback: string
+): string => {
+  const code = errorCode(error);
+  return (code === undefined ? undefined : known[code]) ?? fallback;
+};
+
 type ApiInit = Omit<RequestInit, "body"> & { body?: unknown };
 
 function pickErrors(parsed: unknown): ApiErrorEntry[] {
