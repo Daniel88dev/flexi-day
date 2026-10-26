@@ -10,6 +10,7 @@ import { ReadLogPanel } from "@/components/directory/read-log-panel";
 import { RetentionPanel } from "@/components/directory/retention-panel";
 import { PermissionTableEditor } from "@/components/directory/permission-table-editor";
 import type { DirectoryOrganization } from "@/lib/api/directory";
+import { administers } from "@/lib/directory/directory-access";
 import { useTranslation } from "@/lib/i18n/use-translation";
 
 export type SettingsPanel = "permissions" | "roles" | "general" | "retention" | "lists" | "readLog";
@@ -28,7 +29,7 @@ export function DirectorySettings({
   const copy = t.directory.settings;
   const [panel, setPanel] = useState<Panel>(initialPanel);
   // The Read log is for the owner and org admins; HR reads it only by also being one.
-  const readsLog = organization.role === "OWNER" || organization.role === "ORGANIZATION_ADMIN";
+  const readsLog = administers(organization);
   const panels: [Panel, string][] = [
     ["permissions", copy.permissions],
     ["roles", copy.roles],
@@ -40,7 +41,7 @@ export function DirectorySettings({
 
   return (
     <div className="grid gap-4 lg:grid-cols-[13rem_1fr]">
-      <nav aria-label={copy.sectionsLabel} className="flex gap-1 lg:flex-col">
+      <nav aria-label={copy.sectionsLabel} className="flex flex-wrap gap-1 lg:flex-col">
         {panels.map(([id, label]) => (
           <Button
             key={id}

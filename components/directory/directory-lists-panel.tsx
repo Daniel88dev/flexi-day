@@ -15,6 +15,7 @@ import {
   useUpdateDirectoryListEntry,
 } from "@/lib/api/queries";
 import { countryOptions } from "@/lib/directory/phone";
+import { LapsedNote } from "@/components/directory/directory-lapsed-banner";
 import { useTranslation } from "@/lib/i18n/use-translation";
 
 /** Departments and Locations: add, rename, archive, and delete while unused. */
@@ -92,7 +93,7 @@ function ListCard({ organizationId, kind }: { organizationId: string; kind: Dire
       </CardHeader>
       <CardContent className="space-y-3">
         {list.data?.editable && !list.data.writable ? (
-          <p className="text-sm text-amber-700 dark:text-amber-400">{copy.lapsedNote}</p>
+          <LapsedNote>{copy.lapsedNote}</LapsedNote>
         ) : null}
         {failure ? (
           <p role="alert" className="text-destructive text-sm">

@@ -1,6 +1,6 @@
 import type { Locale } from "@/lib/i18n/config";
 import { api } from "./client";
-import type { DirectoryCountry } from "./directory";
+import { withLanguage, type DirectoryCountry } from "./directory";
 
 export type DirectoryListKind = "departments" | "locations";
 
@@ -30,7 +30,7 @@ export type DirectoryListEntryChange = {
 };
 
 const listPath = (organizationId: string, kind: DirectoryListKind, rest = "", language?: Locale) =>
-  `/api/directory/${encodeURIComponent(organizationId)}/${kind}${rest}${language ? `?language=${language}` : ""}`;
+  withLanguage(`/api/directory/${encodeURIComponent(organizationId)}/${kind}${rest}`, language);
 
 /** Anyone in the directory reads the lists, archived entries included. */
 export function getDirectoryList(

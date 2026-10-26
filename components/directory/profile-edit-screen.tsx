@@ -3,7 +3,7 @@
 import { useMemo, useState, type ChangeEvent, type FormEvent, type ReactNode } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ChevronLeft, Lock } from "lucide-react";
+import { Lock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -12,7 +12,8 @@ import { Label } from "@/components/ui/label";
 import { buttonVariants } from "@/components/ui/button";
 import { DirectoryLapsedBanner } from "@/components/directory/directory-lapsed-banner";
 import { PersonAvatar } from "@/components/directory/person-avatar";
-import { profileHref } from "@/components/directory/directory-list";
+import { EntryOptions } from "@/components/directory/entry-options";
+import { BackLink, ProfileReadFailure } from "@/components/directory/profile-parts";
 import { ApiError, errorCode, errorCopy } from "@/lib/api/client";
 import {
   CONTRACT_TYPES,
@@ -47,16 +48,17 @@ import {
 } from "@/lib/directory/sensitive-form";
 import { useShownSection } from "@/lib/directory/shown-sections";
 import { SensitiveGate } from "@/components/directory/sensitive-section";
-import { entryLabel, pickerEntries } from "@/lib/directory/entries";
 import {
   buildProfilePatch,
   profileFormValues,
   workPhoneInvalid,
   type ProfileFormValues,
 } from "@/lib/directory/profile-form";
+import { formatDate } from "@/lib/directory/format";
+import { isExternalWorker, looksLikeEmail } from "@/lib/directory/person";
+import { profileHref } from "@/lib/directory/routes";
+import { localDayOf } from "@/lib/calendar/month-grid";
 import { useTranslation } from "@/lib/i18n/use-translation";
-
-const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 /**
  * One edit page for the whole profile, with an anchor per Section. A Section
@@ -74,29 +76,12 @@ export function ProfileEditScreen() {
   );
 
   const back = (
-    <p className="text-muted-foreground text-xs">
-      <Link
-        href={profileHref(organizationId, employmentId)}
-        className="hover:text-foreground inline-flex items-center gap-1 hover:underline"
-      >
-        <ChevronLeft className="h-3 w-3" aria-hidden />
-        {profile.data?.name ?? t.directory.profile.back}
-      </Link>
-    </p>
+    <BackLink href={profileHref(organizationId, employmentId)}>
+      {profile.data?.name ?? t.directory.profile.back}
+    </BackLink>
   );
 
-  if (profile.error) {
-    const missing =
-      profile.error instanceof ApiError && [403, 404, 409].includes(profile.error.status);
-    return (
-      <div className="space-y-4">
-        {back}
-        <p className={missing ? "text-muted-foreground text-sm" : "text-destructive text-sm"}>
-          {missing ? t.directory.profile.notFound : t.directory.profile.loadFailed}
-        </p>
-      </div>
-    );
-  }
+  if (profile.error) return <ProfileReadFailure error={profile.error} back={back} />;
   if (!profile.data || !organization) {
     return <p className="text-muted-foreground text-sm">{t.common.loading}</p>;
   }
@@ -129,7 +114,7 @@ function ProfileEditForm({ profile, lapsed }: { profile: DirectoryProfile; lapse
   const nameEditable = cardWrite && !card?.nameFromAccount && !lapsed;
   // Only an open record without an account holds an address of its own; a directory invite goes there.
   const emailWritable = cardWrite && profile.account?.status === "NO_ACCOUNT" && !profile.ended;
-  const external = profile.markers.includes("EXTERNAL_WORKER");
+  const external = isExternalWorker(profile);
   const people = useDirectoryPeople(cardWrite ? profile.organizationId : null).data?.people;
   const departments = useDirectoryList(profile.organizationId, "departments", cardWrite).data;
   const locations = useDirectoryList(profile.organizationId, "locations", cardWrite).data;
@@ -193,7 +178,7 @@ function ProfileEditForm({ profile, lapsed }: { profile: DirectoryProfile; lapse
     if (
       emailWritable &&
       values.signInEmail.trim() !== "" &&
-      !EMAIL.test(values.signInEmail.trim())
+      !looksLikeEmail(values.signInEmail.trim())
     ) {
       setEmailError(true);
       return;
@@ -254,7 +239,7 @@ function ProfileEditForm({ profile, lapsed }: { profile: DirectoryProfile; lapse
   const phoneCountrySelect = (
     id: string,
     label: string,
-    props: ReturnType<typeof contactField>
+    props: { value: string; onChange: (value: string) => void; disabled: boolean }
   ) => (
     <SelectField id={id} label={label} {...props} clearable={false}>
       <option value="">{copy.noPhoneCountry}</option>
@@ -265,7 +250,7 @@ function ProfileEditForm({ profile, lapsed }: { profile: DirectoryProfile; lapse
       ))}
     </SelectField>
   );
-  const today = new Date().toISOString().slice(0, 10);
+  const today = localDayOf(new Date());
 
   const reportsToOptions = (people ?? []).filter(
     (person) => person.employmentId !== profile.employmentId
@@ -273,9 +258,7 @@ function ProfileEditForm({ profile, lapsed }: { profile: DirectoryProfile; lapse
   const reportsToKnown =
     values.reportsTo === "" ||
     reportsToOptions.some((person) => person.employmentId === values.reportsTo);
-  const spellStart = job
-    ? new Date(job.spell.startedAt).toLocaleDateString(t.common.dateLocale)
-    : null;
+  const spellStart = job ? formatDate(job.spell.startedAt, t.common.dateLocale) : null;
 
   const anchors = [
     { id: "record", title: copy.record },
@@ -377,14 +360,10 @@ function ProfileEditForm({ profile, lapsed }: { profile: DirectoryProfile; lapse
               {...field("department", cardWrite)}
             >
               <option value="">{copy.noEntry}</option>
-              {pickerEntries(
-                departments?.entries ?? (card.department ? [card.department] : []),
-                card.department?.id ?? null
-              ).map((entry) => (
-                <option key={entry.id} value={entry.id}>
-                  {entryLabel(entry, t.directory.archivedEntry)}
-                </option>
-              ))}
+              <EntryOptions
+                entries={departments?.entries ?? (card.department ? [card.department] : [])}
+                currentId={card.department?.id}
+              />
             </SelectField>
             <SelectField
               id="profile-location"
@@ -392,14 +371,10 @@ function ProfileEditForm({ profile, lapsed }: { profile: DirectoryProfile; lapse
               {...field("location", cardWrite)}
             >
               <option value="">{copy.noEntry}</option>
-              {pickerEntries(
-                locations?.entries ?? (card.location ? [card.location] : []),
-                card.location?.id ?? null
-              ).map((entry) => (
-                <option key={entry.id} value={entry.id}>
-                  {entryLabel(entry, t.directory.archivedEntry)}
-                </option>
-              ))}
+              <EntryOptions
+                entries={locations?.entries ?? (card.location ? [card.location] : [])}
+                currentId={card.location?.id}
+              />
             </SelectField>
           </div>
         </EditSection>
@@ -435,19 +410,11 @@ function ProfileEditForm({ profile, lapsed }: { profile: DirectoryProfile; lapse
                 </Button>
               ) : null}
             </div>
-            <SelectField
-              id="profile-work-phone-country"
-              label={copy.phoneCountry}
-              {...field("workPhoneCountry", workContactWrite)}
-              clearable={false}
-            >
-              <option value="">{copy.noPhoneCountry}</option>
-              {countries.map((country) => (
-                <option key={country.code} value={country.code}>
-                  {country.label}
-                </option>
-              ))}
-            </SelectField>
+            {phoneCountrySelect(
+              "profile-work-phone-country",
+              copy.phoneCountry,
+              field("workPhoneCountry", workContactWrite)
+            )}
             <TextField
               id="profile-work-phone"
               type="tel"

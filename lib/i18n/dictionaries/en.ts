@@ -1,3 +1,4 @@
+import type { PermissionRow, PermissionValue } from "@/lib/api/directory";
 import { AWAY_RECORD_TYPE, CalendarRecordType, type WireRecordType } from "@/lib/api/types";
 
 const daySpan = (range: string, days: number) =>
@@ -1631,11 +1632,11 @@ export const en = {
           "HR and Leadership roles",
           "the Permission table and its history",
           "retention settings and holds, and your emergency-contact notice text",
-          "Person and Organization exports",
+          "Person exports",
           "every person without an account, current or former",
         ],
         keeps:
-          "People with an account keep their employment, name, email, worker type and dates. The agreement acceptances, the read log and profile history stay. Turning the directory on again starts from the default Permission table.",
+          "People with an account keep their employment, name, email, worker type and dates. The agreement acceptances, the read log and profile history stay, and so do Organization exports until they expire. Turning the directory on again starts from the default Permission table.",
         nameLabel: (organization: string) => `Type ${organization} to confirm`,
         nameMismatch: "That is not the organization's name.",
         confirm: "Delete all directory data",
@@ -2325,14 +2326,14 @@ export const en = {
         CHANGE_WORKER_TYPE: "Change worker type",
         END_EMPLOYMENT: "End an Employment",
         MANAGE_DEPARTMENTS_AND_LOCATIONS: "Manage departments and locations",
-      } as Record<string, string>,
+      } satisfies Record<PermissionRow, string>,
       values: {
         NONE: "None",
         READ: "Read",
         WRITE: "Write",
         ALLOWED: "Allowed",
         NO: "No",
-      } as Record<string, string>,
+      } satisfies Record<PermissionValue, string>,
       loadFailed: "Could not load the permission table",
       saveFailed: "Could not change the cell",
       errors: {

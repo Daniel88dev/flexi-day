@@ -4,7 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { renderWithClient } from "@/lib/test-utils";
 import type { DirectoryProfile, EndPreview } from "@/lib/api/directory";
 import type { PersonExport } from "@/lib/api/person-export";
-import { ProfileActions } from "../profile-actions";
+import { hasProfileActions, ProfileActions } from "../profile-actions";
 
 let preview: { data?: EndPreview; error: unknown; isLoading: boolean };
 const previewCalls: boolean[] = [];
@@ -243,4 +243,20 @@ describe("ProfileActions", () => {
     expect(within(dialog).getByRole("heading")).toHaveTextContent("End Jana Member's engagement");
     expect(within(dialog).getByRole("button", { name: /^end engagement$/i })).toBeInTheDocument();
   });
+});
+
+describe("hasProfileActions", () => {
+  const none = { end: false, export: false, erase: false };
+
+  it("returns false without actions or with every action off", () => {
+    expect(hasProfileActions(profile({ actions: undefined }))).toBe(false);
+    expect(hasProfileActions(profile({ actions: none }))).toBe(false);
+  });
+
+  it.each(["invite", "changeType", "end", "export", "erase"] as const)(
+    "returns true when only %s is allowed",
+    (action) => {
+      expect(hasProfileActions(profile({ actions: { ...none, [action]: true } }))).toBe(true);
+    }
+  );
 });

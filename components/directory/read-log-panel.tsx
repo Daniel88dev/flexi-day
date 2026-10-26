@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import type { ReadLogEntry, ReadLogFilter } from "@/lib/api/directory";
 import { useReadLog } from "@/lib/api/queries";
+import { formatDateTime } from "@/lib/directory/format";
 import { useTranslation } from "@/lib/i18n/use-translation";
 
 /** The Read log, for the owner and org admins: reads of Sensitive sections and every export. */
@@ -18,8 +19,7 @@ export function ReadLogPanel({ organizationId }: { organizationId: string }) {
   const pages = log.data?.pages ?? [];
   const entries = pages.flatMap((page) => page.entries);
   const options = pages[0];
-  const when = (value: string) =>
-    new Date(value).toLocaleString(t.common.dateLocale, { dateStyle: "short", timeStyle: "short" });
+  const when = (value: string) => formatDateTime(value, t.common.dateLocale);
 
   const select = (
     id: string,

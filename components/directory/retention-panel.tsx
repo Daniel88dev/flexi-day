@@ -23,16 +23,8 @@ import {
   useUpdateRetentionPeriod,
 } from "@/lib/api/queries";
 import { isShortening } from "@/lib/directory/retention";
+import { SECTION_WIRE_NAMES } from "@/lib/directory/sections";
 import { useTranslation } from "@/lib/i18n/use-translation";
-
-const SECTIONS: ProfileHistorySection[] = [
-  "CARD",
-  "PHOTO",
-  "WORK_CONTACT",
-  "JOB",
-  "CONTACT",
-  "PERSONAL",
-];
 
 type Change = { section: ProfileHistorySection; period: RetentionPeriod };
 
@@ -102,7 +94,7 @@ function Periods({
           </tr>
         </thead>
         <tbody>
-          {SECTIONS.map((section) => (
+          {SECTION_WIRE_NAMES.map((section) => (
             <tr key={section} className="border-t">
               <th scope="row" className="py-2 pr-4 text-left font-semibold">
                 {sectionNames[section]}

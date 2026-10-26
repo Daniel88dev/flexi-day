@@ -639,6 +639,44 @@ describe("ProfileEditScreen", () => {
       );
     });
 
+    it("offers Clear on the shown Contact fields on a lapsed plan and sends only the cleared one", async () => {
+      const user = userEvent.setup();
+      organization = { ...organization, writable: false };
+      profile = jana({
+        sections: { contact: { level: "WRITE", notice: "x", phoneCountryDefault: cz } },
+      });
+      renderWithClient(<ProfileEditScreen />);
+
+      const region = screen.getByRole("region", { name: /Contact/ });
+      await user.click(within(region).getByRole("button", { name: "Show" }));
+      expect(await within(region).findByLabelText("Private email")).toBeDisabled();
+      expect(
+        within(region).queryByRole("button", { name: /Clear: Emergency contact 1/ })
+      ).not.toBeInTheDocument();
+
+      await user.click(within(region).getByRole("button", { name: "Clear: Private email" }));
+      await user.click(screen.getByRole("button", { name: "Save changes" }));
+
+      expect(mutate).toHaveBeenCalledWith({ contact: { privateEmail: null } }, expect.anything());
+    });
+
+    it("caps the date of birth at the browser's day, not the UTC one", async () => {
+      vi.useFakeTimers({ toFake: ["Date"] });
+      vi.setSystemTime(new Date("2026-10-14T03:00:00.000Z"));
+      showMock.mockResolvedValue({
+        section: "PERSONAL",
+        level: "WRITE",
+        recorded: false,
+        homeAddress: null,
+        dateOfBirth: null,
+      });
+      profile = jana({ self: true, sections: { personal: { level: "WRITE" } } });
+      renderWithClient(<ProfileEditScreen />);
+
+      expect(await screen.findByLabelText("Date of birth")).toHaveAttribute("max", "2026-10-13");
+      vi.useRealTimers();
+    });
+
     it("refuses a half-filled emergency contact before saving", async () => {
       const user = userEvent.setup();
       profile = jana({ self: true, sections: { contact: { level: "WRITE", notice: "x" } } });

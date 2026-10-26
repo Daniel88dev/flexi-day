@@ -3,7 +3,7 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { ChevronLeft, Pencil } from "lucide-react";
+import { Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -11,16 +11,25 @@ import { CopyPreviousSpellBanner } from "@/components/directory/copy-previous-sp
 import { DirectoryLapsedBanner } from "@/components/directory/directory-lapsed-banner";
 import { DirectoryMarkers } from "@/components/directory/directory-markers";
 import { PersonAvatar } from "@/components/directory/person-avatar";
-import { ProfileActions } from "@/components/directory/profile-actions";
+import { hasProfileActions, ProfileActions } from "@/components/directory/profile-actions";
 import { ProfileHistorySheet } from "@/components/directory/profile-history-sheet";
 import { ProfileRetention } from "@/components/directory/profile-retention";
+import {
+  BackLink,
+  EmailLink,
+  Facts,
+  PhoneLink,
+  ProfileReadFailure,
+} from "@/components/directory/profile-parts";
 import { ContactTab, PersonalTab } from "@/components/directory/sensitive-section";
-import { ApiError } from "@/lib/api/client";
 import type { DirectoryProfile } from "@/lib/api/directory";
 import { useDirectoryOrganizations, useDirectoryProfile } from "@/lib/api/queries";
 import { entryLabel } from "@/lib/directory/entries";
+import { formatDate, formatDay } from "@/lib/directory/format";
+import { isExternalWorker } from "@/lib/directory/person";
+import { directoryHref, profileEditHref, profileHref } from "@/lib/directory/routes";
+import { writesAnySection } from "@/lib/directory/sections";
 import { useTranslation } from "@/lib/i18n/use-translation";
-import { profileHref } from "@/components/directory/directory-list";
 
 /**
  * Layout B: a header with the photo, name and the viewer's actions, then tabs.
@@ -37,30 +46,9 @@ export function ProfileScreen() {
     (entry) => entry.organizationId === organizationId
   );
 
-  const back = (
-    <p className="text-muted-foreground text-xs">
-      <Link
-        href={`/directory?organizationId=${encodeURIComponent(organizationId)}`}
-        className="hover:text-foreground inline-flex items-center gap-1 hover:underline"
-      >
-        <ChevronLeft className="h-3 w-3" aria-hidden />
-        {t.directory.profile.back}
-      </Link>
-    </p>
-  );
+  const back = <BackLink href={directoryHref(organizationId)}>{t.directory.profile.back}</BackLink>;
 
-  if (profile.error) {
-    const missing =
-      profile.error instanceof ApiError && [403, 404, 409].includes(profile.error.status);
-    return (
-      <div className="space-y-4">
-        {back}
-        <p className={missing ? "text-muted-foreground text-sm" : "text-destructive text-sm"}>
-          {missing ? t.directory.profile.notFound : t.directory.profile.loadFailed}
-        </p>
-      </div>
-    );
-  }
+  if (profile.error) return <ProfileReadFailure error={profile.error} back={back} />;
   if (!profile.data) {
     return <p className="text-muted-foreground text-sm">{t.common.loading}</p>;
   }
@@ -75,24 +63,6 @@ export function ProfileScreen() {
     </div>
   );
 }
-
-/** The edit page of one profile. */
-export const profileEditHref = (organizationId: string, employmentId: string) =>
-  `/directory/person/edit?organizationId=${encodeURIComponent(organizationId)}&employmentId=${encodeURIComponent(employmentId)}`;
-
-/** The viewer writes a Section the edit page holds. */
-export const canEditProfile = (profile: DirectoryProfile) =>
-  [
-    profile.sections.card,
-    profile.sections.photo,
-    profile.sections.workContact,
-    profile.sections.job,
-    profile.sections.contact,
-    profile.sections.personal,
-  ].some((section) => section?.level === "WRITE");
-
-const hasProfileActions = ({ actions }: DirectoryProfile) =>
-  !!actions && (actions.end || actions.export || actions.erase);
 
 function ProfileHeader({ profile }: { profile: DirectoryProfile }) {
   const { t } = useTranslation();
@@ -110,9 +80,9 @@ function ProfileHeader({ profile }: { profile: DirectoryProfile }) {
           {jobTitle ? <p className="text-muted-foreground text-sm">{jobTitle}</p> : null}
           <DirectoryMarkers markers={profile.markers} />
         </div>
-        {canEditProfile(profile) || profile.canReadHistory || hasProfileActions(profile) ? (
+        {writesAnySection(profile) || profile.canReadHistory || hasProfileActions(profile) ? (
           <div className="flex flex-wrap gap-2">
-            {canEditProfile(profile) ? (
+            {writesAnySection(profile) ? (
               <Button asChild variant="outline" size="sm">
                 <Link href={profileEditHref(profile.organizationId, profile.employmentId)}>
                   <Pencil className="h-4 w-4" aria-hidden />
@@ -138,7 +108,7 @@ function ProfileTabs({ profile }: { profile: DirectoryProfile }) {
 
   return (
     <Tabs defaultValue="overview">
-      <TabsList>
+      <TabsList className="h-auto max-w-full flex-wrap">
         <TabsTrigger value="overview">{copy.overview}</TabsTrigger>
         {sections.job ? <TabsTrigger value="job">{copy.job}</TabsTrigger> : null}
         {sections.contact ? <TabsTrigger value="contact">{copy.contact}</TabsTrigger> : null}
@@ -237,29 +207,21 @@ function WorkContactFacts({
   if (!workEmail && !workPhone) {
     return <p className="text-muted-foreground text-sm">{copy.noWorkContact}</p>;
   }
-  const link = (href: string, text: string) => (
-    <a href={href} className="text-primary hover:underline">
-      {text}
-    </a>
-  );
   return (
     <Facts
       rows={[
-        [copy.workEmail, workEmail ? link(`mailto:${workEmail}`, workEmail) : copy.notSet],
+        [
+          copy.workEmail,
+          workEmail ? <EmailLink key="work-email" email={workEmail} /> : copy.notSet,
+        ],
         [
           copy.workPhone,
-          workPhone ? link(`tel:${workPhone.e164}`, workPhone.display) : copy.notSet,
+          workPhone ? <PhoneLink key="work-phone" phone={workPhone} /> : copy.notSet,
         ],
       ]}
     />
   );
 }
-
-const isExternal = (profile: DirectoryProfile) => profile.markers.includes("EXTERNAL_WORKER");
-
-/** Formats a `YYYY-MM-DD` date as the calendar day it names, whatever the viewer's zone. */
-const formatDay = (value: string, locale: string) =>
-  new Date(`${value}T00:00:00Z`).toLocaleDateString(locale, { timeZone: "UTC" });
 
 function JobTab({ profile }: { profile: DirectoryProfile }) {
   const { t } = useTranslation();
@@ -271,9 +233,9 @@ function JobTab({ profile }: { profile: DirectoryProfile }) {
   if (job.legalName) rows.push([copy.legalName, job.legalName]);
   rows.push([copy.employeeNumber, job.employeeNumber ?? copy.notSet]);
   rows.push([copy.startDate, day(job.startDate)]);
-  if (!isExternal(profile)) rows.push([copy.probationEndDate, day(job.probationEndDate)]);
+  if (!isExternalWorker(profile)) rows.push([copy.probationEndDate, day(job.probationEndDate)]);
   rows.push([copy.leavingDate, day(job.leavingDate)]);
-  if (!isExternal(profile)) {
+  if (!isExternalWorker(profile)) {
     rows.push([
       copy.contractType,
       job.contractType ? copy.contractTypes[job.contractType] : copy.notSet,
@@ -293,7 +255,7 @@ function JobTab({ profile }: { profile: DirectoryProfile }) {
 function RecordTab({ profile }: { profile: DirectoryProfile }) {
   const { t } = useTranslation();
   const copy = t.directory.profile;
-  const date = (value: string) => new Date(value).toLocaleDateString(t.common.dateLocale);
+  const date = (value: string) => formatDate(value, t.common.dateLocale);
   const spell = profile.sections.job?.spell;
   const account = profile.account;
 
@@ -340,18 +302,5 @@ function ProfileSection({ title, children }: { title: string; children: ReactNod
         {children}
       </CardContent>
     </Card>
-  );
-}
-
-function Facts({ rows }: { rows: [string, ReactNode][] }) {
-  return (
-    <dl className="grid gap-x-6 gap-y-2 text-sm sm:grid-cols-[max-content_1fr]">
-      {rows.map(([label, value]) => (
-        <div key={label} className="contents">
-          <dt className="text-muted-foreground">{label}</dt>
-          <dd>{value}</dd>
-        </div>
-      ))}
-    </dl>
   );
 }

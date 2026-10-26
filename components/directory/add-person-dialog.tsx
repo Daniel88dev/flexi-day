@@ -3,7 +3,7 @@
 import { useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { UserPlus } from "lucide-react";
-import { profileHref } from "@/components/directory/directory-list";
+import { profileHref } from "@/lib/directory/routes";
 import { pushToast } from "@/components/toast";
 import { Button } from "@/components/ui/button";
 import {

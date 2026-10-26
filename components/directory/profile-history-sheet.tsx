@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/sheet";
 import type { DirectoryProfile } from "@/lib/api/directory";
 import { useProfileHistory } from "@/lib/api/queries";
+import { formatDateTime } from "@/lib/directory/format";
 import { useTranslation } from "@/lib/i18n/use-translation";
 
 /** The owner, org admins and HR see who changed which fields; never the values. */
@@ -21,11 +22,7 @@ export function ProfileHistorySheet({ profile }: { profile: DirectoryProfile }) 
   const copy = t.directory.history;
   const [open, setOpen] = useState(false);
   const history = useProfileHistory(profile.organizationId, profile.employmentId, open);
-  const when = (value: string) =>
-    new Date(value).toLocaleString(t.common.dateLocale, {
-      dateStyle: "short",
-      timeStyle: "short",
-    });
+  const when = (value: string) => formatDateTime(value, t.common.dateLocale);
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>

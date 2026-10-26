@@ -14,6 +14,7 @@ import { pushToast } from "@/components/toast";
 import { errorCopy } from "@/lib/api/client";
 import type { DirectoryProfile } from "@/lib/api/directory";
 import { useChangeWorkerType } from "@/lib/api/queries";
+import { isExternalWorker } from "@/lib/directory/person";
 import { useTranslation } from "@/lib/i18n/use-translation";
 
 /** Change worker type on the profile: employee to External worker and back. */
@@ -40,7 +41,7 @@ function WorkerTypeDialog({
   const { t } = useTranslation();
   const copy = t.directory.workerType;
   const labels = t.directory.profile;
-  const toExternal = !profile.markers.includes("EXTERNAL_WORKER");
+  const toExternal = !isExternalWorker(profile);
   const change = useChangeWorkerType(profile.organizationId, profile.employmentId);
   const [error, setError] = useState<string | null>(null);
 

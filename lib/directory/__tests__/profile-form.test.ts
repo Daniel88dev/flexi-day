@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { DirectoryProfile } from "@/lib/api/directory";
-import { buildProfilePatch, profileFormValues } from "../profile-form";
+import { buildProfilePatch, profileFormValues, workPhoneInvalid } from "../profile-form";
 
 const profile = (overrides: Partial<DirectoryProfile["sections"]> = {}): DirectoryProfile => ({
   employmentId: "emp-1",
@@ -178,5 +178,26 @@ describe("buildProfilePatch", () => {
         { ...can, workContact: false }
       )
     ).toEqual({});
+  });
+});
+
+describe("workPhoneInvalid", () => {
+  const values = (workPhoneCountry: string, workPhoneNumber: string) => ({
+    ...profileFormValues(profile()),
+    workPhoneCountry,
+    workPhoneNumber,
+  });
+
+  it("returns false for an empty phone", () => {
+    expect(workPhoneInvalid(values("CZ", ""))).toBe(false);
+  });
+
+  it("returns false for a number valid in the picked country", () => {
+    expect(workPhoneInvalid(values("CZ", "601 123 456"))).toBe(false);
+  });
+
+  it("returns true for text that is no phone number", () => {
+    expect(workPhoneInvalid(values("CZ", "call me"))).toBe(true);
+    expect(workPhoneInvalid(values("CZ", "12"))).toBe(true);
   });
 });

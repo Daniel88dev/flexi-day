@@ -283,12 +283,12 @@ describe("DirectoryScreen", () => {
     expect(screen.queryByRole("tab", { name: "Former" })).not.toBeInTheDocument();
   });
 
-  it("lists the Former tab latest end first, one row per spell", async () => {
+  it("lists the Former tab in the server's order, latest end first, one row per spell", async () => {
     const user = userEvent.setup();
     people = { ...people, formerList: true };
     former = [
-      leaver("Petra Early", "2025-11-30T12:00:00.000Z"),
       leaver("Rita Late", "2026-05-31T12:00:00.000Z"),
+      leaver("Petra Early", "2025-11-30T12:00:00.000Z"),
       leaver("Rita Late", "2024-06-30T12:00:00.000Z"),
     ];
     former[2]!.employmentId = "emp-rita-first";
@@ -308,15 +308,15 @@ describe("DirectoryScreen", () => {
     const user = userEvent.setup();
     people = { ...people, formerList: true };
     former = [
+      { ...leaver("Rita Late", "2026-05-31T12:00:00.000Z"), nextRemoval: null, hold: true },
       {
         ...leaver("Petra Early", "2025-11-30T12:00:00.000Z"),
         markers: ["ACCOUNT_DELETED", "REJOINED"],
         nextRemoval: { section: "contact", date: "2026-11-24" },
         hold: false,
       },
-      { ...leaver("Rita Late", "2026-05-31T12:00:00.000Z"), nextRemoval: null, hold: true },
     ];
-    former[0]!.employmentId = "emp-petra";
+    former[1]!.employmentId = "emp-petra";
     renderWithClient(<DirectoryScreen />);
 
     await user.click(screen.getByRole("tab", { name: "Former" }));
@@ -336,6 +336,25 @@ describe("DirectoryScreen", () => {
     expect(within(petra!).queryByTestId("marker-HOLD")).not.toBeInTheDocument();
     expect(cells(rita!).at(-1)).toBe("");
     expect(within(rita!).getByTestId("marker-HOLD")).toHaveTextContent("Hold");
+  });
+
+  it("shows no spell dates on a Former row when the viewer can't read Job", async () => {
+    const user = userEvent.setup();
+    people = { ...people, formerList: true };
+    former = [
+      { ...leaver("Rita Late", "2026-05-31T12:00:00.000Z"), startedAt: null, endedAt: null },
+    ];
+    renderWithClient(<DirectoryScreen />);
+
+    await user.click(screen.getByRole("tab", { name: "Former" }));
+
+    const [row] = within(screen.getByTestId("directory-former")).getAllByRole("row").slice(1);
+    const cells = within(row!)
+      .getAllByRole("cell")
+      .map((cell) => cell.textContent);
+    expect(cells[0]).toBe("Rita Late");
+    expect(cells[3]).toBe("");
+    expect(cells[4]).toBe("");
   });
 
   it("opens Directory settings for the viewers the list allows, without the search row", async () => {
