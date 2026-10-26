@@ -18,6 +18,9 @@ let organization: DirectoryOrganization;
 let updateError: unknown = null;
 const mutate = vi.fn();
 const push = vi.fn();
+const uploadPhoto = vi.fn();
+const removePhoto = vi.fn();
+let uploadState: { data?: unknown; error?: unknown } = {};
 const search = new URLSearchParams("organizationId=org-1&employmentId=emp-jana");
 
 vi.mock("next/navigation", () => ({
@@ -30,6 +33,7 @@ const person = (name: string, employmentId: string): DirectoryPerson => ({
   name,
   jobTitle: null,
   image: null,
+  photoUrl: null,
   user: { id: employmentId, name, initials: name.slice(0, 2), avatarColor: "hsl(1, 1%, 1%)" },
   markers: [],
 });
@@ -44,6 +48,14 @@ vi.mock("@/lib/api/queries", () => ({
     },
   }),
   useUpdateDirectoryProfile: () => ({ mutate, error: updateError, isPending: false }),
+  useUploadProfilePhoto: () => ({
+    mutate: uploadPhoto,
+    isPending: false,
+    data: uploadState.data,
+    error: uploadState.error ?? null,
+    reset: vi.fn(),
+  }),
+  useRemoveProfilePhoto: () => ({ mutate: removePhoto, isPending: false, error: null }),
 }));
 
 const card = (overrides: Partial<DirectoryCardView> = {}): DirectoryCardView => ({
@@ -83,6 +95,7 @@ const jana = (overrides: Partial<DirectoryProfile> = {}): DirectoryProfile => ({
   name: "Jana Member",
   jobTitle: "Support specialist",
   image: null,
+  photoUrl: null,
   user: { id: "u-jana", name: "Jana Member", initials: "JM", avatarColor: "hsl(10, 65%, 50%)" },
   markers: [],
   self: false,
@@ -97,6 +110,9 @@ describe("ProfileEditScreen", () => {
   beforeEach(() => {
     mutate.mockReset();
     push.mockReset();
+    uploadPhoto.mockReset();
+    removePhoto.mockReset();
+    uploadState = {};
     updateError = null;
     profile = jana();
     organization = {
@@ -222,6 +238,99 @@ describe("ProfileEditScreen", () => {
       { card: { jobTitle: null }, job: { employeeNumber: null } },
       expect.anything()
     );
+  });
+
+  describe("the Photo Section", () => {
+    const links = { smallUrl: "https://store.test/s.jpg", fullUrl: "https://store.test/f.jpg" };
+
+    it("lets the person upload a photo even when Card and Job only read", async () => {
+      const user = userEvent.setup();
+      profile = jana({
+        self: true,
+        sections: {
+          card: card({ level: "READ" }),
+          job: job({ level: "READ" }),
+          photo: { level: "WRITE", photo: null },
+        },
+      });
+      renderWithClient(<ProfileEditScreen />);
+
+      const region = screen.getByRole("region", { name: /Photo/ });
+      expect(within(region).getByText("No profile photo.")).toBeInTheDocument();
+      expect(
+        screen.queryByText("You can't edit anything on this profile.")
+      ).not.toBeInTheDocument();
+      const file = new File(["bytes"], "me.jpg", { type: "image/jpeg" });
+      await user.upload(within(region).getByLabelText("Upload photo"), file);
+
+      expect(uploadPhoto).toHaveBeenCalledWith(file);
+      expect(
+        within(region).queryByRole("button", { name: "Remove photo" })
+      ).not.toBeInTheDocument();
+    });
+
+    it("explains a file that can't be a photo without sending it", async () => {
+      const user = userEvent.setup({ applyAccept: false });
+      profile = jana({ sections: { card: card(), photo: { level: "WRITE", photo: null } } });
+      renderWithClient(<ProfileEditScreen />);
+
+      const region = screen.getByRole("region", { name: /Photo/ });
+      await user.upload(
+        within(region).getByLabelText("Upload photo"),
+        new File(["%PDF"], "cv.pdf", { type: "application/pdf" })
+      );
+
+      expect(uploadPhoto).not.toHaveBeenCalled();
+      expect(within(region).getByRole("alert")).toHaveTextContent(
+        "Choose a PNG, JPEG, WebP or HEIC image."
+      );
+    });
+
+    it("shows the current photo with Replace and Remove", async () => {
+      const user = userEvent.setup();
+      profile = jana({ sections: { card: card(), photo: { level: "WRITE", photo: links } } });
+      const { container } = renderWithClient(<ProfileEditScreen />);
+
+      const region = screen.getByRole("region", { name: /Photo/ });
+      expect(container.querySelector("#photo img")).toHaveAttribute("src", links.fullUrl);
+      expect(within(region).getByLabelText("Replace photo")).toBeInTheDocument();
+      await user.click(within(region).getByRole("button", { name: "Remove photo" }));
+
+      expect(removePhoto).toHaveBeenCalled();
+    });
+
+    it("tells why a processed upload was refused", () => {
+      uploadState = { data: { id: "p", status: "REJECTED", rejectionReason: "IMAGE_UNREADABLE" } };
+      profile = jana({ sections: { card: card(), photo: { level: "WRITE", photo: null } } });
+      renderWithClient(<ProfileEditScreen />);
+
+      expect(screen.getByRole("alert")).toHaveTextContent("This image couldn't be read.");
+    });
+
+    it("keeps Remove and disables uploading on a lapsed plan", () => {
+      organization = { ...organization, writable: false };
+      profile = jana({ sections: { card: card(), photo: { level: "WRITE", photo: links } } });
+      renderWithClient(<ProfileEditScreen />);
+
+      const region = screen.getByRole("region", { name: /Photo/ });
+      expect(within(region).getByLabelText("Replace photo")).toBeDisabled();
+      expect(
+        within(region).getByText(
+          "Setting a photo needs the Enterprise plan. You can still remove it."
+        )
+      ).toBeInTheDocument();
+      expect(within(region).getByRole("button", { name: "Remove photo" })).toBeEnabled();
+    });
+
+    it("shows a read-only photo without controls", () => {
+      profile = jana({ sections: { card: card(), photo: { level: "READ", photo: links } } });
+      renderWithClient(<ProfileEditScreen />);
+
+      const region = screen.getByRole("region", { name: /Photo/ });
+      expect(within(region).getByText("Read-only")).toBeInTheDocument();
+      expect(within(region).queryByRole("button")).not.toBeInTheDocument();
+      expect(within(region).queryByLabelText(/photo/i)).not.toBeInTheDocument();
+    });
   });
 
   it("explains a refusal from the server", () => {

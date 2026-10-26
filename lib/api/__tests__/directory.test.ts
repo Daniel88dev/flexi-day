@@ -18,6 +18,9 @@ import {
   listDirectoryOrganizations,
   listDirectoryPeople,
   listFormerDirectoryPeople,
+  getProfilePhotoUpload,
+  removeProfilePhoto,
+  startProfilePhotoUpload,
 } from "../directory";
 
 describe("directory API", () => {
@@ -105,6 +108,21 @@ describe("directory API", () => {
         "/api/directory/org-1/roles/emp%2F1",
         { method: "PUT", body: { roles: ["HR", "LEADERSHIP"] } },
       ],
+    ]);
+  });
+
+  it("starts, follows and removes a Profile photo upload", async () => {
+    apiMock.mockResolvedValue({});
+    await startProfilePhotoUpload("org-1", "emp/1", { contentType: "image/jpeg", size: 12 });
+    await getProfilePhotoUpload("org-1", "emp-1", "photo-1");
+    await removeProfilePhoto("org-1", "emp-1");
+    expect(apiMock.mock.calls).toEqual([
+      [
+        "/api/directory/org-1/people/emp%2F1/photo",
+        { method: "POST", body: { contentType: "image/jpeg", size: 12 } },
+      ],
+      ["/api/directory/org-1/people/emp-1/photo/photo-1"],
+      ["/api/directory/org-1/people/emp-1/photo", { method: "DELETE" }],
     ]);
   });
 });
