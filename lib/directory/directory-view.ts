@@ -37,3 +37,13 @@ export function matchesName(name: string, query: string): boolean {
       .toLocaleLowerCase();
   return fold(name).includes(fold(query.trim()));
 }
+
+/** The directory search: the name or the job title. */
+export function matchesPerson(
+  person: { name: string; jobTitle?: string | null },
+  query: string
+): boolean {
+  return (
+    matchesName(person.name, query) || (!!person.jobTitle && matchesName(person.jobTitle, query))
+  );
+}

@@ -12,6 +12,9 @@ import {
   acceptDirectoryAgreement,
   enableDirectory,
   getDirectoryProfile,
+  getProfileHistory,
+  updateDirectoryProfile,
+  type DirectoryProfilePatch,
   getDirectoryState,
   listDirectoryOrganizations,
   listDirectoryPeople,
@@ -314,6 +317,8 @@ export const qk = {
   directoryFormer: (organizationId: string) => ["directory", "former", organizationId] as const,
   directoryProfile: (organizationId: string, employmentId: string) =>
     ["directory", "profile", organizationId, employmentId] as const,
+  directoryProfileHistory: (organizationId: string, employmentId: string) =>
+    ["directory", "history", organizationId, employmentId] as const,
   organizationExport: (organizationId?: string | null) =>
     ["person-exports", "organization", organizationId ?? "none"] as const,
   attendanceTeam: (params: TeamAttendanceParams) =>
@@ -1644,6 +1649,27 @@ export function useDirectoryProfile(organizationId: string, employmentId: string
     queryKey: qk.directoryProfile(organizationId, employmentId),
     queryFn: () => getDirectoryProfile(organizationId, employmentId),
     enabled: !!organizationId && !!employmentId,
+  });
+}
+
+/** Owner, org admins and HR; pass `enabled` from the profile's `canReadHistory`. */
+export function useProfileHistory(organizationId: string, employmentId: string, enabled: boolean) {
+  return useQuery({
+    queryKey: qk.directoryProfileHistory(organizationId, employmentId),
+    queryFn: () => getProfileHistory(organizationId, employmentId),
+    enabled: enabled && !!organizationId && !!employmentId,
+  });
+}
+
+export function useUpdateDirectoryProfile(organizationId: string, employmentId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (patch: DirectoryProfilePatch) =>
+      updateDirectoryProfile(organizationId, employmentId, patch),
+    onSuccess: (profile) => {
+      qc.setQueryData(qk.directoryProfile(organizationId, employmentId), profile);
+      qc.invalidateQueries({ queryKey: ["directory"] });
+    },
   });
 }
 

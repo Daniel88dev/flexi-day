@@ -7,6 +7,8 @@ import {
   acceptDirectoryAgreement,
   enableDirectory,
   getDirectoryProfile,
+  getProfileHistory,
+  updateDirectoryProfile,
   getDirectoryState,
   listDirectoryOrganizations,
   listDirectoryPeople,
@@ -56,5 +58,20 @@ describe("directory API", () => {
       "/api/directory/org-1/former",
       "/api/directory/org-1/people/emp%2F1",
     ]);
+  });
+
+  it("sends a profile edit as a PATCH with the Sections it touches", async () => {
+    apiMock.mockResolvedValue({});
+    await updateDirectoryProfile("org-1", "emp/1", { card: { jobTitle: null } });
+    expect(apiMock).toHaveBeenCalledWith("/api/directory/org-1/people/emp%2F1", {
+      method: "PATCH",
+      body: { card: { jobTitle: null } },
+    });
+  });
+
+  it("reads a profile's history", async () => {
+    apiMock.mockResolvedValue([]);
+    await getProfileHistory("org-1", "emp-1");
+    expect(apiMock).toHaveBeenCalledWith("/api/directory/org-1/people/emp-1/history");
   });
 });
