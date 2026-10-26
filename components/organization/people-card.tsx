@@ -22,7 +22,7 @@ import {
 } from "@/lib/api/queries";
 import type { EmploymentListItem } from "@/lib/api/employment";
 import type { PersonExport } from "@/lib/api/person-export";
-import { profileHref } from "@/components/directory/directory-list";
+import { profileHref } from "@/lib/directory/routes";
 import { formatMinutes, parseMinutes } from "@/lib/attendance/duration";
 import { useTranslation } from "@/lib/i18n/use-translation";
 import { cn } from "@/lib/utils";

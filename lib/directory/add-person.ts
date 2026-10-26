@@ -1,4 +1,5 @@
 import type { NewDirectoryPerson, WorkerType } from "@/lib/api/directory";
+import { looksLikeEmail } from "@/lib/directory/person";
 
 export type NewPersonValues = {
   name: string;
@@ -22,15 +23,12 @@ export const EMPTY_NEW_PERSON: NewPersonValues = {
 
 export type NewPersonProblems = { name?: "missing"; email?: "invalid" | "taken" };
 
-/** Close to the backend's rule; the server has the last word. */
-const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
 /** What the form can tell without the server: a missing name and an email that isn't one. */
 export function newPersonProblems(values: NewPersonValues): NewPersonProblems {
   const problems: NewPersonProblems = {};
   if (values.name.trim() === "") problems.name = "missing";
   const email = values.email.trim();
-  if (email !== "" && !EMAIL.test(email)) problems.email = "invalid";
+  if (email !== "" && !looksLikeEmail(email)) problems.email = "invalid";
   return problems;
 }
 

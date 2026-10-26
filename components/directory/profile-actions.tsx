@@ -26,17 +26,19 @@ import {
   useRequestPersonExport,
   useRequestedExports,
 } from "@/lib/api/queries";
+import { isExternalWorker } from "@/lib/directory/person";
+import { directoryHref } from "@/lib/directory/routes";
 import { useTranslation } from "@/lib/i18n/use-translation";
+
+/** `ProfileActions` renders at least one button. */
+export const hasProfileActions = ({ actions }: DirectoryProfile) =>
+  !!actions &&
+  (!!actions.invite || !!actions.changeType || actions.end || actions.export || actions.erase);
 
 /** Send invite, Change worker type, End employment, Export and Erase in the profile header, each only when `actions` allows it. */
 export function ProfileActions({ profile }: { profile: DirectoryProfile }) {
   const actions = profile.actions;
-  if (
-    !actions ||
-    (!actions.invite && !actions.changeType && !actions.end && !actions.export && !actions.erase)
-  ) {
-    return null;
-  }
+  if (!actions || !hasProfileActions(profile)) return null;
   return (
     <>
       {actions.invite ? <InviteAction profile={profile} /> : null}
@@ -47,8 +49,6 @@ export function ProfileActions({ profile }: { profile: DirectoryProfile }) {
     </>
   );
 }
-
-const isExternal = (profile: DirectoryProfile) => profile.markers.includes("EXTERNAL_WORKER");
 
 function EndAction({ profile }: { profile: DirectoryProfile }) {
   const { t } = useTranslation();
@@ -62,7 +62,7 @@ function EndAction({ profile }: { profile: DirectoryProfile }) {
         className="text-destructive"
         onClick={() => setOpen(true)}
       >
-        {isExternal(profile) ? t.directory.end.actionExternal : t.directory.end.action}
+        {isExternalWorker(profile) ? t.directory.end.actionExternal : t.directory.end.action}
       </Button>
       <EndDialog open={open} onOpenChange={setOpen} profile={profile} />
     </>
@@ -80,7 +80,7 @@ function EndDialog({
 }) {
   const { t } = useTranslation();
   const copy = t.directory.end;
-  const external = isExternal(profile);
+  const external = isExternalWorker(profile);
   const preview = useEndPreview(profile.organizationId, profile.employmentId, open);
 
   return (
@@ -118,7 +118,7 @@ function EndForm({
 }) {
   const { t } = useTranslation();
   const copy = t.directory.end;
-  const external = isExternal(profile);
+  const external = isExternalWorker(profile);
   const end = useEndEmployment(profile.organizationId);
   const [endedOn, setEndedOn] = useState(preview.suggestedEndedOn);
   const [error, setError] = useState<string | null>(null);
@@ -241,7 +241,7 @@ function ExportAction({ profile }: { profile: DirectoryProfile }) {
   const entry = exports?.find(
     (row) =>
       row.subjectEmploymentId === profile.employmentId ||
-      (row.subjectUserId !== null && row.subjectUserId === profile.user.id)
+      (profile.user.id !== null && row.subjectUserId === profile.user.id)
   );
   return (
     <PersonExportAction
@@ -275,11 +275,13 @@ function EraseAction({ profile }: { profile: DirectoryProfile }) {
       <EraseDialog
         open={open}
         onOpenChange={setOpen}
-        employment={{ id: profile.employmentId, ended: profile.ended, user: profile.user }}
+        employment={{
+          id: profile.employmentId,
+          ended: profile.ended,
+          user: { ...profile.user, id: profile.user.id ?? profile.employmentId },
+        }}
         organizationId={profile.organizationId}
-        onErased={() =>
-          router.push(`/directory?organizationId=${encodeURIComponent(profile.organizationId)}`)
-        }
+        onErased={() => router.push(directoryHref(profile.organizationId))}
       />
     </>
   );

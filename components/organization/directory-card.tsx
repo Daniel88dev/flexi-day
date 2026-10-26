@@ -11,6 +11,7 @@ import { EnableDirectoryDialog } from "@/components/organization/enable-director
 import { TurnOffDirectoryDialog } from "@/components/organization/turn-off-directory-dialog";
 import type { DirectoryState } from "@/lib/api/directory";
 import { useDirectoryState } from "@/lib/api/queries";
+import { formatDate } from "@/lib/directory/format";
 import { useTranslation } from "@/lib/i18n/use-translation";
 
 /** Turned off at some point and not emptied since: what Delete all is for. */
@@ -34,7 +35,7 @@ export function DirectoryCard({
   const [turningOff, setTurningOff] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const data = state.data;
-  const date = (iso: string) => new Date(iso).toLocaleDateString(t.common.dateLocale);
+  const date = (iso: string) => formatDate(iso, t.common.dateLocale);
 
   return (
     <Card>

@@ -3,12 +3,9 @@
 import type { ReactNode } from "react";
 import { Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import type {
-  ContactValues,
-  DirectoryPhone,
-  DirectoryProfile,
-  PersonalValues,
-} from "@/lib/api/directory";
+import { EmailLink, Facts, PhoneLink } from "@/components/directory/profile-parts";
+import type { ContactValues, DirectoryProfile, PersonalValues } from "@/lib/api/directory";
+import { formatDay } from "@/lib/directory/format";
 import { useShownSection } from "@/lib/directory/shown-sections";
 import { useTranslation } from "@/lib/i18n/use-translation";
 
@@ -69,12 +66,6 @@ export function SensitiveGate<V extends ContactValues | PersonalValues>({
   );
 }
 
-const phoneLink = (phone: DirectoryPhone) => (
-  <a href={`tel:${phone.e164}`} className="text-primary hover:underline">
-    {phone.display}
-  </a>
-);
-
 /** The Contact Section on the profile page, behind Show. */
 export function ContactTab({ profile }: { profile: DirectoryProfile }) {
   const shown = useShownSection(profile, "contact");
@@ -105,17 +96,18 @@ export function ContactFacts({ values }: { values: ContactValues }) {
   return (
     <Facts
       rows={[
-        [copy.privatePhone, values.privatePhone ? phoneLink(values.privatePhone) : copy.notSet],
+        [
+          copy.privatePhone,
+          values.privatePhone ? (
+            <PhoneLink key="private-phone" phone={values.privatePhone} />
+          ) : (
+            copy.notSet
+          ),
+        ],
         [
           copy.privateEmail,
           values.privateEmail ? (
-            <a
-              key="private-email"
-              href={`mailto:${values.privateEmail}`}
-              className="text-primary hover:underline"
-            >
-              {values.privateEmail}
-            </a>
+            <EmailLink key="private-email" email={values.privateEmail} />
           ) : (
             copy.notSet
           ),
@@ -124,7 +116,7 @@ export function ContactFacts({ values }: { values: ContactValues }) {
           copy.emergencyContact(index + 1),
           slot ? (
             <span key={key}>
-              {slot.name}, {phoneLink(slot.phone)}
+              {slot.name}, <PhoneLink phone={slot.phone} />
             </span>
           ) : (
             copy.notSet
@@ -134,10 +126,6 @@ export function ContactFacts({ values }: { values: ContactValues }) {
     />
   );
 }
-
-/** Formats a `YYYY-MM-DD` date as the calendar day it names, whatever the viewer's zone. */
-const formatDay = (value: string, locale: string) =>
-  new Date(`${value}T00:00:00Z`).toLocaleDateString(locale, { timeZone: "UTC" });
 
 export function PersonalFacts({ values }: { values: PersonalValues }) {
   const { t } = useTranslation();
@@ -174,18 +162,5 @@ export function PersonalFacts({ values }: { values: PersonalValues }) {
         ],
       ]}
     />
-  );
-}
-
-function Facts({ rows }: { rows: [string, ReactNode][] }) {
-  return (
-    <dl className="grid gap-x-6 gap-y-2 text-sm sm:grid-cols-[max-content_1fr]">
-      {rows.map(([label, value]) => (
-        <div key={label} className="contents">
-          <dt className="text-muted-foreground">{label}</dt>
-          <dd>{value}</dd>
-        </div>
-      ))}
-    </dl>
   );
 }

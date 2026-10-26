@@ -8,7 +8,7 @@ export type DirectoryAgreementState = {
   acceptedVersion: number | null;
   acceptedAt: string | null;
   acceptedByName: string | null;
-  /** On, and the latest acceptance is older than the current version. */
+  /** Sent true to the owner only: on, and the latest acceptance is older than the current version. */
   newVersionReady: boolean;
 };
 
@@ -45,9 +45,9 @@ export function getDirectoryState(organizationId: string): Promise<DirectoryStat
   return api<DirectoryState>(scoped("/api/organization/directory", organizationId));
 }
 
-/** Owner only; sends the agreement version the owner was shown. */
 export type EnableDirectoryInput = { agreementVersion: number; tellMembers: boolean };
 
+/** Owner only; sends the agreement version the owner was shown. */
 export function enableDirectory(
   organizationId: string,
   input: EnableDirectoryInput
@@ -99,16 +99,15 @@ export type DirectoryMarker =
 export type DirectoryPerson = {
   employmentId: string;
   name: string;
-  /** A Card field. */
   jobTitle: string | null;
-  /** Card fields; an archived entry still shows on the record that holds it. */
+  /** An archived entry still shows on the record that holds it. */
   department?: DirectoryEntryRef | null;
   location?: DirectoryEntryRef | null;
-  /** The Account picture. */
   image: string | null;
   /** The small Profile photo; null without one or without a read on the Photo Section. */
   photoUrl: string | null;
-  user: { id: string; name: string; initials: string; avatarColor: string };
+  /** `id` is null on a record without an account; key such a row by `employmentId`. */
+  user: { id: string | null; name: string; initials: string; avatarColor: string };
   markers: DirectoryMarker[];
   /** In no group of the organization; sent to the owner and org admins only. */
   noGroup?: boolean;
@@ -117,21 +116,12 @@ export type DirectoryPerson = {
 /** Named as the keys of `DirectoryProfile.sections`. */
 export type ProfileSectionKey = "card" | "photo" | "workContact" | "job" | "contact" | "personal";
 
-export const PROFILE_SECTION_KEYS: ProfileSectionKey[] = [
-  "card",
-  "photo",
-  "workContact",
-  "job",
-  "contact",
-  "personal",
-];
-
 export type FormerDirectoryPerson = DirectoryPerson & {
-  startedAt: string;
-  endedAt: string;
+  /** Null when the viewer can't read Job; the server still orders the list by end date. */
+  startedAt: string | null;
+  endedAt: string | null;
   /** The earliest coming Retention purge among the Sections the viewer reads; null under a hold. */
   nextRemoval?: { section: ProfileSectionKey; date: string } | null;
-  /** A Retention hold is on. */
   hold?: boolean;
 };
 
@@ -292,6 +282,19 @@ export type DirectoryProfile = DirectoryPerson & {
 const directoryPath = (organizationId: string, rest: string) =>
   `/api/directory/${encodeURIComponent(organizationId)}/${rest}`;
 
+/** `language` names the countries in the answer; the backend falls back to the stored setting. */
+export const withLanguage = (path: string, language?: Locale) =>
+  language ? `${path}?language=${language}` : path;
+
+const personPath = (organizationId: string, employmentId: string, rest = "", language?: Locale) =>
+  withLanguage(
+    directoryPath(
+      organizationId,
+      `people/${encodeURIComponent(employmentId)}${rest ? `/${rest}` : ""}`
+    ),
+    language
+  );
+
 export function listDirectoryPeople(organizationId: string): Promise<DirectoryPeople> {
   return api<DirectoryPeople>(directoryPath(organizationId, "people"));
 }
@@ -303,19 +306,12 @@ export function listFormerDirectoryPeople(
   return api<FormerDirectoryPerson[]>(directoryPath(organizationId, "former"));
 }
 
-/** `language` names the countries in the answer; the backend falls back to the stored setting. */
-const profilePath = (organizationId: string, employmentId: string, language?: Locale) =>
-  directoryPath(
-    organizationId,
-    `people/${encodeURIComponent(employmentId)}${language ? `?language=${language}` : ""}`
-  );
-
 export function getDirectoryProfile(
   organizationId: string,
   employmentId: string,
   language?: Locale
 ): Promise<DirectoryProfile> {
-  return api<DirectoryProfile>(profilePath(organizationId, employmentId, language));
+  return api<DirectoryProfile>(personPath(organizationId, employmentId, "", language));
 }
 
 /** A value sets the field, `null` clears it, and a missing key leaves it alone. */
@@ -383,10 +379,10 @@ export function createDirectoryPerson(
   person: NewDirectoryPerson,
   language?: Locale
 ): Promise<DirectoryProfile> {
-  return api<DirectoryProfile>(
-    directoryPath(organizationId, `people${language ? `?language=${language}` : ""}`),
-    { method: "POST", body: person }
-  );
+  return api<DirectoryProfile>(withLanguage(directoryPath(organizationId, "people"), language), {
+    method: "POST",
+    body: person,
+  });
 }
 
 export type DirectoryInvite = {
@@ -407,7 +403,7 @@ export function sendDirectoryInvite(
   employmentId: string,
   groupId: string | null
 ): Promise<SentDirectoryInvite> {
-  return api<SentDirectoryInvite>(directoryPath(organizationId, `people/${employmentId}/invite`), {
+  return api<SentDirectoryInvite>(personPath(organizationId, employmentId, "invite"), {
     method: "POST",
     body: groupId ? { groupId } : {},
   });
@@ -430,7 +426,7 @@ export function updateDirectoryProfile(
   patch: DirectoryProfilePatch,
   language?: Locale
 ): Promise<DirectoryProfile> {
-  return api<DirectoryProfile>(profilePath(organizationId, employmentId, language), {
+  return api<DirectoryProfile>(personPath(organizationId, employmentId, "", language), {
     method: "PATCH",
     body: patch,
   });
@@ -447,14 +443,12 @@ export function changeWorkerType(
   type: WorkerType,
   language?: Locale
 ): Promise<DirectoryProfile> {
-  const query = language ? `?language=${language}` : "";
-  return api<DirectoryProfile>(
-    directoryPath(organizationId, `people/${encodeURIComponent(employmentId)}/worker-type${query}`),
-    { method: "PUT", body: { type } }
-  );
+  return api<DirectoryProfile>(personPath(organizationId, employmentId, "worker-type", language), {
+    method: "PUT",
+    body: { type },
+  });
 }
 
-/** The Sections Copy from previous spell can bring over. */
 export const COPYABLE_SECTIONS = ["contact", "personal", "photo"] as const;
 
 export type CopyableSectionKey = (typeof COPYABLE_SECTIONS)[number];
@@ -474,9 +468,7 @@ export function getPreviousSpell(
   organizationId: string,
   employmentId: string
 ): Promise<PreviousSpell> {
-  return api<PreviousSpell>(
-    directoryPath(organizationId, `people/${encodeURIComponent(employmentId)}/previous-spell`)
-  );
+  return api<PreviousSpell>(personPath(organizationId, employmentId, "previous-spell"));
 }
 
 export function copyFromPreviousSpell(
@@ -485,12 +477,8 @@ export function copyFromPreviousSpell(
   sections: CopyableSectionKey[],
   language?: Locale
 ): Promise<DirectoryProfile> {
-  const query = language ? `?language=${language}` : "";
   return api<DirectoryProfile>(
-    directoryPath(
-      organizationId,
-      `people/${encodeURIComponent(employmentId)}/previous-spell/copy${query}`
-    ),
+    personPath(organizationId, employmentId, "previous-spell/copy", language),
     { method: "POST", body: { sections } }
   );
 }
@@ -505,13 +493,9 @@ export function showSensitiveSection(
   section: SensitiveSection,
   language?: Locale
 ): Promise<ShownSection> {
-  return api<ShownSection>(
-    directoryPath(
-      organizationId,
-      `people/${encodeURIComponent(employmentId)}/show/${section}${language ? `?language=${language}` : ""}`
-    ),
-    { method: "POST" }
-  );
+  return api<ShownSection>(personPath(organizationId, employmentId, `show/${section}`, language), {
+    method: "POST",
+  });
 }
 
 export type ReadLogEntry = {
@@ -639,10 +623,7 @@ export function startProfilePhotoUpload(
   employmentId: string,
   input: { contentType: string; size: number }
 ): Promise<{ photo: ProfilePhotoUpload; upload: UploadTarget }> {
-  return api(directoryPath(organizationId, `people/${encodeURIComponent(employmentId)}/photo`), {
-    method: "POST",
-    body: input,
-  });
+  return api(personPath(organizationId, employmentId, "photo"), { method: "POST", body: input });
 }
 
 export function getProfilePhotoUpload(
@@ -651,21 +632,13 @@ export function getProfilePhotoUpload(
   photoId: string
 ): Promise<ProfilePhotoUpload> {
   return api<ProfilePhotoUpload>(
-    directoryPath(
-      organizationId,
-      `people/${encodeURIComponent(employmentId)}/photo/${encodeURIComponent(photoId)}`
-    )
+    personPath(organizationId, employmentId, `photo/${encodeURIComponent(photoId)}`)
   );
 }
 
 /** Removes the Profile photo and both its sizes; works on every plan. */
 export function removeProfilePhoto(organizationId: string, employmentId: string): Promise<void> {
-  return api<void>(
-    directoryPath(organizationId, `people/${encodeURIComponent(employmentId)}/photo`),
-    {
-      method: "DELETE",
-    }
-  );
+  return api<void>(personPath(organizationId, employmentId, "photo"), { method: "DELETE" });
 }
 
 export type ProfileHistorySection =
@@ -697,15 +670,15 @@ export type ProfileHistoryEntry = {
 export type ProfileActions = {
   /** End employment, by the End act cell, on an open record that isn't the owner's. */
   end: boolean;
-  /** The Person export: the owner and org admins, for a person with an account. */
+  /** The owner and org admins, for a person with an account. */
   export: boolean;
-  /** Erase: the owner and org admins, for a Deleted account. */
+  /** The owner and org admins, for a Deleted account. */
   erase: boolean;
-  /** Set or lift the Retention hold: the owner and org admins, on an ended record. */
+  /** The owner and org admins, on an ended record. */
   hold?: boolean;
-  /** Send directory invite: the act cell allows it, on an open record without an account. */
+  /** The act cell allows it, on an open record without an account. */
   invite?: boolean;
-  /** Change worker type: the act cell allows it, on an open record. */
+  /** The act cell allows it, on an open record. */
   changeType?: boolean;
   /**
    * Copy from previous spell: the owner, org admins and HR, on an open record
@@ -720,10 +693,9 @@ export function setRetentionHold(
   employmentId: string,
   on: boolean
 ): Promise<{ hold: RetentionHold | null }> {
-  return api<{ hold: RetentionHold | null }>(
-    directoryPath(organizationId, `people/${encodeURIComponent(employmentId)}/hold`),
-    { method: on ? "PUT" : "DELETE" }
-  );
+  return api<{ hold: RetentionHold | null }>(personPath(organizationId, employmentId, "hold"), {
+    method: on ? "PUT" : "DELETE",
+  });
 }
 
 /** What End employment would do, for the End dialog. */
@@ -750,9 +722,7 @@ export type EndPreview = {
 
 /** Only for a viewer whose End act cell allows it. */
 export function getEndPreview(organizationId: string, employmentId: string): Promise<EndPreview> {
-  return api<EndPreview>(
-    directoryPath(organizationId, `people/${encodeURIComponent(employmentId)}/end-preview`)
-  );
+  return api<EndPreview>(personPath(organizationId, employmentId, "end-preview"));
 }
 
 /** Owner, org admins and HR only. */
@@ -760,9 +730,7 @@ export function getProfileHistory(
   organizationId: string,
   employmentId: string
 ): Promise<ProfileHistoryEntry[]> {
-  return api<ProfileHistoryEntry[]>(
-    directoryPath(organizationId, `people/${encodeURIComponent(employmentId)}/history`)
-  );
+  return api<ProfileHistoryEntry[]>(personPath(organizationId, employmentId, "history"));
 }
 
 export type DirectoryRoleName = "HR" | "LEADERSHIP";

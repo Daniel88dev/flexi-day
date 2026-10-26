@@ -30,6 +30,16 @@ import {
   copyFromPreviousSpell,
   getDirectoryChecklist,
   hideDirectoryChecklist,
+  changeWorkerType,
+  checkDirectoryEmail,
+  createDirectoryPerson,
+  deleteAllDirectoryData,
+  disableDirectory,
+  getRetentionPreview,
+  getRetentionSettings,
+  sendDirectoryInvite,
+  setRetentionHold,
+  updateRetentionPeriod,
 } from "../directory";
 
 describe("directory API", () => {
@@ -195,6 +205,85 @@ describe("directory API", () => {
     expect(apiMock.mock.calls).toEqual([
       ["/api/directory/org%201/checklist"],
       ["/api/directory/org%201/checklist/hide", { method: "POST" }],
+    ]);
+  });
+
+  it("turns the directory off and deletes its data with the typed name", async () => {
+    apiMock.mockResolvedValue({ enabled: false });
+    await disableDirectory("org 1");
+    await deleteAllDirectoryData("org-1", "Acme");
+    expect(apiMock.mock.calls).toEqual([
+      ["/api/organization/directory/disable?organizationId=org%201", { method: "POST" }],
+      [
+        "/api/organization/directory/delete-all?organizationId=org-1",
+        { method: "POST", body: { confirmName: "Acme" } },
+      ],
+    ]);
+  });
+
+  it("adds a person without an account, in the asked language", async () => {
+    apiMock.mockResolvedValue({});
+    await createDirectoryPerson("org-1", { name: "Ada", type: "employee" }, "cs");
+    await createDirectoryPerson("org-1", { name: "Bo", type: "external" });
+    expect(apiMock.mock.calls).toEqual([
+      [
+        "/api/directory/org-1/people?language=cs",
+        { method: "POST", body: { name: "Ada", type: "employee" } },
+      ],
+      ["/api/directory/org-1/people", { method: "POST", body: { name: "Bo", type: "external" } }],
+    ]);
+  });
+
+  it("sends a directory invite to an encoded Employment, with or without a group", async () => {
+    apiMock.mockResolvedValue({});
+    await sendDirectoryInvite("org-1", "emp/1", "g-1");
+    await sendDirectoryInvite("org-1", "emp-2", null);
+    expect(apiMock.mock.calls).toEqual([
+      ["/api/directory/org-1/people/emp%2F1/invite", { method: "POST", body: { groupId: "g-1" } }],
+      ["/api/directory/org-1/people/emp-2/invite", { method: "POST", body: {} }],
+    ]);
+  });
+
+  it("checks an email in the body, never in the path", async () => {
+    apiMock.mockResolvedValue({ available: true });
+    await checkDirectoryEmail("org-1", "ada@example.com");
+    expect(apiMock).toHaveBeenCalledWith("/api/directory/org-1/people/email-check", {
+      method: "POST",
+      body: { email: "ada@example.com" },
+    });
+  });
+
+  it("changes the worker type with a PUT, in the asked language", async () => {
+    apiMock.mockResolvedValue({});
+    await changeWorkerType("org-1", "emp/1", "external", "en");
+    expect(apiMock).toHaveBeenCalledWith(
+      "/api/directory/org-1/people/emp%2F1/worker-type?language=en",
+      { method: "PUT", body: { type: "external" } }
+    );
+  });
+
+  it("reads and changes the retention periods, and previews a change", async () => {
+    apiMock.mockResolvedValue({});
+    await getRetentionSettings("org-1");
+    await updateRetentionPeriod("org-1", { section: "CONTACT", period: "YEAR_1" });
+    await getRetentionPreview("org-1", { section: "JOB", period: "AT_END" });
+    expect(apiMock.mock.calls).toEqual([
+      ["/api/directory/org-1/settings/retention"],
+      [
+        "/api/directory/org-1/settings/retention",
+        { method: "PUT", body: { section: "CONTACT", period: "YEAR_1" } },
+      ],
+      ["/api/directory/org-1/settings/retention/preview?section=JOB&period=AT_END"],
+    ]);
+  });
+
+  it("sets the Retention hold with a PUT and lifts it with a DELETE", async () => {
+    apiMock.mockResolvedValue({ hold: null });
+    await setRetentionHold("org-1", "emp/1", true);
+    await setRetentionHold("org-1", "emp/1", false);
+    expect(apiMock.mock.calls).toEqual([
+      ["/api/directory/org-1/people/emp%2F1/hold", { method: "PUT" }],
+      ["/api/directory/org-1/people/emp%2F1/hold", { method: "DELETE" }],
     ]);
   });
 });

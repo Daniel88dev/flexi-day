@@ -11,33 +11,16 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { pushToast } from "@/components/toast";
-import {
-  PROFILE_SECTION_KEYS,
-  type DirectoryProfile,
-  type ProfileHistorySection,
-  type ProfileSectionKey,
-  type SectionRetention,
-} from "@/lib/api/directory";
+import type { DirectoryProfile, ProfileSectionKey, SectionRetention } from "@/lib/api/directory";
 import { useSetRetentionHold } from "@/lib/api/queries";
+import { formatDate, formatDay } from "@/lib/directory/format";
+import { PROFILE_SECTION_KEYS, SECTION_WIRE_NAME } from "@/lib/directory/sections";
 import { useTranslation } from "@/lib/i18n/use-translation";
-
-const HISTORY_SECTION: Record<ProfileSectionKey, ProfileHistorySection> = {
-  card: "CARD",
-  photo: "PHOTO",
-  workContact: "WORK_CONTACT",
-  job: "JOB",
-  contact: "CONTACT",
-  personal: "PERSONAL",
-};
-
-/** Formats a `YYYY-MM-DD` date as the calendar day it names, whatever the viewer's zone. */
-export const formatDay = (value: string, locale: string) =>
-  new Date(`${value}T00:00:00Z`).toLocaleDateString(locale, { timeZone: "UTC" });
 
 /** The label of a Section, as the profile history names it. */
 export const useSectionLabel = () => {
   const { t } = useTranslation();
-  return (key: ProfileSectionKey) => t.directory.history.sections[HISTORY_SECTION[key]];
+  return (key: ProfileSectionKey) => t.directory.history.sections[SECTION_WIRE_NAME[key]];
 };
 
 /** The Retention hold and when each Section goes or went, on an ended profile. */
@@ -72,10 +55,7 @@ export function ProfileRetention({ profile }: { profile: DirectoryProfile }) {
       <div className="flex flex-wrap items-center gap-3">
         <p className="text-muted-foreground">
           {hold
-            ? copy.holdOn(
-                new Date(hold.setAt).toLocaleDateString(t.common.dateLocale),
-                hold.setBy?.name ?? null
-              )
+            ? copy.holdOn(formatDate(hold.setAt, t.common.dateLocale), hold.setBy?.name ?? null)
             : copy.holdOff}
         </p>
         {profile.actions?.hold ? <HoldAction profile={profile} on={!!hold} /> : null}

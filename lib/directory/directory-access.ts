@@ -5,7 +5,9 @@ export type DirectoryNavEntry = {
   enterpriseChip: boolean;
 };
 
-const administers = (organization: DirectoryOrganization) => organization.role !== "MEMBER";
+/** The owner or an org admin. */
+export const administers = (organization: Pick<DirectoryOrganization, "role">) =>
+  organization.role !== "MEMBER";
 
 /**
  * Whether the People section carries a Directory entry. Everyone in a

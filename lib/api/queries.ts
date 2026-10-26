@@ -139,6 +139,7 @@ import {
 } from "./person-export";
 import { captureSessionLocation } from "@/lib/attendance/geolocation";
 import { useTranslation } from "@/lib/i18n/use-translation";
+import type { Locale } from "@/lib/i18n/config";
 import {
   addOrganizationAdmin,
   getOrganization,
@@ -364,8 +365,9 @@ export const qk = {
   directoryOrganizations: () => ["directory", "organizations"] as const,
   directoryPeople: (organizationId: string) => ["directory", "people", organizationId] as const,
   directoryFormer: (organizationId: string) => ["directory", "former", organizationId] as const,
-  directoryProfile: (organizationId: string, employmentId: string) =>
-    ["directory", "profile", organizationId, employmentId] as const,
+  /** Country names in the answer follow the interface language, so the language is in the key. */
+  directoryProfile: (organizationId: string, employmentId: string, locale: Locale) =>
+    ["directory", "profile", organizationId, employmentId, locale] as const,
   directoryProfileHistory: (organizationId: string, employmentId: string) =>
     ["directory", "history", organizationId, employmentId] as const,
   directoryEndPreview: (organizationId: string, employmentId: string) =>
@@ -375,7 +377,7 @@ export const qk = {
   directoryPermissions: (organizationId: string) =>
     ["directory", "permissions", organizationId] as const,
   directoryPermissionHistory: (organizationId: string) =>
-    ["directory", "permissionHistory", organizationId] as const,
+    ["directory", "permission-history", organizationId] as const,
   directoryRoles: (organizationId: string) => ["directory", "roles", organizationId] as const,
   directoryChecklist: (organizationId: string) =>
     ["directory", "checklist", organizationId] as const,
@@ -388,13 +390,13 @@ export const qk = {
   directoryReadLog: (organizationId: string, filter: ReadLogFilter) =>
     [
       "directory",
-      "readLog",
+      "read-log",
       organizationId,
       filter.employmentId ?? "",
       filter.readerUserId ?? "",
     ] as const,
-  directoryList: (organizationId: string, kind: DirectoryListKind) =>
-    ["directory", "list", kind, organizationId] as const,
+  directoryList: (organizationId: string, kind: DirectoryListKind, locale: Locale) =>
+    ["directory", "list", organizationId, kind, locale] as const,
   organizationExport: (organizationId?: string | null) =>
     ["person-exports", "organization", organizationId ?? "none"] as const,
   attendanceTeam: (params: TeamAttendanceParams) =>
@@ -1724,11 +1726,10 @@ export function useFormerDirectoryPeople(organizationId: string | null, enabled:
   });
 }
 
-/** Country names in the answer follow the interface language, so the language is part of the key. */
 export function useDirectoryProfile(organizationId: string, employmentId: string) {
   const { locale, localeReady } = useTranslation();
   return useQuery({
-    queryKey: [...qk.directoryProfile(organizationId, employmentId), locale],
+    queryKey: qk.directoryProfile(organizationId, employmentId, locale),
     queryFn: () => getDirectoryProfile(organizationId, employmentId, locale),
     enabled: localeReady && !!organizationId && !!employmentId,
   });
@@ -1761,10 +1762,7 @@ export function useCreateDirectoryPerson(organizationId: string) {
     mutationFn: (person: NewDirectoryPerson) =>
       createDirectoryPerson(organizationId, person, locale),
     onSuccess: (profile) => {
-      qc.setQueryData(
-        [...qk.directoryProfile(organizationId, profile.employmentId), locale],
-        profile
-      );
+      qc.setQueryData(qk.directoryProfile(organizationId, profile.employmentId, locale), profile);
       qc.invalidateQueries({ queryKey: ["directory"] });
     },
   });
@@ -1801,7 +1799,7 @@ export function useCopyFromPreviousSpell(organizationId: string, employmentId: s
     mutationFn: (sections: CopyableSectionKey[]) =>
       copyFromPreviousSpell(organizationId, employmentId, sections, locale),
     onSuccess: (profile) => {
-      qc.setQueryData([...qk.directoryProfile(organizationId, employmentId), locale], profile);
+      qc.setQueryData(qk.directoryProfile(organizationId, employmentId, locale), profile);
       qc.removeQueries({ queryKey: qk.directoryPreviousSpell(organizationId, employmentId) });
       qc.invalidateQueries({ queryKey: ["directory"] });
     },
@@ -1814,7 +1812,7 @@ export function useChangeWorkerType(organizationId: string, employmentId: string
   return useMutation({
     mutationFn: (type: WorkerType) => changeWorkerType(organizationId, employmentId, type, locale),
     onSuccess: (profile) => {
-      qc.setQueryData([...qk.directoryProfile(organizationId, employmentId), locale], profile);
+      qc.setQueryData(qk.directoryProfile(organizationId, employmentId, locale), profile);
       qc.invalidateQueries({ queryKey: ["directory"] });
     },
   });
@@ -1827,7 +1825,7 @@ export function useUpdateDirectoryProfile(organizationId: string, employmentId: 
     mutationFn: (patch: DirectoryProfilePatch) =>
       updateDirectoryProfile(organizationId, employmentId, patch, locale),
     onSuccess: (profile) => {
-      qc.setQueryData([...qk.directoryProfile(organizationId, employmentId), locale], profile);
+      qc.setQueryData(qk.directoryProfile(organizationId, employmentId, locale), profile);
       qc.invalidateQueries({ queryKey: ["directory"] });
     },
   });
@@ -1994,7 +1992,7 @@ export function useDirectoryList(
 ) {
   const { locale, localeReady } = useTranslation();
   return useQuery({
-    queryKey: [...qk.directoryList(organizationId ?? "", kind), locale],
+    queryKey: qk.directoryList(organizationId ?? "", kind, locale),
     queryFn: () => getDirectoryList(organizationId!, kind, locale),
     enabled: enabled && localeReady && !!organizationId,
   });

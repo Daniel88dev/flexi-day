@@ -21,10 +21,9 @@ import {
   useOrganization,
   useSendDirectoryInvite,
 } from "@/lib/api/queries";
+import { administers } from "@/lib/directory/directory-access";
+import { profileEditHref } from "@/lib/directory/routes";
 import { useTranslation } from "@/lib/i18n/use-translation";
-
-const recordEditHref = (organizationId: string, employmentId: string) =>
-  `/directory/person/edit?organizationId=${encodeURIComponent(organizationId)}&employmentId=${encodeURIComponent(employmentId)}#record`;
 
 /** Send directory invite on the profile of a person without an account. */
 export function InviteAction({ profile }: { profile: DirectoryProfile }) {
@@ -54,9 +53,7 @@ export function InviteAction({ profile }: { profile: DirectoryProfile }) {
         <InviteDialog
           profile={profile}
           sent={sent}
-          administers={
-            organization?.role === "OWNER" || organization?.role === "ORGANIZATION_ADMIN"
-          }
+          administers={!!organization && administers(organization)}
           onClose={() => setOpen(false)}
         />
       ) : null}
@@ -143,7 +140,7 @@ function InviteDialog({
             </Button>
           ) : (
             <Button asChild>
-              <Link href={recordEditHref(profile.organizationId, profile.employmentId)}>
+              <Link href={profileEditHref(profile.organizationId, profile.employmentId, "record")}>
                 {copy.addEmail}
               </Link>
             </Button>
