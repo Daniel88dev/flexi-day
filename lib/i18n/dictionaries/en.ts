@@ -1655,6 +1655,9 @@ export const en = {
         readAgreement: "Read the directory agreement",
         accept: (organization: string) => `I accept this agreement for ${organization}`,
         recordHint: "We record who accepted, when, and which version.",
+        tellMembers: "Tell members",
+        tellMembersHint:
+          "Everyone with an account here gets a notice in the app and on their phone, asking them to check their profile.",
         cancel: "Cancel",
         confirm: "Accept and turn on",
         working: "Turning on…",
@@ -1813,6 +1816,19 @@ export const en = {
   },
 
   directory: {
+    checklist: {
+      title: "Set up the directory",
+      items: {
+        departments: "Add departments",
+        locations: "Add locations",
+        hr: "Assign HR",
+        jobTitles: "Add job titles",
+      },
+      jobTitlesHint: "on people's profiles",
+      done: "Done",
+      hide: "Hide",
+      reviewPermissions: "Review who sees what",
+    },
     title: "Directory",
     upsellLead:
       "Keep a profile for everyone your organization works with, including people without a Flexi Day account and external workers. You decide who sees which part of it.",

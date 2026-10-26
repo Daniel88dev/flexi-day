@@ -86,7 +86,7 @@ describe("DirectoryCard", () => {
     await userEvent.click(within(dialog).getByLabelText("I accept this agreement for Acme"));
     await userEvent.click(confirm);
 
-    expect(enable).toHaveBeenCalledWith(1);
+    expect(enable).toHaveBeenCalledWith({ agreementVersion: 1, tellMembers: true });
     expect(push).toHaveBeenCalledWith("/directory");
   });
 

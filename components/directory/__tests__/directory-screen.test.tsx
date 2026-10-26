@@ -29,13 +29,26 @@ vi.mock("@/components/directory/add-person-dialog", () => ({
 }));
 
 vi.mock("@/components/directory/directory-settings", () => ({
-  DirectorySettings: () => <div data-testid="directory-settings" />,
+  DirectorySettings: ({ initialPanel }: { initialPanel?: string }) => (
+    <div data-testid="directory-settings" data-panel={initialPanel} />
+  ),
 }));
 
 vi.mock("@/lib/api/queries", () => ({
   useDirectoryOrganizations: () => ({ data: organizations, isLoading: false, error: null }),
   useDirectoryState: () => ({ data: undefined }),
   useAcceptDirectoryAgreement: () => ({ mutateAsync: vi.fn(), isPending: false }),
+  useDirectoryChecklist: () => ({
+    data: {
+      hidden: false,
+      items: [
+        { key: "departments", done: false },
+        { key: "locations", done: true },
+      ],
+      reviewPermissions: true,
+    },
+  }),
+  useHideDirectoryChecklist: () => ({ mutate: vi.fn(), isPending: false }),
   useDirectoryPeople: (organizationId: string | null) => ({
     data: organizationId ? people : undefined,
     isLoading: false,
@@ -336,9 +349,26 @@ describe("DirectoryScreen", () => {
     expect(screen.queryByRole("searchbox")).not.toBeInTheDocument();
   });
 
-  it("offers no Directory settings tab to a member", () => {
+  it("offers no Directory settings tab and no checklist to a member", () => {
     renderWithClient(<DirectoryScreen />);
     expect(screen.queryByRole("tab", { name: "Directory settings" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: "Set up the directory" })).not.toBeInTheDocument();
+  });
+
+  it("shows the setup checklist to settings viewers and opens the panel an item names", async () => {
+    const user = userEvent.setup();
+    people = { ...people, settings: true };
+    renderWithClient(<DirectoryScreen />);
+
+    expect(screen.getByRole("region", { name: "Set up the directory" })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Review who sees what" }));
+
+    expect(screen.getByTestId("directory-settings")).toHaveAttribute("data-panel", "permissions");
+    expect(screen.queryByRole("region", { name: "Set up the directory" })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("tab", { name: "People" }));
+    await user.click(screen.getByRole("button", { name: "Add departments" }));
+    expect(screen.getByTestId("directory-settings")).toHaveAttribute("data-panel", "lists");
   });
 
   it("shows a lapsed organization's banner, with See plans for an admin", () => {

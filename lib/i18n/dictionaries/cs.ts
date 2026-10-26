@@ -1670,6 +1670,9 @@ export const cs: Dictionary = {
         readAgreement: "Přečíst smlouvu k adresáři",
         accept: (organization: string) => `Přijímám tuto smlouvu za ${organization}`,
         recordHint: "Zaznamenáme, kdo smlouvu přijal, kdy a kterou verzi.",
+        tellMembers: "Dát vědět členům",
+        tellMembersHint:
+          "Každý, kdo tu má účet, dostane upozornění v aplikaci a v telefonu s výzvou, ať si zkontroluje svůj profil.",
         cancel: "Zrušit",
         confirm: "Přijmout a zapnout",
         working: "Zapínám…",
@@ -1827,6 +1830,19 @@ export const cs: Dictionary = {
   },
 
   directory: {
+    checklist: {
+      title: "Nastavte adresář",
+      items: {
+        departments: "Přidejte oddělení",
+        locations: "Přidejte lokality",
+        hr: "Určete HR",
+        jobTitles: "Doplňte pracovní pozice",
+      },
+      jobTitlesHint: "v profilech lidí",
+      done: "Hotovo",
+      hide: "Skrýt",
+      reviewPermissions: "Zkontrolujte, kdo co vidí",
+    },
     title: "Adresář",
     upsellLead:
       "Veďte profil pro každého, s kým vaše organizace spolupracuje, včetně lidí bez účtu ve Flexi Day a externích spolupracovníků. Sami určíte, kdo uvidí kterou část.",

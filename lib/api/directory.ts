@@ -46,13 +46,15 @@ export function getDirectoryState(organizationId: string): Promise<DirectoryStat
 }
 
 /** Owner only; sends the agreement version the owner was shown. */
+export type EnableDirectoryInput = { agreementVersion: number; tellMembers: boolean };
+
 export function enableDirectory(
   organizationId: string,
-  agreementVersion: number
+  input: EnableDirectoryInput
 ): Promise<DirectoryState> {
   return api<DirectoryState>(scoped("/api/organization/directory/enable", organizationId), {
     method: "POST",
-    body: { agreementVersion },
+    body: input,
   });
 }
 
@@ -863,4 +865,25 @@ export function setDirectoryRoles(
     directoryPath(organizationId, `roles/${encodeURIComponent(employmentId)}`),
     { method: "PUT", body: { roles } }
   );
+}
+
+export type DirectoryChecklistItemKey = "departments" | "locations" | "hr" | "jobTitles";
+
+/** The setup checklist on the directory page. `hr` and `reviewPermissions` come to the owner only. */
+export type DirectoryChecklist = {
+  hidden: boolean;
+  items: { key: DirectoryChecklistItemKey; done: boolean }[];
+  reviewPermissions: boolean;
+};
+
+/** The owner, org admins and HR. */
+export function getDirectoryChecklist(organizationId: string): Promise<DirectoryChecklist> {
+  return api<DirectoryChecklist>(directoryPath(organizationId, "checklist"));
+}
+
+/** Hides the checklist for the whole organization until the next enable. */
+export function hideDirectoryChecklist(organizationId: string): Promise<DirectoryChecklist> {
+  return api<DirectoryChecklist>(directoryPath(organizationId, "checklist/hide"), {
+    method: "POST",
+  });
 }
