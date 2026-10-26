@@ -30,6 +30,7 @@ import { matchesPerson, useDirectoryView } from "@/lib/directory/directory-view"
 import { entryFilterOptions, entryLabel, matchesEntries } from "@/lib/directory/entries";
 import type { DirectoryEntryRef } from "@/lib/api/directory-lists";
 import { useTranslation } from "@/lib/i18n/use-translation";
+import { formatDay, useSectionLabel } from "@/components/directory/profile-retention";
 
 export const profileHref = (organizationId: string, employmentId: string) =>
   `/directory/person?organizationId=${encodeURIComponent(organizationId)}&employmentId=${encodeURIComponent(employmentId)}`;
@@ -391,6 +392,7 @@ function FormerView({
   query: string;
 }) {
   const { t } = useTranslation();
+  const sectionLabel = useSectionLabel();
   if (!former) return <ListState loading={loading} failed={failed} />;
   const shown = former
     .filter((person) => matchesPerson(person, query))
@@ -408,6 +410,7 @@ function FormerView({
             <TableHead>{t.directory.departmentColumn}</TableHead>
             <TableHead>{t.directory.startedColumn}</TableHead>
             <TableHead>{t.directory.endedColumn}</TableHead>
+            <TableHead>{t.directory.retention.nextRemovalColumn}</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -429,8 +432,13 @@ function FormerView({
               <TableCell>
                 <span className="flex flex-wrap items-center gap-2">
                   {date(person.endedAt)}
-                  <DirectoryMarkers markers={person.markers} />
+                  <DirectoryMarkers markers={person.markers} hold={person.hold} />
                 </span>
+              </TableCell>
+              <TableCell className="text-muted-foreground">
+                {person.nextRemoval
+                  ? `${sectionLabel(person.nextRemoval.section)} · ${formatDay(person.nextRemoval.date, t.common.dateLocale)}`
+                  : ""}
               </TableCell>
             </TableRow>
           ))}

@@ -1839,6 +1839,31 @@ export const cs: Dictionary = {
       doneExternal: (name: string) => `Spolupráce ukončena: ${name}`,
       failed: "Pracovní poměr se nepodařilo ukončit",
     },
+    retention: {
+      title: "Uchování údajů",
+      status: {
+        REMOVES_ON: (date: string) => `Odstraní se ${date}`,
+        REMOVED_ON: (date: string) => `Odstraněno po uplynutí lhůty ${date}`,
+        KEPT_UNTIL_ERASED: "Uchovává se do smazání",
+        ON_HOLD: "Drží ho pozastavení mazání",
+      },
+      holdOff: "Mazání není pozastavené.",
+      holdOn: (date: string, name: string | null) =>
+        name
+          ? `Mazání je pozastavené od ${date}, pozastavil(a) ${name}. Dokud platí, nic se neodstraní.`
+          : `Mazání je pozastavené od ${date}. Dokud platí, nic se neodstraní.`,
+      setHold: "Pozastavit mazání",
+      liftHold: "Zrušit pozastavení mazání",
+      liftTitle: (name: string) => `Zrušit pozastavení mazání u osoby ${name}?`,
+      liftBody:
+        "Příští noční běh odstraní každou sekci, které už uplynula lhůta uchování. Nikdo nedostane upozornění.",
+      lift: "Zrušit pozastavení",
+      holdSet: "Mazání je pozastavené",
+      holdLifted: "Pozastavení mazání je zrušené",
+      holdFailed: "Pozastavení mazání se nepodařilo změnit",
+      nextRemovalColumn: "Příští odstranění",
+      holdMarker: "Pozastaveno",
+    },
     markers: {
       EXTERNAL_WORKER: "Externí spolupracovník",
       NO_ACCOUNT: "Bez účtu",

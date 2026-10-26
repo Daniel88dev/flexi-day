@@ -40,6 +40,7 @@ import {
   getReadLog,
   updateDirectoryGeneralSettings,
   updateRetentionPeriod,
+  setRetentionHold,
   type ReadLogFilter,
   type ProfileHistorySection,
   type RetentionPeriod,
@@ -1841,8 +1842,18 @@ export function useUpdateRetentionPeriod(organizationId: string) {
       qc.setQueryData(qk.directoryRetention(organizationId), settings);
       qc.invalidateQueries({ queryKey: qk.directoryGeneralSettings(organizationId) });
       qc.invalidateQueries({ queryKey: ["directory", "profile"] });
+      qc.invalidateQueries({ queryKey: ["directory", "former"] });
       qc.invalidateQueries({ queryKey: ["directory", "end-preview"] });
     },
+  });
+}
+
+/** Sets (`true`) or lifts (`false`) the Retention hold on one ended Employment. */
+export function useSetRetentionHold(organizationId: string, employmentId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (on: boolean) => setRetentionHold(organizationId, employmentId, on),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["directory"] }),
   });
 }
 

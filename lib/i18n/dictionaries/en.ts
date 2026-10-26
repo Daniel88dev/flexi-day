@@ -1824,6 +1824,31 @@ export const en = {
       doneExternal: (name: string) => `${name}'s engagement ended`,
       failed: "Could not end the employment",
     },
+    retention: {
+      title: "Retention",
+      status: {
+        REMOVES_ON: (date: string) => `Removed on ${date}`,
+        REMOVED_ON: (date: string) => `Removed by retention on ${date}`,
+        KEPT_UNTIL_ERASED: "Kept until erased",
+        ON_HOLD: "Kept by the retention hold",
+      },
+      holdOff: "No retention hold.",
+      holdOn: (date: string, name: string | null) =>
+        name
+          ? `Retention hold on since ${date}, set by ${name}. Nothing is removed while it is on.`
+          : `Retention hold on since ${date}. Nothing is removed while it is on.`,
+      setHold: "Set retention hold",
+      liftHold: "Lift retention hold",
+      liftTitle: (name: string) => `Lift the retention hold on ${name}?`,
+      liftBody:
+        "The next nightly run removes every Section that is past its retention period. Nobody is told.",
+      lift: "Lift hold",
+      holdSet: "Retention hold set",
+      holdLifted: "Retention hold lifted",
+      holdFailed: "Could not change the retention hold",
+      nextRemovalColumn: "Next removal",
+      holdMarker: "Hold",
+    },
     markers: {
       EXTERNAL_WORKER: "External worker",
       NO_ACCOUNT: "No account",
