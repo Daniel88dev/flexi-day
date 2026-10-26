@@ -26,6 +26,8 @@ import {
   getReadLog,
   getDirectoryGeneralSettings,
   updateDirectoryGeneralSettings,
+  getPreviousSpell,
+  copyFromPreviousSpell,
 } from "../directory";
 
 describe("directory API", () => {
@@ -167,6 +169,19 @@ describe("directory API", () => {
       [
         "/api/directory/org-1/settings/general",
         { method: "PUT", body: { emergencyContactNotice: { en: "Text", cs: null } } },
+      ],
+    ]);
+  });
+
+  it("reads the previous spell and copies the chosen Sections with a POST", async () => {
+    apiMock.mockResolvedValue({});
+    await getPreviousSpell("org-1", "emp/2");
+    await copyFromPreviousSpell("org-1", "emp/2", ["contact", "photo"], "cs");
+    expect(apiMock.mock.calls).toEqual([
+      ["/api/directory/org-1/people/emp%2F2/previous-spell"],
+      [
+        "/api/directory/org-1/people/emp%2F2/previous-spell/copy?language=cs",
+        { method: "POST", body: { sections: ["contact", "photo"] } },
       ],
     ]);
   });

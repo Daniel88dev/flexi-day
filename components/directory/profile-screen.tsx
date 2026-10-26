@@ -7,6 +7,7 @@ import { ChevronLeft, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { CopyPreviousSpellBanner } from "@/components/directory/copy-previous-spell";
 import { DirectoryLapsedBanner } from "@/components/directory/directory-lapsed-banner";
 import { DirectoryMarkers } from "@/components/directory/directory-markers";
 import { PersonAvatar } from "@/components/directory/person-avatar";
@@ -68,6 +69,7 @@ export function ProfileScreen() {
     <div className="space-y-6">
       {back}
       {organization ? <DirectoryLapsedBanner organization={organization} /> : null}
+      <CopyPreviousSpellBanner profile={profile.data} organization={organization} />
       <ProfileHeader profile={profile.data} />
       <ProfileTabs profile={profile.data} />
     </div>

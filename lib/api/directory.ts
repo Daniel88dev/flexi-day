@@ -432,6 +432,47 @@ export function changeWorkerType(
   );
 }
 
+/** The Sections Copy from previous spell can bring over. */
+export const COPYABLE_SECTIONS = ["contact", "personal", "photo"] as const;
+
+export type CopyableSectionKey = (typeof COPYABLE_SECTIONS)[number];
+
+/** What one Section of the previous spell offers the new one. A copy never overwrites. */
+export type CopyableSection =
+  | { status: "COPYABLE" | "EMPTY" | "FILLED" | "NOT_WRITABLE" }
+  | { status: "REMOVED_ON"; date: string };
+
+export type PreviousSpell = {
+  previous: { employmentId: string; startedAt: string; endedAt: string };
+  /** Personal is absent when the new spell is an External worker's. */
+  sections: Partial<Record<CopyableSectionKey, CopyableSection>>;
+};
+
+export function getPreviousSpell(
+  organizationId: string,
+  employmentId: string
+): Promise<PreviousSpell> {
+  return api<PreviousSpell>(
+    directoryPath(organizationId, `people/${encodeURIComponent(employmentId)}/previous-spell`)
+  );
+}
+
+export function copyFromPreviousSpell(
+  organizationId: string,
+  employmentId: string,
+  sections: CopyableSectionKey[],
+  language?: Locale
+): Promise<DirectoryProfile> {
+  const query = language ? `?language=${language}` : "";
+  return api<DirectoryProfile>(
+    directoryPath(
+      organizationId,
+      `people/${encodeURIComponent(employmentId)}/previous-spell/copy${query}`
+    ),
+    { method: "POST", body: { sections } }
+  );
+}
+
 /**
  * Show: the values of one Sensitive section. For anyone but the person this
  * writes one read-log row, so call it only on the viewer's click.
@@ -644,6 +685,11 @@ export type ProfileActions = {
   invite?: boolean;
   /** Change worker type: the act cell allows it, on an open record. */
   changeType?: boolean;
+  /**
+   * Copy from previous spell: the owner, org admins and HR, on an open record
+   * whose previous spell holds a Section they can copy.
+   */
+  copyFromPreviousSpell?: boolean;
 };
 
 /** The owner and org admins, on an ended record, on every plan. */

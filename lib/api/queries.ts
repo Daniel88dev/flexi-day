@@ -19,10 +19,13 @@ import {
   createDirectoryPerson,
   sendDirectoryInvite,
   changeWorkerType,
+  copyFromPreviousSpell,
+  getPreviousSpell,
   checkDirectoryEmail,
   type NewDirectoryPerson,
   type DirectoryProfilePatch,
   type WorkerType,
+  type CopyableSectionKey,
   getDirectoryState,
   listDirectoryOrganizations,
   listDirectoryPeople,
@@ -362,6 +365,8 @@ export const qk = {
     ["directory", "history", organizationId, employmentId] as const,
   directoryEndPreview: (organizationId: string, employmentId: string) =>
     ["directory", "end-preview", organizationId, employmentId] as const,
+  directoryPreviousSpell: (organizationId: string, employmentId: string) =>
+    ["directory", "previous-spell", organizationId, employmentId] as const,
   directoryPermissions: (organizationId: string) =>
     ["directory", "permissions", organizationId] as const,
   directoryPermissionHistory: (organizationId: string) =>
@@ -1769,6 +1774,31 @@ export function useSendDirectoryInvite(organizationId: string, employmentId: str
 
 export function useCheckDirectoryEmail(organizationId: string) {
   return useMutation({ mutationFn: (email: string) => checkDirectoryEmail(organizationId, email) });
+}
+
+/** What Copy from previous spell can bring over; fetched when its dialog opens. */
+export function usePreviousSpell(organizationId: string, employmentId: string, enabled: boolean) {
+  return useQuery({
+    queryKey: qk.directoryPreviousSpell(organizationId, employmentId),
+    queryFn: () => getPreviousSpell(organizationId, employmentId),
+    enabled: enabled && !!organizationId && !!employmentId,
+    staleTime: 0,
+  });
+}
+
+/** Copy from previous spell; the profile lands in the cache, photos and lists refresh. */
+export function useCopyFromPreviousSpell(organizationId: string, employmentId: string) {
+  const qc = useQueryClient();
+  const { locale } = useTranslation();
+  return useMutation({
+    mutationFn: (sections: CopyableSectionKey[]) =>
+      copyFromPreviousSpell(organizationId, employmentId, sections, locale),
+    onSuccess: (profile) => {
+      qc.setQueryData([...qk.directoryProfile(organizationId, employmentId), locale], profile);
+      qc.removeQueries({ queryKey: qk.directoryPreviousSpell(organizationId, employmentId) });
+      qc.invalidateQueries({ queryKey: ["directory"] });
+    },
+  });
 }
 
 export function useChangeWorkerType(organizationId: string, employmentId: string) {

@@ -132,6 +132,24 @@ describe("ProfileScreen", () => {
     );
   });
 
+  it("shows the Copy from previous spell banner only when the profile offers it", () => {
+    profile = {
+      data: jana({
+        actions: { end: false, export: false, erase: false, copyFromPreviousSpell: true },
+      }),
+      error: null,
+    };
+    const { unmount } = renderWithClient(<ProfileScreen />);
+    expect(screen.getByTestId("copy-previous-spell")).toHaveTextContent(
+      /copy from previous spell/i
+    );
+    unmount();
+
+    profile = { data: jana(), error: null };
+    renderWithClient(<ProfileScreen />);
+    expect(screen.queryByTestId("copy-previous-spell")).not.toBeInTheDocument();
+  });
+
   it("shows the Department and the Location with its country, an archived entry marked", () => {
     profile = {
       data: jana({
