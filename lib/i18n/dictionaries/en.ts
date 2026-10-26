@@ -1516,6 +1516,14 @@ export const en = {
     toDashboard: "Go to dashboard",
     loadFailed: "Couldn't load this invite. Please try again.",
     failed: "Couldn't join the group. Please try again.",
+    directoryTitle: (organization: string) => `Join ${organization}`,
+    directoryInvitedBy: (name: string, organization: string) =>
+      `${name} invited you to ${organization} on flexiday.`,
+    directoryInvitedByUnknown: (organization: string) =>
+      `You've been invited to ${organization} on flexiday.`,
+    directoryJoin: "Accept invite",
+    alreadyEmployed:
+      "You already belong to this organization under another record. Ask its admin to sort out the duplicate, then open this invite again.",
   },
 
   footer: {
@@ -1835,6 +1843,34 @@ export const en = {
       adding: "Adding…",
       done: (name: string) => `${name} was added`,
     },
+    invite: {
+      action: "Send invite",
+      again: "Send invite again",
+      title: (name: string) => `Invite ${name} to Flexi Day`,
+      description: (email: string) =>
+        `The invite goes to ${email}. Accepting it creates their account or signs them in, and this profile becomes theirs.`,
+      noEmail: "Add an email to the profile before sending an invite.",
+      addEmail: "Add email",
+      lapsed: "Sending invites needs the Enterprise plan.",
+      group: "Also add to a group",
+      noGroup: "No group",
+      groupHint: "Optional. They join the group when they accept.",
+      resendNote: "Sending again withdraws the earlier invite.",
+      cancel: "Cancel",
+      confirm: "Send invite",
+      sending: "Sending…",
+      done: (email: string) => `Invite sent to ${email}`,
+      notDelivered: "The invite was created, but the email didn't go out. Send it again.",
+      errors: {
+        INVITE_DENIED: "You can't send directory invites.",
+        NO_EMAIL: "Add an email to the profile first.",
+        HAS_ACCOUNT: "This person already has an account.",
+        EMPLOYMENT_ENDED: "This person no longer works here.",
+        GROUP_NOT_FOUND: "That group no longer exists. Pick another.",
+        DIRECTORY_PLAN_REQUIRED: "Sending invites needs the Enterprise plan.",
+        failed: "Could not send the invite",
+      },
+    },
     end: {
       action: "End employment",
       actionExternal: "End engagement",
@@ -1892,6 +1928,7 @@ export const en = {
       NO_ACCOUNT: "No account",
       ACCOUNT_DELETED: "Account deleted",
       REJOINED: "Rejoined",
+      INVITE_SENT: "Invite sent",
     },
     lapsed: {
       title: "The directory is read-only on this plan",
@@ -2040,6 +2077,8 @@ export const en = {
       saving: "Saving…",
       cancel: "Cancel",
       nameRequired: "Enter a name.",
+      signInEmailHint: "A directory invite goes to this address.",
+      emailInvalid: "That isn't an email address.",
       nothingToEdit: "You can't edit anything on this profile.",
       privatePhoneCountry: "Private phone country",
       emergencyName: (slot: number) => `Emergency contact ${slot}: name`,
@@ -2059,6 +2098,8 @@ export const en = {
       errors: {
         SECTION_NOT_WRITABLE: "You can no longer edit one of these sections.",
         NAME_FROM_ACCOUNT: "The name follows the person's account.",
+        EMAIL_FROM_ACCOUNT: "Only a person without an account takes an email here.",
+        EMPLOYMENT_EMAIL_TAKEN: "Someone in the organization already uses this email.",
         DIRECTORY_PLAN_REQUIRED:
           "Setting values needs the Enterprise plan. You can still clear them.",
         EMPLOYEE_NUMBER_TAKEN: "Another current employee already has this employee number.",

@@ -56,6 +56,8 @@ import {
 } from "@/lib/directory/profile-form";
 import { useTranslation } from "@/lib/i18n/use-translation";
 
+const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 /**
  * One edit page for the whole profile, with an anchor per Section. A Section
  * the viewer only reads is greyed, one they can't read is left out. On a
@@ -125,6 +127,8 @@ function ProfileEditForm({ profile, lapsed }: { profile: DirectoryProfile; lapse
   const workContactWrite = workContact?.level === "WRITE";
   const jobWrite = job?.level === "WRITE";
   const nameEditable = cardWrite && !card?.nameFromAccount && !lapsed;
+  // Only an open record without an account holds an address of its own; a directory invite goes there.
+  const emailWritable = cardWrite && profile.account?.status === "NO_ACCOUNT" && !profile.ended;
   const external = profile.markers.includes("EXTERNAL_WORKER");
   const people = useDirectoryPeople(cardWrite ? profile.organizationId : null).data?.people;
   const departments = useDirectoryList(profile.organizationId, "departments", cardWrite).data;
@@ -133,6 +137,7 @@ function ProfileEditForm({ profile, lapsed }: { profile: DirectoryProfile; lapse
   const [initial] = useState(() => profileFormValues(profile));
   const [values, setValues] = useState(initial);
   const [nameError, setNameError] = useState(false);
+  const [emailError, setEmailError] = useState(false);
   const [phoneError, setPhoneError] = useState(false);
   const countries = useMemo(() => phoneCountryOptions(locale), [locale]);
   const addressCountries = useMemo(() => countryOptions(locale), [locale]);
@@ -161,6 +166,7 @@ function ProfileEditForm({ profile, lapsed }: { profile: DirectoryProfile; lapse
 
   const patch = buildProfilePatch(initial, values, {
     name: nameEditable,
+    email: emailWritable,
     card: cardWrite,
     workContact: workContactWrite,
     job: jobWrite,
@@ -184,6 +190,15 @@ function ProfileEditForm({ profile, lapsed }: { profile: DirectoryProfile; lapse
       return;
     }
     setNameError(false);
+    if (
+      emailWritable &&
+      values.signInEmail.trim() !== "" &&
+      !EMAIL.test(values.signInEmail.trim())
+    ) {
+      setEmailError(true);
+      return;
+    }
+    setEmailError(false);
     if (workContactWrite && workPhoneInvalid(values)) {
       setPhoneError(true);
       return;
@@ -305,16 +320,28 @@ function ProfileEditForm({ profile, lapsed }: { profile: DirectoryProfile; lapse
             error={nameError ? copy.nameRequired : null}
           />
           {profile.account ? (
-            <TextField
-              id="profile-sign-in-email"
-              label={labels.signInEmail}
-              value={profile.account.signInEmail ?? ""}
-              onChange={() => undefined}
-              disabled
-              hint={
-                profile.account.status === "ACTIVE" ? <Locked>{copy.fromAccount}</Locked> : null
-              }
-            />
+            emailWritable ? (
+              <TextField
+                id="profile-sign-in-email"
+                type="email"
+                label={labels.signInEmail}
+                maxLength={254}
+                {...field("signInEmail", true)}
+                hint={copy.signInEmailHint}
+                error={emailError ? copy.emailInvalid : null}
+              />
+            ) : (
+              <TextField
+                id="profile-sign-in-email"
+                label={labels.signInEmail}
+                value={profile.account.signInEmail ?? ""}
+                onChange={() => undefined}
+                disabled
+                hint={
+                  profile.account.status === "ACTIVE" ? <Locked>{copy.fromAccount}</Locked> : null
+                }
+              />
+            )
           ) : null}
         </div>
       </EditSection>

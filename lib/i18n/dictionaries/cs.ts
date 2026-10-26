@@ -1532,6 +1532,14 @@ export const cs: Dictionary = {
     toDashboard: "Přejít na přehled",
     loadFailed: "Pozvánku se nepodařilo načíst. Zkuste to znovu.",
     failed: "Připojení ke skupině se nezdařilo. Zkuste to znovu.",
+    directoryTitle: (organization: string) => `Připojit se k organizaci ${organization}`,
+    directoryInvitedBy: (name: string, organization: string) =>
+      `${name} vás pozval(a) do organizace ${organization} ve flexiday.`,
+    directoryInvitedByUnknown: (organization: string) =>
+      `Máte pozvánku do organizace ${organization} ve flexiday.`,
+    directoryJoin: "Přijmout pozvánku",
+    alreadyEmployed:
+      "V této organizaci už máte jiný záznam. Požádejte jejího správce, ať duplicitu vyřeší, a pak pozvánku otevřete znovu.",
   },
 
   footer: {
@@ -1848,6 +1856,34 @@ export const cs: Dictionary = {
       adding: "Přidávám…",
       done: (name: string) => `${name} je v adresáři`,
     },
+    invite: {
+      action: "Poslat pozvánku",
+      again: "Poslat pozvánku znovu",
+      title: (name: string) => `Pozvat ${name} do Flexi Day`,
+      description: (email: string) =>
+        `Pozvánka přijde na ${email}. Po přijetí si člověk vytvoří účet nebo se přihlásí a tento profil bude jeho.`,
+      noEmail: "Než pošlete pozvánku, doplňte do profilu e-mail.",
+      addEmail: "Doplnit e-mail",
+      lapsed: "Posílání pozvánek vyžaduje tarif Enterprise.",
+      group: "Přidat také do skupiny",
+      noGroup: "Žádná skupina",
+      groupHint: "Nepovinné. Do skupiny se připojí, až pozvánku přijme.",
+      resendNote: "Novým odesláním se dřívější pozvánka zruší.",
+      cancel: "Zrušit",
+      confirm: "Poslat pozvánku",
+      sending: "Odesílám…",
+      done: (email: string) => `Pozvánka odeslána na ${email}`,
+      notDelivered: "Pozvánka vznikla, ale e-mail se nepodařilo odeslat. Pošlete ji znovu.",
+      errors: {
+        INVITE_DENIED: "Pozvánky do adresáře posílat nemůžete.",
+        NO_EMAIL: "Nejdřív doplňte do profilu e-mail.",
+        HAS_ACCOUNT: "Tento člověk už účet má.",
+        EMPLOYMENT_ENDED: "Tento člověk už tu nepracuje.",
+        GROUP_NOT_FOUND: "Tato skupina už neexistuje. Vyberte jinou.",
+        DIRECTORY_PLAN_REQUIRED: "Posílání pozvánek vyžaduje tarif Enterprise.",
+        failed: "Pozvánku se nepodařilo odeslat",
+      },
+    },
     end: {
       action: "Ukončit pracovní poměr",
       actionExternal: "Ukončit spolupráci",
@@ -1906,6 +1942,7 @@ export const cs: Dictionary = {
       NO_ACCOUNT: "Bez účtu",
       ACCOUNT_DELETED: "Účet smazán",
       REJOINED: "Opětovný nástup",
+      INVITE_SENT: "Pozvánka odeslána",
     },
     lapsed: {
       title: "Na tomto tarifu je adresář jen ke čtení",
@@ -2054,6 +2091,8 @@ export const cs: Dictionary = {
       saving: "Ukládám…",
       cancel: "Zrušit",
       nameRequired: "Zadejte jméno.",
+      signInEmailHint: "Na tuto adresu přijde pozvánka do adresáře.",
+      emailInvalid: "Tohle není e-mailová adresa.",
       nothingToEdit: "Na tomto profilu nemůžete nic upravit.",
       privatePhoneCountry: "Země soukromého telefonu",
       emergencyName: (slot: number) => `Nouzový kontakt ${slot}: jméno`,
@@ -2072,6 +2111,8 @@ export const cs: Dictionary = {
       errors: {
         SECTION_NOT_WRITABLE: "Jednu z těchto sekcí už upravovat nemůžete.",
         NAME_FROM_ACCOUNT: "Jméno se řídí účtem dané osoby.",
+        EMAIL_FROM_ACCOUNT: "E-mail tu lze zadat jen člověku bez účtu.",
+        EMPLOYMENT_EMAIL_TAKEN: "Tento e-mail už v organizaci někdo používá.",
         DIRECTORY_PLAN_REQUIRED:
           "Zadávat hodnoty lze jen s tarifem Enterprise. Mazat je můžete dál.",
         EMPLOYEE_NUMBER_TAKEN: "Toto osobní číslo už má jiný současný zaměstnanec.",

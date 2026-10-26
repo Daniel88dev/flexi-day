@@ -26,19 +26,22 @@ import { closedStatusOf, errorCode, type ClosedStatus } from "@/lib/invites/invi
 export function JoinSignUp({
   token,
   invitedEmail,
+  initialName = "",
   signInHref,
   onSignedUp,
   onClosed,
 }: {
   token: string;
   invitedEmail: string;
+  /** The name the organization holds for the person, filled in for them to correct. */
+  initialName?: string;
   signInHref: string;
   onSignedUp: (signedIn: boolean) => Promise<void>;
   onClosed: (status: ClosedStatus) => void;
 }) {
   const { t } = useTranslation();
   const signUp = useSignUpWithInvite();
-  const [name, setName] = useState("");
+  const [name, setName] = useState(initialName);
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState<string | null>(null);

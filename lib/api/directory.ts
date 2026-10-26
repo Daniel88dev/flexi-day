@@ -71,7 +71,8 @@ export function listDirectoryOrganizations(): Promise<DirectoryOrganization[]> {
 }
 
 /** Badges on a directory row. Only the owner, org admins and HR get the restricted ones. */
-export type DirectoryMarker = "EXTERNAL_WORKER" | "NO_ACCOUNT" | "ACCOUNT_DELETED" | "REJOINED";
+export type DirectoryMarker =
+  "EXTERNAL_WORKER" | "NO_ACCOUNT" | "ACCOUNT_DELETED" | "REJOINED" | "INVITE_SENT";
 
 export type DirectoryPerson = {
   employmentId: string;
@@ -299,6 +300,8 @@ export function getDirectoryProfile(
 export type DirectoryProfilePatch = {
   card?: {
     name?: string;
+    /** Only an open record without an account takes it. */
+    email?: string | null;
     jobTitle?: string | null;
     reportsToEmploymentId?: string | null;
     departmentId?: string | null;
@@ -362,6 +365,30 @@ export function createDirectoryPerson(
     directoryPath(organizationId, `people${language ? `?language=${language}` : ""}`),
     { method: "POST", body: person }
   );
+}
+
+export type DirectoryInvite = {
+  id: string;
+  employmentId: string;
+  groupId: string | null;
+  email: string;
+  status: "open";
+  expiresAt: string;
+  createdAt: string;
+};
+
+export type SentDirectoryInvite = { invite: DirectoryInvite; emailDelivered: boolean };
+
+/** Emails a directory invite to a person without an account; a group is optional. */
+export function sendDirectoryInvite(
+  organizationId: string,
+  employmentId: string,
+  groupId: string | null
+): Promise<SentDirectoryInvite> {
+  return api<SentDirectoryInvite>(directoryPath(organizationId, `people/${employmentId}/invite`), {
+    method: "POST",
+    body: groupId ? { groupId } : {},
+  });
 }
 
 /** Whether an open Employment of the organization already holds the email. The email stays in the body. */
@@ -594,6 +621,8 @@ export type ProfileActions = {
   erase: boolean;
   /** Set or lift the Retention hold: the owner and org admins, on an ended record. */
   hold?: boolean;
+  /** Send directory invite: the act cell allows it, on an open record without an account. */
+  invite?: boolean;
 };
 
 /** The owner and org admins, on an ended record, on every plan. */

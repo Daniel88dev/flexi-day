@@ -39,6 +39,8 @@ vi.mock("@/lib/api/client", async (importOriginal) => ({
 const openInvite = (overrides: Partial<InvitePreview> = {}): InvitePreview => ({
   groupId: "g-1",
   groupName: "Platform",
+  organizationName: "Northwind",
+  personName: null,
   inviterName: "Owen Owner",
   invitedEmail: "dana@northwind.co",
   status: "open",
@@ -401,5 +403,49 @@ describe("JoinPage", () => {
       expect(await screen.findByText("Invite not found")).toBeInTheDocument();
       expect(apiMock).not.toHaveBeenCalled();
     });
+  });
+});
+
+describe("JoinPage, a directory invite", () => {
+  const directoryInvite = () =>
+    openInvite({ groupId: null, groupName: null, personName: "Dana Holt" });
+
+  beforeEach(() => {
+    previewResult = () => Promise.resolve(directoryInvite());
+  });
+
+  it("names the organization and fills the name in for sign-up", async () => {
+    renderWithClient(<JoinPage />);
+
+    expect(await screen.findByText("Join Northwind")).toBeInTheDocument();
+    expect(
+      screen.getByText("Owen Owner invited you to Northwind on flexiday.")
+    ).toBeInTheDocument();
+    expect(screen.getByLabelText("Your name")).toHaveValue("Dana Holt");
+  });
+
+  it("accepts the invite for a signed-in account and lands on the dashboard", async () => {
+    const user = userEvent.setup();
+    signInAs("dana@northwind.co");
+    joinResult = () => Promise.resolve({ groupId: null, claimed: { employmentId: "e-1" } });
+    renderWithClient(<JoinPage />);
+
+    await user.click(await screen.findByRole("button", { name: /Accept invite/ }));
+
+    expect(joinCalls()).toBe(1);
+    await waitFor(() => expect(replaceMock).toHaveBeenCalledWith("/dashboard"));
+  });
+
+  it("explains a refusal because the account already belongs there", async () => {
+    const user = userEvent.setup();
+    signInAs("dana@northwind.co");
+    joinResult = () => Promise.reject(apiError(409, { code: "ALREADY_EMPLOYED" }));
+    renderWithClient(<JoinPage />);
+
+    await user.click(await screen.findByRole("button", { name: /Accept invite/ }));
+
+    expect(
+      await screen.findByText(/You already belong to this organization under another record/)
+    ).toBeInTheDocument();
   });
 });

@@ -200,6 +200,75 @@ describe("ProfileEditScreen", () => {
     expect(mutate).toHaveBeenCalledWith({ card: { name: "Ada Lovelace" } }, expect.anything());
   });
 
+  describe("the sign-in email of a person without an account", () => {
+    const accountless = (signInEmail: string | null) =>
+      jana({
+        sections: { card: card({ nameFromAccount: false }), job: job() },
+        account: { status: "NO_ACCOUNT", signInEmail, directoryRoles: [] },
+        markers: ["NO_ACCOUNT"],
+      });
+
+    it("lets a Card writer set it, lowercased", async () => {
+      const user = userEvent.setup();
+      profile = accountless(null);
+      renderWithClient(<ProfileEditScreen />);
+
+      const email = screen.getByLabelText("Sign-in email");
+      expect(email).toBeEnabled();
+      expect(screen.getByText("A directory invite goes to this address.")).toBeInTheDocument();
+      await user.type(email, "Ada@Example.test");
+      await user.click(screen.getByRole("button", { name: "Save changes" }));
+
+      expect(mutate).toHaveBeenCalledWith(
+        { card: { email: "ada@example.test" } },
+        expect.anything()
+      );
+    });
+
+    it("refuses an address that isn't one before saving", async () => {
+      const user = userEvent.setup();
+      profile = accountless(null);
+      renderWithClient(<ProfileEditScreen />);
+
+      await user.type(screen.getByLabelText("Sign-in email"), "not-an-email");
+      await user.click(screen.getByRole("button", { name: "Save changes" }));
+
+      expect(screen.getByText("That isn't an email address.")).toBeInTheDocument();
+      expect(mutate).not.toHaveBeenCalled();
+    });
+
+    it("stays read-only for a reader of the Card and once the person left", () => {
+      profile = { ...accountless("ada@example.test"), ended: true };
+      renderWithClient(<ProfileEditScreen />);
+      expect(screen.getByLabelText("Sign-in email")).toBeDisabled();
+    });
+
+    it("offers only Clear on a lapsed plan", async () => {
+      const user = userEvent.setup();
+      organization = { ...organization, writable: false };
+      profile = accountless("ada@example.test");
+      renderWithClient(<ProfileEditScreen />);
+
+      expect(screen.getByLabelText("Sign-in email")).toBeDisabled();
+      await user.click(screen.getByRole("button", { name: "Clear: Sign-in email" }));
+      await user.click(screen.getByRole("button", { name: "Save changes" }));
+
+      expect(mutate).toHaveBeenCalledWith({ card: { email: null } }, expect.anything());
+    });
+
+    it("says when another open Employment uses the address", () => {
+      profile = accountless("ada@example.test");
+      updateError = new ApiError(409, "Taken", {}, [
+        { message: "Taken", context: { code: "EMPLOYMENT_EMAIL_TAKEN" } },
+      ]);
+      renderWithClient(<ProfileEditScreen />);
+
+      expect(
+        screen.getByText("Someone in the organization already uses this email.")
+      ).toBeInTheDocument();
+    });
+  });
+
   it("saves only the fields that changed and goes back to the profile", async () => {
     const user = userEvent.setup();
     mutate.mockImplementation((_patch, options: { onSuccess: () => void }) => options.onSuccess());
