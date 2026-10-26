@@ -9,6 +9,12 @@ import {
 } from "@tanstack/react-query";
 import { ApiError, errorCode } from "./client";
 import {
+  acceptDirectoryAgreement,
+  enableDirectory,
+  getDirectoryState,
+  listDirectoryOrganizations,
+} from "./directory";
+import {
   approveVacation,
   approveVacations,
   cancelVacations,
@@ -298,6 +304,9 @@ export const qk = {
   requestedExports: (organizationId?: string | null) =>
     ["person-exports", "requested", organizationId ?? "none"] as const,
   ownExports: () => ["person-exports", "own"] as const,
+  directoryState: (organizationId?: string | null) =>
+    ["directory", "state", organizationId ?? "none"] as const,
+  directoryOrganizations: () => ["directory", "organizations"] as const,
   organizationExport: (organizationId?: string | null) =>
     ["person-exports", "organization", organizationId ?? "none"] as const,
   attendanceTeam: (params: TeamAttendanceParams) =>
@@ -1586,5 +1595,45 @@ export function useSupportGroup(groupId: string | null, enabled: boolean) {
     queryKey: qk.supportGroup(groupId ?? ""),
     queryFn: () => getSupportGroup(groupId ?? ""),
     enabled: enabled && !!groupId,
+  });
+}
+
+/** Owner and org admins only; skipped without an organization. */
+export function useDirectoryState(organizationId: string | null, enabled = true) {
+  return useQuery({
+    queryKey: qk.directoryState(organizationId),
+    queryFn: () => getDirectoryState(organizationId!),
+    enabled: !!organizationId && enabled,
+  });
+}
+
+/** For everyone signed in: the People section and the directory page read it. */
+export function useDirectoryOrganizations() {
+  return useQuery({
+    queryKey: qk.directoryOrganizations(),
+    queryFn: listDirectoryOrganizations,
+  });
+}
+
+export function useEnableDirectory(organizationId: string | null) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (agreementVersion: number) => enableDirectory(organizationId!, agreementVersion),
+    onSuccess: (state) => {
+      qc.setQueryData(qk.directoryState(organizationId), state);
+      qc.invalidateQueries({ queryKey: ["directory"] });
+    },
+  });
+}
+
+export function useAcceptDirectoryAgreement(organizationId: string | null) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (agreementVersion: number) =>
+      acceptDirectoryAgreement(organizationId!, agreementVersion),
+    onSuccess: (state) => {
+      qc.setQueryData(qk.directoryState(organizationId), state);
+      qc.invalidateQueries({ queryKey: ["directory"] });
+    },
   });
 }

@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { renderHook } from "@testing-library/react";
 import type { ViewerRoles } from "@/lib/viewer/use-viewer-roles";
+import type { DirectoryOrganization } from "@/lib/api/directory";
 
 const member: ViewerRoles = {
   isLoading: false,
@@ -18,6 +19,7 @@ const state = {
   supportAdmin: false,
   roles: member,
   attendanceActive: false,
+  directoryOrganizations: undefined as DirectoryOrganization[] | undefined,
 };
 
 vi.mock("next/navigation", () => ({ usePathname: () => state.pathname }));
@@ -27,6 +29,7 @@ vi.mock("@/lib/support/use-support-admin", () => ({
 vi.mock("@/lib/viewer/use-viewer-roles", () => ({ useViewerRoles: () => state.roles }));
 vi.mock("@/lib/api/queries", () => ({
   useAttendanceState: () => ({ data: { active: state.attendanceActive } }),
+  useDirectoryOrganizations: () => ({ data: state.directoryOrganizations }),
 }));
 
 import { useShellNav } from "../use-shell-nav";
@@ -39,6 +42,26 @@ describe("useShellNav", () => {
     state.supportAdmin = false;
     state.roles = member;
     state.attendanceActive = false;
+    state.directoryOrganizations = undefined;
+  });
+
+  it("adds the People section once a Directory organization answers", () => {
+    state.directoryOrganizations = [
+      {
+        organizationId: "org-1",
+        name: "Acme",
+        role: "MEMBER",
+        enabled: true,
+        writable: true,
+        newAgreementVersionReady: false,
+      },
+    ];
+    const { result } = renderHook(() => useShellNav());
+
+    expect(result.current.sections.map((section) => section.id)).toEqual(["timeOff", "people"]);
+    expect(result.current.sections[1]!.links).toEqual([
+      expect.objectContaining({ href: "/directory", label: "Directory" }),
+    ]);
   });
 
   it("gives a member Time off, Settings and the dashboard as the active page", () => {

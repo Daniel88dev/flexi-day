@@ -16,6 +16,7 @@ const member: ShellAccess = {
   supportAdmin: false,
   attendanceActive: false,
   attendanceOpen: false,
+  directory: null,
 };
 const admin: ShellAccess = { ...member, administersSomething: true };
 const loading: ShellAccess = { ...admin, rolesLoading: true };
@@ -48,6 +49,37 @@ describe("isLinkActive", () => {
 });
 
 describe("buildSections", () => {
+  it("puts the People section between Attendance and Organization", () => {
+    const sections = buildSections(en, {
+      ...clocking,
+      administersSomething: true,
+      directory: { enterpriseChip: false },
+    });
+
+    expect(sections.map((section) => section.id)).toEqual([
+      "timeOff",
+      "attendance",
+      "people",
+      "organization",
+    ]);
+    expect(sections[2]).toMatchObject({
+      label: "People",
+      links: [{ href: "/directory", label: "Directory" }],
+    });
+    expect(sections[2]!.links[0]!.badge).toBeUndefined();
+  });
+
+  it("marks the Directory entry Enterprise when it is only an upsell", () => {
+    const sections = buildSections(en, { ...admin, directory: { enterpriseChip: true } });
+    const people = sections.find((section) => section.id === "people");
+
+    expect(people?.links[0]).toMatchObject({ href: "/directory", badge: "Enterprise" });
+  });
+
+  it("leaves the People section out without a Directory entry", () => {
+    expect(buildSections(en, admin).some((section) => section.id === "people")).toBe(false);
+  });
+
   it("returns Time off and Organization for an admin, in mockup order", () => {
     const sections = buildSections(en, admin);
 

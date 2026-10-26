@@ -24,6 +24,7 @@ import {
 import { useShellNav } from "@/lib/navigation/use-shell-nav";
 import { cn } from "@/lib/utils";
 import { useNewGroupEvent, useNoGroups } from "./new-menu";
+import { NavBadge } from "./nav-badge";
 
 const tabClass =
   "flex flex-col items-center gap-1 pt-1.5 text-[11px] font-semibold transition-colors [&_svg]:size-[22px]";
@@ -66,6 +67,7 @@ function SheetLink({
     >
       <Icon className="size-[18px]" />
       {link.label}
+      {link.badge ? <NavBadge>{link.badge}</NavBadge> : null}
     </Link>
   );
 }

@@ -44,6 +44,17 @@ vi.mock("@/lib/api/queries", () => ({
         },
       ],
       admins: [{ userId: "u-1", email: "owner@example.com", isOwner: true, grantedAt: null }],
+      directory: {
+        enabled: true,
+        enabledAt: "2026-09-02T10:00:00.000Z",
+        disabledAt: null,
+        currentAgreementVersion: 2,
+        acceptedAgreementVersion: 1,
+        acceptedAt: "2026-09-02T10:00:00.000Z",
+        acceptances: 1,
+        permissionCells: 72,
+        people: { open: 15, former: 2 },
+      },
     },
     isLoading: false,
     error: null,
@@ -70,5 +81,14 @@ describe("SupportOrganizationPage", () => {
     // Deleted groups stay listed, flagged rather than hidden.
     expect(screen.getByText(/deleted/)).toBeInTheDocument();
     expect(screen.getByText("owner")).toBeInTheDocument();
+  });
+
+  it("shows the directory state, agreement versions and counts", () => {
+    renderWithClient(<SupportOrganizationPage />);
+    const directory = screen.getByTestId("support-directory");
+    expect(directory).toHaveTextContent(/^On since/);
+    expect(directory).toHaveTextContent("accepted version 1, current version 2");
+    expect(directory).toHaveTextContent("15 open and 2 former Employments");
+    expect(directory).toHaveTextContent("72 permission table cells");
   });
 });

@@ -75,6 +75,34 @@ function OrganizationDetail() {
         </CardContent>
       </Card>
 
+      {data.directory ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>People directory</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-1 text-sm" data-testid="support-directory">
+            <p>
+              {data.directory.enabled ? "On" : "Off"}
+              {data.directory.enabled && data.directory.enabledAt
+                ? ` since ${new Date(data.directory.enabledAt).toLocaleDateString()}`
+                : ""}
+              {!data.directory.enabled && data.directory.disabledAt
+                ? ` since ${new Date(data.directory.disabledAt).toLocaleDateString()}`
+                : ""}
+            </p>
+            <p>
+              Agreement: accepted version {data.directory.acceptedAgreementVersion ?? "none"},
+              current version {data.directory.currentAgreementVersion} ·{" "}
+              {data.directory.acceptances} acceptances
+            </p>
+            <p className="text-[color:var(--text-muted)]">
+              {data.directory.people.open} open and {data.directory.people.former} former
+              Employments · {data.directory.permissionCells} permission table cells
+            </p>
+          </CardContent>
+        </Card>
+      ) : null}
+
       <Card>
         <CardHeader>
           <CardTitle>Groups</CardTitle>

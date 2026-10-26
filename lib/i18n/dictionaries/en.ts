@@ -184,6 +184,8 @@ export const en = {
     myAttendance: "My attendance",
     teamAttendance: "Team attendance",
     support: "Support",
+    directory: "Directory",
+    enterpriseChip: "Enterprise",
     organization: "Organization",
     billing: "Billing",
     settings: "Settings",
@@ -193,6 +195,7 @@ export const en = {
     sections: {
       timeOff: "Time off",
       attendance: "Attendance",
+      people: "People",
       organization: "Organization",
     },
   },
@@ -1571,6 +1574,51 @@ export const en = {
     remove: "Remove",
     removing: "Removing…",
     removeFailed: "Could not remove the administrator",
+    directory: {
+      title: "People directory",
+      lead: "A profile for everyone the organization works with, including people without an account and external workers. You decide who sees which part of it.",
+      on: "On",
+      off: "Off",
+      since: (date: string) => `since ${date}`,
+      accepted: (version: number, name: string | null, date: string) =>
+        name
+          ? `Agreement version ${version}, accepted by ${name} on ${date}.`
+          : `Agreement version ${version}, accepted on ${date}.`,
+      turnOn: "Turn on",
+      openDirectory: "Open the directory",
+      ownerOnly: "Only the owner can turn the directory on.",
+      planRequired: "The people directory is on the Enterprise plan.",
+      seePlans: "See plans",
+      dialog: {
+        title: (version: number) => `People directory agreement · version ${version}`,
+        summary: (people: number) =>
+          `${people} ${people === 1 ? "person" : "people"} will appear in the directory under their account names.`,
+        keepsEmployment:
+          "From now on, removing someone from a group no longer ends their employment.",
+        draftNote:
+          "This agreement is a draft. Flexi Day processes the directory's data on your organization's instructions; the full text follows before the directory ships.",
+        readAgreement: "Read the directory agreement",
+        accept: (organization: string) => `I accept this agreement for ${organization}`,
+        recordHint: "We record who accepted, when, and which version.",
+        cancel: "Cancel",
+        confirm: "Accept and turn on",
+        working: "Turning on…",
+        done: "The people directory is on",
+        failed: "Could not turn the directory on",
+        stale:
+          "The agreement has changed. Close this dialog and open it again to read the current version.",
+        alreadyOn: "The directory is already on.",
+      },
+      banner: {
+        title: (version: number) => `Version ${version} of the directory agreement is ready`,
+        body: "Read it and accept it for your organization. The directory keeps working meanwhile.",
+        read: "Read the agreement",
+        accept: (version: number) => `Accept version ${version}`,
+        accepting: "Accepting…",
+        done: "Agreement accepted",
+        failed: "Could not accept the agreement",
+      },
+    },
     export: {
       title: "Organization export",
       lead: "Everything the organization holds: one folder per person, plus organization.json with groups, memberships, settings and group events. Only the owner can run it.",
@@ -1704,6 +1752,29 @@ export const en = {
       `You're managing this group as an administrator of ${name}. You're not a member of it, so you can't book or approve leave here.`,
   },
 
+  directory: {
+    title: "Directory",
+    emptyTitle: "No profiles yet",
+    emptyBody: (organization: string) =>
+      `The directory of ${organization} is on. Profiles of its people will show here.`,
+    upsellLead:
+      "Keep a profile for everyone your organization works with, including people without a Flexi Day account and external workers. You decide who sees which part of it.",
+    upsellPoints: [
+      "A directory of cards with job title, department, location and who they report to",
+      "Job, contact and personal details, encrypted where they are sensitive",
+      "A permission table you set per section and per audience",
+      "Retention periods, exports and a read log for privacy requests",
+    ],
+    seePlans: "See plans",
+    planNote: "People directory and employee profiles are on the Enterprise plan.",
+    offOwner: "The directory is off. Turn it on from the Organization page.",
+    offAdmin: (organization: string) =>
+      `The directory of ${organization} is off. Only its owner can turn it on.`,
+    toOrganization: "Go to the Organization page",
+    unavailable: "The directory isn't on in any of your organizations.",
+    loadFailed: "Could not load the directory",
+  },
+
   billing: {
     title: "Billing",
     subtitle: "Your plan, usage and payment details.",
@@ -1761,6 +1832,7 @@ export const en = {
     featureAttachments: "Attachments on requests (images & PDF)",
     featureBirthdays: "Birthdays on the group calendar",
     featureGroupEvents: "Group events on the shared calendar",
+    featureDirectory: "People directory and employee profiles",
     subscribe: "Subscribe",
     switchPlan: "Switch to this plan",
     current: "Current plan",
@@ -1940,6 +2012,7 @@ export const en = {
           "Everything in Pro",
           "Up to 20 extra group slots",
           "Priority support",
+          "People directory and employee profiles",
         ],
         cta: "Go Enterprise",
       },
