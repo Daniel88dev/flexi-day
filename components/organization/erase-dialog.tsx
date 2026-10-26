@@ -17,13 +17,7 @@ import { errorCopy } from "@/lib/api/client";
 import type { EmploymentListItem } from "@/lib/api/employment";
 import { useEraseEmployment } from "@/lib/api/queries";
 import { useTranslation } from "@/lib/i18n/use-translation";
-
-/** The backend's rule too: case and extra spaces don't make a typed name wrong. */
-const sameName = (typed: string, expected: string) => {
-  const normalize = (value: string) =>
-    value.normalize("NFC").trim().replace(/\s+/g, " ").toLocaleLowerCase();
-  return normalize(typed) === normalize(expected);
-};
+import { sameName } from "@/lib/same-name";
 
 export function EraseDialog({
   open,

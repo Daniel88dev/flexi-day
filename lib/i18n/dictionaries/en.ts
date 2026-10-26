@@ -1602,6 +1602,48 @@ export const en = {
       ownerOnly: "Only the owner can turn the directory on.",
       planRequired: "The people directory is on the Enterprise plan.",
       seePlans: "See plans",
+      turnOff: "Turn off",
+      offSince: (date: string) => `since ${date}`,
+      turnOffDialog: {
+        title: "Turn the people directory off?",
+        body: "Nobody's employment ends. The directory closes for everyone, and its data stays until you delete it. Retention keeps running.",
+        derived: "From now on, removing someone from their last group ends their employment again.",
+        unlinked: (people: number) =>
+          `${people} ${people === 1 ? "person belongs" : "people belong"} to no group and stay employed until you end them.`,
+        reviewOnPeopleCard: "Review them on the People card",
+        invites:
+          "Directory invites that name no group stop working. Invites to a group stay valid.",
+        roles: "HR and Leadership roles stay stored and grant nothing until you turn it back on.",
+        confirm: "Turn off",
+        working: "Turning off…",
+        done: "The people directory is off",
+        failed: "Could not turn the directory off",
+      },
+      deleteAll: "Delete all directory data",
+      deletedOn: (date: string) => `Directory data deleted on ${date}.`,
+      deleteDialog: {
+        title: "Delete all directory data?",
+        body: "This removes for good, for everyone in the organization:",
+        removes: [
+          "every profile field, including Contact and Personal",
+          "Profile photos",
+          "the Department and Location lists",
+          "HR and Leadership roles",
+          "the Permission table and its history",
+          "retention settings and holds, and your emergency-contact notice text",
+          "Person and Organization exports",
+          "every person without an account, current or former",
+        ],
+        keeps:
+          "People with an account keep their employment, name, email, worker type and dates. The agreement acceptances, the read log and profile history stay. Turning the directory on again starts from the default Permission table.",
+        nameLabel: (organization: string) => `Type ${organization} to confirm`,
+        nameMismatch: "That is not the organization's name.",
+        confirm: "Delete all directory data",
+        working: "Deleting…",
+        done: "Directory data deleted",
+        failed: "Could not delete the directory data",
+        directoryOn: "Turn the directory off first.",
+      },
       dialog: {
         title: (version: number) => `People directory agreement · version ${version}`,
         summary: (people: number) =>
@@ -1650,6 +1692,7 @@ export const en = {
         "The directory is on, so End employment, Export and Erase are on each person's profile.",
       openProfile: (name: string) => `Open ${name}'s profile`,
       profile: "Profile",
+      noLink: "People in no group stay employed until you end them.",
       end: "End employment",
       endDialog: {
         title: (name: string) => `End ${name}'s employment`,

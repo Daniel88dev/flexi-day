@@ -18,6 +18,8 @@ export type DirectoryState = {
   enabled: boolean;
   enabledAt: string | null;
   disabledAt: string | null;
+  /** The owner's last Delete all directory data; optional as an older backend sends none. */
+  dataDeletedAt?: string | null;
   /** The plan passes the directory gate: Enterprise or Custom. */
   writable: boolean;
   agreement: DirectoryAgreementState;
@@ -51,6 +53,24 @@ export function enableDirectory(
   return api<DirectoryState>(scoped("/api/organization/directory/enable", organizationId), {
     method: "POST",
     body: { agreementVersion },
+  });
+}
+
+/** Owner only. Ends nobody and keeps the data. */
+export function disableDirectory(organizationId: string): Promise<DirectoryState> {
+  return api<DirectoryState>(scoped("/api/organization/directory/disable", organizationId), {
+    method: "POST",
+  });
+}
+
+/** Owner only, while the directory is off, with the organization's name typed. */
+export function deleteAllDirectoryData(
+  organizationId: string,
+  confirmName: string
+): Promise<DirectoryState> {
+  return api<DirectoryState>(scoped("/api/organization/directory/delete-all", organizationId), {
+    method: "POST",
+    body: { confirmName },
   });
 }
 
