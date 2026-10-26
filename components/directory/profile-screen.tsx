@@ -12,6 +12,7 @@ import { DirectoryMarkers } from "@/components/directory/directory-markers";
 import { PersonAvatar } from "@/components/directory/person-avatar";
 import { ProfileActions } from "@/components/directory/profile-actions";
 import { ProfileHistorySheet } from "@/components/directory/profile-history-sheet";
+import { ProfileRetention } from "@/components/directory/profile-retention";
 import { ContactTab, PersonalTab } from "@/components/directory/sensitive-section";
 import { ApiError } from "@/lib/api/client";
 import type { DirectoryProfile } from "@/lib/api/directory";
@@ -143,6 +144,11 @@ function ProfileTabs({ profile }: { profile: DirectoryProfile }) {
         {hasRecord ? <TabsTrigger value="record">{copy.record}</TabsTrigger> : null}
       </TabsList>
       <TabsContent value="overview" className="space-y-4 pt-4">
+        {profile.retention ? (
+          <ProfileSection title={t.directory.retention.title}>
+            <ProfileRetention profile={profile} />
+          </ProfileSection>
+        ) : null}
         {card ? (
           <ProfileSection title={copy.card}>
             <Facts

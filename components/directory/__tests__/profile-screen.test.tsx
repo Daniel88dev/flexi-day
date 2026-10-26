@@ -45,7 +45,9 @@ const shownContact = (recorded: boolean) => ({
 });
 const historyCalls: boolean[] = [];
 
+const holdMock = vi.fn();
 vi.mock("@/lib/api/queries", () => ({
+  useSetRetentionHold: () => ({ mutateAsync: holdMock, isPending: false }),
   useDirectoryOrganizations: () => ({ data: organizations, isLoading: false, error: null }),
   useDirectoryProfile: () => ({ ...profile, isLoading: false }),
   useProfileHistory: (_organizationId: string, _employmentId: string, enabled: boolean) => {
@@ -537,6 +539,101 @@ describe("ProfileScreen", () => {
       profile = { data: jana({ markers: ["EXTERNAL_WORKER"] }), error: null };
       renderWithClient(<ProfileScreen />);
       expect(screen.queryByRole("tab", { name: "Personal" })).not.toBeInTheDocument();
+    });
+  });
+  describe("retention on a former profile", () => {
+    const former = (overrides: Partial<DirectoryProfile> = {}) =>
+      jana({
+        ended: true,
+        sections: {
+          card: card(),
+          photo: { level: "READ", photo: null },
+          workContact: { level: "READ", workEmail: null, workPhone: null },
+          contact: { level: "READ" },
+        },
+        retention: {
+          hold: null,
+          sections: {
+            card: { status: "KEPT_UNTIL_ERASED" },
+            photo: { status: "REMOVES_ON", date: "2027-09-30" },
+            workContact: { status: "REMOVED_ON", date: "2026-10-20" },
+            contact: { status: "REMOVES_ON", date: "2026-11-24" },
+          },
+        },
+        ...overrides,
+      });
+
+    beforeEach(() => holdMock.mockReset().mockResolvedValue({ hold: null }));
+
+    it("shows each Section's removal date before a purge and the purge's date after it", () => {
+      profile = { data: former(), error: null };
+      renderWithClient(<ProfileScreen />);
+
+      const retention = screen.getByRole("region", { name: "Retention" });
+      const line = (section: string) =>
+        within(retention).getByText(section).closest("div")?.textContent;
+      expect(line("Card")).toBe("CardKept until erased");
+      expect(line("Photo")).toBe("PhotoRemoved on 30/09/2027");
+      expect(line("Work contact")).toBe("Work contactRemoved by retention on 20/10/2026");
+      expect(line("Contact")).toBe("ContactRemoved on 24/11/2026");
+      expect(within(retention).getByText("No retention hold.")).toBeInTheDocument();
+      expect(
+        within(retention).queryByRole("button", { name: "Set retention hold" })
+      ).not.toBeInTheDocument();
+    });
+
+    it("lets an admin set the hold at once", async () => {
+      const user = userEvent.setup();
+      profile = {
+        data: former({ actions: { end: false, export: false, erase: false, hold: true } }),
+        error: null,
+      };
+      renderWithClient(<ProfileScreen />);
+
+      await user.click(screen.getByRole("button", { name: "Set retention hold" }));
+      expect(holdMock).toHaveBeenCalledWith(true);
+    });
+
+    it("shows who set the hold and when, and lifts it only after a confirm", async () => {
+      const user = userEvent.setup();
+      profile = {
+        data: former({
+          actions: { end: false, export: false, erase: false, hold: true },
+          retention: {
+            hold: {
+              setAt: "2026-10-26T09:00:00.000Z",
+              setBy: { userId: "u-dana", name: "Dana Delegate" },
+            },
+            sections: { card: { status: "KEPT_UNTIL_ERASED" }, contact: { status: "ON_HOLD" } },
+          },
+        }),
+        error: null,
+      };
+      renderWithClient(<ProfileScreen />);
+
+      const retention = screen.getByRole("region", { name: "Retention" });
+      expect(
+        within(retention).getByText(
+          "Retention hold on since 26/10/2026, set by Dana Delegate. Nothing is removed while it is on."
+        )
+      ).toBeInTheDocument();
+      expect(within(retention).getByText("Contact").closest("div")?.textContent).toBe(
+        "ContactKept by the retention hold"
+      );
+
+      await user.click(within(retention).getByRole("button", { name: "Lift retention hold" }));
+      const dialog = screen.getByRole("dialog");
+      expect(
+        within(dialog).getByText("Lift the retention hold on Jana Member?")
+      ).toBeInTheDocument();
+      expect(holdMock).not.toHaveBeenCalled();
+      await user.click(within(dialog).getByRole("button", { name: "Lift hold" }));
+      expect(holdMock).toHaveBeenCalledWith(false);
+    });
+
+    it("leaves the Retention block off an open profile", () => {
+      renderWithClient(<ProfileScreen />);
+      expect(screen.queryByRole("region", { name: "Retention" })).not.toBeInTheDocument();
     });
   });
 });

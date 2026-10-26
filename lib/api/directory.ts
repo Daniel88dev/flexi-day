@@ -91,7 +91,46 @@ export type DirectoryPerson = {
   noGroup?: boolean;
 };
 
-export type FormerDirectoryPerson = DirectoryPerson & { startedAt: string; endedAt: string };
+/** Named as the keys of `DirectoryProfile.sections`. */
+export type ProfileSectionKey = "card" | "photo" | "workContact" | "job" | "contact" | "personal";
+
+export const PROFILE_SECTION_KEYS: ProfileSectionKey[] = [
+  "card",
+  "photo",
+  "workContact",
+  "job",
+  "contact",
+  "personal",
+];
+
+export type FormerDirectoryPerson = DirectoryPerson & {
+  startedAt: string;
+  endedAt: string;
+  /** The earliest coming Retention purge among the Sections the viewer reads; null under a hold. */
+  nextRemoval?: { section: ProfileSectionKey; date: string } | null;
+  /** A Retention hold is on. */
+  hold?: boolean;
+};
+
+export type RetentionHold = {
+  setAt: string;
+  /** Null once the setter's account is gone. */
+  setBy: { userId: string; name: string | null } | null;
+};
+
+/**
+ * One Section's retention on an ended record. `date` is a `YYYY-MM-DD`: the
+ * nightly run that empties it, or the day a purge did.
+ */
+export type SectionRetention =
+  | { status: "REMOVES_ON" | "REMOVED_ON"; date: string }
+  | { status: "KEPT_UNTIL_ERASED" | "ON_HOLD" };
+
+export type ProfileRetention = {
+  hold: RetentionHold | null;
+  /** Only Sections the viewer reads; one with nothing to say is absent. */
+  sections: Partial<Record<ProfileSectionKey, SectionRetention>>;
+};
 
 export type DirectoryPeople = {
   people: DirectoryPerson[];
@@ -215,6 +254,8 @@ export type DirectoryProfile = DirectoryPerson & {
   canReadHistory: boolean;
   /** What the viewer may do to this record from its profile. */
   actions?: ProfileActions;
+  /** On an ended record: the Retention hold and when each Section goes or went. */
+  retention?: ProfileRetention;
   /** For the owner, org admins, HR and the person. */
   account?: {
     status: DirectoryAccountStatus;
@@ -512,7 +553,21 @@ export type ProfileActions = {
   export: boolean;
   /** Erase: the owner and org admins, for a Deleted account. */
   erase: boolean;
+  /** Set or lift the Retention hold: the owner and org admins, on an ended record. */
+  hold?: boolean;
 };
+
+/** The owner and org admins, on an ended record, on every plan. */
+export function setRetentionHold(
+  organizationId: string,
+  employmentId: string,
+  on: boolean
+): Promise<{ hold: RetentionHold | null }> {
+  return api<{ hold: RetentionHold | null }>(
+    directoryPath(organizationId, `people/${encodeURIComponent(employmentId)}/hold`),
+    { method: on ? "PUT" : "DELETE" }
+  );
+}
 
 /** What End employment would do, for the End dialog. */
 export type EndPreview = {

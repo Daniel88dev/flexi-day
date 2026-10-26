@@ -273,6 +273,40 @@ describe("DirectoryScreen", () => {
     ]);
   });
 
+  it("shows each former row's next removal and the hold, account deleted and rejoined markers", async () => {
+    const user = userEvent.setup();
+    people = { ...people, formerList: true };
+    former = [
+      {
+        ...leaver("Petra Early", "2025-11-30T12:00:00.000Z"),
+        markers: ["ACCOUNT_DELETED", "REJOINED"],
+        nextRemoval: { section: "contact", date: "2026-11-24" },
+        hold: false,
+      },
+      { ...leaver("Rita Late", "2026-05-31T12:00:00.000Z"), nextRemoval: null, hold: true },
+    ];
+    former[0]!.employmentId = "emp-petra";
+    renderWithClient(<DirectoryScreen />);
+
+    await user.click(screen.getByRole("tab", { name: "Former" }));
+
+    const table = screen.getByTestId("directory-former");
+    expect(within(table).getByRole("columnheader", { name: "Next removal" })).toBeInTheDocument();
+    const [rita, petra] = within(table).getAllByRole("row").slice(1);
+    const cells = (row: HTMLElement) =>
+      within(row)
+        .getAllByRole("cell")
+        .map((cell) => cell.textContent);
+    expect(cells(petra!).at(-1)).toBe("Contact · 24/11/2026");
+    expect(within(petra!).getByTestId("marker-ACCOUNT_DELETED")).toHaveTextContent(
+      "Account deleted"
+    );
+    expect(within(petra!).getByTestId("marker-REJOINED")).toHaveTextContent("Rejoined");
+    expect(within(petra!).queryByTestId("marker-HOLD")).not.toBeInTheDocument();
+    expect(cells(rita!).at(-1)).toBe("");
+    expect(within(rita!).getByTestId("marker-HOLD")).toHaveTextContent("Hold");
+  });
+
   it("opens Directory settings for the viewers the list allows, without the search row", async () => {
     const user = userEvent.setup();
     people = { ...people, formerList: true, settings: true };
