@@ -30,7 +30,22 @@ import {
 } from "@/lib/api/queries";
 import { PHOTO_PICKER_ACCEPT, photoFileProblem } from "@/lib/directory/profile-photo";
 import { cn } from "@/lib/utils";
-import { phoneCountryOptions } from "@/lib/directory/phone";
+import { countryOptions, phoneCountryOptions } from "@/lib/directory/phone";
+import {
+  addressIncomplete,
+  buildContactPatch,
+  buildPersonalPatch,
+  contactFormValues,
+  contactProblems,
+  hasContactProblem,
+  personalFormValues,
+  shownContactFrom,
+  shownPersonalFrom,
+  type ContactFormValues,
+  type PersonalFormValues,
+} from "@/lib/directory/sensitive-form";
+import { useShownSection } from "@/lib/directory/shown-sections";
+import { SensitiveGate } from "@/components/directory/sensitive-section";
 import {
   buildProfilePatch,
   profileFormValues,
@@ -101,8 +116,10 @@ function ProfileEditForm({ profile, lapsed }: { profile: DirectoryProfile; lapse
   const labels = t.directory.profile;
   const router = useRouter();
   const update = useUpdateDirectoryProfile(profile.organizationId, profile.employmentId);
-  const { card, photo, workContact, job } = profile.sections;
+  const { card, photo, workContact, job, contact, personal } = profile.sections;
   const cardWrite = card?.level === "WRITE";
+  const contactWrite = contact?.level === "WRITE";
+  const personalWrite = personal?.level === "WRITE";
   const workContactWrite = workContact?.level === "WRITE";
   const jobWrite = job?.level === "WRITE";
   const nameEditable = cardWrite && !card?.nameFromAccount && !lapsed;
@@ -114,6 +131,27 @@ function ProfileEditForm({ profile, lapsed }: { profile: DirectoryProfile; lapse
   const [nameError, setNameError] = useState(false);
   const [phoneError, setPhoneError] = useState(false);
   const countries = useMemo(() => phoneCountryOptions(locale), [locale]);
+  const addressCountries = useMemo(() => countryOptions(locale), [locale]);
+
+  // Sensitive sections join the form only once shown; until then nothing of theirs is sent.
+  const contactShown = useShownSection(profile, "contact");
+  const personalShown = useShownSection(profile, "personal");
+  const contactInitial = useMemo(
+    () =>
+      contactShown.data ? contactFormValues(contactShown.data, contact?.phoneCountryDefault) : null,
+    [contactShown.data, contact?.phoneCountryDefault]
+  );
+  const personalInitial = useMemo(
+    () => (personalShown.data ? personalFormValues(personalShown.data) : null),
+    [personalShown.data]
+  );
+  const [contactEdits, setContactEdits] = useState<Partial<ContactFormValues>>({});
+  const [personalEdits, setPersonalEdits] = useState<Partial<PersonalFormValues>>({});
+  const contactValues = contactInitial ? { ...contactInitial, ...contactEdits } : null;
+  const personalValues = personalInitial ? { ...personalInitial, ...personalEdits } : null;
+  const [contactChecked, setContactChecked] = useState(false);
+  const [addressChecked, setAddressChecked] = useState(false);
+  const problems = contactValues ? contactProblems(contactValues) : null;
   const set = (field: keyof ProfileFormValues) => (value: string) =>
     setValues((current) => ({ ...current, [field]: value }));
 
@@ -123,6 +161,16 @@ function ProfileEditForm({ profile, lapsed }: { profile: DirectoryProfile; lapse
     workContact: workContactWrite,
     job: jobWrite,
   });
+  const contactPatch =
+    contactWrite && contactInitial && contactValues
+      ? buildContactPatch(contactInitial, contactValues)
+      : undefined;
+  const personalPatch =
+    personalWrite && personalInitial && personalValues
+      ? buildPersonalPatch(personalInitial, personalValues)
+      : undefined;
+  if (contactPatch) patch.contact = contactPatch;
+  if (personalPatch) patch.personal = personalPatch;
   const dirty = Object.keys(patch).length > 0;
 
   const submit = (event: FormEvent) => {
@@ -137,9 +185,29 @@ function ProfileEditForm({ profile, lapsed }: { profile: DirectoryProfile; lapse
       return;
     }
     setPhoneError(false);
+    if (contactPatch && problems && hasContactProblem(problems)) {
+      setContactChecked(true);
+      return;
+    }
+    setContactChecked(false);
+    if (personalPatch && personalValues && addressIncomplete(personalValues)) {
+      setAddressChecked(true);
+      return;
+    }
+    setAddressChecked(false);
     if (!dirty) return;
     update.mutate(patch, {
-      onSuccess: () => router.push(profileHref(profile.organizationId, profile.employmentId)),
+      onSuccess: () => {
+        if (contactPatch && contactValues && contact) {
+          contactShown.put(shownContactFrom(contactValues, contact.level, !profile.self, locale));
+        }
+        if (personalPatch && personalValues && personal) {
+          personalShown.put(
+            shownPersonalFrom(personalValues, personal.level, !profile.self, locale)
+          );
+        }
+        router.push(profileHref(profile.organizationId, profile.employmentId));
+      },
     });
   };
 
@@ -150,6 +218,35 @@ function ProfileEditForm({ profile, lapsed }: { profile: DirectoryProfile; lapse
     disabled: !writable || lapsed,
     clearable: writable && lapsed && values[name] !== "",
   });
+
+  /** Props for one Sensitive field: the same rules as `field`, on its own Section's state. */
+  const contactField = (name: keyof ContactFormValues) => ({
+    value: contactValues?.[name] ?? "",
+    onChange: (value: string) => setContactEdits((current) => ({ ...current, [name]: value })),
+    disabled: !contactWrite || lapsed,
+    clearable: contactWrite && lapsed && (contactValues?.[name] ?? "") !== "",
+  });
+  const personalField = (name: keyof PersonalFormValues) => ({
+    value: personalValues?.[name] ?? "",
+    onChange: (value: string) => setPersonalEdits((current) => ({ ...current, [name]: value })),
+    disabled: !personalWrite || lapsed,
+    clearable: personalWrite && lapsed && (personalValues?.[name] ?? "") !== "",
+  });
+  const phoneCountrySelect = (
+    id: string,
+    label: string,
+    props: ReturnType<typeof contactField>
+  ) => (
+    <SelectField id={id} label={label} {...props} clearable={false}>
+      <option value="">{copy.noPhoneCountry}</option>
+      {countries.map((country) => (
+        <option key={country.code} value={country.code}>
+          {country.label}
+        </option>
+      ))}
+    </SelectField>
+  );
+  const today = new Date().toISOString().slice(0, 10);
 
   const reportsToOptions = (people ?? []).filter(
     (person) => person.employmentId !== profile.employmentId
@@ -167,6 +264,8 @@ function ProfileEditForm({ profile, lapsed }: { profile: DirectoryProfile; lapse
     ...(photo ? [{ id: "photo", title: copy.photo.title }] : []),
     ...(workContact ? [{ id: "work-contact", title: labels.workContact }] : []),
     ...(job ? [{ id: "job", title: labels.job }] : []),
+    ...(contact ? [{ id: "contact", title: labels.contact }] : []),
+    ...(personal ? [{ id: "personal", title: labels.personal }] : []),
   ];
 
   return (
@@ -180,7 +279,12 @@ function ProfileEditForm({ profile, lapsed }: { profile: DirectoryProfile; lapse
             </a>
           ))}
         </nav>
-        {!cardWrite && !workContactWrite && !jobWrite && photo?.level !== "WRITE" ? (
+        {!cardWrite &&
+        !workContactWrite &&
+        !jobWrite &&
+        !contactWrite &&
+        !personalWrite &&
+        photo?.level !== "WRITE" ? (
           <p className="text-muted-foreground text-sm">{copy.nothingToEdit}</p>
         ) : null}
       </div>
@@ -363,6 +467,149 @@ function ProfileEditForm({ profile, lapsed }: { profile: DirectoryProfile; lapse
               </>
             ) : null}
           </div>
+        </EditSection>
+      ) : null}
+
+      {contact ? (
+        <EditSection id="contact" title={labels.contact} level={contact.level} lapsed={lapsed}>
+          <SensitiveGate profile={profile} shown={contactShown}>
+            {() =>
+              contactValues ? (
+                <div className="grid gap-4 sm:grid-cols-2">
+                  {phoneCountrySelect(
+                    "profile-private-phone-country",
+                    copy.privatePhoneCountry,
+                    contactField("privatePhoneCountry")
+                  )}
+                  <TextField
+                    id="profile-private-phone"
+                    type="tel"
+                    label={labels.privatePhone}
+                    maxLength={40}
+                    hint={copy.phoneHint}
+                    error={contactChecked && problems?.privatePhone ? copy.invalidPhone : null}
+                    {...contactField("privatePhoneNumber")}
+                  />
+                  <div className="sm:col-span-2">
+                    <TextField
+                      id="profile-private-email"
+                      type="email"
+                      label={labels.privateEmail}
+                      maxLength={254}
+                      {...contactField("privateEmail")}
+                    />
+                  </div>
+                  {([1, 2] as const).map((slot) => {
+                    const problem = contactChecked ? problems?.emergency[slot] : null;
+                    return (
+                      <fieldset key={slot} className="grid gap-4 sm:col-span-2 sm:grid-cols-3">
+                        <legend className="mb-2 text-sm font-medium">
+                          {labels.emergencyContact(slot)}
+                        </legend>
+                        <TextField
+                          id={`profile-emergency-${slot}-name`}
+                          label={copy.emergencyName(slot)}
+                          maxLength={100}
+                          error={problem === "incomplete" ? copy.emergencyIncomplete : null}
+                          {...contactField(`emergency${slot}Name`)}
+                        />
+                        {phoneCountrySelect(
+                          `profile-emergency-${slot}-country`,
+                          copy.emergencyPhoneCountry(slot),
+                          contactField(`emergency${slot}Country`)
+                        )}
+                        <TextField
+                          id={`profile-emergency-${slot}-phone`}
+                          type="tel"
+                          label={copy.emergencyPhone(slot)}
+                          maxLength={40}
+                          error={problem === "invalidPhone" ? copy.invalidPhone : null}
+                          {...contactField(`emergency${slot}Number`)}
+                        />
+                      </fieldset>
+                    );
+                  })}
+                  {contactWrite && contact.notice ? (
+                    <aside
+                      aria-label={copy.noticeTitle}
+                      className="bg-muted/40 space-y-1 rounded-md border p-3 text-sm sm:col-span-2"
+                    >
+                      <p className="font-medium">{copy.noticeTitle}</p>
+                      <p className="text-muted-foreground">{contact.notice}</p>
+                    </aside>
+                  ) : null}
+                </div>
+              ) : null
+            }
+          </SensitiveGate>
+        </EditSection>
+      ) : null}
+
+      {personal ? (
+        <EditSection id="personal" title={labels.personal} level={personal.level} lapsed={lapsed}>
+          <SensitiveGate profile={profile} shown={personalShown}>
+            {() =>
+              personalValues ? (
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="sm:col-span-2">
+                    <TextField
+                      id="profile-address-line1"
+                      label={copy.addressLine1}
+                      maxLength={200}
+                      error={addressChecked ? copy.addressIncomplete : null}
+                      {...personalField("line1")}
+                    />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <TextField
+                      id="profile-address-line2"
+                      label={copy.addressLine2}
+                      maxLength={200}
+                      {...personalField("line2")}
+                    />
+                  </div>
+                  <TextField
+                    id="profile-postal-code"
+                    label={copy.postalCode}
+                    maxLength={16}
+                    {...personalField("postalCode")}
+                  />
+                  <TextField
+                    id="profile-city"
+                    label={copy.city}
+                    maxLength={100}
+                    {...personalField("city")}
+                  />
+                  <TextField
+                    id="profile-region"
+                    label={copy.region}
+                    maxLength={100}
+                    {...personalField("region")}
+                  />
+                  <SelectField
+                    id="profile-country"
+                    label={copy.country}
+                    {...personalField("country")}
+                  >
+                    <option value="">{copy.noCountry}</option>
+                    {addressCountries.map((country) => (
+                      <option key={country.code} value={country.code}>
+                        {country.label}
+                      </option>
+                    ))}
+                  </SelectField>
+                  <TextField
+                    id="profile-date-of-birth"
+                    type="date"
+                    label={labels.dateOfBirth}
+                    min="1900-01-01"
+                    max={today}
+                    {...personalField("dateOfBirth")}
+                  />
+                </div>
+              ) : null
+            }
+          </SensitiveGate>
         </EditSection>
       ) : null}
 
@@ -577,7 +824,12 @@ function FieldFrame({
 }
 
 function TextField(
-  props: FieldProps & { type?: "text" | "date" | "email" | "tel"; maxLength?: number }
+  props: FieldProps & {
+    type?: "text" | "date" | "email" | "tel";
+    maxLength?: number;
+    min?: string;
+    max?: string;
+  }
 ) {
   return (
     <FieldFrame {...props}>
@@ -586,6 +838,8 @@ function TextField(
         type={props.type ?? "text"}
         value={props.value}
         maxLength={props.maxLength}
+        min={props.min}
+        max={props.max}
         disabled={props.disabled}
         aria-invalid={props.error ? true : undefined}
         onChange={(event) => props.onChange(event.target.value)}

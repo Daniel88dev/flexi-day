@@ -151,6 +151,44 @@ export type ProfilePhotoLinks = { smallUrl: string; fullUrl: string };
 
 export type DirectoryPhotoView = DirectorySectionView & { photo: ProfilePhotoLinks | null };
 
+/** Contact on a profile never carries its values; Show returns them. */
+export type DirectoryContactView = DirectorySectionView & {
+  /** The Art. 14 notice, filled in, for viewers who write Contact. */
+  notice?: string;
+  phoneCountryDefault?: DirectoryCountry | null;
+};
+
+export type SensitiveSection = "contact" | "personal";
+
+export type EmergencyContact = { name: string; phone: DirectoryPhone };
+
+export type ContactValues = {
+  privatePhone: DirectoryPhone | null;
+  privateEmail: string | null;
+  emergencyContact1: EmergencyContact | null;
+  emergencyContact2: EmergencyContact | null;
+};
+
+export type HomeAddress = {
+  line1: string;
+  line2: string | null;
+  postalCode: string | null;
+  city: string;
+  region: string | null;
+  country: DirectoryCountry;
+};
+
+export type PersonalValues = {
+  homeAddress: HomeAddress | null;
+  /** `YYYY-MM-DD`. */
+  dateOfBirth: string | null;
+};
+
+type Shown = { level: DirectorySectionLevel; recorded: boolean };
+export type ShownContact = Shown & { section: "CONTACT" } & ContactValues;
+export type ShownPersonal = Shown & { section: "PERSONAL" } & PersonalValues;
+export type ShownSection = ShownContact | ShownPersonal;
+
 export type DirectoryAccountStatus = "ACTIVE" | "NO_ACCOUNT" | "DELETED";
 
 export type DirectoryProfile = DirectoryPerson & {
@@ -163,7 +201,8 @@ export type DirectoryProfile = DirectoryPerson & {
     photo?: DirectoryPhotoView;
     workContact?: DirectoryWorkContactView;
     job?: DirectoryJobView;
-    contact?: DirectorySectionView;
+    contact?: DirectoryContactView;
+    /** Absent on an External worker's record. */
     personal?: DirectorySectionView;
   };
   /** The owner, org admins and HR read the profile history. */
@@ -228,6 +267,24 @@ export type DirectoryProfilePatch = {
     contractType?: ContractType | null;
     workingTime?: WorkingTime | null;
   };
+  contact?: {
+    privatePhone?: string | null;
+    privateEmail?: string | null;
+    emergencyContact1?: { name: string; phone: string } | null;
+    emergencyContact2?: { name: string; phone: string } | null;
+  };
+  personal?: {
+    homeAddress?: {
+      line1: string;
+      line2: string | null;
+      postalCode: string | null;
+      city: string;
+      region: string | null;
+      /** ISO 3166-1 alpha-2. */
+      country: string;
+    } | null;
+    dateOfBirth?: string | null;
+  };
 };
 
 export function updateDirectoryProfile(
@@ -239,6 +296,85 @@ export function updateDirectoryProfile(
   return api<DirectoryProfile>(profilePath(organizationId, employmentId, language), {
     method: "PATCH",
     body: patch,
+  });
+}
+
+/**
+ * Show: the values of one Sensitive section. For anyone but the person this
+ * writes one read-log row, so call it only on the viewer's click.
+ */
+export function showSensitiveSection(
+  organizationId: string,
+  employmentId: string,
+  section: SensitiveSection,
+  language?: Locale
+): Promise<ShownSection> {
+  return api<ShownSection>(
+    directoryPath(
+      organizationId,
+      `people/${encodeURIComponent(employmentId)}/show/${section}${language ? `?language=${language}` : ""}`
+    ),
+    { method: "POST" }
+  );
+}
+
+export type ReadLogEntry = {
+  id: string;
+  kind: "read" | "export";
+  at: string;
+  reader: { userId: string; name: string | null };
+  /** `name` is null once the person was erased. */
+  person: { employmentId: string | null; name: string | null };
+  /** Null on an export. */
+  sections: ("CONTACT" | "PERSONAL")[] | null;
+  audience: DirectoryAudience;
+};
+
+export type ReadLogPage = {
+  entries: ReadLogEntry[];
+  nextBefore: string | null;
+  people: { employmentId: string; name: string }[];
+  readers: { userId: string; name: string | null }[];
+};
+
+export type ReadLogFilter = { employmentId?: string; readerUserId?: string; before?: string };
+
+/** The owner and org admins only. */
+export function getReadLog(
+  organizationId: string,
+  filter: ReadLogFilter = {}
+): Promise<ReadLogPage> {
+  const query = new URLSearchParams();
+  if (filter.employmentId) query.set("employmentId", filter.employmentId);
+  if (filter.readerUserId) query.set("readerUserId", filter.readerUserId);
+  if (filter.before) query.set("before", filter.before);
+  const search = query.toString();
+  return api<ReadLogPage>(directoryPath(organizationId, `read-log${search ? `?${search}` : ""}`));
+}
+
+export type DirectoryGeneralSettings = {
+  editable: boolean;
+  /** The organization's own texts; null where it uses the default. */
+  emergencyContactNotice: { en: string | null; cs: string | null };
+  defaults: { en: string; cs: string };
+  /** What `{period}` reads as. */
+  period: { en: string; cs: string };
+};
+
+export function getDirectoryGeneralSettings(
+  organizationId: string
+): Promise<DirectoryGeneralSettings> {
+  return api<DirectoryGeneralSettings>(directoryPath(organizationId, "settings/general"));
+}
+
+/** `null` goes back to the default; a missing language stays as it is. */
+export function updateDirectoryGeneralSettings(
+  organizationId: string,
+  emergencyContactNotice: { en?: string | null; cs?: string | null }
+): Promise<DirectoryGeneralSettings> {
+  return api<DirectoryGeneralSettings>(directoryPath(organizationId, "settings/general"), {
+    method: "PUT",
+    body: { emergencyContactNotice },
   });
 }
 

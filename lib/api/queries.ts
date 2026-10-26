@@ -2,6 +2,7 @@
 
 import {
   queryOptions,
+  useInfiniteQuery,
   useMutation,
   useQueries,
   useQuery,
@@ -33,6 +34,10 @@ import {
   removeProfilePhoto,
   startProfilePhotoUpload,
   type ProfilePhotoUpload,
+  getDirectoryGeneralSettings,
+  getReadLog,
+  updateDirectoryGeneralSettings,
+  type ReadLogFilter,
 } from "./directory";
 import { waitForPhotoUpload } from "@/lib/directory/profile-photo";
 import {
@@ -342,6 +347,16 @@ export const qk = {
   directoryPermissionHistory: (organizationId: string) =>
     ["directory", "permissionHistory", organizationId] as const,
   directoryRoles: (organizationId: string) => ["directory", "roles", organizationId] as const,
+  directoryGeneralSettings: (organizationId: string) =>
+    ["directory", "general", organizationId] as const,
+  directoryReadLog: (organizationId: string, filter: ReadLogFilter) =>
+    [
+      "directory",
+      "readLog",
+      organizationId,
+      filter.employmentId ?? "",
+      filter.readerUserId ?? "",
+    ] as const,
   organizationExport: (organizationId?: string | null) =>
     ["person-exports", "organization", organizationId ?? "none"] as const,
   attendanceTeam: (params: TeamAttendanceParams) =>
@@ -1763,6 +1778,39 @@ export function useSetDirectoryRoles(organizationId: string) {
       qc.setQueryData(qk.directoryRoles(organizationId), roles);
       qc.invalidateQueries({ queryKey: ["directory"] });
     },
+  });
+}
+
+/** Owner, org admins and HR read the General settings. */
+export function useDirectoryGeneralSettings(organizationId: string, enabled: boolean) {
+  return useQuery({
+    queryKey: qk.directoryGeneralSettings(organizationId),
+    queryFn: () => getDirectoryGeneralSettings(organizationId),
+    enabled: enabled && !!organizationId,
+  });
+}
+
+/** The owner and org admins; a changed notice reaches open profiles on their next read. */
+export function useUpdateDirectoryGeneralSettings(organizationId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (notice: { en?: string | null; cs?: string | null }) =>
+      updateDirectoryGeneralSettings(organizationId, notice),
+    onSuccess: (settings) => {
+      qc.setQueryData(qk.directoryGeneralSettings(organizationId), settings);
+      qc.invalidateQueries({ queryKey: ["directory", "profile"] });
+    },
+  });
+}
+
+/** The owner and org admins; pages back from the newest row. */
+export function useReadLog(organizationId: string, filter: ReadLogFilter, enabled: boolean) {
+  return useInfiniteQuery({
+    queryKey: qk.directoryReadLog(organizationId, filter),
+    queryFn: ({ pageParam }) => getReadLog(organizationId, { ...filter, before: pageParam }),
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (page) => page.nextBefore ?? undefined,
+    enabled: enabled && !!organizationId,
   });
 }
 
