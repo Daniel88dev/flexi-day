@@ -1265,6 +1265,9 @@ export const cs: Dictionary = {
         `organizace ${organization} s jejími skupinami a záznamem o předplatném`,
       confirmOwnedOrganizations:
         "každá organizace, kterou vlastníte a ve které nikdo jiný není, s jejími skupinami a záznamem o předplatném",
+      confirmDeletedAccounts: (names: string) => `včetně záznamů těchto smazaných účtů: ${names}`,
+      confirmExportLink: "Nejdřív si stáhněte export organizace",
+      confirmExportHint: "Export se připraví na pozadí. Smazat můžete i bez čekání na něj.",
       confirmKeptIntro:
         "Váš zaměstnavatel si ponechá, dokud vaše zaměstnání neukončí nebo záznamy nesmaže:",
       confirmKeptBy: (organization: string) =>
@@ -1581,6 +1584,12 @@ export const cs: Dictionary = {
     remove: "Odebrat",
     removing: "Odebírám…",
     removeFailed: "Správce se nepodařilo odebrat",
+    export: {
+      title: "Export organizace",
+      lead: "Vše, co organizace uchovává: jedna složka za každého člověka a soubor organization.json se skupinami, členstvími, nastavením a událostmi skupin. Spustit ho může jen vlastník.",
+      exportLabel: "Exportovat data organizace",
+      downloadLabel: "Stáhnout export organizace",
+    },
     people: {
       title: "Lidé",
       lead: "Všichni, kdo v této organizaci pracují nebo pracovali.",

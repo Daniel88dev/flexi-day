@@ -1247,6 +1247,11 @@ export const en = {
         `the organization ${organization}, with its groups and subscription record`,
       confirmOwnedOrganizations:
         "any organization you own that has nobody else in it, with its groups and subscription record",
+      confirmDeletedAccounts: (names: string) =>
+        `with the records of these Deleted accounts: ${names}`,
+      confirmExportLink: "Download the organization export first",
+      confirmExportHint:
+        "The export is prepared in the background. You don't have to wait for it to delete.",
       confirmKeptIntro: "Your employer keeps, until they end your employment or erase it:",
       confirmKeptBy: (organization: string) =>
         `${organization}: your leave, attendance and quotas, with their history`,
@@ -1563,6 +1568,12 @@ export const en = {
     remove: "Remove",
     removing: "Removing…",
     removeFailed: "Could not remove the administrator",
+    export: {
+      title: "Organization export",
+      lead: "Everything the organization holds: one folder per person, plus organization.json with groups, memberships, settings and group events. Only the owner can run it.",
+      exportLabel: "Export the organization's data",
+      downloadLabel: "Download the organization export",
+    },
     people: {
       title: "People",
       lead: "Everyone employed here, and everyone who was.",

@@ -21,6 +21,7 @@ import {
 import type { OrganizationDetail } from "@/lib/api/organization";
 import { AttendanceCard } from "@/components/organization/attendance-card";
 import { PeopleCard } from "@/components/organization/people-card";
+import { OrganizationExportCard } from "@/components/organization/organization-export-card";
 import { AvatarBubble } from "@/components/brand/avatar-bubble";
 import { useTranslation } from "@/lib/i18n/use-translation";
 import { cn } from "@/lib/utils";
@@ -142,6 +143,10 @@ function OrganizationDetailView({
       </div>
       <AttendanceCard detail={detail} organizationId={organizationId} />
       <PeopleCard organizationId={organizationId} focusEmploymentId={focusEmploymentId} />
+      <OrganizationExportCard
+        organizationId={organizationId}
+        isOwner={detail.organization.isOwner}
+      />
       <GroupsCard detail={detail} />
       <AdminsCard detail={detail} organizationId={organizationId} />
     </div>

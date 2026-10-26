@@ -5,13 +5,22 @@ import type { ReactNode } from "react";
 
 const listRequestedMock = vi.fn();
 const requestMock = vi.fn();
+const getOrganizationMock = vi.fn();
+const requestOrganizationMock = vi.fn();
 vi.mock("../person-export", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../person-export")>()),
   listRequestedExports: (...args: unknown[]) => listRequestedMock(...args),
   requestPersonExport: (...args: unknown[]) => requestMock(...args),
+  getOrganizationExport: (...args: unknown[]) => getOrganizationMock(...args),
+  requestOrganizationExport: (...args: unknown[]) => requestOrganizationMock(...args),
 }));
 
-import { useRequestPersonExport, useRequestedExports } from "../queries";
+import {
+  useOrganizationExport,
+  useRequestOrganizationExport,
+  useRequestPersonExport,
+  useRequestedExports,
+} from "../queries";
 
 const newClient = () =>
   new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
@@ -59,5 +68,43 @@ describe("useRequestPersonExport", () => {
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(requestMock).toHaveBeenCalledWith("emp-1");
     expect(invalidate).toHaveBeenCalledWith({ queryKey: ["person-exports"] });
+  });
+});
+
+describe("useOrganizationExport", () => {
+  it("asks again while the export is preparing, and stops once it is ready", async () => {
+    getOrganizationMock.mockResolvedValueOnce(entry("PENDING")).mockResolvedValue(entry("READY"));
+    const { result } = renderHook(() => useOrganizationExport("org-1"), {
+      wrapper: wrapperFor(newClient()),
+    });
+
+    await waitFor(() => expect(result.current.data?.status).toBe("READY"), { timeout: 5000 });
+    expect(getOrganizationMock).toHaveBeenCalledWith("org-1");
+    expect(getOrganizationMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("asks nothing when the caller is not the owner", () => {
+    getOrganizationMock.mockClear();
+    renderHook(() => useOrganizationExport("org-1", false), { wrapper: wrapperFor(newClient()) });
+    expect(getOrganizationMock).not.toHaveBeenCalled();
+  });
+});
+
+describe("useRequestOrganizationExport", () => {
+  it("refreshes the organization's export once the request lands", async () => {
+    requestOrganizationMock.mockResolvedValue(entry("PENDING"));
+    const client = newClient();
+    const invalidate = vi.spyOn(client, "invalidateQueries");
+    const { result } = renderHook(() => useRequestOrganizationExport("org-1"), {
+      wrapper: wrapperFor(client),
+    });
+
+    result.current.mutate();
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(requestOrganizationMock).toHaveBeenCalledWith("org-1");
+    expect(invalidate).toHaveBeenCalledWith({
+      queryKey: ["person-exports", "organization", "org-1"],
+    });
   });
 });

@@ -66,6 +66,8 @@ import { endEmployment, listEmployments, updateEmploymentRequiredMinutes } from 
 import {
   listOwnExportOrganizations,
   listRequestedExports,
+  getOrganizationExport,
+  requestOrganizationExport,
   requestOwnPersonExport,
   requestPersonExport,
   type PersonExport,
@@ -291,6 +293,8 @@ export const qk = {
   requestedExports: (organizationId?: string | null) =>
     ["person-exports", "requested", organizationId ?? "none"] as const,
   ownExports: () => ["person-exports", "own"] as const,
+  organizationExport: (organizationId?: string | null) =>
+    ["person-exports", "organization", organizationId ?? "none"] as const,
   attendanceTeam: (params: TeamAttendanceParams) =>
     [
       "attendance-team",
@@ -1440,6 +1444,24 @@ export function useRequestOwnPersonExport() {
   return useMutation({
     mutationFn: (organizationId: string) => requestOwnPersonExport(organizationId),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["person-exports"] }),
+  });
+}
+
+/** The owner's newest Organization export, polled while it is preparing. Owner only. */
+export function useOrganizationExport(organizationId: string | null, enabled = true) {
+  return useQuery({
+    queryKey: qk.organizationExport(organizationId),
+    queryFn: () => getOrganizationExport(organizationId!),
+    enabled: enabled && !!organizationId,
+    refetchInterval: (query) => (preparing([query.state.data ?? null]) ? EXPORT_POLL_MS : false),
+  });
+}
+
+export function useRequestOrganizationExport(organizationId: string | null) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => requestOrganizationExport(organizationId!),
+    onSuccess: () => qc.invalidateQueries({ queryKey: qk.organizationExport(organizationId) }),
   });
 }
 

@@ -4,8 +4,10 @@ const apiMock = vi.fn();
 vi.mock("../client", () => ({ api: (...args: unknown[]) => apiMock(...args) }));
 
 import {
+  getOrganizationExport,
   listOwnExportOrganizations,
   listRequestedExports,
+  requestOrganizationExport,
   requestOwnPersonExport,
   requestPersonExport,
   signPersonExportDownload,
@@ -13,6 +15,20 @@ import {
 
 describe("person export API", () => {
   beforeEach(() => apiMock.mockReset());
+
+  it("requests the owner's Organization export", async () => {
+    apiMock.mockResolvedValue({ id: "x", scope: "ORGANIZATION" });
+    await requestOrganizationExport("org 1");
+    expect(apiMock).toHaveBeenCalledWith("/api/organization/export?organizationId=org%201", {
+      method: "POST",
+    });
+  });
+
+  it("returns the owner's newest Organization export, or null", async () => {
+    apiMock.mockResolvedValue({ export: null });
+    await expect(getOrganizationExport("org-1")).resolves.toBeNull();
+    expect(apiMock).toHaveBeenCalledWith("/api/organization/export?organizationId=org-1");
+  });
 
   it("requests an admin export through the Employment", async () => {
     apiMock.mockResolvedValue({ id: "x", status: "PENDING" });

@@ -194,6 +194,49 @@ describe("DeleteAccountCard", () => {
     );
   });
 
+  it("lists the Deleted accounts that go with an owned organization and links to its export", async () => {
+    getStatusMock.mockResolvedValue({
+      ...PASSWORD_USER,
+      ownedOrganizations: [
+        {
+          organizationId: "o1",
+          organizationName: "Acme",
+          deletedAccounts: [
+            { userId: "u-alice", name: "Alice Leaver" },
+            { userId: "u-bob", name: "Bob Gone" },
+          ],
+        },
+        { organizationId: "o5", organizationName: "Side Project", deletedAccounts: [] },
+      ],
+    });
+    organizations = [{ id: "o1", name: "Acme", isOwner: true }];
+    const user = userEvent.setup();
+    renderWithClient(<DeleteAccountCard layoutReady />);
+
+    await user.type(await screen.findByLabelText("Password"), "hunter22");
+    await user.click(screen.getByRole("button", { name: "Delete account" }));
+
+    const dialog = await screen.findByRole("dialog");
+    const acme = within(dialog)
+      .getByText(/the organization Acme/)
+      .closest("li")!;
+    expect(acme).toHaveTextContent(
+      "with the records of these Deleted accounts: Alice Leaver, Bob Gone"
+    );
+    const side = within(dialog)
+      .getByText(/the organization Side Project/)
+      .closest("li")!;
+    expect(side).not.toHaveTextContent("Deleted accounts");
+    expect(
+      within(dialog).getByRole("link", { name: "Download the organization export first" })
+    ).toHaveAttribute(
+      "href",
+      expect.stringMatching(/^\/organization\/?\?organizationId=o1#organization-export$/)
+    );
+    expect(dialog).toHaveTextContent("You don't have to wait for it to delete.");
+    expect(within(dialog).getByRole("button", { name: "Delete for good" })).toBeEnabled();
+  });
+
   it("names the organization a plain member works in among what stays", async () => {
     getStatusMock.mockResolvedValue(PASSWORD_USER);
     organizations = [{ id: "o1", name: "Acme", isOwner: true }];

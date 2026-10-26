@@ -47,6 +47,7 @@ vi.mock("@/lib/api/queries", () => ({
 const exported = (overrides: Partial<PersonExport> = {}): PersonExport => ({
   id: "exp-1",
   organizationId: "org-1",
+  scope: "PERSON",
   subjectUserId: "user-1",
   status: "PENDING",
   createdAt: "2026-10-25T10:00:00Z",

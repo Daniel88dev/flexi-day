@@ -49,6 +49,8 @@ vi.mock("@/lib/api/queries", () => ({
   useUpdateEmploymentRequiredMinutes: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useRequestedExports: () => ({ data: undefined }),
   useRequestPersonExport: () => ({ mutateAsync: vi.fn(), isPending: false }),
+  useOrganizationExport: () => ({ data: null }),
+  useRequestOrganizationExport: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useAddOrganizationAdmin: () => ({ mutateAsync: addAdmin, isPending: false }),
   useRemoveOrganizationAdmin: () => ({ mutateAsync: removeAdmin, isPending: false }),
 }));
@@ -202,6 +204,12 @@ describe("OrganizationScreen", () => {
       expect(screen.getByRole("link", { name: "Manage billing" })).toBeInTheDocument();
     });
 
+    it("offers the Organization export", () => {
+      renderWithClient(<OrganizationScreen />);
+
+      expect(screen.getByRole("region", { name: "Organization export" })).toBeInTheDocument();
+    });
+
     it("saves only the fields that actually changed", async () => {
       const user = userEvent.setup();
       renderWithClient(<OrganizationScreen />);
@@ -310,6 +318,7 @@ describe("OrganizationScreen", () => {
 
       expect(screen.queryByLabelText("Billing email")).not.toBeInTheDocument();
       expect(screen.queryByRole("link", { name: "Manage billing" })).not.toBeInTheDocument();
+      expect(screen.queryByRole("region", { name: "Organization export" })).not.toBeInTheDocument();
     });
 
     it("can still rename the organization", async () => {
