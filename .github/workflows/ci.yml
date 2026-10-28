@@ -7,8 +7,8 @@ on:
     branches: [main]
 
 jobs:
-  test:
-    name: Lint, Format, Typecheck, Test & Build
+  checks:
+    name: Lint, Format, Typecheck & Build
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -37,15 +37,59 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
-      - name: Test
-        run: npm run test
-
       - name: Build
         run: npm run build
 
+  test:
+    name: Test (${{ matrix.shard }}/2)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2]
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Test
+        run: npm run test -- --shard=${{ matrix.shard }}/2
+
+  # The "Protect main" ruleset requires this job's name. It runs even when a job it needs
+  # fails, because a skipped required check counts as passing.
+  ci-passed:
+    name: Lint, Format, Typecheck, Test & Build
+    needs: [checks, test]
+    if: always()
+    runs-on: ubuntu-latest
+    permissions: {}
+
+    steps:
+      - name: Require every job to pass
+        env:
+          RESULTS: ${{ join(needs.*.result, ' ') }}
+        run: |
+          for result in $RESULTS; do
+            if [ "$result" != "success" ]; then
+              echo "A required job ended with: $result"
+              exit 1
+            fi
+          done
+
   deploy:
     name: Deploy to S3
-    needs: test
+    needs: ci-passed
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     environment: production
