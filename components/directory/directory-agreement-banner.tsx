@@ -8,15 +8,14 @@ import { pushToast } from "@/components/toast";
 import { errorCopy } from "@/lib/api/client";
 import { useAcceptDirectoryAgreement, useDirectoryState } from "@/lib/api/queries";
 import { useTranslation } from "@/lib/i18n/use-translation";
-
-export const DIRECTORY_AGREEMENT_PATH = "/directory-agreement";
+import { legalHref } from "@/lib/legal";
 
 /**
  * The owner's prompt to accept a new agreement version. Renders nothing for
  * anyone else, and nothing pauses while it shows.
  */
 export function DirectoryAgreementBanner({ organizationId }: { organizationId: string | null }) {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   const copy = t.organization.directory.banner;
   const state = useDirectoryState(organizationId);
   const accept = useAcceptDirectoryAgreement(organizationId);
@@ -48,7 +47,7 @@ export function DirectoryAgreementBanner({ organizationId }: { organizationId: s
         {error ? <p className="text-destructive mt-1 text-xs">{error}</p> : null}
       </div>
       <Button asChild size="sm" variant="outline">
-        <Link href={DIRECTORY_AGREEMENT_PATH} target="_blank" rel="noopener">
+        <Link href={legalHref("directory-agreement", locale)} target="_blank" rel="noopener">
           {copy.read}
         </Link>
       </Button>

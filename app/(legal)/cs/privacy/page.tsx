@@ -116,7 +116,7 @@ export default function CsPrivacyPage() {
         <li>
           <strong>Profily v adresáři lidí</strong> — pokud vlastník organizace zapnul adresář lidí,
           profil, který o vás organizace vede. Popisuje ho{" "}
-          <a href="/directory-agreement/">smlouva k adresáři lidí</a> (v angličtině).
+          <a href="/cs/directory-agreement/">smlouva k adresáři lidí</a>.
         </li>
       </ul>
       <h3>Údaje, které shromažďujeme automaticky (jsme správcem)</h3>

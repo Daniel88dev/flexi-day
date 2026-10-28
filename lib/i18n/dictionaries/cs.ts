@@ -1668,8 +1668,7 @@ export const cs: Dictionary = {
         summary: (people: number) =>
           `${people} ${plural(people, "člověk", "lidé", "lidí")} se v adresáři objeví pod jménem svého účtu.`,
         keepsEmployment: "Odebrání ze skupiny od teď už neukončí něčí pracovní poměr.",
-        draftNote:
-          "Tato smlouva je koncept. Flexi Day zpracovává data adresáře podle pokynů vaší organizace; plné znění doplníme před spuštěním adresáře.",
+        note: "Flexi Day zpracovává data adresáře jen podle pokynů vaší organizace, šifruje sekce Kontakt a Osobní údaje a na profilových fotografiích nikdy nespouští rozpoznávání obličejů.",
         readAgreement: "Přečíst smlouvu k adresáři",
         accept: (organization: string) => `Přijímám tuto smlouvu za ${organization}`,
         recordHint: "Zaznamenáme, kdo smlouvu přijal, kdy a kterou verzi.",

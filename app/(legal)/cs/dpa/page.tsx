@@ -37,7 +37,7 @@ export default function CsDpaPage() {
         narozeniny. Údajů účtu jsme správcem my a řídí se našimi{" "}
         <a href="/cs/privacy/">Zásadami ochrany osobních údajů</a>. Pokud Správce zapne adresář
         lidí, doplňuje tuto Smlouvu pro profilové údaje v adresáři{" "}
-        <a href="/directory-agreement/">smlouva k adresáři lidí</a> (v angličtině).
+        <a href="/cs/directory-agreement/">smlouva k adresáři lidí</a>.
       </p>
 
       <h2>2. Předmět, doba trvání, povaha a účel zpracování</h2>

@@ -115,8 +115,8 @@ export default function CsTermsPage() {
       <p>
         U Údajů účtu jsme správcem my, jak popisují naše{" "}
         <a href="/cs/privacy/">Zásady ochrany osobních údajů</a>. Pokud Organizace zapne adresář
-        lidí, přijímá její vlastník také <a href="/directory-agreement/">smlouvu k adresáři lidí</a>{" "}
-        (v angličtině).
+        lidí, přijímá její vlastník také{" "}
+        <a href="/cs/directory-agreement/">smlouvu k adresáři lidí</a>.
       </p>
 
       <h2>9. Dostupnost</h2>
