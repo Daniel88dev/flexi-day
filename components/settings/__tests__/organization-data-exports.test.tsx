@@ -32,6 +32,7 @@ const organization = (overrides: Partial<OwnExportOrganization> = {}): OwnExport
   employmentId: "emp-1",
   startedAt: "2026-01-05T08:00:00Z",
   endedAt: null,
+  timezone: "UTC",
   export: null,
   ...overrides,
 });
@@ -63,6 +64,22 @@ describe("OrganizationDataExports", () => {
 
     await userEvent.click(screen.getByRole("button", { name: "Export your data from Old Co" }));
     expect(requestOwn).toHaveBeenCalledWith("org-2");
+  });
+
+  it("names the day the Employment ended in the organization's zone, not the viewer's", () => {
+    organizations = [
+      organization({ organizationName: "Utc Co", endedAt: "2026-09-30T00:00:00.000Z" }),
+      organization({
+        organizationId: "org-2",
+        organizationName: "Prague Co",
+        endedAt: "2026-09-30T23:00:00.000Z",
+        timezone: "Europe/Prague",
+      }),
+    ];
+    renderWithClient(<OrganizationDataExports />);
+
+    expect(screen.getByText("Ended 30/09/2026")).toBeInTheDocument();
+    expect(screen.getByText("Ended 01/10/2026")).toBeInTheDocument();
   });
 
   it("shows Preparing, then Download behind a signed link", async () => {

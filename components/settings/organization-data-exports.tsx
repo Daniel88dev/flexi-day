@@ -2,6 +2,7 @@
 
 import { PersonExportAction } from "@/components/person-export-action";
 import { useOwnExportOrganizations, useRequestOwnPersonExport } from "@/lib/api/queries";
+import { formatEmploymentDay } from "@/lib/directory/format";
 import { useTranslation } from "@/lib/i18n/use-translation";
 
 /**
@@ -41,7 +42,11 @@ export function OrganizationDataExports() {
                 {organization.endedAt ? (
                   <p className="text-muted-foreground text-xs">
                     {d.ended(
-                      new Date(organization.endedAt).toLocaleDateString(t.common.dateLocale)
+                      formatEmploymentDay(
+                        organization.endedAt,
+                        t.common.dateLocale,
+                        organization.timezone
+                      )
                     )}
                   </p>
                 ) : null}
