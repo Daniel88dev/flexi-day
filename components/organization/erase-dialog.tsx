@@ -1,23 +1,11 @@
 "use client";
 
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { TypeNameConfirmDialog } from "@/components/organization/type-name-confirm-dialog";
 import { pushToast } from "@/components/toast";
 import { errorCopy } from "@/lib/api/client";
 import type { EmploymentListItem } from "@/lib/api/employment";
 import { useEraseEmployment } from "@/lib/api/queries";
 import { useTranslation } from "@/lib/i18n/use-translation";
-import { sameName } from "@/lib/same-name";
 
 export function EraseDialog({
   open,
@@ -37,77 +25,34 @@ export function EraseDialog({
   const copy = t.organization.people.eraseDialog;
   const erase = useEraseEmployment(organizationId);
   const name = employment.user.name;
-  const [typed, setTyped] = useState("");
-  const [error, setError] = useState<string | null>(null);
 
-  async function submit() {
-    setError(null);
-    if (!sameName(typed, name)) {
-      setError(copy.nameMismatch);
-      return;
-    }
-
-    try {
-      await erase.mutateAsync({ employmentId: employment.id, confirmName: typed });
-      pushToast(copy.done(name));
-      onOpenChange(false);
-      onErased?.();
-    } catch (err) {
-      setError(
+  return (
+    <TypeNameConfirmDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      name={name}
+      inputId={`erase-${employment.id}`}
+      title={copy.title(name)}
+      description={copy.body}
+      nameLabel={copy.nameLabel(name)}
+      mismatch={copy.nameMismatch}
+      confirmLabel={copy.confirm}
+      pending={erase.isPending}
+      onConfirm={async (typed) => {
+        await erase.mutateAsync({ employmentId: employment.id, confirmName: typed });
+        pushToast(copy.done(name));
+        onErased?.();
+      }}
+      failureMessage={(err) =>
         errorCopy(
           err,
           { NAME_MISMATCH: copy.nameMismatch, MANAGES_GROUP: copy.managesGroup },
           copy.failed
         )
-      );
-    }
-  }
-
-  return (
-    <Dialog
-      open={open}
-      onOpenChange={(next) => {
-        if (!next) {
-          setTyped("");
-          setError(null);
-        }
-        onOpenChange(next);
-      }}
+      }
     >
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{copy.title(name)}</DialogTitle>
-          <DialogDescription>{copy.body}</DialogDescription>
-        </DialogHeader>
-        <p className="text-muted-foreground text-sm">{copy.others}</p>
-        {employment.ended ? null : <p className="text-sm">{copy.openFirst}</p>}
-        <div className="space-y-2">
-          <Label htmlFor={`erase-${employment.id}`}>{copy.nameLabel(name)}</Label>
-          <Input
-            id={`erase-${employment.id}`}
-            autoComplete="off"
-            value={typed}
-            onChange={(event) => {
-              setTyped(event.target.value);
-              setError(null);
-            }}
-          />
-          {error ? <p className="text-destructive text-sm">{error}</p> : null}
-        </div>
-        <DialogFooter>
-          <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
-            {t.common.cancel}
-          </Button>
-          <Button
-            type="button"
-            variant="destructive"
-            disabled={erase.isPending || typed.trim() === ""}
-            onClick={() => void submit()}
-          >
-            {copy.confirm}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+      <p className="text-muted-foreground text-sm">{copy.others}</p>
+      {employment.ended ? null : <p className="text-sm">{copy.openFirst}</p>}
+    </TypeNameConfirmDialog>
   );
 }

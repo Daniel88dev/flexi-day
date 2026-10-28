@@ -12,7 +12,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
 import { pushToast } from "@/components/toast";
 import { errorCopy } from "@/lib/api/client";
 import type { DirectoryProfile } from "@/lib/api/directory";
@@ -24,6 +23,7 @@ import {
 import { administers } from "@/lib/directory/directory-access";
 import { profileEditHref } from "@/lib/directory/routes";
 import { useTranslation } from "@/lib/i18n/use-translation";
+import { SelectField } from "@/components/directory/form-fields";
 
 /** Send directory invite on the profile of a person without an account. */
 export function InviteAction({ profile }: { profile: DirectoryProfile }) {
@@ -101,26 +101,21 @@ function InviteDialog({
         {email ? (
           <div className="space-y-3">
             {groups.length > 0 ? (
-              <div className="space-y-1.5">
-                <Label htmlFor="invite-group">{copy.group}</Label>
-                <select
-                  id="invite-group"
-                  className="border-input bg-background h-9 w-full rounded-md border px-3 text-sm"
-                  value={groupId}
-                  onChange={(event) => setGroupId(event.target.value)}
-                  aria-describedby="invite-group-hint"
-                >
-                  <option value="">{copy.noGroup}</option>
-                  {groups.map((group) => (
-                    <option key={group.id} value={group.id}>
-                      {group.groupName}
-                    </option>
-                  ))}
-                </select>
-                <p id="invite-group-hint" className="text-muted-foreground text-xs">
-                  {copy.groupHint}
-                </p>
-              </div>
+              <SelectField
+                id="invite-group"
+                label={copy.group}
+                hint={<span id="invite-group-hint">{copy.groupHint}</span>}
+                value={groupId}
+                onChange={setGroupId}
+                aria-describedby="invite-group-hint"
+              >
+                <option value="">{copy.noGroup}</option>
+                {groups.map((group) => (
+                  <option key={group.id} value={group.id}>
+                    {group.groupName}
+                  </option>
+                ))}
+              </SelectField>
             ) : null}
             {sent ? <p className="text-muted-foreground text-sm">{copy.resendNote}</p> : null}
             {error ? (
@@ -132,7 +127,7 @@ function InviteDialog({
         ) : null}
         <DialogFooter>
           <Button type="button" variant="outline" onClick={onClose}>
-            {copy.cancel}
+            {t.common.cancel}
           </Button>
           {email ? (
             <Button type="button" onClick={submit} disabled={send.isPending}>

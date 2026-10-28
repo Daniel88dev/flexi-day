@@ -89,7 +89,7 @@ function WorkerTypeDialog({
         ) : null}
         <DialogFooter>
           <Button type="button" variant="outline" onClick={onClose}>
-            {copy.cancel}
+            {t.common.cancel}
           </Button>
           <Button type="button" onClick={submit} disabled={change.isPending}>
             {change.isPending ? copy.saving : toExternal ? copy.toExternal : copy.toEmployee}

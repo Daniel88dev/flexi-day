@@ -13,6 +13,15 @@ import {
 } from "@/lib/directory/permission-table";
 import { LapsedNote } from "@/components/directory/directory-lapsed-banner";
 import { useTranslation } from "@/lib/i18n/use-translation";
+import { SelectField } from "@/components/directory/form-fields";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 /** The organization's Permission table: the owner edits it, org admins and HR read it. */
 export function PermissionTableEditor({ organizationId }: { organizationId: string }) {
@@ -73,39 +82,41 @@ function Grid(props: GridProps) {
   const { t } = useTranslation();
   const copy = t.directory.settings;
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full min-w-[60rem] border-collapse text-sm">
-        <thead>
-          <tr className="text-muted-foreground text-xs uppercase">
-            <th scope="col" className="w-44 py-2 text-left font-medium">
-              <span className="sr-only">{copy.permissions}</span>
-            </th>
-            {PERMISSION_AUDIENCES.map((audience) => (
-              <th key={audience} scope="col" className="px-1 py-2 text-center font-medium">
-                {t.directory.history.audiences[audience]}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {props.lines.sections.map((line) => (
-            <Line key={line.row} line={line} {...props} />
-          ))}
-          <tr>
-            <th
-              scope="rowgroup"
-              colSpan={PERMISSION_AUDIENCES.length + 1}
-              className="text-muted-foreground border-t pt-4 pb-1 text-left text-xs font-medium uppercase"
+    <Table className="min-w-[60rem]">
+      <TableHeader>
+        <TableRow className="text-muted-foreground text-xs uppercase hover:bg-transparent">
+          <TableHead scope="col" className="text-muted-foreground h-auto w-44 px-0 py-2">
+            <span className="sr-only">{copy.permissions}</span>
+          </TableHead>
+          {PERMISSION_AUDIENCES.map((audience) => (
+            <TableHead
+              key={audience}
+              scope="col"
+              className="text-muted-foreground h-auto px-1 py-2 text-center"
             >
-              {copy.acts}
-            </th>
-          </tr>
-          {props.lines.acts.map((line) => (
-            <Line key={line.row} line={line} {...props} />
+              {t.directory.history.audiences[audience]}
+            </TableHead>
           ))}
-        </tbody>
-      </table>
-    </div>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {props.lines.sections.map((line) => (
+          <Line key={line.row} line={line} {...props} />
+        ))}
+        <TableRow className="hover:bg-transparent">
+          <TableHead
+            scope="rowgroup"
+            colSpan={PERMISSION_AUDIENCES.length + 1}
+            className="text-muted-foreground h-auto px-0 pt-4 pb-1 text-xs uppercase"
+          >
+            {copy.acts}
+          </TableHead>
+        </TableRow>
+        {props.lines.acts.map((line) => (
+          <Line key={line.row} line={line} {...props} />
+        ))}
+      </TableBody>
+    </Table>
   );
 }
 
@@ -120,26 +131,30 @@ function Line({
   const copy = t.directory.settings;
   const rowName = copy.rows[line.row];
   return (
-    <tr className="border-t">
-      <th scope="row" className="py-2 pr-2 text-left font-semibold">
+    <TableRow className="hover:bg-transparent">
+      <TableHead scope="row" className="h-auto px-0 py-2 pr-2 font-semibold whitespace-normal">
         {rowName}
-      </th>
+      </TableHead>
       {PERMISSION_AUDIENCES.map((audience) => {
         const cell = line.cells[audience];
         const label = copy.cellLabel(rowName, t.directory.history.audiences[audience]);
         if (!cell) {
           return (
-            <td key={audience} aria-label={`${label}: ${copy.noCell}`} className="text-center">
+            <TableCell
+              key={audience}
+              aria-label={`${label}: ${copy.noCell}`}
+              className="px-1 py-1 text-center whitespace-normal"
+            >
               <span className="text-muted-foreground" aria-hidden>
                 –
               </span>
-            </td>
+            </TableCell>
           );
         }
         const valueName = copy.values[cell.value];
         if (cell.fixed) {
           return (
-            <td key={audience} className="px-1 py-1 text-center">
+            <TableCell key={audience} className="px-1 py-1 text-center whitespace-normal">
               <span
                 aria-label={copy.fixed(valueName)}
                 className="border-primary/40 text-primary inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs font-medium"
@@ -147,36 +162,38 @@ function Line({
                 <Lock className="h-3 w-3" aria-hidden />
                 {valueName}
               </span>
-            </td>
+            </TableCell>
           );
         }
         if (!editable) {
           return (
-            <td key={audience} aria-label={`${label}: ${valueName}`} className="px-1 text-center">
+            <TableCell
+              key={audience}
+              aria-label={`${label}: ${valueName}`}
+              className="px-1 py-1 text-center whitespace-normal"
+            >
               {valueName}
-            </td>
+            </TableCell>
           );
         }
         return (
-          <td key={audience} className="px-1 py-1 text-center">
-            <select
+          <TableCell key={audience} className="px-1 py-1 text-center whitespace-normal">
+            <SelectField
               aria-label={label}
               value={cell.value}
               disabled={pending}
-              onChange={(event) =>
-                onChange(cell, event.target.value as PermissionTableCell["value"])
-              }
-              className="border-border bg-background h-8 w-full min-w-[5.5rem] rounded-md border px-2 text-sm disabled:opacity-50"
+              onChange={(value) => onChange(cell, value as PermissionTableCell["value"])}
+              className="min-w-[5.5rem]"
             >
               {cellOptions(cell, writable).map((option) => (
                 <option key={option.value} value={option.value} disabled={option.disabled}>
                   {copy.values[option.value]}
                 </option>
               ))}
-            </select>
-          </td>
+            </SelectField>
+          </TableCell>
         );
       })}
-    </tr>
+    </TableRow>
   );
 }

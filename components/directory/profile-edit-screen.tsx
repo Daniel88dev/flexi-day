@@ -7,13 +7,12 @@ import { Lock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { buttonVariants } from "@/components/ui/button";
 import { DirectoryLapsedBanner } from "@/components/directory/directory-lapsed-banner";
 import { PersonAvatar } from "@/components/directory/person-avatar";
 import { EntryOptions } from "@/components/directory/entry-options";
 import { BackLink, ProfileReadFailure } from "@/components/directory/profile-parts";
+import { SelectField, TextField } from "@/components/directory/form-fields";
 import { ApiError, errorCode, errorCopy } from "@/lib/api/client";
 import {
   CONTRACT_TYPES,
@@ -653,7 +652,7 @@ function ProfileEditForm({ profile, lapsed }: { profile: DirectoryProfile; lapse
       <div className="flex justify-end gap-2">
         <Button asChild variant="outline">
           <Link href={profileHref(profile.organizationId, profile.employmentId)}>
-            {copy.cancel}
+            {t.common.cancel}
           </Link>
         </Button>
         <Button type="submit" disabled={!dirty || update.isPending}>
@@ -807,92 +806,6 @@ function EditSection({
         {children}
       </CardContent>
     </Card>
-  );
-}
-
-type FieldProps = {
-  id: string;
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-  disabled: boolean;
-  clearable?: boolean;
-  hint?: ReactNode;
-  error?: string | null;
-};
-
-function FieldFrame({
-  id,
-  label,
-  hint,
-  error,
-  clearable,
-  onChange,
-  children,
-}: FieldProps & { children: ReactNode }) {
-  const { t } = useTranslation();
-  return (
-    <div className="space-y-1.5">
-      <Label htmlFor={id}>{label}</Label>
-      {children}
-      {clearable ? (
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          aria-label={`${t.directory.edit.clear}: ${label}`}
-          onClick={() => onChange("")}
-        >
-          {t.directory.edit.clear}
-        </Button>
-      ) : null}
-      {error ? (
-        <p className="text-destructive text-xs">{error}</p>
-      ) : hint ? (
-        <p className="text-muted-foreground text-xs">{hint}</p>
-      ) : null}
-    </div>
-  );
-}
-
-function TextField(
-  props: FieldProps & {
-    type?: "text" | "date" | "email" | "tel";
-    maxLength?: number;
-    min?: string;
-    max?: string;
-  }
-) {
-  return (
-    <FieldFrame {...props}>
-      <Input
-        id={props.id}
-        type={props.type ?? "text"}
-        value={props.value}
-        maxLength={props.maxLength}
-        min={props.min}
-        max={props.max}
-        disabled={props.disabled}
-        aria-invalid={props.error ? true : undefined}
-        onChange={(event) => props.onChange(event.target.value)}
-      />
-    </FieldFrame>
-  );
-}
-
-function SelectField(props: FieldProps & { children: ReactNode }) {
-  return (
-    <FieldFrame {...props}>
-      <select
-        id={props.id}
-        value={props.value}
-        disabled={props.disabled}
-        onChange={(event) => props.onChange(event.target.value)}
-        className="border-border bg-background h-9 w-full rounded-md border px-3 text-sm disabled:opacity-50"
-      >
-        {props.children}
-      </select>
-    </FieldFrame>
   );
 }
 
