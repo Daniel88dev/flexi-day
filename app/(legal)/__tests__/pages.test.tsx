@@ -272,14 +272,36 @@ describe("Data Processing Agreement page", () => {
 });
 
 describe("Directory agreement page", () => {
-  it("renders the agreement as a draft with its version", async () => {
+  it("renders the final agreement with its version", async () => {
     const { default: DirectoryAgreementPage } = await import("../directory-agreement/page");
     render(<DirectoryAgreementPage />);
     expect(
       screen.getByRole("heading", { level: 1, name: "People directory agreement" })
     ).toBeInTheDocument();
-    expect(screen.getByRole("note")).toHaveTextContent(/Draft\./);
-    expect(screen.getByText(/^Version 1\./)).toBeInTheDocument();
+    expect(screen.queryByText(/placeholder/i)).toBeNull();
+    expect(screen.getByText(/^Version 2\./)).toBeInTheDocument();
+  });
+
+  it("rules out biometric processing of profile photos", async () => {
+    const { default: DirectoryAgreementPage } = await import("../directory-agreement/page");
+    render(<DirectoryAgreementPage />);
+    const text = sectionText(screen.getByRole("heading", { name: "4. No biometric processing" }));
+    expect(text).toMatch(/never run face recognition, face matching/);
+    expect(text).toMatch(/create no biometric templates/);
+    expect(text).toMatch(/third-party vision or recognition service/);
+  });
+
+  it("adds to the DPA and links its Czech version", async () => {
+    const { default: DirectoryAgreementPage } = await import("../directory-agreement/page");
+    render(<DirectoryAgreementPage />);
+    expect(screen.getByRole("link", { name: "Data Processing Agreement" })).toHaveAttribute(
+      "href",
+      "/dpa/"
+    );
+    expect(screen.getByRole("link", { name: "Česká verze" })).toHaveAttribute(
+      "href",
+      "/cs/directory-agreement/"
+    );
   });
 });
 
@@ -292,6 +314,11 @@ describe("Czech legal pages", () => {
     },
     { name: "terms", en: () => import("../terms/page"), cs: () => import("../cs/terms/page") },
     { name: "dpa", en: () => import("../dpa/page"), cs: () => import("../cs/dpa/page") },
+    {
+      name: "directory-agreement",
+      en: () => import("../directory-agreement/page"),
+      cs: () => import("../cs/directory-agreement/page"),
+    },
   ];
 
   for (const pair of pairs) {
@@ -338,5 +365,16 @@ describe("Czech legal pages", () => {
     expect(
       screen.getAllByRole("link", { name: "Smlouva o zpracování osobních údajů" })[0]
     ).toHaveAttribute("href", "/cs/dpa/");
+  });
+
+  it("Czech directory agreement carries the same version and rules out biometrics", async () => {
+    const { default: CsAgreement } = await import("../cs/directory-agreement/page");
+    render(<CsAgreement />);
+    expect(screen.getByText(/^Verze 2\./)).toBeInTheDocument();
+    const text = sectionText(
+      screen.getByRole("heading", { name: "4. Žádné biometrické zpracování" })
+    );
+    expect(text).toMatch(/Nikdy nespouštíme rozpoznávání obličejů/);
+    expect(text).toMatch(/Nevytváříme biometrické šablony/);
   });
 });

@@ -15,11 +15,11 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { pushToast } from "@/components/toast";
-import { DIRECTORY_AGREEMENT_PATH } from "@/components/directory/directory-agreement-banner";
 import { errorCopy } from "@/lib/api/client";
 import type { DirectoryState } from "@/lib/api/directory";
 import { useEnableDirectory } from "@/lib/api/queries";
 import { useTranslation } from "@/lib/i18n/use-translation";
+import { legalHref } from "@/lib/legal";
 
 export function EnableDirectoryDialog({
   open,
@@ -32,7 +32,7 @@ export function EnableDirectoryDialog({
   state: DirectoryState;
   organizationName: string;
 }) {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   const copy = t.organization.directory.dialog;
   const router = useRouter();
   const enable = useEnableDirectory(state.organizationId);
@@ -85,9 +85,9 @@ export function EnableDirectoryDialog({
         </DialogHeader>
 
         <div className="bg-muted/50 space-y-2 rounded-[var(--radius-sm)] p-3 text-sm">
-          <p>{copy.draftNote}</p>
+          <p>{copy.note}</p>
           <Link
-            href={DIRECTORY_AGREEMENT_PATH}
+            href={legalHref("directory-agreement", locale)}
             target="_blank"
             rel="noopener"
             className="text-primary font-semibold underline-offset-2 hover:underline"

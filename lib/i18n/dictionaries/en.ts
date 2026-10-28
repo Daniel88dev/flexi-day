@@ -1654,8 +1654,7 @@ export const en = {
           `${people} ${people === 1 ? "person" : "people"} will appear in the directory under their account names.`,
         keepsEmployment:
           "From now on, removing someone from a group no longer ends their employment.",
-        draftNote:
-          "This agreement is a draft. Flexi Day processes the directory's data on your organization's instructions; the full text follows before the directory ships.",
+        note: "Flexi Day processes the directory's data only on your organization's instructions, encrypts the Contact and Personal sections, and never runs face recognition on profile photos.",
         readAgreement: "Read the directory agreement",
         accept: (organization: string) => `I accept this agreement for ${organization}`,
         recordHint: "We record who accepted, when, and which version.",
