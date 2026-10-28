@@ -23,9 +23,13 @@ import {
 } from "@/components/directory/profile-parts";
 import { ContactTab, PersonalTab } from "@/components/directory/sensitive-section";
 import type { DirectoryProfile } from "@/lib/api/directory";
-import { useDirectoryOrganizations, useDirectoryProfile } from "@/lib/api/queries";
+import {
+  useDirectoryOrganizations,
+  useDirectoryProfile,
+  useOrganizationTimeZone,
+} from "@/lib/api/queries";
 import { entryLabel } from "@/lib/directory/entries";
-import { formatDate, formatDay } from "@/lib/directory/format";
+import { formatDay, formatEmploymentDay } from "@/lib/directory/format";
 import { isExternalWorker } from "@/lib/directory/person";
 import { directoryHref, profileEditHref, profileHref } from "@/lib/directory/routes";
 import { writesAnySection } from "@/lib/directory/sections";
@@ -255,7 +259,8 @@ function JobTab({ profile }: { profile: DirectoryProfile }) {
 function RecordTab({ profile }: { profile: DirectoryProfile }) {
   const { t } = useTranslation();
   const copy = t.directory.profile;
-  const date = (value: string) => formatDate(value, t.common.dateLocale);
+  const timeZone = useOrganizationTimeZone(profile.organizationId);
+  const date = (value: string) => formatEmploymentDay(value, t.common.dateLocale, timeZone);
   const spell = profile.sections.job?.spell;
   const account = profile.account;
 

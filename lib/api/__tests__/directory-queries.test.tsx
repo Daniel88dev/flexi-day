@@ -50,6 +50,7 @@ import {
   useEndPreview,
   useFormerDirectoryPeople,
   useHideDirectoryChecklist,
+  useOrganizationTimeZone,
   usePermissionHistory,
   usePermissionTable,
   usePreviousSpell,
@@ -242,6 +243,25 @@ describe("gated directory reads", () => {
     await Promise.resolve();
     expect(result.current.fetchStatus).toBe("idle");
     for (const mock of Object.values(fetchers)) expect(mock).not.toHaveBeenCalled();
+  });
+});
+
+describe("useOrganizationTimeZone", () => {
+  it("returns the zone of the matching organization, undefined for one not listed", async () => {
+    fetchers.listDirectoryOrganizations.mockResolvedValue([
+      { organizationId: "org-1", timezone: "UTC" },
+      { organizationId: "org-2", timezone: "Europe/Prague" },
+    ]);
+    const client = newClient();
+    const { result } = renderHook(() => useOrganizationTimeZone("org-2"), {
+      wrapper: wrapperFor(client),
+    });
+    await waitFor(() => expect(result.current).toBe("Europe/Prague"));
+
+    const missing = renderHook(() => useOrganizationTimeZone("org-3"), {
+      wrapper: wrapperFor(client),
+    });
+    expect(missing.result.current).toBeUndefined();
   });
 });
 

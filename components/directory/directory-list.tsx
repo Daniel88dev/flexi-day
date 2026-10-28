@@ -27,13 +27,17 @@ import type {
   DirectoryPerson,
   FormerDirectoryPerson,
 } from "@/lib/api/directory";
-import { useDirectoryPeople, useFormerDirectoryPeople } from "@/lib/api/queries";
+import {
+  useDirectoryPeople,
+  useFormerDirectoryPeople,
+  useOrganizationTimeZone,
+} from "@/lib/api/queries";
 import { matchesPerson, useDirectoryView } from "@/lib/directory/directory-view";
 import { entryFilterOptions, entryLabel, matchesEntries } from "@/lib/directory/entries";
 import type { DirectoryEntryRef } from "@/lib/api/directory-lists";
 import { useTranslation } from "@/lib/i18n/use-translation";
 import { useSectionLabel } from "@/components/directory/profile-retention";
-import { formatDate, formatDay } from "@/lib/directory/format";
+import { formatDay, formatEmploymentDay } from "@/lib/directory/format";
 import { profileHref } from "@/lib/directory/routes";
 
 /** The directory of one Directory organization: People and, for the owner, org admins and HR, Former. */
@@ -415,12 +419,14 @@ function FormerView({
 }) {
   const { t } = useTranslation();
   const sectionLabel = useSectionLabel();
+  const timeZone = useOrganizationTimeZone(organizationId);
   if (!former) return <ListState loading={loading} failed={failed} />;
   // The server orders the list by end date, which a viewer without Job never gets.
   const shown = former.filter((person) => matchesPerson(person, query));
   if (shown.length === 0) return <EmptyState query={query} empty={t.directory.noFormer} />;
 
-  const date = (value: string | null) => (value ? formatDate(value, t.common.dateLocale) : "");
+  const date = (value: string | null) =>
+    value ? formatEmploymentDay(value, t.common.dateLocale, timeZone) : "";
   return (
     <Card>
       <Table data-testid="directory-former">

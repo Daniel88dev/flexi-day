@@ -1709,6 +1709,11 @@ export function useDirectoryOrganizations() {
   });
 }
 
+export function useOrganizationTimeZone(organizationId: string) {
+  return useDirectoryOrganizations().data?.find((entry) => entry.organizationId === organizationId)
+    ?.timezone;
+}
+
 export function useDirectoryPeople(organizationId: string | null) {
   return useQuery({
     queryKey: qk.directoryPeople(organizationId ?? ""),

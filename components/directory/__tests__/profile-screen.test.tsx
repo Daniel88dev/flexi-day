@@ -47,6 +47,7 @@ const historyCalls: boolean[] = [];
 
 const holdMock = vi.fn();
 vi.mock("@/lib/api/queries", () => ({
+  useOrganizationTimeZone: () => "UTC",
   useSetRetentionHold: () => ({ mutateAsync: holdMock, isPending: false }),
   useDirectoryOrganizations: () => ({ data: organizations, isLoading: false, error: null }),
   useDirectoryProfile: () => ({ ...profile, isLoading: false }),

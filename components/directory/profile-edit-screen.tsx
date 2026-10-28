@@ -26,6 +26,7 @@ import {
   useDirectoryOrganizations,
   useDirectoryPeople,
   useDirectoryProfile,
+  useOrganizationTimeZone,
   useRemoveProfilePhoto,
   useUpdateDirectoryProfile,
   useUploadProfilePhoto,
@@ -54,7 +55,7 @@ import {
   workPhoneInvalid,
   type ProfileFormValues,
 } from "@/lib/directory/profile-form";
-import { formatDate } from "@/lib/directory/format";
+import { formatEmploymentDay } from "@/lib/directory/format";
 import { isExternalWorker, looksLikeEmail } from "@/lib/directory/person";
 import { profileHref } from "@/lib/directory/routes";
 import { localDayOf } from "@/lib/calendar/month-grid";
@@ -118,6 +119,7 @@ function ProfileEditForm({ profile, lapsed }: { profile: DirectoryProfile; lapse
   const people = useDirectoryPeople(cardWrite ? profile.organizationId : null).data?.people;
   const departments = useDirectoryList(profile.organizationId, "departments", cardWrite).data;
   const locations = useDirectoryList(profile.organizationId, "locations", cardWrite).data;
+  const timeZone = useOrganizationTimeZone(profile.organizationId);
 
   const [initial] = useState(() => profileFormValues(profile));
   const [values, setValues] = useState(initial);
@@ -258,7 +260,9 @@ function ProfileEditForm({ profile, lapsed }: { profile: DirectoryProfile; lapse
   const reportsToKnown =
     values.reportsTo === "" ||
     reportsToOptions.some((person) => person.employmentId === values.reportsTo);
-  const spellStart = job ? formatDate(job.spell.startedAt, t.common.dateLocale) : null;
+  const spellStart = job
+    ? formatEmploymentDay(job.spell.startedAt, t.common.dateLocale, timeZone)
+    : null;
 
   const anchors = [
     { id: "record", title: copy.record },

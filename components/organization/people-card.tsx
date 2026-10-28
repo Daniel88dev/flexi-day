@@ -22,6 +22,7 @@ import {
 } from "@/lib/api/queries";
 import type { EmploymentListItem } from "@/lib/api/employment";
 import type { PersonExport } from "@/lib/api/person-export";
+import { formatEmploymentDay } from "@/lib/directory/format";
 import { profileHref } from "@/lib/directory/routes";
 import { formatMinutes, parseMinutes } from "@/lib/attendance/duration";
 import { useTranslation } from "@/lib/i18n/use-translation";
@@ -206,7 +207,7 @@ function PersonRow({
           {employment.endedAt ? (
             <span className="text-muted-foreground text-xs font-normal">
               {t.organization.people.endedOn(
-                new Date(employment.endedAt).toLocaleDateString(t.common.dateLocale)
+                formatEmploymentDay(employment.endedAt, t.common.dateLocale, timeZone)
               )}
             </span>
           ) : null}

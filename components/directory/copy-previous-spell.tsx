@@ -22,8 +22,12 @@ import {
   type DirectoryOrganization,
   type DirectoryProfile,
 } from "@/lib/api/directory";
-import { useCopyFromPreviousSpell, usePreviousSpell } from "@/lib/api/queries";
-import { formatDate, formatDay } from "@/lib/directory/format";
+import {
+  useCopyFromPreviousSpell,
+  useOrganizationTimeZone,
+  usePreviousSpell,
+} from "@/lib/api/queries";
+import { formatDay, formatEmploymentDay } from "@/lib/directory/format";
 import { useTranslation } from "@/lib/i18n/use-translation";
 
 /** On a rejoined profile, for the owner, org admins and HR, while something can be copied. */
@@ -72,7 +76,8 @@ function CopyDialog({ profile, onClose }: { profile: DirectoryProfile; onClose: 
   const copyFrom = useCopyFromPreviousSpell(profile.organizationId, profile.employmentId);
   const [chosen, setChosen] = useState<CopyableSectionKey[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const date = (value: string) => formatDate(value, t.common.dateLocale);
+  const timeZone = useOrganizationTimeZone(profile.organizationId);
+  const date = (value: string) => formatEmploymentDay(value, t.common.dateLocale, timeZone);
 
   const statusLine = (section: CopyableSection) =>
     section.status === "REMOVED_ON"
