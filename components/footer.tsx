@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Logo } from "@/components/brand/logo";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/lib/i18n/use-translation";
+import { legalHref } from "@/lib/legal";
 
 export const FOOTER_LINKS = [
   { href: "/privacy", label: "Privacy" },
@@ -20,11 +21,11 @@ interface FooterProps {
 }
 
 export function Footer({ minimal = false, containerClassName }: FooterProps) {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   const year = new Date().getFullYear();
   const links = [
-    { href: "/privacy", label: t.footer.privacy },
-    { href: "/terms", label: t.footer.terms },
+    { href: legalHref("privacy", locale), label: t.footer.privacy },
+    { href: legalHref("terms", locale), label: t.footer.terms },
     { href: "/security", label: t.footer.security },
     { href: "/contact", label: t.footer.contact },
   ];

@@ -2,7 +2,17 @@ import { describe, expect, it } from "vitest";
 import sitemap from "../sitemap";
 import { SITE_URL } from "@/lib/site";
 
-const PUBLIC_PATHS = ["/", "/contact/", "/privacy/", "/security/", "/terms/"];
+const PUBLIC_PATHS = [
+  "/",
+  "/contact/",
+  "/privacy/",
+  "/security/",
+  "/terms/",
+  "/dpa/",
+  "/cs/privacy/",
+  "/cs/terms/",
+  "/cs/dpa/",
+];
 
 describe("sitemap", () => {
   const entries = sitemap();

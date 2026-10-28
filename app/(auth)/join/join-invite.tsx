@@ -11,6 +11,7 @@ import { ApiError } from "@/lib/api/client";
 import { useGroups, useInvitePreview, useJoinGroupByLink } from "@/lib/api/queries";
 import { planLimitMessage } from "@/lib/billing/plan-limit-error";
 import { useTranslation } from "@/lib/i18n/use-translation";
+import { legalHref } from "@/lib/legal";
 import {
   closedInviteCopy,
   closedStatusOf,
@@ -29,7 +30,7 @@ const maskEmail = (email: string): string => {
 const groupHref = (groupId: string) => `/groups/detail?groupId=${groupId}`;
 
 export function JoinInvite() {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   const router = useRouter();
   const params = useSearchParams();
   const token = params.get("token") ?? "";
@@ -154,11 +155,19 @@ export function JoinInvite() {
               style={{ color: "var(--text-faint)", lineHeight: 1.5 }}
             >
               {t.auth.signUp.agreePrefix}{" "}
-              <Link href="/terms" className="underline" style={{ color: "var(--text-muted)" }}>
+              <Link
+                href={legalHref("terms", locale)}
+                className="underline"
+                style={{ color: "var(--text-muted)" }}
+              >
                 {t.auth.signUp.terms}
               </Link>{" "}
               {t.auth.signUp.and}{" "}
-              <Link href="/privacy" className="underline" style={{ color: "var(--text-muted)" }}>
+              <Link
+                href={legalHref("privacy", locale)}
+                className="underline"
+                style={{ color: "var(--text-muted)" }}
+              >
                 {t.auth.signUp.privacy}
               </Link>
               .

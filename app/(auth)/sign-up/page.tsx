@@ -18,6 +18,7 @@ import {
 import { FieldInput } from "@/components/auth/field-input";
 import { GuestGuard } from "@/components/auth/guest-guard";
 import { useTranslation } from "@/lib/i18n/use-translation";
+import { legalHref } from "@/lib/legal";
 
 export default function SignUpPage() {
   return (
@@ -30,7 +31,7 @@ export default function SignUpPage() {
 }
 
 function SignUpForm() {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -94,11 +95,19 @@ function SignUpForm() {
             style={{ color: "var(--text-faint)", lineHeight: 1.5 }}
           >
             {t.auth.signUp.agreePrefix}{" "}
-            <Link href="/terms" className="underline" style={{ color: "var(--text-muted)" }}>
+            <Link
+              href={legalHref("terms", locale)}
+              className="underline"
+              style={{ color: "var(--text-muted)" }}
+            >
               {t.auth.signUp.terms}
             </Link>{" "}
             {t.auth.signUp.and}{" "}
-            <Link href="/privacy" className="underline" style={{ color: "var(--text-muted)" }}>
+            <Link
+              href={legalHref("privacy", locale)}
+              className="underline"
+              style={{ color: "var(--text-muted)" }}
+            >
               {t.auth.signUp.privacy}
             </Link>
             .

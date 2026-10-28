@@ -27,6 +27,7 @@ import {
 } from "@/lib/attendance/today";
 import { useNow } from "@/lib/attendance/use-now";
 import { useTranslation } from "@/lib/i18n/use-translation";
+import { legalHref } from "@/lib/legal";
 import type { Dictionary } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { DayTotals } from "./day-totals";
@@ -91,7 +92,7 @@ function Notice({
  * not flash up for somebody who put it away months ago.
  */
 function LocationNotice() {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   const settings = useMySettings();
   const dismiss = useUpdateMySettings();
 
@@ -101,7 +102,7 @@ function LocationNotice() {
     <Notice icon={<MapPin />} title={t.clock.locationNoticeTitle}>
       <p style={{ color: "var(--text-muted)" }}>
         {t.clock.locationNoticeBody}{" "}
-        <Link href="/privacy" className="underline">
+        <Link href={legalHref("privacy", locale)} className="underline">
           {t.clock.locationNoticePrivacy}
         </Link>
       </p>
