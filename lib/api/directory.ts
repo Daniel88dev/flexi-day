@@ -35,6 +35,8 @@ export type DirectoryOrganization = {
   enabled: boolean;
   writable: boolean;
   newAgreementVersionReady: boolean;
+  /** Where Employment start and end name their day; optional as an older backend sends none. */
+  timezone?: string;
 };
 
 const scoped = (path: string, organizationId: string) =>

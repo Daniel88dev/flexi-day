@@ -58,6 +58,7 @@ const person = (name: string, employmentId: string): DirectoryPerson => ({
 });
 
 vi.mock("@/lib/api/queries", () => ({
+  useOrganizationTimeZone: () => "UTC",
   useDirectoryOrganizations: () => ({ data: [organization], isLoading: false, error: null }),
   useDirectoryProfile: () => ({ data: profile, isLoading: false, error: null }),
   useDirectoryPeople: () => ({

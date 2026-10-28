@@ -16,6 +16,7 @@ vi.mock("@/components/toast", () => ({
 }));
 
 vi.mock("@/lib/api/queries", () => ({
+  useOrganizationTimeZone: () => "UTC",
   usePreviousSpell: (_org: string, _emp: string, enabled: boolean) => {
     previousEnabled.push(enabled);
     return previous;

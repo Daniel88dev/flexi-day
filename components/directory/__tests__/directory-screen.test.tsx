@@ -35,6 +35,7 @@ vi.mock("@/components/directory/directory-settings", () => ({
 }));
 
 vi.mock("@/lib/api/queries", () => ({
+  useOrganizationTimeZone: () => "UTC",
   useDirectoryOrganizations: () => ({ data: organizations, isLoading: false, error: null }),
   useDirectoryState: () => ({ data: undefined }),
   useAcceptDirectoryAgreement: () => ({ mutateAsync: vi.fn(), isPending: false }),
