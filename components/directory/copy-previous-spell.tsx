@@ -148,7 +148,7 @@ function CopyDialog({ profile, onClose }: { profile: DirectoryProfile; onClose: 
         ) : null}
         <DialogFooter>
           <Button type="button" variant="outline" onClick={onClose}>
-            {copy.cancel}
+            {t.common.cancel}
           </Button>
           <Button
             type="button"

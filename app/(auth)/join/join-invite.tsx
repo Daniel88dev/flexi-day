@@ -18,6 +18,7 @@ import {
   errorCode,
   type ClosedStatus,
 } from "@/lib/invites/invite-errors";
+import { inviteCopy } from "@/lib/invites/invite-copy";
 import { JoinSignUp } from "./join-sign-up";
 
 /** `dana@northwind.co` → `d…@northwind.co`: enough to pick the right account. */
@@ -106,16 +107,7 @@ export function JoinInvite() {
     );
   }
 
-  const title =
-    groupId === null ? t.join.directoryTitle(invite.organizationName) : t.join.title(groupName);
-  const description =
-    groupId === null
-      ? invite.inviterName
-        ? t.join.directoryInvitedBy(invite.inviterName, invite.organizationName)
-        : t.join.directoryInvitedByUnknown(invite.organizationName)
-      : invite.inviterName
-        ? t.join.invitedBy(invite.inviterName)
-        : t.join.invitedByUnknown;
+  const { title, description, join } = inviteCopy(t, invite);
 
   if (!session) {
     // The sign-up response set the session cookie; the session store has to
@@ -242,12 +234,7 @@ export function JoinInvite() {
           onClick={handleJoin}
           disabled={joinGroup.isPending}
         >
-          {joinGroup.isPending
-            ? t.join.joining
-            : groupId === null
-              ? t.join.directoryJoin
-              : t.join.join}{" "}
-          <ArrowRight className="h-[18px] w-[18px]" />
+          {joinGroup.isPending ? t.join.joining : join} <ArrowRight className="h-[18px] w-[18px]" />
         </Button>
       </div>
     </AuthCard>

@@ -6,6 +6,7 @@ import { UserPlus } from "lucide-react";
 import { profileHref } from "@/lib/directory/routes";
 import { pushToast } from "@/components/toast";
 import { Button } from "@/components/ui/button";
+import { SelectField, TextField } from "@/components/directory/form-fields";
 import {
   Dialog,
   DialogContent,
@@ -14,8 +15,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { errorCode, errorCopy } from "@/lib/api/client";
 import type { DirectoryOrganization, DirectoryPerson, WorkerType } from "@/lib/api/directory";
 import {
@@ -151,21 +150,16 @@ function AddPersonDialog({
           }}
         >
           <Group legend={copy.person}>
-            <Field
+            <TextField
               id="add-person-name"
               label={copy.name}
               error={problems.name ? copy.errors.nameMissing : null}
-            >
-              <Input
-                id="add-person-name"
-                value={values.name}
-                maxLength={200}
-                autoComplete="off"
-                aria-invalid={problems.name ? true : undefined}
-                onChange={(event) => set("name")(event.target.value)}
-                onBlur={blurName}
-              />
-            </Field>
+              value={values.name}
+              maxLength={200}
+              autoComplete="off"
+              onChange={set("name")}
+              onBlur={blurName}
+            />
             <div
               role="radiogroup"
               aria-label={copy.workerType}
@@ -189,80 +183,71 @@ function AddPersonDialog({
           </Group>
 
           <Group legend={copy.card}>
-            <Field id="add-person-job-title" label={copy.jobTitle}>
-              <Input
-                id="add-person-job-title"
-                value={values.jobTitle}
-                maxLength={100}
-                onChange={(event) => set("jobTitle")(event.target.value)}
-              />
-            </Field>
+            <TextField
+              id="add-person-job-title"
+              label={copy.jobTitle}
+              value={values.jobTitle}
+              maxLength={100}
+              onChange={set("jobTitle")}
+            />
             {departmentOptions.length > 0 ? (
-              <Field id="add-person-department" label={copy.department}>
-                <NativeSelect
-                  id="add-person-department"
-                  value={values.departmentId}
-                  onChange={set("departmentId")}
-                >
-                  <option value="">{copy.none}</option>
-                  {departmentOptions.map((entry) => (
-                    <option key={entry.id} value={entry.id}>
-                      {entryLabel(entry, t.directory.archivedEntry)}
-                    </option>
-                  ))}
-                </NativeSelect>
-              </Field>
-            ) : null}
-            {locationOptions.length > 0 ? (
-              <Field id="add-person-location" label={copy.location}>
-                <NativeSelect
-                  id="add-person-location"
-                  value={values.locationId}
-                  onChange={set("locationId")}
-                >
-                  <option value="">{copy.none}</option>
-                  {locationOptions.map((entry) => (
-                    <option key={entry.id} value={entry.id}>
-                      {entryLabel(entry, t.directory.archivedEntry)}
-                    </option>
-                  ))}
-                </NativeSelect>
-              </Field>
-            ) : null}
-            <Field id="add-person-reports-to" label={copy.reportsTo}>
-              <NativeSelect
-                id="add-person-reports-to"
-                value={values.reportsToEmploymentId}
-                onChange={set("reportsToEmploymentId")}
+              <SelectField
+                id="add-person-department"
+                label={copy.department}
+                value={values.departmentId}
+                onChange={set("departmentId")}
               >
                 <option value="">{copy.none}</option>
-                {people.map((person) => (
-                  <option key={person.employmentId} value={person.employmentId}>
-                    {person.name}
+                {departmentOptions.map((entry) => (
+                  <option key={entry.id} value={entry.id}>
+                    {entryLabel(entry, t.directory.archivedEntry)}
                   </option>
                 ))}
-              </NativeSelect>
-            </Field>
+              </SelectField>
+            ) : null}
+            {locationOptions.length > 0 ? (
+              <SelectField
+                id="add-person-location"
+                label={copy.location}
+                value={values.locationId}
+                onChange={set("locationId")}
+              >
+                <option value="">{copy.none}</option>
+                {locationOptions.map((entry) => (
+                  <option key={entry.id} value={entry.id}>
+                    {entryLabel(entry, t.directory.archivedEntry)}
+                  </option>
+                ))}
+              </SelectField>
+            ) : null}
+            <SelectField
+              id="add-person-reports-to"
+              label={copy.reportsTo}
+              value={values.reportsToEmploymentId}
+              onChange={set("reportsToEmploymentId")}
+            >
+              <option value="">{copy.none}</option>
+              {people.map((person) => (
+                <option key={person.employmentId} value={person.employmentId}>
+                  {person.name}
+                </option>
+              ))}
+            </SelectField>
           </Group>
 
           <Group legend={copy.account}>
-            <Field
+            <TextField
               id="add-person-email"
+              type="email"
               label={copy.email}
               error={emailError}
               hint={copy.emailHint}
-            >
-              <Input
-                id="add-person-email"
-                type="email"
-                value={values.email}
-                maxLength={254}
-                autoComplete="off"
-                aria-invalid={emailError ? true : undefined}
-                onChange={(event) => set("email")(event.target.value)}
-                onBlur={() => void blurEmail()}
-              />
-            </Field>
+              value={values.email}
+              maxLength={254}
+              autoComplete="off"
+              onChange={set("email")}
+              onBlur={() => void blurEmail()}
+            />
           </Group>
 
           {failure ? (
@@ -272,7 +257,7 @@ function AddPersonDialog({
           ) : null}
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={onClose}>
-              {copy.cancel}
+              {t.common.cancel}
             </Button>
             <Button type="submit" disabled={create.isPending}>
               {create.isPending ? copy.adding : copy.confirm}
@@ -292,55 +277,6 @@ function Group({ legend, children }: { legend: string; children: ReactNode }) {
       </legend>
       {children}
     </fieldset>
-  );
-}
-
-function Field({
-  id,
-  label,
-  error,
-  hint,
-  children,
-}: {
-  id: string;
-  label: string;
-  error?: string | null;
-  hint?: string;
-  children: ReactNode;
-}) {
-  return (
-    <div className="space-y-1.5">
-      <Label htmlFor={id}>{label}</Label>
-      {children}
-      {error ? (
-        <p className="text-destructive text-xs">{error}</p>
-      ) : hint ? (
-        <p className="text-muted-foreground text-xs">{hint}</p>
-      ) : null}
-    </div>
-  );
-}
-
-function NativeSelect({
-  id,
-  value,
-  onChange,
-  children,
-}: {
-  id: string;
-  value: string;
-  onChange: (value: string) => void;
-  children: ReactNode;
-}) {
-  return (
-    <select
-      id={id}
-      value={value}
-      onChange={(event) => onChange(event.target.value)}
-      className="border-border bg-background h-9 w-full rounded-md border px-3 text-sm"
-    >
-      {children}
-    </select>
   );
 }
 

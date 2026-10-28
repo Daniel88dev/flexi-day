@@ -11,11 +11,8 @@ import { RetentionPanel } from "@/components/directory/retention-panel";
 import { PermissionTableEditor } from "@/components/directory/permission-table-editor";
 import type { DirectoryOrganization } from "@/lib/api/directory";
 import { administers } from "@/lib/directory/directory-access";
+import type { SettingsPanel } from "@/lib/directory/settings-panel";
 import { useTranslation } from "@/lib/i18n/use-translation";
-
-export type SettingsPanel = "permissions" | "roles" | "general" | "retention" | "lists" | "readLog";
-
-type Panel = SettingsPanel;
 
 /** The Directory settings tab, for the owner, org admins and HR. Later settings add a panel here. */
 export function DirectorySettings({
@@ -27,16 +24,16 @@ export function DirectorySettings({
 }) {
   const { t } = useTranslation();
   const copy = t.directory.settings;
-  const [panel, setPanel] = useState<Panel>(initialPanel);
+  const [panel, setPanel] = useState<SettingsPanel>(initialPanel);
   // The Read log is for the owner and org admins; HR reads it only by also being one.
   const readsLog = administers(organization);
-  const panels: [Panel, string][] = [
+  const panels: [SettingsPanel, string][] = [
     ["permissions", copy.permissions],
     ["roles", copy.roles],
     ["general", copy.general],
     ["retention", copy.retention],
     ["lists", copy.lists],
-    ...(readsLog ? [["readLog", copy.readLog] as [Panel, string]] : []),
+    ...(readsLog ? [["readLog", copy.readLog] as [SettingsPanel, string]] : []),
   ];
 
   return (

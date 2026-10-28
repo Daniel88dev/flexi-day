@@ -4,11 +4,23 @@ import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
 import type { ReadLogEntry, ReadLogFilter } from "@/lib/api/directory";
 import { useReadLog } from "@/lib/api/queries";
 import { formatDateTime } from "@/lib/directory/format";
 import { useTranslation } from "@/lib/i18n/use-translation";
+import { SelectField } from "@/components/directory/form-fields";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { cn } from "@/lib/utils";
+
+const HEAD = "text-muted-foreground h-auto py-2 pr-4 pl-0 font-normal last:pr-0";
+const CELL = "py-2 pr-4 pl-0 whitespace-normal last:pr-0";
 
 /** The Read log, for the owner and org admins: reads of Sensitive sections and every export. */
 export function ReadLogPanel({ organizationId }: { organizationId: string }) {
@@ -28,22 +40,14 @@ export function ReadLogPanel({ organizationId }: { organizationId: string }) {
     onChange: (value: string) => void,
     choices: { value: string; label: string }[]
   ) => (
-    <div className="space-y-1.5">
-      <Label htmlFor={id}>{label}</Label>
-      <select
-        id={id}
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        className="border-border bg-background h-9 w-full rounded-md border px-3 text-sm"
-      >
-        <option value="">{copy.everyone}</option>
-        {choices.map((choice) => (
-          <option key={choice.value} value={choice.value}>
-            {choice.label}
-          </option>
-        ))}
-      </select>
-    </div>
+    <SelectField id={id} label={label} value={value} onChange={onChange}>
+      <option value="">{copy.everyone}</option>
+      {choices.map((choice) => (
+        <option key={choice.value} value={choice.value}>
+          {choice.label}
+        </option>
+      ))}
+    </SelectField>
   );
 
   return (
@@ -85,32 +89,34 @@ export function ReadLogPanel({ organizationId }: { organizationId: string }) {
         ) : entries.length === 0 ? (
           <p className="text-muted-foreground text-sm">{copy.empty}</p>
         ) : (
-          <table className="w-full text-sm">
-            <thead className="text-muted-foreground text-left text-xs">
-              <tr>
-                <th className="py-2 pr-4 font-normal">{copy.when}</th>
-                <th className="py-2 pr-4 font-normal">{copy.reader}</th>
-                <th className="py-2 pr-4 font-normal">{copy.person}</th>
-                <th className="py-2 pr-4 font-normal">{copy.what}</th>
-                <th className="py-2 font-normal">{copy.audience}</th>
-              </tr>
-            </thead>
-            <tbody className="divide-border divide-y">
+          <Table>
+            <TableHeader className="text-xs">
+              <TableRow className="hover:bg-transparent">
+                <TableHead className={HEAD}>{copy.when}</TableHead>
+                <TableHead className={HEAD}>{copy.reader}</TableHead>
+                <TableHead className={HEAD}>{copy.person}</TableHead>
+                <TableHead className={HEAD}>{copy.what}</TableHead>
+                <TableHead className={HEAD}>{copy.audience}</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {entries.map((entry) => (
-                <tr key={entry.id}>
-                  <td className="text-muted-foreground py-2 pr-4 text-xs">
+                <TableRow key={entry.id} className="hover:bg-transparent">
+                  <TableCell className={cn(CELL, "text-muted-foreground text-xs")}>
                     <time dateTime={entry.at}>{when(entry.at)}</time>
-                  </td>
-                  <td className="py-2 pr-4">{entry.reader.name ?? copy.unknownReader}</td>
-                  <td className="py-2 pr-4">{entry.person.name ?? copy.erasedPerson}</td>
-                  <td className="py-2 pr-4">
+                  </TableCell>
+                  <TableCell className={CELL}>{entry.reader.name ?? copy.unknownReader}</TableCell>
+                  <TableCell className={CELL}>{entry.person.name ?? copy.erasedPerson}</TableCell>
+                  <TableCell className={CELL}>
                     <What entry={entry} />
-                  </td>
-                  <td className="py-2">{t.directory.history.audiences[entry.audience]}</td>
-                </tr>
+                  </TableCell>
+                  <TableCell className={CELL}>
+                    {t.directory.history.audiences[entry.audience]}
+                  </TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         )}
         {log.hasNextPage ? (
           <Button

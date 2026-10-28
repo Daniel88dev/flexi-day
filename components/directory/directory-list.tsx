@@ -20,7 +20,7 @@ import { DirectoryAgreementBanner } from "@/components/directory/directory-agree
 import { DirectoryLapsedBanner } from "@/components/directory/directory-lapsed-banner";
 import { DirectoryMarkers } from "@/components/directory/directory-markers";
 import { DirectoryChecklist } from "@/components/directory/directory-checklist";
-import { DirectorySettings, type SettingsPanel } from "@/components/directory/directory-settings";
+import { DirectorySettings } from "@/components/directory/directory-settings";
 import { PersonAvatar } from "@/components/directory/person-avatar";
 import type {
   DirectoryOrganization,
@@ -39,6 +39,8 @@ import { useTranslation } from "@/lib/i18n/use-translation";
 import { useSectionLabel } from "@/components/directory/profile-retention";
 import { formatDay, formatEmploymentDay } from "@/lib/directory/format";
 import { profileHref } from "@/lib/directory/routes";
+import { SelectField } from "@/components/directory/form-fields";
+import type { SettingsPanel } from "@/lib/directory/settings-panel";
 
 /** The directory of one Directory organization: People and, for the owner, org admins and HR, Former. */
 export function DirectoryList({
@@ -255,19 +257,14 @@ function EntryFilter({
   const { t } = useTranslation();
   if (options.length === 0 && value === "") return null;
   return (
-    <select
-      aria-label={label}
-      className="border-border bg-background h-8 rounded-md border px-2 text-sm"
-      value={value}
-      onChange={(event) => onChange(event.target.value)}
-    >
+    <SelectField aria-label={label} className="w-auto" value={value} onChange={onChange}>
       <option value="">{all}</option>
       {options.map((entry) => (
         <option key={entry.id} value={entry.id}>
           {entryLabel(entry, t.directory.archivedEntry)}
         </option>
       ))}
-    </select>
+    </SelectField>
   );
 }
 

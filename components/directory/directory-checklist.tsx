@@ -2,10 +2,11 @@
 
 import { CheckCircle2, Circle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import type { SettingsPanel } from "@/components/directory/directory-settings";
 import type { DirectoryChecklistItemKey } from "@/lib/api/directory";
 import { useDirectoryChecklist, useHideDirectoryChecklist } from "@/lib/api/queries";
+import type { SettingsPanel } from "@/lib/directory/settings-panel";
 import { useTranslation } from "@/lib/i18n/use-translation";
+import { cn } from "@/lib/utils";
 
 const PANEL_OF: Record<DirectoryChecklistItemKey, SettingsPanel | null> = {
   departments: "lists",
@@ -64,13 +65,16 @@ export function DirectoryChecklist({
               {panel ? (
                 <button
                   type="button"
-                  className={`underline-offset-2 hover:underline ${done ? "text-muted-foreground line-through" : ""}`}
+                  className={cn(
+                    "underline-offset-2 hover:underline",
+                    done && "text-muted-foreground line-through"
+                  )}
                   onClick={() => onOpenSettings(panel)}
                 >
                   {copy.items[key]}
                 </button>
               ) : (
-                <span className={done ? "text-muted-foreground line-through" : ""}>
+                <span className={cn(done && "text-muted-foreground line-through")}>
                   {copy.items[key]}
                 </span>
               )}

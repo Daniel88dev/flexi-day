@@ -25,6 +25,15 @@ import {
 import { isShortening } from "@/lib/directory/retention";
 import { SECTION_WIRE_NAMES } from "@/lib/directory/sections";
 import { useTranslation } from "@/lib/i18n/use-translation";
+import { SelectField } from "@/components/directory/form-fields";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 type Change = { section: ProfileHistorySection; period: RetentionPeriod };
 
@@ -82,41 +91,42 @@ function Periods({
           {copy.saveFailed}
         </p>
       ) : null}
-      <table className="w-full border-collapse text-sm">
-        <thead>
-          <tr className="text-muted-foreground text-xs uppercase">
-            <th scope="col" className="py-2 text-left font-medium">
+      <Table>
+        <TableHeader>
+          <TableRow className="text-muted-foreground text-xs uppercase hover:bg-transparent">
+            <TableHead scope="col" className="text-muted-foreground h-auto px-0 py-2">
               {copy.section}
-            </th>
-            <th scope="col" className="py-2 text-left font-medium">
+            </TableHead>
+            <TableHead scope="col" className="text-muted-foreground h-auto px-0 py-2">
               {copy.period}
-            </th>
-          </tr>
-        </thead>
-        <tbody>
+            </TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
           {SECTION_WIRE_NAMES.map((section) => (
-            <tr key={section} className="border-t">
-              <th scope="row" className="py-2 pr-4 text-left font-semibold">
+            <TableRow key={section} className="hover:bg-transparent">
+              <TableHead
+                scope="row"
+                className="h-auto px-0 py-2 pr-4 font-semibold whitespace-normal"
+              >
                 {sectionNames[section]}
-              </th>
-              <td className="py-2">
+              </TableHead>
+              <TableCell className="px-0 py-2 whitespace-normal">
                 <div className="flex flex-wrap items-center gap-3">
                   {settings.editable ? (
-                    <select
+                    <SelectField
                       aria-label={copy.periodLabel(sectionNames[section])}
                       value={settings.periods[section]}
                       disabled={update.isPending}
-                      onChange={(event) =>
-                        choose({ section, period: event.target.value as RetentionPeriod })
-                      }
-                      className="border-border bg-background h-8 min-w-[9rem] rounded-md border px-2 text-sm disabled:opacity-50"
+                      onChange={(period) => choose({ section, period: period as RetentionPeriod })}
+                      className="w-auto min-w-[9rem]"
                     >
                       {RETENTION_PERIODS.map((period) => (
                         <option key={period} value={period}>
                           {copy.periods[period]}
                         </option>
                       ))}
-                    </select>
+                    </SelectField>
                   ) : (
                     <span>{copy.periods[settings.periods[section]]}</span>
                   )}
@@ -124,11 +134,11 @@ function Periods({
                     {copy.defaultIs(copy.periods[settings.defaults[section]])}
                   </span>
                 </div>
-              </td>
-            </tr>
+              </TableCell>
+            </TableRow>
           ))}
-        </tbody>
-      </table>
+        </TableBody>
+      </Table>
       <ShorteningDialog
         organizationId={organizationId}
         change={shortening}

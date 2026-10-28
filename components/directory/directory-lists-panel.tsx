@@ -17,6 +17,7 @@ import {
 import { countryOptions } from "@/lib/directory/phone";
 import { LapsedNote } from "@/components/directory/directory-lapsed-banner";
 import { useTranslation } from "@/lib/i18n/use-translation";
+import { SelectField } from "@/components/directory/form-fields";
 
 /** Departments and Locations: add, rename, archive, and delete while unused. */
 export function DirectoryListsPanel({ organizationId }: { organizationId: string }) {
@@ -116,12 +117,12 @@ function ListCard({ organizationId, kind }: { organizationId: string; kind: Dire
             {locations ? (
               <div className="space-y-1">
                 <Label htmlFor="new-location-country">{copy.countryLabel}</Label>
-                <select
+                <SelectField
                   id="new-location-country"
-                  className="border-border bg-background h-9 rounded-md border px-3 text-sm disabled:opacity-50"
+                  className="w-auto"
                   value={country}
                   disabled={!list.data.writable}
-                  onChange={(event) => setCountry(event.target.value)}
+                  onChange={setCountry}
                 >
                   <option value="">{copy.noCountry}</option>
                   {countries.map((option) => (
@@ -129,7 +130,7 @@ function ListCard({ organizationId, kind }: { organizationId: string; kind: Dire
                       {option.label}
                     </option>
                   ))}
-                </select>
+                </SelectField>
               </div>
             ) : null}
             <Button
@@ -182,10 +183,10 @@ function EntryRow({
             onChange={(event) => setName(event.target.value)}
           />
           <Button type="submit" size="sm">
-            {copy.save}
+            {t.common.save}
           </Button>
           <Button type="button" size="sm" variant="ghost" onClick={() => setRenaming(false)}>
-            {copy.cancel}
+            {t.common.cancel}
           </Button>
         </form>
       </li>
