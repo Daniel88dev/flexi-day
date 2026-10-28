@@ -14,15 +14,31 @@ export default function PrivacyPage() {
     <LegalShell
       title="Privacy Policy"
       updated={LEGAL.updated}
-      intro="This policy explains what personal data flexiday processes, why, and the rights you have under the General Data Protection Regulation (GDPR)."
+      intro="This policy explains what personal data flexiday processes, in which role, why, and the rights you have under the General Data Protection Regulation (GDPR)."
+      translatedPage="privacy"
     >
       <h2>1. Who we are</h2>
       <p>
         {LEGAL.product} is operated by <strong>{LEGAL.entity}</strong> (&ldquo;we&rdquo;,
-        &ldquo;us&rdquo;, &ldquo;the controller&rdquo;), a sole trader established in the{" "}
-        {LEGAL.country}, with a registered address at {LEGAL.address}. We are the{" "}
-        <strong>data controller</strong> for the personal data described in this policy.
+        &ldquo;us&rdquo;), company ID (IČO) {LEGAL.ico}, a sole trader established in the{" "}
+        {LEGAL.country}, with a registered address at {LEGAL.address}.
       </p>
+      <p>Our role depends on the data, and it is the same on every plan:</p>
+      <ul>
+        <li>
+          We are the <strong>data controller</strong> of your <strong>account data</strong>: your
+          sign-in, settings, notifications, calendar connections, push registrations and birthday.
+          We decide what happens to it, and this policy covers it in full.
+        </li>
+        <li>
+          We are a <strong>processor</strong> of <strong>organization data</strong>: what an
+          organization keeps about the people who work in it, such as employments, groups, leave,
+          attendance and quotas. The organization (usually your employer) is its controller. We
+          process it only to provide the Service to that organization, on its instructions, under
+          our <a href="/dpa/">Data Processing Agreement</a>. The organization decides how long it
+          keeps your records and answers your requests about them.
+        </li>
+      </ul>
       <p>
         For any privacy question or to exercise your rights, contact us at{" "}
         <a href={`mailto:${LEGAL.email}`}>{LEGAL.email}</a>. We have not appointed a Data Protection
@@ -37,22 +53,45 @@ export default function PrivacyPage() {
       </p>
 
       <h2>3. What data we collect</h2>
-      <h3>Data you provide</h3>
+      <h3>Account data (we are the controller)</h3>
       <ul>
         <li>
-          <strong>Account data</strong> — your name, email address and password (stored only as a
+          <strong>Sign-in details</strong> — your name, email address and password (stored only as a
           salted hash; we never see your plain-text password).
         </li>
         <li>
-          <strong>Team &amp; organisation data</strong> — groups you create or join, roles, and
-          invitations.
+          <strong>Settings and notifications</strong> — your preferences and the notifications we
+          show you in the app.
         </li>
         <li>
-          <strong>Time-off data</strong> — leave requests you submit, including dates, leave type
-          (e.g. vacation, sick, home office), status, and any note you add.
+          <strong>Birthday</strong> — the month and day, and optionally the year, you add if you
+          want to, shared with the groups you are in when you choose to share it.
         </li>
         <li>
           <strong>Support communications</strong> — the content of emails you send us.
+        </li>
+        <li>
+          <strong>Sign-in with Google, Microsoft or Apple</strong>: if you sign in with one of these
+          accounts, the provider sends us your name, email address and, where you have one, your
+          profile picture. We use them only to create your account and sign you in.
+        </li>
+        <li>
+          <strong>Calendar connection</strong>: if you connect your Google or Microsoft calendar to
+          a personal calendar, we store the access tokens the provider issues (encrypted), the
+          permission you granted, the time zone you chose, and the ids of the events we created.
+          Section 6 has the details.
+        </li>
+      </ul>
+      <h3>Organization data (we process it for your organization)</h3>
+      <ul>
+        <li>
+          <strong>Employment and team data</strong> — the organizations and groups you belong to,
+          your roles and invitations, and the organization&rsquo;s own copy of your name and email.
+        </li>
+        <li>
+          <strong>Time-off data</strong> — leave requests you submit, including dates, leave type
+          (e.g. vacation, sick, home office), status, and any note you add, with the quotas they
+          count against and the change log that records who changed what.
         </li>
         <li>
           <strong>Attendance location</strong> — where your employer has switched attendance
@@ -75,18 +114,12 @@ export default function PrivacyPage() {
           or sooner if the request is cancelled.
         </li>
         <li>
-          <strong>Sign-in with Google, Microsoft or Apple</strong>: if you sign in with one of these
-          accounts, the provider sends us your name, email address and, where you have one, your
-          profile picture. We use them only to create your account and sign you in.
-        </li>
-        <li>
-          <strong>Calendar connection</strong>: if you connect your Google or Microsoft calendar to
-          a personal calendar, we store the access tokens the provider issues (encrypted), the
-          permission you granted, the time zone you chose, and the ids of the events we created.
-          Section 6 has the details.
+          <strong>People directory profiles</strong> — where the organization&rsquo;s owner has
+          turned the people directory on, the profile the organization keeps about you. The{" "}
+          <a href="/directory-agreement/">People directory agreement</a> describes it.
         </li>
       </ul>
-      <h3>Data we collect automatically</h3>
+      <h3>Data we collect automatically (we are the controller)</h3>
       <ul>
         <li>
           <strong>Technical data</strong> — IP address, browser and device type, and timestamps,
@@ -110,6 +143,11 @@ export default function PrivacyPage() {
       </ul>
 
       <h2>4. Why we use your data and our legal bases</h2>
+      <p>
+        The table covers the data we control. For organization data, the organization decides why it
+        is processed and on which legal basis, and it answers for that choice. We process
+        organization data only to provide the Service to the organization.
+      </p>
       <table>
         <thead>
           <tr>
@@ -120,10 +158,6 @@ export default function PrivacyPage() {
         <tbody>
           <tr>
             <td>Create and manage your account and authenticate you</td>
-            <td>Performance of a contract (b)</td>
-          </tr>
-          <tr>
-            <td>Provide the time-off calendar, requests and approvals to your team</td>
             <td>Performance of a contract (b)</td>
           </tr>
           <tr>
@@ -158,9 +192,11 @@ export default function PrivacyPage() {
 
       <h2>5. Who we share it with</h2>
       <p>
-        We do not sell your personal data. Within the Service, your time-off and profile information
-        is visible to members of your team and groups, as needed to coordinate coverage. We rely on
-        the following processors, who act on our instructions under data-processing agreements:
+        We do not sell your personal data. Within the Service, organization data is visible to the
+        people in your organization as its settings and roles allow, for example to your team and
+        groups to coordinate coverage. We rely on the following processors, who act on our
+        instructions under data-processing agreements. Those that handle organization data are our
+        sub-processors, which the <a href="/dpa/">Data Processing Agreement</a> lists:
       </p>
       <table>
         <thead>
@@ -277,23 +313,50 @@ export default function PrivacyPage() {
 
       <h2>8. How long we keep it</h2>
       <p>
-        We keep your personal data for as long as your account is active. You can delete your
-        account yourself in Settings, or ask us to erase your data.
+        We keep your account data for as long as your account exists. You can delete your account
+        yourself in Settings, or ask us to erase your account data. Organization data stays for as
+        long as the organization keeps it: the organization decides when to end an employment, when
+        to erase a person&rsquo;s records and when to delete the organization itself.
+      </p>
+      <h3>Deleting your account</h3>
+      <p>
+        Deleting your account removes your account data from our live systems at once: your sign-in
+        methods, sessions, settings, notifications, calendar connections (handled as section 6
+        describes), push registrations and birthday.
       </p>
       <p>
-        Deleting your account removes it from our live systems at once, together with everything
-        tied to it: your leave and attendance records, request attachments and settings. That
-        includes what your team or employer could see of them. If you own an organization that has
-        nobody else in it, the organization goes too, with its groups and its subscription record.
-        An owner has to remove the other members and cancel a renewing subscription before they can
-        delete their account. Paddle, as seller of record, keeps its own records of past payments
-        under its own privacy policy.
+        It does not delete the records the organizations you work in hold about you, because those
+        are theirs. Your employments stay open, and your approved leave, request attachments,
+        attendance, quotas and the change log stay with each organization, under the name and email
+        it held for you at the moment of deletion. The organization&rsquo;s admins are told, and the
+        organization decides whether to end your employment or erase your records. Leave requests
+        still pending are cancelled, whatever their dates. If you are clocked in, the clock stops at
+        the moment of deletion and the day is flagged for an admin to review. Groups you manage in
+        someone else&rsquo;s organization pass to that organization&rsquo;s owner. Before you
+        delete, you can download your account data, and your own records from each organization you
+        work in, from Settings.
       </p>
       <p>
-        Our database backups age out, so deleted data is gone from them within seven days. Changes
-        you made to other people&rsquo;s allowances as an admin stay in the audit log without your
-        identity. A request to erase your data is handled the same way. Either way, we delete it
-        unless we are legally required to keep it longer.
+        If you own an organization where nobody else with an account still works, deleting your
+        account deletes the organization: its groups, its subscription record, and everything it
+        holds about other people, including former members, deleted accounts and people who never
+        had an account. That is the organization&rsquo;s instruction to end the service, and the
+        owner can download an organization export first. An owner has to remove the other members
+        who have an account and cancel a renewing subscription before they can delete their account.
+        Paddle, as seller of record, keeps its own records of past payments under its own privacy
+        policy.
+      </p>
+      <h3>Erasing organization data</h3>
+      <p>
+        Only an organization&rsquo;s owner and admins can erase a person&rsquo;s organization data,
+        as a step separate from ending their employment. The Service lets them do it once the person
+        has deleted their account, or for a person who never had one. To have your records in an
+        organization erased or corrected, ask that organization.
+      </p>
+      <h3>Backups and other periods</h3>
+      <p>
+        Our database backups age out, so deleted data is gone from them within seven days. We delete
+        it unless we are legally required to keep it longer.
       </p>
       <p>
         Request attachments are deleted automatically twelve months after the absence, or as soon as
@@ -313,7 +376,18 @@ export default function PrivacyPage() {
         <li>withdraw consent at any time, where processing is based on consent.</li>
       </ul>
       <p>
-        To exercise any of these rights, email <a href={`mailto:${LEGAL.email}`}>{LEGAL.email}</a>.
+        For account data, email <a href={`mailto:${LEGAL.email}`}>{LEGAL.email}</a> and we handle
+        the request ourselves. You can also download your account data and delete your account in
+        Settings.
+      </p>
+      <p>
+        For organization data, your organization is the controller and answers your request, within
+        the deadlines the GDPR sets. You can download your own records from each organization you
+        work in, in Settings. If you send us a request about organization data, we forward it to the
+        organization&rsquo;s owner and help them answer it; we do not change or erase organization
+        data on our own.
+      </p>
+      <p>
         You also have the right to lodge a complaint with the {LEGAL.authority.name},{" "}
         {LEGAL.authority.address} (<a href={LEGAL.authority.url}>{LEGAL.authority.url}</a>).
       </p>

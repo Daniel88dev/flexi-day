@@ -27,6 +27,7 @@ import { formatMinutes, parseMinutes } from "@/lib/attendance/duration";
 import { selfServiceDaysOf, type SelfServiceDraft } from "@/lib/attendance/self-service";
 import { browserTimezone, listTimezones } from "@/lib/attendance/timezones";
 import { useTranslation } from "@/lib/i18n/use-translation";
+import { legalHref } from "@/lib/legal";
 import { cn } from "@/lib/utils";
 import { SelfServiceControl } from "./self-service-control";
 
@@ -70,7 +71,7 @@ function AttendanceForm({
   organizationId: string | null;
   settings: AttendanceSettings;
 }) {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   const update = useUpdateAttendanceSettings(organizationId);
   const countriesQuery = useBankHolidayCountries();
 
@@ -462,7 +463,7 @@ function AttendanceForm({
                   </p>
                   <p className="text-muted-foreground text-xs">
                     {t.organization.attendance.locationResponsibilityBody}{" "}
-                    <Link href="/privacy" className="underline">
+                    <Link href={legalHref("privacy", locale)} className="underline">
                       {t.organization.attendance.locationReadPrivacy}
                     </Link>
                   </p>

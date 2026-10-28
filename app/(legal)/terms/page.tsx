@@ -14,6 +14,7 @@ export default function TermsPage() {
     <LegalShell
       title="Terms of Service"
       updated={LEGAL.updated}
+      translatedPage="terms"
       intro="These terms form the agreement between you and flexiday when you use the Service. Please read them carefully."
     >
       <h2>1. Agreement</h2>
@@ -35,6 +36,20 @@ export default function TermsPage() {
         </li>
         <li>
           <strong>Content</strong> — any data you submit, including time-off requests and notes.
+        </li>
+        <li>
+          <strong>Organization</strong> — the workspace a customer runs in the Service for the
+          people who work for it, with its groups. Its owner acts for it.
+        </li>
+        <li>
+          <strong>Organization data</strong> — the personal data an Organization keeps in the
+          Service about the people who work in it, such as employments, leave, attendance and
+          quotas.
+        </li>
+        <li>
+          <strong>Account data</strong> — the data we keep about an Account holder themselves, such
+          as their sign-in, settings and notifications. Our <a href="/privacy/">Privacy Policy</a>{" "}
+          lists both kinds.
         </li>
       </ul>
 
@@ -82,14 +97,29 @@ export default function TermsPage() {
         app, and the retention described in our <a href="/privacy">Privacy Policy</a>.
       </p>
 
-      <h2>8. Availability</h2>
+      <h2>8. Data protection</h2>
+      <p>
+        For Organization data, the organization is the controller and we are its processor. Our{" "}
+        <a href="/dpa/">Data Processing Agreement</a> forms part of these Terms and applies to every
+        organization on every plan. By creating an Organization, or by accepting these Terms on its
+        behalf, you accept the Data Processing Agreement for it. Where the Data Processing Agreement
+        and these Terms differ on the processing of Organization data, the Data Processing Agreement
+        prevails.
+      </p>
+      <p>
+        For Account data we are the controller, as our <a href="/privacy/">Privacy Policy</a>{" "}
+        describes. Where an Organization turns on the people directory, its owner also accepts the{" "}
+        <a href="/directory-agreement/">People directory agreement</a>.
+      </p>
+
+      <h2>9. Availability</h2>
       <p>
         The Service is provided on an ongoing, best-effort basis. We do not guarantee that the
         Service will be uninterrupted or error-free, and we may perform maintenance or suspend
         features when needed.
       </p>
 
-      <h2>9. Plans, fees and billing</h2>
+      <h2>10. Plans, fees and billing</h2>
       <p>
         The Service offers a free plan and paid subscription plans (currently Pro and Enterprise,
         plus optional extra group slots). Each plan&rsquo;s limits and prices are shown on our
@@ -132,30 +162,33 @@ export default function TermsPage() {
         </li>
       </ul>
 
-      <h2>10. Intellectual property</h2>
+      <h2>11. Intellectual property</h2>
       <p>
         The Service, including its software, design and trademarks, is owned by {LEGAL.entity} and
         protected by law. These Terms do not grant you any rights in the Service other than the
         right to use it in accordance with these Terms.
       </p>
 
-      <h2>11. Termination</h2>
+      <h2>12. Termination</h2>
       <p>
-        You may stop using the Service and delete your Account at any time. We may suspend or
-        terminate your access if you breach these Terms or if we discontinue the Service. On
-        termination, your right to use the Service ends; sections that by their nature should
-        survive (such as intellectual property, disclaimers and limitation of liability) will remain
-        in effect.
+        You may stop using the Service and delete your Account at any time. Deleting your Account
+        does not delete the Organization data that the organizations you work in keep about you;
+        each organization decides what happens to it, as the Privacy Policy describes. Deleting an
+        Organization ends the processing of its data, as the Data Processing Agreement describes. We
+        may suspend or terminate your access if you breach these Terms or if we discontinue the
+        Service. On termination, your right to use the Service ends; sections that by their nature
+        should survive (such as intellectual property, disclaimers and limitation of liability) will
+        remain in effect.
       </p>
 
-      <h2>12. Disclaimers</h2>
+      <h2>13. Disclaimers</h2>
       <p>
         To the extent permitted by law, the Service is provided &ldquo;as is&rdquo; and &ldquo;as
         available&rdquo; without warranties of any kind, whether express or implied. We do not
         warrant that the Service will meet your requirements or be free of errors.
       </p>
 
-      <h2>13. Limitation of liability</h2>
+      <h2>14. Limitation of liability</h2>
       <p>
         To the extent permitted by law, we will not be liable for any indirect, incidental or
         consequential damages, or for loss of data, profits or business, arising from your use of
@@ -163,21 +196,21 @@ export default function TermsPage() {
         law, including your statutory rights as a consumer.
       </p>
 
-      <h2>14. Changes to these Terms</h2>
+      <h2>15. Changes to these Terms</h2>
       <p>
         We may update these Terms from time to time. We will update the &ldquo;last updated&rdquo;
         date above and, for material changes, provide additional notice. Continued use of the
         Service after changes take effect means you accept the updated Terms.
       </p>
 
-      <h2>15. Governing law</h2>
+      <h2>16. Governing law</h2>
       <p>
         These Terms are governed by the laws of the {LEGAL.country}. The courts of the{" "}
         {LEGAL.country} will have jurisdiction over any dispute, without prejudice to any mandatory
         consumer-protection rights you have in your country of residence.
       </p>
 
-      <h2>16. Contact</h2>
+      <h2>17. Contact</h2>
       <p>
         {LEGAL.entity}
         <br />
