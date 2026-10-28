@@ -40,6 +40,8 @@ reach `out/`.
 - **Every new function in `lib/` needs unit tests; every new component needs at least a smoke test.**
 - Naming: `describe("functionName")` with `it("returns …")` / `it("should …")`.
 - Pure logic → `.test.ts`; components → `.test.tsx` with `@testing-library/react`.
+- `.test.ts` files run in node, not jsdom. One that needs the DOM (`renderHook`, `window`) starts
+  with `// @vitest-environment jsdom`.
 - CI runs `npm run test` on every PR. Keep it green before merging.
 
 ## Formatting is automatic
