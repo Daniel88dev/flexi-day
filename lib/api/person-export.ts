@@ -26,6 +26,7 @@ export type OwnExportOrganization = {
   employmentId: UUID;
   startedAt: Iso;
   endedAt: Iso | null;
+  timezone: string;
   export: PersonExport | null;
 };
 
