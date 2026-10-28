@@ -1,4 +1,4 @@
-import type { DirectoryOrganization } from "@/lib/api/directory";
+import type { DirectoryOrganization, DirectoryState } from "@/lib/api/directory";
 
 export type DirectoryNavEntry = {
   /** Shown while the entry is there only as an upsell to the owner or an org admin. */
@@ -8,6 +8,14 @@ export type DirectoryNavEntry = {
 /** The owner or an org admin. */
 export const administers = (organization: Pick<DirectoryOrganization, "role">) =>
   organization.role !== "MEMBER";
+
+/** The directory is off, was on before, and its data has not been deleted since. */
+export const holdsOffData = (
+  state: Pick<DirectoryState, "enabled" | "enabledAt" | "disabledAt" | "dataDeletedAt">
+) =>
+  !state.enabled &&
+  state.enabledAt !== null &&
+  (!state.dataDeletedAt || (state.disabledAt !== null && state.disabledAt > state.dataDeletedAt));
 
 /**
  * Whether the People section carries a Directory entry. Everyone in a

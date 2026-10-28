@@ -55,6 +55,8 @@ vi.mock("@/lib/api/queries", () => ({
   useRequestOrganizationExport: () => ({ mutateAsync: vi.fn(), isPending: false }),
   // The directory card has its own suite.
   useDirectoryState: () => ({ data: undefined, isLoading: true }),
+  useDirectoryOrganizations: () => ({ data: undefined }),
+  useSetRetentionHold: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useEnableDirectory: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useAcceptDirectoryAgreement: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useAddOrganizationAdmin: () => ({ mutateAsync: addAdmin, isPending: false }),

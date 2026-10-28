@@ -8,12 +8,14 @@ import { Badge } from "@/components/ui/badge";
 import { EndEmploymentDialog } from "@/components/organization/end-employment-dialog";
 import { EraseDialog } from "@/components/organization/erase-dialog";
 import { PersonExportAction } from "@/components/person-export-action";
+import { HoldAction, useSectionLabel } from "@/components/directory/profile-retention";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { pushToast } from "@/components/toast";
 import {
   useAttendanceSettings,
+  useDirectoryOrganizations,
   useDirectoryState,
   useEmployments,
   useRequestPersonExport,
@@ -22,7 +24,8 @@ import {
 } from "@/lib/api/queries";
 import type { EmploymentListItem } from "@/lib/api/employment";
 import type { PersonExport } from "@/lib/api/person-export";
-import { formatEmploymentDay } from "@/lib/directory/format";
+import { administers, holdsOffData } from "@/lib/directory/directory-access";
+import { formatDay, formatEmploymentDay } from "@/lib/directory/format";
 import { profileHref } from "@/lib/directory/routes";
 import { formatMinutes, parseMinutes } from "@/lib/attendance/duration";
 import { useTranslation } from "@/lib/i18n/use-translation";
@@ -50,7 +53,14 @@ export function PeopleCard({
   const exports = useRequestedExports(organizationId).data;
   const requestExport = useRequestPersonExport();
   // While the directory is on, a person's End, Export and Erase sit on their profile.
-  const directoryOn = useDirectoryState(organizationId).data?.enabled ?? false;
+  const directoryState = useDirectoryState(organizationId).data;
+  const directoryOn = directoryState?.enabled ?? false;
+  const organization = useDirectoryOrganizations().data?.find(
+    (entry) => entry.organizationId === organizationId
+  );
+  // Waits for the directory state: the roster carries holds while it is on too.
+  const showRetentionHolds =
+    !!directoryState && holdsOffData(directoryState) && !!organization && administers(organization);
 
   if (query.isPending) return null;
 
@@ -88,6 +98,7 @@ export function PeopleCard({
         onRequestExport={() => requestExport.mutateAsync(employment.id)}
         focused={employment.id === focusEmploymentId}
         directoryOn={directoryOn}
+        showRetentionHolds={showRetentionHolds}
       />
     ));
 
@@ -161,6 +172,7 @@ function PersonRow({
   onRequestExport,
   focused,
   directoryOn,
+  showRetentionHolds,
 }: {
   employment: EmploymentListItem;
   organizationId: string | null;
@@ -172,6 +184,7 @@ function PersonRow({
   onRequestExport: () => Promise<unknown>;
   focused: boolean;
   directoryOn: boolean;
+  showRetentionHolds: boolean;
 }) {
   const { t } = useTranslation();
   const rowRef = useRef<HTMLLIElement>(null);
@@ -216,6 +229,12 @@ function PersonRow({
         {employment.accountDeleted ? null : (
           <p className="text-muted-foreground text-xs">{employment.email}</p>
         )}
+        {showRetentionHolds &&
+        organizationId &&
+        employment.ended &&
+        employment.hold !== undefined ? (
+          <RetentionHold employment={employment} organizationId={organizationId} />
+        ) : null}
       </div>
 
       {requiredMinutesPerDay !== null && !external ? (
@@ -246,6 +265,40 @@ function PersonRow({
         />
       )}
     </li>
+  );
+}
+
+function RetentionHold({
+  employment,
+  organizationId,
+}: {
+  employment: EmploymentListItem;
+  organizationId: string;
+}) {
+  const { t } = useTranslation();
+  const copy = t.organization.people;
+  const sectionLabel = useSectionLabel();
+  const next = employment.nextRemoval;
+
+  return (
+    <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
+      <span className="text-muted-foreground">{employment.hold ? copy.holdOn : copy.holdOff}</span>
+      {next ? (
+        <span className="text-muted-foreground">
+          {copy.nextRemoval(sectionLabel(next.section), formatDay(next.date, t.common.dateLocale))}
+        </span>
+      ) : null}
+      <HoldAction
+        organizationId={organizationId}
+        employmentId={employment.id}
+        name={employment.user.name}
+        on={!!employment.hold}
+        labels={{
+          set: copy.setHoldFor(employment.user.name),
+          lift: copy.liftHoldFor(employment.user.name),
+        }}
+      />
+    </div>
   );
 }
 
