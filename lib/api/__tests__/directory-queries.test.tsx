@@ -401,7 +401,7 @@ const mutationCases: MutationCase[] = [
     input: true,
     fetcher: "setRetentionHold",
     args: ["org-1", "emp-1", true],
-    invalidates: [["directory"]],
+    invalidates: [["directory"], qk.employments("org-1")],
   },
   {
     name: "useAddDirectoryListEntry",

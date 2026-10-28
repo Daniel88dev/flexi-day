@@ -1622,6 +1622,9 @@ export const en = {
       },
       deleteAll: "Delete all directory data",
       deletedOn: (date: string) => `Directory data deleted on ${date}.`,
+      retentionWhileOff: "Retention keeps running while the directory is off.",
+      retentionSettings: "Retention settings",
+      readLog: "Read log",
       deleteDialog: {
         title: "Delete all directory data?",
         body: "This removes for good, for everyone in the organization:",
@@ -1697,6 +1700,11 @@ export const en = {
       openProfile: (name: string) => `Open ${name}'s profile`,
       profile: "Profile",
       noLink: "People in no group stay employed until you end them.",
+      holdOn: "Retention hold on",
+      holdOff: "No retention hold",
+      nextRemoval: (section: string, date: string) => `Next removal: ${section} · ${date}`,
+      setHoldFor: (name: string) => `Set retention hold for ${name}`,
+      liftHoldFor: (name: string) => `Lift retention hold for ${name}`,
       end: "End employment",
       endDialog: {
         title: (name: string) => `End ${name}'s employment`,

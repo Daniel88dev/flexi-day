@@ -1,4 +1,5 @@
 import { api } from "./client";
+import type { ProfileSectionKey } from "./directory";
 import type { Iso, UserSummary, UUID } from "./types";
 
 /** One person's membership in one organization — the subject of attendance. */
@@ -29,6 +30,10 @@ export type EmploymentListItem = {
   user: UserSummary;
   /** Org admins only: open, and no group, admin grant or ownership holds it. */
   noLink?: boolean;
+  /** Org admins only, on ended rows; optional as an older backend sends none. */
+  hold?: boolean;
+  /** Null under a hold or when nothing is scheduled. */
+  nextRemoval?: { section: ProfileSectionKey; date: string } | null;
 };
 
 /**

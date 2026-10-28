@@ -1,8 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { renderWithClient } from "@/lib/test-utils";
+import { renderWithClient, withClient } from "@/lib/test-utils";
 import type { AttendanceSettings } from "@/lib/api/attendance-settings";
+import type { DirectoryOrganizationRole } from "@/lib/api/directory";
 import type { EmploymentListItem } from "@/lib/api/employment";
 import type { PersonExport } from "@/lib/api/person-export";
 import { PeopleCard } from "../people-card";
@@ -16,6 +17,9 @@ const endEmployment = vi.fn();
 const eraseEmployment = vi.fn();
 let requestedExports: PersonExport[] | undefined;
 let directoryEnabled = false;
+let directoryEnabledAt: string | null = "2026-01-01T00:00:00Z";
+let viewerRole: DirectoryOrganizationRole = "OWNER";
+const setHold = vi.fn();
 const requestExport = vi.fn();
 const signDownload = vi.fn();
 const followLink = vi.fn();
@@ -39,7 +43,18 @@ vi.mock("@/lib/api/queries", () => ({
   useEndEmployment: () => ({ mutateAsync: endEmployment, isPending: false }),
   useEraseEmployment: () => ({ mutateAsync: eraseEmployment, isPending: false }),
   useRequestedExports: () => ({ data: requestedExports }),
-  useDirectoryState: () => ({ data: { enabled: directoryEnabled } }),
+  useDirectoryState: () => ({
+    data: {
+      enabled: directoryEnabled,
+      enabledAt: directoryEnabledAt,
+      disabledAt: null,
+      dataDeletedAt: null,
+    },
+  }),
+  useDirectoryOrganizations: () => ({
+    data: [{ organizationId: "org-1", role: viewerRole }],
+  }),
+  useSetRetentionHold: () => ({ mutateAsync: setHold, isPending: false }),
   useRequestPersonExport: () => ({
     mutateAsync: requestExport,
     isPending: false,
@@ -109,6 +124,11 @@ describe("PeopleCard", () => {
     requestExport.mockResolvedValue(exported());
     signDownload.mockReset();
     followLink.mockReset();
+    directoryEnabled = false;
+    directoryEnabledAt = "2026-01-01T00:00:00Z";
+    viewerRole = "OWNER";
+    setHold.mockReset();
+    setHold.mockResolvedValue({ hold: null });
   });
 
   afterEach(() => {
@@ -534,6 +554,101 @@ describe("PeopleCard", () => {
 
       expect(screen.getByText("The export failed. Try again.")).toBeInTheDocument();
       expect(screen.getByRole("button", { name: "Export Milo Member's data" })).toBeEnabled();
+    });
+  });
+
+  describe("Retention hold on a former row, with the directory off", () => {
+    const leaver = (overrides: Partial<EmploymentListItem> = {}) =>
+      person({
+        id: "emp-9",
+        userId: "user-9",
+        ended: true,
+        endedAt: "2026-06-30T12:00:00Z",
+        user: { id: "user-9", name: "Olga Former", initials: "OF", avatarColor: "#000" },
+        ...overrides,
+      });
+    const formerRow = () =>
+      within(screen.getByRole("list", { name: "Former" })).getByRole("listitem");
+
+    it("shows no hold and the next removal, and sets a hold", async () => {
+      employments = [
+        leaver({ hold: false, nextRemoval: { section: "contact", date: "2026-11-24" } }),
+      ];
+      renderWithClient(<PeopleCard organizationId="org-1" />);
+
+      const row = formerRow();
+      expect(within(row).getByText("No retention hold")).toBeInTheDocument();
+      expect(within(row).getByText("Next removal: Contact · 24/11/2026")).toBeInTheDocument();
+
+      await userEvent.click(
+        within(row).getByRole("button", { name: "Set retention hold for Olga Former" })
+      );
+      expect(setHold).toHaveBeenCalledWith(true);
+    });
+
+    it("shows a hold that is on and lifts it only after confirming", async () => {
+      employments = [leaver({ hold: true, nextRemoval: null })];
+      renderWithClient(<PeopleCard organizationId="org-1" />);
+
+      const row = formerRow();
+      expect(within(row).getByText("Retention hold on")).toBeInTheDocument();
+      expect(within(row).queryByText(/Next removal/)).toBeNull();
+
+      await userEvent.click(
+        within(row).getByRole("button", { name: "Lift retention hold for Olga Former" })
+      );
+      const dialog = screen.getByRole("dialog");
+      expect(
+        within(dialog).getByText("Lift the retention hold on Olga Former?")
+      ).toBeInTheDocument();
+      expect(setHold).not.toHaveBeenCalled();
+      await userEvent.click(within(dialog).getByRole("button", { name: "Lift hold" }));
+      expect(setHold).toHaveBeenCalledWith(false);
+    });
+
+    it("follows the roster when the hold changes", () => {
+      employments = [leaver({ hold: false, nextRemoval: null })];
+      const { rerender } = renderWithClient(<PeopleCard organizationId="org-1" />);
+      expect(within(formerRow()).getByText("No retention hold")).toBeInTheDocument();
+
+      employments = [leaver({ hold: true, nextRemoval: null })];
+      rerender(withClient(<PeopleCard organizationId="org-1" />));
+      expect(within(formerRow()).getByText("Retention hold on")).toBeInTheDocument();
+    });
+
+    it("says nothing about holds while the directory is on", () => {
+      directoryEnabled = true;
+      employments = [leaver({ hold: true, nextRemoval: null })];
+      renderWithClient(<PeopleCard organizationId="org-1" />);
+
+      expect(within(formerRow()).queryByText("Retention hold on")).toBeNull();
+      expect(within(formerRow()).queryByRole("button", { name: /retention hold/ })).toBeNull();
+    });
+
+    it("says nothing when the roster carries no hold", () => {
+      employments = [leaver()];
+      renderWithClient(<PeopleCard organizationId="org-1" />);
+
+      expect(within(formerRow()).queryByText(/retention hold/i)).toBeNull();
+      expect(within(formerRow()).queryByRole("button", { name: /retention hold/ })).toBeNull();
+    });
+
+    it("is not offered where the directory was never on", () => {
+      directoryEnabledAt = null;
+      employments = [leaver({ hold: false, nextRemoval: null })];
+      renderWithClient(<PeopleCard organizationId="org-1" />);
+
+      expect(within(formerRow()).queryByText(/retention hold/i)).toBeNull();
+      expect(within(formerRow()).queryByRole("button", { name: /retention hold/ })).toBeNull();
+    });
+
+    it("is not offered to someone who administers nothing", () => {
+      viewerRole = "MEMBER";
+      employments = [leaver({ hold: false, nextRemoval: null })];
+      renderWithClient(<PeopleCard organizationId="org-1" />);
+
+      expect(within(formerRow()).queryByText(/retention hold/i)).toBeNull();
+      expect(within(formerRow()).queryByRole("button", { name: /retention hold/ })).toBeNull();
     });
   });
 });

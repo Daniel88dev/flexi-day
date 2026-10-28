@@ -58,16 +58,36 @@ export function ProfileRetention({ profile }: { profile: DirectoryProfile }) {
             ? copy.holdOn(formatDate(hold.setAt, t.common.dateLocale), hold.setBy?.name ?? null)
             : copy.holdOff}
         </p>
-        {profile.actions?.hold ? <HoldAction profile={profile} on={!!hold} /> : null}
+        {profile.actions?.hold ? (
+          <HoldAction
+            organizationId={profile.organizationId}
+            employmentId={profile.employmentId}
+            name={profile.name}
+            on={!!hold}
+          />
+        ) : null}
       </div>
     </div>
   );
 }
 
-function HoldAction({ profile, on }: { profile: DirectoryProfile; on: boolean }) {
+export function HoldAction({
+  organizationId,
+  employmentId,
+  name,
+  on,
+  labels,
+}: {
+  organizationId: string;
+  employmentId: string;
+  name: string;
+  on: boolean;
+  /** Accessible names for a list, where several rows carry the same buttons. */
+  labels?: { set: string; lift: string };
+}) {
   const { t } = useTranslation();
   const copy = t.directory.retention;
-  const hold = useSetRetentionHold(profile.organizationId, profile.employmentId);
+  const hold = useSetRetentionHold(organizationId, employmentId);
   const [confirming, setConfirming] = useState(false);
 
   async function change(next: boolean) {
@@ -86,6 +106,7 @@ function HoldAction({ profile, on }: { profile: DirectoryProfile; on: boolean })
         type="button"
         size="sm"
         variant="outline"
+        aria-label={labels?.set}
         disabled={hold.isPending}
         onClick={() => void change(true)}
       >
@@ -95,13 +116,19 @@ function HoldAction({ profile, on }: { profile: DirectoryProfile; on: boolean })
   }
   return (
     <>
-      <Button type="button" size="sm" variant="outline" onClick={() => setConfirming(true)}>
+      <Button
+        type="button"
+        size="sm"
+        variant="outline"
+        aria-label={labels?.lift}
+        onClick={() => setConfirming(true)}
+      >
         {copy.liftHold}
       </Button>
       <Dialog open={confirming} onOpenChange={setConfirming}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{copy.liftTitle(profile.name)}</DialogTitle>
+            <DialogTitle>{copy.liftTitle(name)}</DialogTitle>
             <DialogDescription>{copy.liftBody}</DialogDescription>
           </DialogHeader>
           <DialogFooter>

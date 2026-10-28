@@ -1637,6 +1637,9 @@ export const cs: Dictionary = {
       },
       deleteAll: "Smazat všechna data adresáře",
       deletedOn: (date: string) => `Data adresáře smazána ${date}.`,
+      retentionWhileOff: "Údaje se mažou podle lhůt uchování i při vypnutém adresáři.",
+      retentionSettings: "Nastavení uchování údajů",
+      readLog: "Záznam o čtení",
       deleteDialog: {
         title: "Smazat všechna data adresáře?",
         body: "Tímto natrvalo odstraníte pro celou organizaci:",
@@ -1710,6 +1713,11 @@ export const cs: Dictionary = {
       openProfile: (name: string) => `Otevřít profil: ${name}`,
       profile: "Profil",
       noLink: "Lidé bez skupiny zůstávají zaměstnaní, dokud jim pracovní poměr neukončíte.",
+      holdOn: "Mazání je pozastavené",
+      holdOff: "Mazání není pozastavené",
+      nextRemoval: (section: string, date: string) => `Příští odstranění: ${section} · ${date}`,
+      setHoldFor: (name: string) => `Pozastavit mazání: ${name}`,
+      liftHoldFor: (name: string) => `Zrušit pozastavení mazání: ${name}`,
       end: "Ukončit pracovní poměr",
       endDialog: {
         title: (name: string) => `Ukončit pracovní poměr: ${name}`,

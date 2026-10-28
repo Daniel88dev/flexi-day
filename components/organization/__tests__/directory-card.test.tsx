@@ -3,12 +3,13 @@ import { screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { renderWithClient } from "@/lib/test-utils";
 import { ApiError } from "@/lib/api/client";
-import type { DirectoryState } from "@/lib/api/directory";
+import type { DirectoryOrganizationRole, DirectoryState } from "@/lib/api/directory";
 import type { EmploymentListItem } from "@/lib/api/employment";
 import { DirectoryCard } from "../directory-card";
 
 let state: DirectoryState | undefined;
 let employments: EmploymentListItem[] = [];
+let viewerRole: DirectoryOrganizationRole = "OWNER";
 const enable = vi.fn();
 const disable = vi.fn();
 const deleteAll = vi.fn();
@@ -21,6 +22,19 @@ vi.mock("@/lib/api/queries", () => ({
   useDisableDirectory: () => ({ mutateAsync: disable, isPending: false }),
   useDeleteAllDirectoryData: () => ({ mutateAsync: deleteAll, isPending: false }),
   useEmployments: () => ({ data: employments, isPending: false, error: null }),
+  useDirectoryOrganizations: () => ({
+    data: [{ organizationId: "org-1", role: viewerRole }],
+  }),
+}));
+vi.mock("@/components/directory/retention-panel", () => ({
+  RetentionPanel: ({ organizationId }: { organizationId: string }) => (
+    <p>Retention panel for {organizationId}</p>
+  ),
+}));
+vi.mock("@/components/directory/read-log-panel", () => ({
+  ReadLogPanel: ({ organizationId }: { organizationId: string }) => (
+    <p>Read log panel for {organizationId}</p>
+  ),
 }));
 
 const employment = (
@@ -69,6 +83,7 @@ describe("DirectoryCard", () => {
     deleteAll.mockReset();
     deleteAll.mockResolvedValue(directory());
     employments = [];
+    viewerRole = "OWNER";
   });
 
   it("lets the owner turn it on only after accepting the agreement", async () => {
@@ -272,6 +287,62 @@ describe("DirectoryCard", () => {
       state = off({ isOwner: false });
       renderWithClient(<DirectoryCard organizationId="org-1" organizationName="Acme" />);
       expect(screen.queryByRole("button", { name: "Delete all directory data" })).toBeNull();
+    });
+  });
+
+  describe("retention while off", () => {
+    const off = (overrides: Partial<DirectoryState> = {}) =>
+      directory({
+        enabledAt: "2026-09-02T10:00:00Z",
+        disabledAt: "2026-10-20T10:00:00Z",
+        ...overrides,
+      });
+
+    it("opens Retention settings and the Read log for the owner", async () => {
+      state = off();
+      renderWithClient(<DirectoryCard organizationId="org-1" organizationName="Acme" />);
+
+      expect(screen.getByText("Retention keeps running while the directory is off.")).toBeVisible();
+      await userEvent.click(screen.getByRole("button", { name: "Retention settings" }));
+      expect(
+        within(screen.getByRole("dialog")).getByText("Retention panel for org-1")
+      ).toBeInTheDocument();
+      await userEvent.keyboard("{Escape}");
+
+      await userEvent.click(screen.getByRole("button", { name: "Read log" }));
+      expect(
+        within(screen.getByRole("dialog")).getByText("Read log panel for org-1")
+      ).toBeInTheDocument();
+    });
+
+    it("opens them for an org admin too", () => {
+      state = off({ isOwner: false });
+      viewerRole = "ORGANIZATION_ADMIN";
+      renderWithClient(<DirectoryCard organizationId="org-1" organizationName="Acme" />);
+
+      expect(screen.getByRole("button", { name: "Retention settings" })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Read log" })).toBeInTheDocument();
+    });
+
+    it.each([
+      ["the directory is on", () => off({ enabled: true })],
+      ["it was never on", () => directory()],
+      ["its data is deleted", () => off({ dataDeletedAt: "2026-10-21T10:00:00Z" })],
+    ])("is not offered while %s", (_, make) => {
+      state = make();
+      renderWithClient(<DirectoryCard organizationId="org-1" organizationName="Acme" />);
+
+      expect(screen.queryByRole("button", { name: "Retention settings" })).toBeNull();
+      expect(screen.queryByRole("button", { name: "Read log" })).toBeNull();
+    });
+
+    it("is not offered to someone who administers nothing", () => {
+      state = off({ isOwner: false });
+      viewerRole = "MEMBER";
+      renderWithClient(<DirectoryCard organizationId="org-1" organizationName="Acme" />);
+
+      expect(screen.queryByRole("button", { name: "Retention settings" })).toBeNull();
+      expect(screen.queryByRole("button", { name: "Read log" })).toBeNull();
     });
   });
 });

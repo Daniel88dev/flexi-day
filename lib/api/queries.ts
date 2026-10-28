@@ -1957,7 +1957,11 @@ export function useSetRetentionHold(organizationId: string, employmentId: string
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (on: boolean) => setRetentionHold(organizationId, employmentId, on),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["directory"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["directory"] });
+      // The People card reads holds from the roster while the directory is off.
+      qc.invalidateQueries({ queryKey: qk.employments(organizationId) });
+    },
   });
 }
 
