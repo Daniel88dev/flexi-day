@@ -34,7 +34,7 @@ reach `out/`.
 
 ## Testing
 
-- Vitest: `npm run test` (single run), `npm run test:watch`.
+- Vitest: `pnpm run test` (single run), `pnpm run test:watch`.
 - Tests live **next to their source** in a `__tests__/` subfolder, e.g. `lib/__tests__/data.test.ts`,
   `components/__tests__/dashboard-stats.test.tsx`.
 - **Every new function in `lib/` needs unit tests; every new component needs at least a smoke test.**
@@ -42,7 +42,7 @@ reach `out/`.
 - Pure logic → `.test.ts`; components → `.test.tsx` with `@testing-library/react`.
 - `.test.ts` files run in node, not jsdom. One that needs the DOM (`renderHook`, `window`) starts
   with `// @vitest-environment jsdom`.
-- CI runs `npm run test` on every PR. Keep it green before merging.
+- CI runs `pnpm run test` on every PR. Keep it green before merging.
 
 ## Formatting is automatic
 

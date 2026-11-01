@@ -1,12 +1,12 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npm install *)",
-      "Bash(npx tsc *)",
+      "Bash(pnpm install *)",
+      "Bash(pnpm exec tsc *)",
       "Bash(curl -s http://localhost:8080/api/auth/reference)",
       "Bash(curl -s -X POST http://localhost:8080/api/auth/forget-password -H \"Content-Type: application/json\" -d '{}')",
       "Bash(curl -s -X POST http://localhost:8080/api/auth/request-password-reset -H \"Content-Type: application/json\" -d '{}')",
-      "Bash(npm run *)",
+      "Bash(pnpm run *)",
       "Bash(curl -sf http://localhost:3000)",
       "mcp__plugin_playwright_playwright__browser_navigate",
       "mcp__plugin_playwright_playwright__browser_snapshot",
@@ -38,7 +38,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "jq -r '.tool_input.file_path // .tool_response.filePath' | { read -r f; npx prettier --write \"$f\"; } 2>/dev/null || true",
+            "command": "jq -r '.tool_response.filePath // .tool_input.file_path' | { read -r f; pnpm exec prettier --write --ignore-unknown \"$f\"; } 2>/dev/null || true",
             "timeout": 30
           }
         ]
