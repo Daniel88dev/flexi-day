@@ -112,7 +112,10 @@ describe("BillingPage", () => {
   it("lists attachments on the paid plan cards only", () => {
     renderWithClient(<BillingPage />);
 
-    expect(screen.getAllByText("Attachments on requests (images & PDF)")).toHaveLength(2);
+    const attachments = "Attachments on requests (images & PDF)";
+    expect(within(planCard("Pro")).getByText(attachments)).toBeInTheDocument();
+    expect(within(planCard("Enterprise")).getByText(attachments)).toBeInTheDocument();
+    expect(within(planCard("Free")).queryByText(attachments)).not.toBeInTheDocument();
   });
 
   it("lists attachments on the paid plan cards in Czech", () => {
@@ -124,7 +127,28 @@ describe("BillingPage", () => {
       </I18nContext>
     );
 
-    expect(screen.getAllByText("Přílohy k žádostem (obrázky a PDF)")).toHaveLength(2);
+    const attachments = "Přílohy k žádostem (obrázky a PDF)";
+    expect(within(planCard("Pro")).getByText(attachments)).toBeInTheDocument();
+    expect(within(planCard("Enterprise")).getByText(attachments)).toBeInTheDocument();
+    expect(within(planCard("Free")).queryByText(attachments)).not.toBeInTheDocument();
+  });
+
+  it("lists birthdays on the paid plan cards only", () => {
+    renderWithClient(<BillingPage />);
+
+    const birthdays = "Birthdays on the group calendar";
+    expect(within(planCard("Pro")).getByText(birthdays)).toBeInTheDocument();
+    expect(within(planCard("Enterprise")).getByText(birthdays)).toBeInTheDocument();
+    expect(within(planCard("Free")).queryByText(birthdays)).not.toBeInTheDocument();
+  });
+
+  it("lists group events on the paid plan cards only", () => {
+    renderWithClient(<BillingPage />);
+
+    const groupEvents = "Group events on the shared calendar";
+    expect(within(planCard("Pro")).getByText(groupEvents)).toBeInTheDocument();
+    expect(within(planCard("Enterprise")).getByText(groupEvents)).toBeInTheDocument();
+    expect(within(planCard("Free")).queryByText(groupEvents)).not.toBeInTheDocument();
   });
 
   it("lists attendance on the paid plan cards only", () => {
@@ -149,6 +173,15 @@ describe("BillingPage", () => {
     expect(within(planCard("Pro")).getByText(attendance)).toBeInTheDocument();
     expect(within(planCard("Enterprise")).getByText(attendance)).toBeInTheDocument();
     expect(within(planCard("Free")).queryByText(attendance)).not.toBeInTheDocument();
+  });
+
+  it("lists the people directory on the Enterprise card only", () => {
+    renderWithClient(<BillingPage />);
+
+    const directory = "People directory and employee profiles";
+    expect(within(planCard("Enterprise")).getByText(directory)).toBeInTheDocument();
+    expect(within(planCard("Pro")).queryByText(directory)).not.toBeInTheDocument();
+    expect(within(planCard("Free")).queryByText(directory)).not.toBeInTheDocument();
   });
 
   it("defaults the cycle toggle to yearly and shows ex-VAT yearly prices", () => {
