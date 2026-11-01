@@ -50,6 +50,14 @@ reach `out/`.
 immediately after you touch them. Take the reformatted version as current rather than re-editing
 to restore your own spacing.
 
+## Supply-chain policy
+
+`pnpm-workspace.yaml` blocks too-new versions and unapproved build scripts. A new `allowBuilds`
+entry needs a comment saying what the script does and why the package fails without it, plus a
+call-out in the PR. `minimumReleaseAgeExclude` and `trustPolicyExclude` entries are exact-version
+(`pkg@1.2.3`), and each GHSA waiver in `.github/dependency-review-config.yml` names its reason and
+Fenro task. Policy: T-561.
+
 ## Merging pull requests
 
 Never merge a PR yourself — no `gh pr merge`, no merge button, no auto-merge — unless the user
