@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { fireEvent, screen, waitFor } from "@testing-library/react";
+import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import BillingPage from "../page";
 import { renderWithClient } from "@/lib/test-utils";
@@ -60,6 +60,13 @@ vi.mock("@/components/toast", async (importOriginal) => ({
   pushToast: (...args: unknown[]) => pushToastMock(...args),
 }));
 
+/** The plan card titled `name`. The tier names also appear outside the cards. */
+const planCard = (name: string): HTMLElement => {
+  const title = screen.getAllByText(name).find((el) => el.dataset.slot === "card-title");
+  if (!title) throw new Error(`No plan card titled ${name}`);
+  return title.closest('[data-slot="card"]') as HTMLElement;
+};
+
 describe("BillingPage", () => {
   beforeEach(() => {
     overview = baseOverview();
@@ -118,6 +125,30 @@ describe("BillingPage", () => {
     );
 
     expect(screen.getAllByText("Přílohy k žádostem (obrázky a PDF)")).toHaveLength(2);
+  });
+
+  it("lists attendance on the paid plan cards only", () => {
+    renderWithClient(<BillingPage />);
+
+    const attendance = "Attendance with clock-in and worked time";
+    expect(within(planCard("Pro")).getByText(attendance)).toBeInTheDocument();
+    expect(within(planCard("Enterprise")).getByText(attendance)).toBeInTheDocument();
+    expect(within(planCard("Free")).queryByText(attendance)).not.toBeInTheDocument();
+  });
+
+  it("lists attendance on the paid plan cards in Czech", () => {
+    renderWithClient(
+      <I18nContext
+        value={{ locale: "cs", setLocale: () => {}, t: dictionaries.cs, localeReady: true }}
+      >
+        <BillingPage />
+      </I18nContext>
+    );
+
+    const attendance = "Docházka s příchody a odpracovaným časem";
+    expect(within(planCard("Pro")).getByText(attendance)).toBeInTheDocument();
+    expect(within(planCard("Enterprise")).getByText(attendance)).toBeInTheDocument();
+    expect(within(planCard("Free")).queryByText(attendance)).not.toBeInTheDocument();
   });
 
   it("defaults the cycle toggle to yearly and shows ex-VAT yearly prices", () => {
