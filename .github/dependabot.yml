@@ -9,6 +9,10 @@ updates:
     schedule:
       interval: weekly
     open-pull-requests-limit: 10
+    # Matches minimumReleaseAge in pnpm-workspace.yaml, so a routine bump never proposes a version
+    # the install would reject as too new.
+    cooldown:
+      default-days: 3
     groups:
       # @eslint-react releases near-daily, and the flat config hand-maintains a
       # list of its rules switched off in favour of eslint-plugin-react-hooks.
