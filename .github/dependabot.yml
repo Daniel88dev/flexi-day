@@ -1,8 +1,9 @@
 version: 2
 
 updates:
-  # npm. Minor and patch land as one grouped PR per week so routine bumps do not
-  # become a dozen separate reviews; majors stay individual because they need one.
+  # The npm ecosystem also covers pnpm and reads pnpm-lock.yaml. Minor and patch land as one
+  # grouped PR per week so routine bumps do not become a dozen separate reviews; majors stay
+  # individual because they need one.
   - package-ecosystem: npm
     directory: /
     schedule:
@@ -24,8 +25,8 @@ updates:
           - patch
       # The one major that cannot land alone. vitest and @vitest/coverage-v8
       # peer-depend on each other by exact version, so two separate major PRs
-      # are two ERESOLVE failures — each one the new major arguing with the
-      # other still on the old one. Minor and patch ride the group above.
+      # each pair the new major with the other still on the old one, an unmet
+      # peer in both. Minor and patch ride the group above.
       vitest-major:
         patterns:
           - vitest
