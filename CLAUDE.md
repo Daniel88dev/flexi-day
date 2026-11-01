@@ -26,7 +26,7 @@ needs a running backend and a signed-in session.
 
 ## Running it locally
 
-`npm run dev:scenario` from the workspace root seeds data, then
+`pnpm run dev:scenario` from the workspace root seeds data, then
 `http://localhost:3000/dev-sign-in/?email=owner@dev.local` signs you in without email verification.
 That route exists only when `NEXT_PUBLIC_DEV_TOOLS=1` is set in `.env.local` — `pageExtensions` in
 `next.config.ts` keeps `page.dev.tsx` files out of production builds entirely, so it can never
