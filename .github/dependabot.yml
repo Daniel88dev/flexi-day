@@ -8,6 +8,7 @@ updates:
     directory: /
     schedule:
       interval: weekly
+      day: monday
     open-pull-requests-limit: 10
     # Matches minimumReleaseAge in pnpm-workspace.yaml, so a routine bump never proposes a version
     # the install would reject as too new.
@@ -44,6 +45,7 @@ updates:
     directory: /
     schedule:
       interval: weekly
+      day: monday
     open-pull-requests-limit: 5
     groups:
       # init and analyze are two actions out of one repo, and the action aborts
