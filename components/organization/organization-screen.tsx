@@ -27,6 +27,14 @@ import { DirectoryAgreementBanner } from "@/components/directory/directory-agree
 import { AvatarBubble } from "@/components/brand/avatar-bubble";
 import { useTranslation } from "@/lib/i18n/use-translation";
 import { cn } from "@/lib/utils";
+import {
+  AiPrototypeSwitcher,
+  OrganizationAiCardC,
+  OrganizationAiPageB,
+  OrganizationAiSectionA,
+  OrganizationTabsB,
+  useAiPrototype,
+} from "@/components/ai-settings/prototype/variants";
 
 export function OrganizationScreen() {
   const { t } = useTranslation();
@@ -46,6 +54,9 @@ export function OrganizationScreen() {
   // Owned organizations sort first, so the default is the viewer's own.
   const activeId = selectedId ?? linked ?? organizations[0]?.id ?? null;
   const detailQuery = useOrganization(activeId);
+  // PROTOTYPE (T-680)
+  const aiProto = useAiPrototype();
+  const aiTab = aiProto.variant === "B" && params.get("tab") === "ai";
 
   if (organizationsQuery.isLoading) {
     return <p className="text-muted-foreground text-sm">{t.common.loading}</p>;
@@ -78,8 +89,12 @@ export function OrganizationScreen() {
         <h1 className="font-heading text-2xl font-bold">{t.organization.title}</h1>
         <p className="text-muted-foreground mt-1 text-sm">{t.organization.subtitle}</p>
       </div>
+      <AiPrototypeSwitcher />
+      {aiProto.variant === "B" ? <OrganizationTabsB /> : null}
 
-      {organizations.length > 1 ? (
+      {aiTab ? (
+        <OrganizationAiPageB />
+      ) : organizations.length > 1 ? (
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-muted-foreground text-xs font-semibold uppercase">
             {t.organization.switcher}
@@ -107,7 +122,7 @@ export function OrganizationScreen() {
         </div>
       ) : null}
 
-      {detailQuery.isLoading ? (
+      {aiTab ? null : detailQuery.isLoading ? (
         <p className="text-muted-foreground text-sm">{t.common.loading}</p>
       ) : detailQuery.error || !detailQuery.data ? (
         <p className="text-destructive text-sm">{t.organization.loadError}</p>
@@ -136,6 +151,7 @@ function OrganizationDetailView({
   /** The People card row a notification links to. */
   focusEmploymentId: string | null;
 }) {
+  const aiProto = useAiPrototype();
   return (
     <div className="space-y-4">
       <DirectoryAgreementBanner organizationId={organizationId} />
@@ -147,7 +163,9 @@ function OrganizationDetailView({
           organizationId={organizationId}
           organizationName={detail.organization.name}
         />
+        {aiProto.variant === "C" ? <OrganizationAiCardC /> : null}
       </div>
+      {aiProto.variant === "A" ? <OrganizationAiSectionA /> : null}
       <AttendanceCard detail={detail} organizationId={organizationId} />
       <PeopleCard organizationId={organizationId} focusEmploymentId={focusEmploymentId} />
       <OrganizationExportCard

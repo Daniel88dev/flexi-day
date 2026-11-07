@@ -4,6 +4,7 @@ import Link from "next/link";
 import { PanelLeft, PanelLeftClose } from "lucide-react";
 import { Logo } from "@/components/brand/logo";
 import { NavBadge } from "@/components/shell/nav-badge";
+import { useAiUsagePrototypeLink } from "@/components/ai-settings/prototype/variants";
 import {
   Sidebar,
   SidebarContent,
@@ -93,6 +94,7 @@ function UserBlock() {
 /** Desktop navigation: sectioned, collapsible to icons. Hidden below `md`, where the bottom bar takes over. */
 export function AppSidebar() {
   const { sections, utility, isActive } = useShellNav();
+  const aiUsageLink = useAiUsagePrototypeLink(); // PROTOTYPE (T-680)
 
   return (
     <Sidebar collapsible="icon" className="border-[color:var(--sidebar-border)]">
@@ -116,6 +118,9 @@ export function AppSidebar() {
                 {section.links.map((link) => (
                   <NavItem key={link.href} link={link} isActive={isActive(link.href)} />
                 ))}
+                {section.id === "organization" && aiUsageLink ? (
+                  <NavItem link={aiUsageLink} isActive={isActive("/ai-usage")} />
+                ) : null}
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>

@@ -18,6 +18,7 @@ import { ConnectedAccountsCard } from "@/components/settings/connected-accounts-
 import { DeleteAccountCard } from "@/components/settings/delete-account-card";
 import { TwoFactorCard } from "@/components/settings/two-factor-card";
 import { YourDataCard } from "@/components/settings/your-data-card";
+import { MyAiConnectionsCard } from "@/components/ai-settings/prototype/my-connections-card";
 import { OrganizationDataExports } from "@/components/settings/organization-data-exports";
 import { pushToast } from "@/components/toast";
 import { useMySettings, useReportScope, useUpdateMySettings } from "@/lib/api/queries";
@@ -93,6 +94,11 @@ export default function SettingsPage() {
 
       <Suspense fallback={null}>
         <ConnectedAccountsCard />
+      </Suspense>
+
+      {/* PROTOTYPE (T-680) */}
+      <Suspense fallback={null}>
+        <MyAiConnectionsCard />
       </Suspense>
 
       {/* Someone who only ever signed in with Google or Microsoft has no
