@@ -5,6 +5,10 @@ import { BottomBar } from "@/components/shell/bottom-bar";
 import { TopBar } from "@/components/shell/top-bar";
 import { GraceBanner } from "@/components/billing/grace-banner";
 import { Footer } from "@/components/footer";
+import {
+  AssistantPrototypeDock,
+  AssistantPrototypeShell,
+} from "@/components/assistant/prototype/host";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
@@ -23,9 +27,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <div className="mx-auto w-full max-w-[1340px] flex-1 px-7 py-8 max-md:px-4">
             {children}
           </div>
+          <AssistantPrototypeDock />
           <Footer containerClassName="max-w-[1340px] max-md:px-4" />
         </SidebarInset>
         <BottomBar />
+        <AssistantPrototypeShell />
       </SidebarProvider>
     </TooltipProvider>
   );

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { PanelLeft, PanelLeftClose } from "lucide-react";
 import { Logo } from "@/components/brand/logo";
 import { NavBadge } from "@/components/shell/nav-badge";
+import { AssistantPrototypeSidebar } from "@/components/assistant/prototype/host";
 import {
   Sidebar,
   SidebarContent,
@@ -106,6 +107,7 @@ export function AppSidebar() {
       </SidebarHeader>
 
       <SidebarContent className="px-1">
+        <AssistantPrototypeSidebar />
         {sections.map((section) => (
           <SidebarGroup key={section.id} className="py-1">
             <SidebarGroupLabel className="h-auto px-2.5 pt-3 pb-1.5 text-[11px] font-bold tracking-[0.08em] text-[color:var(--text-faint)] uppercase group-data-[collapsible=icon]:mx-1.5 group-data-[collapsible=icon]:my-2 group-data-[collapsible=icon]:mt-0 group-data-[collapsible=icon]:h-px group-data-[collapsible=icon]:bg-[var(--border)] group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:opacity-100">
