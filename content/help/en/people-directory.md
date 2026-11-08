@@ -5,6 +5,7 @@ summary: What the Enterprise people directory is, how the owner turns it on or o
 module: directory
 roles: [member, org-admin, owner]
 routes: [/directory]
+tools: [list_directory_people]
 keywords:
   [
     directory,

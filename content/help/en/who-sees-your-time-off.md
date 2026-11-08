@@ -5,6 +5,7 @@ summary: What teammates, approvers and admins see of your requests, and how sick
 module: leave
 roles: [member, approver, manager, group-admin, org-admin, owner]
 routes: [/dashboard, /requests]
+tools: [list_who_is_away]
 keywords:
   [
     privacy,

@@ -5,6 +5,7 @@ summary: What each section of a directory profile holds, how to edit your own or
 module: directory
 roles: [member, group-admin, org-admin, owner]
 routes: [/directory/person, /directory/person/edit]
+tools: [get_directory_profile, show_directory_section]
 keywords:
   [
     profile,

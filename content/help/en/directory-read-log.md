@@ -5,6 +5,7 @@ summary: Why Contact and Personal stay hidden until you press Show, what the rea
 module: directory
 roles: [member, org-admin, owner]
 routes: [/directory]
+tools: [show_directory_section]
 keywords:
   [
     read log,
@@ -47,7 +48,8 @@ profile and its edit page.
 
 Each entry has who opened it, whose profile, which section, when, and the audience that allowed it,
 such as HR or Org admin. It never holds the values. Exports of a person's data are logged there
-too.
+too. A section opened through an AI app or the Assistant shows "{{ui:common.channel.mcp}}" or
+"{{ui:common.channel.assistant}}" under the reader.
 
 Entries are kept for 12 months and then removed. They stay even after the person is erased, as
 they hold no values.

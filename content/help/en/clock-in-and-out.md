@@ -5,6 +5,7 @@ summary: How to clock in and out and take breaks on My attendance, what a sessio
 module: attendance
 roles: [member, approver, manager, group-admin, org-admin, owner]
 routes: [/my-attendance]
+tools: [get_my_attendance]
 keywords:
   [
     clock in,

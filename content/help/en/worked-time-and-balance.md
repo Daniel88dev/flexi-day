@@ -5,6 +5,7 @@ summary: How Flexi Day turns sessions and breaks into worked time, which days ow
 module: attendance
 roles: [member, approver, manager, group-admin, org-admin, owner]
 routes: [/my-attendance]
+tools: [get_my_worked_time]
 keywords:
   [
     worked time,

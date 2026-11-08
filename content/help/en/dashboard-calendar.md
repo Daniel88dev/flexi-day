@@ -5,6 +5,7 @@ summary: Read the dashboard calendar, switch between your own and your group's t
 module: leave
 roles: [member, approver, manager, group-admin, org-admin, owner]
 routes: [/dashboard]
+tools: [list_who_is_away, list_group_events, list_birthdays]
 keywords:
   [
     dashboard,

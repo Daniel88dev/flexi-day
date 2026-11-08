@@ -5,6 +5,7 @@ summary: How yearly allowances work per group and type, where to see what's left
 module: quotas
 roles: [member, approver, manager, group-admin, org-admin, owner]
 routes: [/groups/detail, /dashboard]
+tools: [get_my_balances]
 keywords:
   [
     quota,

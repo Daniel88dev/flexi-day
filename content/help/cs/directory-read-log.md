@@ -1,6 +1,6 @@
 ---
 id: directory-read-log
-translatedFrom: "c6aa47e70130"
+translatedFrom: "9ca3a7b5f05e"
 title: Citlivé sekce a záznam o čtení
 summary: Proč Kontakt a Osobní údaje zůstávají skryté, dokud nestiskneš Zobrazit, co záznam o čtení ukládá o tom, kdo je otevřel, a kdo záznam může číst.
 keywords:
@@ -45,6 +45,8 @@ jeho stránce úprav.
 
 Každý záznam obsahuje, kdo sekci otevřel, čí profil, kterou sekci, kdy a skupinu lidí, která to
 dovolila, třeba HR nebo Správce organizace. Hodnoty nikdy. Zapisují se sem i exporty dat člověka.
+Sekce otevřená přes AI aplikaci nebo Asistenta má pod čtenářem poznámku „{{ui:common.channel.mcp}}“
+nebo „{{ui:common.channel.assistant}}“.
 
 Záznamy se uchovávají 12 měsíců a pak se smažou. Zůstávají i po vymazání člověka, protože žádné
 hodnoty neobsahují.

@@ -5,6 +5,7 @@ summary: Cancel your own pending or approved time off, and how dates, types and 
 module: leave
 roles: [member, approver, manager, group-admin, org-admin, owner]
 routes: [/requests, /dashboard]
+tools: [list_my_requests]
 keywords:
   [
     cancel,

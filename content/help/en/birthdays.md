@@ -5,6 +5,7 @@ summary: Save your birthday in Settings, choose whether your groups see it and y
 module: group-events
 roles: [member, approver, manager, group-admin, org-admin, owner]
 routes: [/settings, /dashboard]
+tools: [list_birthdays]
 keywords:
   [
     birthday,

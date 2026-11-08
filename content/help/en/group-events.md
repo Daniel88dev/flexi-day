@@ -5,6 +5,7 @@ summary: Put a meeting, an offsite or a recurring team day on a group's calendar
 module: group-events
 roles: [member, approver, manager, group-admin, org-admin, owner]
 routes: [/dashboard]
+tools: [list_group_events]
 keywords:
   [
     group event,
