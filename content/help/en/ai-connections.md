@@ -6,7 +6,22 @@ module: assistant-and-mcp
 roles: [member, approver, manager, group-admin, org-admin, owner]
 routes: [/settings, /organization]
 tools: [search_docs, read_doc]
-keywords: [ai connections, mcp, claude, chatgpt, cursor, connector, connect, disconnect, read only]
+keywords:
+  [
+    ai connections,
+    mcp,
+    claude,
+    chatgpt,
+    cursor,
+    connector,
+    connect,
+    disconnect,
+    read only,
+    read and write,
+    turn on,
+    agreement,
+    tell members,
+  ]
 related: [assistant]
 goldenQuestions:
   - question: How do I connect ChatGPT to Flexi Day?
@@ -23,12 +38,36 @@ app.
 
 ## Before you start
 
-AI connections work on the Pro and Enterprise plans. The owner chooses one of three settings in
-the AI card on the {{ui:nav.organization}} page:
+AI connections work on every paid plan: Pro, Enterprise and Custom. The owner chooses one of three
+settings for "{{ui:aiConnectionsSettings.card.title}}" in the AI card on the
+{{ui:nav.organization}} page:
 
-- **Off**, the default: no app can connect.
-- **Read only**: apps can read what you can see.
-- **Read and write**: apps can also make changes to your own records.
+- **{{ui:aiConnectionsSettings.card.levels.off}}**, the default: no app can connect.
+- **{{ui:aiConnectionsSettings.card.levels.read}}**: apps can read what you can see.
+- **{{ui:aiConnectionsSettings.card.levels.write}}**: apps can also make changes to your own
+  records.
+
+## Turning AI connections on
+
+Only the owner can change the setting. Org admins see it but can't change it, and on the Free plan
+it stays off. Before AI connections turn on, the owner reads what the apps can do and what leaves
+Flexi Day: what an app reads goes to the company behind that app, under the member's own agreement
+with them. Personal accounts of AI apps may keep what they read or train on it, so your
+organization's own policy decides which apps people may use.
+
+The owner picks the level to start with under "{{ui:aiConnectionsSettings.turnOn.startWith}}". The
+first time an AI feature is turned on, the owner accepts the AI features agreement for the
+organization, and Flexi Day records who accepted, when, and which version. If the Assistant already
+accepted the current version, AI connections don't ask again.
+
+"{{ui:aiSettings.turnOn.tellMembers}}" is ticked by default and sends everyone in the organization a
+notice in the app and on their phone. While AI connections are on, the owner can copy the same text
+from the AI card with "{{ui:aiSettings.card.copyNotice}}".
+
+Going from {{ui:aiConnectionsSettings.card.levels.read}} to
+{{ui:aiConnectionsSettings.card.levels.write}} needs no new acceptance. Lowering to
+{{ui:aiConnectionsSettings.card.levels.read}} or turning AI connections off asks the owner to confirm
+first, because it disconnects apps. Every change is recorded with who made it and when.
 
 ## Connect an app
 

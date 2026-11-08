@@ -5,8 +5,12 @@ vi.mock("../client", () => ({ api: (...args: unknown[]) => apiMock(...args) }));
 
 import {
   acceptAiAgreement,
+  dailyAiConnectionLimit,
+  disableAiConnections,
   disableAssistant,
+  enableAiConnections,
   enableAssistant,
+  setAiConnectionsLevel,
   getAiSettings,
   memberNoticeText,
   nextWeeklyReset,
@@ -45,6 +49,45 @@ describe("ai settings API", () => {
       method: "POST",
       body: { agreementVersion: 2 },
     });
+  });
+});
+
+describe("AI connections API", () => {
+  beforeEach(() => {
+    apiMock.mockReset();
+    apiMock.mockResolvedValue({});
+  });
+
+  it("turns AI connections on at the chosen level with the agreement version", async () => {
+    await enableAiConnections("org-1", { level: "write", agreementVersion: 1, tellMembers: true });
+    expect(apiMock).toHaveBeenCalledWith(
+      "/api/organization/ai/connections/enable?organizationId=org-1",
+      { method: "POST", body: { level: "write", agreementVersion: 1, tellMembers: true } }
+    );
+  });
+
+  it("changes the level", async () => {
+    await setAiConnectionsLevel("org-1", "read");
+    expect(apiMock).toHaveBeenCalledWith(
+      "/api/organization/ai/connections/level?organizationId=org-1",
+      { method: "POST", body: { level: "read" } }
+    );
+  });
+
+  it("turns AI connections off", async () => {
+    await disableAiConnections("org-1");
+    expect(apiMock).toHaveBeenCalledWith(
+      "/api/organization/ai/connections/disable?organizationId=org-1",
+      { method: "POST" }
+    );
+  });
+});
+
+describe("dailyAiConnectionLimit", () => {
+  it("returns 5,000 on Pro and 20,000 on Enterprise and Custom", () => {
+    expect(dailyAiConnectionLimit("PRO")).toBe(5000);
+    expect(dailyAiConnectionLimit("ENTERPRISE")).toBe(20000);
+    expect(dailyAiConnectionLimit("CUSTOM")).toBe(20000);
   });
 });
 

@@ -13,6 +13,9 @@ export type AiAgreementState = {
   newVersionReady: boolean;
 };
 
+/** The owner's AI connections setting. */
+export type AiConnectionsLevel = "off" | "read" | "write";
+
 /** `GET /api/organization/ai`: what the AI card shows an owner or org admin. */
 export type AiSettings = {
   organizationId: string;
@@ -20,9 +23,14 @@ export type AiSettings = {
   ownerName: string;
   plan: AiPlan;
   assistant: { enabled: boolean; enabledAt: string | null; planAllows: boolean };
+  /** `planAllows`: any Paid plan, so the owner may raise it. */
+  aiConnections: { level: AiConnectionsLevel; planAllows: boolean };
   agreement: AiAgreementState;
-  /** The text "Tell members" sends, in both languages, so the AI card copies the same words. */
-  memberNotice: { assistant: { en: NoticeText; cs: NoticeText } };
+  /** The texts "Tell members" sends, in both languages, so the AI card copies the same words. */
+  memberNotice: {
+    assistant: { en: NoticeText; cs: NoticeText };
+    aiConnections: { en: NoticeText; cs: NoticeText };
+  };
 };
 
 export type EnableAssistantInput = { agreementVersion: number; tellMembers: boolean };
@@ -60,6 +68,44 @@ export function acceptAiAgreement(
     body: { agreementVersion },
   });
 }
+
+export type EnableAiConnectionsInput = EnableAssistantInput & { level: "read" | "write" };
+
+/** Owner only; the first turn-on sends the agreement version the owner was shown. */
+export function enableAiConnections(
+  organizationId: string,
+  input: EnableAiConnectionsInput
+): Promise<AiSettings> {
+  return api<AiSettings>(scoped("/api/organization/ai/connections/enable", organizationId), {
+    method: "POST",
+    body: input,
+  });
+}
+
+/** Moves between Read only and Read and write while AI connections are on. */
+export function setAiConnectionsLevel(
+  organizationId: string,
+  level: "read" | "write"
+): Promise<AiSettings> {
+  return api<AiSettings>(scoped("/api/organization/ai/connections/level", organizationId), {
+    method: "POST",
+    body: { level },
+  });
+}
+
+export function disableAiConnections(organizationId: string): Promise<AiSettings> {
+  return api<AiSettings>(scoped("/api/organization/ai/connections/disable", organizationId), {
+    method: "POST",
+  });
+}
+
+/** The daily AI connection limit per organization (Pro 5,000, Enterprise and Custom 20,000). */
+export function dailyAiConnectionLimit(plan: AiPlan): number {
+  return plan === "PRO" ? 5_000 : 20_000;
+}
+
+/** The member daily limit: AI connection calls per member per UTC day. */
+export const MEMBER_DAILY_LIMIT = 1_000;
 
 /** The notice as one paragraph, the way an owner pastes it into their own policy. */
 export function memberNoticeText(notice: NoticeText): string {

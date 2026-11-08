@@ -198,27 +198,33 @@ describe("OrganizationScreen", () => {
     expect(screen.getByText(/4 members/)).toBeInTheDocument();
   });
 
-  it("shows the AI card only where the Assistant is available", () => {
-    const aiOrg = (assistant: boolean) => ({
+  it("shows the AI card where the Assistant or AI connections is available", () => {
+    const aiOrg = (assistant: boolean, aiConnections: boolean) => ({
       assistant,
-      aiConnections: false,
+      aiConnections,
       organizations: [
         {
           organizationId: "org-1",
           assistant,
-          aiConnections: false,
+          aiConnections,
           newAgreementVersionReady: false,
         },
       ],
     });
-    availability = aiOrg(false);
+    availability = aiOrg(false, false);
     const { unmount } = renderWithClient(<OrganizationScreen />);
     expect(screen.queryByRole("heading", { name: "AI" })).toBeNull();
     unmount();
 
-    availability = aiOrg(true);
-    renderWithClient(<OrganizationScreen />);
-    expect(screen.getByRole("heading", { name: "AI" })).toBeInTheDocument();
+    for (const [assistant, aiConnections] of [
+      [true, false],
+      [false, true],
+    ]) {
+      availability = aiOrg(assistant, aiConnections);
+      const view = renderWithClient(<OrganizationScreen />);
+      expect(screen.getByRole("heading", { name: "AI" })).toBeInTheDocument();
+      view.unmount();
+    }
   });
 
   it("hides the switcher for a single organization", () => {

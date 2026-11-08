@@ -9,14 +9,17 @@ import { Switch } from "@/components/ui/switch";
 import { copyText, pushToast } from "@/components/toast";
 import { AssistantTurnOnDialog } from "@/components/ai/assistant-turn-on-dialog";
 import { AssistantTurnOffDialog } from "@/components/ai/assistant-turn-off-dialog";
+import { AiConnectionsControl } from "@/components/ai/ai-connections-control";
+import { AiFeatureGate } from "@/components/ai/ai-feature-gate";
 import { memberNoticeText, type AiSettings } from "@/lib/api/ai-settings";
 import { useAiSettings } from "@/lib/api/queries";
 import { formatDate } from "@/lib/directory/format";
 import { useTranslation } from "@/lib/i18n/use-translation";
 
 /**
- * The AI card on the Organization page: the Assistant switch, owner only.
- * The AI connections half lands beside it in its own ticket.
+ * The AI card on the Organization page: the Assistant switch and the AI
+ * connections setting side by side, owner only. Each half shows only while its
+ * feature is available to the organization.
  */
 export function AiCard({
   organizationId,
@@ -49,7 +52,14 @@ export function AiCard({
         ) : !settings ? (
           <p className="text-destructive text-sm">{copy.loadFailed}</p>
         ) : (
-          <AssistantControl settings={settings} organizationName={organizationName} />
+          <>
+            <AiFeatureGate feature="assistant" organizationId={organizationId}>
+              <AssistantControl settings={settings} organizationName={organizationName} />
+            </AiFeatureGate>
+            <AiFeatureGate feature="aiConnections" organizationId={organizationId}>
+              <AiConnectionsControl settings={settings} organizationName={organizationName} />
+            </AiFeatureGate>
+          </>
         )}
       </CardContent>
     </Card>

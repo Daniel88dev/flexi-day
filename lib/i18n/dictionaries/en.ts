@@ -3008,6 +3008,78 @@ export const en = {
       failed: "Could not accept the agreement",
     },
   },
+  aiConnectionsSettings: {
+    card: {
+      title: "AI connections",
+      levels: { off: "Off", read: "Read only", write: "Read and write" },
+      offLead: "Off. Members can't connect AI apps such as Claude or ChatGPT to Flexi Day.",
+      readLead: "Members' AI apps can read what the member can see.",
+      writeLead: "Members' AI apps can read, and change the member's own requests and attendance.",
+      planLead: "Let members connect AI apps such as Claude or ChatGPT to Flexi Day.",
+      comesWithPaid: "AI connections come with every paid plan.",
+      raised: "AI connections can now read and write",
+      raiseFailed: "Could not change AI connections",
+    },
+    turnOn: {
+      title: (organization: string) => `Turn on AI connections for ${organization}?`,
+      lead: "Read this before you turn it on. You can turn it off any time.",
+      facts: (
+        organization: string,
+        limits: { organization: string; member: string }
+      ): [string, string][] => [
+        [
+          "What it does",
+          `Members connect AI apps they already use, such as Claude or ChatGPT, to their Flexi Day account. The app works with that member's own permissions in ${organization}.`,
+        ],
+        [
+          "What leaves Flexi Day",
+          "What the app reads goes to the company behind that app, under the member's own agreement with them. Flexi Day has no agreement with those companies. Once data reaches the app, that company handles it, not us.",
+        ],
+        [
+          "Which apps",
+          "Personal accounts of AI apps may keep what they read or train on it. Your organization's own policy decides which apps your people may use.",
+        ],
+        [
+          "Read only",
+          "Apps see what the member can see: requests, balances, who is away, attendance, the directory.",
+        ],
+        [
+          "Read and write",
+          "Apps can also create and cancel the member's own requests and clock them in and out. They never approve or reject requests.",
+        ],
+        [
+          "Limits",
+          `${limits.organization} calls a day for the organization, ${limits.member} a day per member. Nothing extra to pay.`,
+        ],
+      ],
+      startWith: "Start with",
+      readHint: "Apps can look things up. A safe way to start.",
+      writeHint: "Apps can also create and cancel the member's own requests and clock in and out.",
+      turnOn: "Turn on AI connections",
+      working: "Turning on…",
+      done: "AI connections are on",
+      failed: "Could not turn AI connections on",
+      alreadyOn: "AI connections are already on.",
+    },
+    lower: {
+      title: "Switch AI connections to read only?",
+      warning:
+        "This disconnects every app that has write access now. Their members can connect again with read access.",
+      confirm: "Disconnect and switch",
+      working: "Switching…",
+      done: "AI connections are read only",
+      failed: "Could not switch AI connections to read only",
+    },
+    turnOff: {
+      title: "Turn off AI connections?",
+      warning:
+        "This disconnects every connected app now. If you turn it on again, every member has to connect again.",
+      confirm: "Disconnect all and turn off",
+      working: "Turning off…",
+      done: "AI connections are off",
+      failed: "Could not turn AI connections off",
+    },
+  },
 };
 
 export type Dictionary = typeof en;

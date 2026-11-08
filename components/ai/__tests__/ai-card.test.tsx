@@ -14,6 +14,21 @@ const copyText = vi.fn();
 
 vi.mock("@/lib/api/queries", () => ({
   useAiSettings: () => ({ data: settings, isLoading: false }),
+  // AI connections have their own suite; this one sees the Assistant half alone.
+  useAiAvailability: () => ({
+    data: {
+      assistant: true,
+      aiConnections: false,
+      organizations: [
+        {
+          organizationId: "org-1",
+          assistant: true,
+          aiConnections: false,
+          newAgreementVersionReady: false,
+        },
+      ],
+    },
+  }),
   useEnableAssistant: () => ({ mutateAsync: enable, isPending: false }),
   useDisableAssistant: () => ({ mutateAsync: disable, isPending: false }),
 }));
@@ -39,6 +54,7 @@ const aiSettings = (overrides: Partial<AiSettings> = {}): AiSettings => ({
   ownerName: "Olga Owner",
   plan: "ENTERPRISE",
   assistant: { enabled: false, enabledAt: null, planAllows: true },
+  aiConnections: { level: "off", planAllows: true },
   agreement: {
     currentVersion: 1,
     acceptedVersion: null,
@@ -46,7 +62,7 @@ const aiSettings = (overrides: Partial<AiSettings> = {}): AiSettings => ({
     acceptedByName: null,
     newVersionReady: false,
   },
-  memberNotice: { assistant: NOTICE },
+  memberNotice: { assistant: NOTICE, aiConnections: NOTICE },
   ...overrides,
 });
 

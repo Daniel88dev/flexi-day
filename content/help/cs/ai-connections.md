@@ -1,9 +1,24 @@
 ---
 id: ai-connections
-translatedFrom: "7c58a7c96f0c"
+translatedFrom: "e14219c923d0"
 title: Připoj k Flexi Day AI aplikaci
 summary: Nech AI aplikaci, jako je Claude, ChatGPT nebo Cursor, číst tvoje údaje ve Flexi Day a dělat za tebe změny.
-keywords: [ai připojení, mcp, claude, chatgpt, cursor, konektor, připojit, odpojit, jen čtení]
+keywords:
+  [
+    ai připojení,
+    mcp,
+    claude,
+    chatgpt,
+    cursor,
+    konektor,
+    připojit,
+    odpojit,
+    jen čtení,
+    čtení a zápis,
+    zapnout,
+    smlouva,
+    dát vědět členům,
+  ]
 goldenQuestions:
   - question: Jak připojím ChatGPT k Flexi Day?
     expectedArticles: [ai-connections]
@@ -19,12 +34,36 @@ máš v aplikaci.
 
 ## Než začneš
 
-AI připojení fungují v tarifech Pro a Enterprise. Vlastník vybere jedno ze tří nastavení v kartě AI
-na stránce {{ui:nav.organization}}:
+AI připojení fungují v každém placeném tarifu: Pro, Enterprise i Custom. Vlastník vybere jedno ze
+tří nastavení pro „{{ui:aiConnectionsSettings.card.title}}“ v kartě AI na stránce
+{{ui:nav.organization}}:
 
-- **Vypnuto**, výchozí stav: žádná aplikace se nepřipojí.
-- **Jen čtení**: aplikace čtou to, co vidíš ty.
-- **Čtení a zápis**: aplikace navíc můžou měnit tvoje vlastní záznamy.
+- **{{ui:aiConnectionsSettings.card.levels.off}}**, výchozí stav: žádná aplikace se nepřipojí.
+- **{{ui:aiConnectionsSettings.card.levels.read}}**: aplikace čtou to, co vidíš ty.
+- **{{ui:aiConnectionsSettings.card.levels.write}}**: aplikace navíc můžou měnit tvoje vlastní
+  záznamy.
+
+## Zapnutí AI připojení
+
+Nastavení může změnit jen vlastník. Správci organizace ho vidí, ale změnit ho nemůžou, a v tarifu
+Free zůstává vypnuté. Než se AI připojení zapnou, vlastník si přečte, co aplikace umí a co opouští
+Flexi Day: co aplikace přečte, jde ke společnosti, která za ní stojí, podle vlastní smlouvy člena s
+ní. Osobní účty AI aplikací si mohou přečtená data uchovat nebo na nich trénovat, takže které
+aplikace můžou lidé používat, určují pravidla vaší organizace.
+
+Úroveň, se kterou začne, vybere vlastník v části „{{ui:aiConnectionsSettings.turnOn.startWith}}“.
+Když se nějaká funkce AI zapíná poprvé, vlastník přijme za organizaci Smlouvu o funkcích AI a Flexi
+Day zaznamená, kdo ji přijal, kdy a kterou verzi. Pokud aktuální verzi už přijal při zapnutí
+Asistenta, AI připojení se znovu neptají.
+
+„{{ui:aiSettings.turnOn.tellMembers}}“ je ve výchozím stavu zaškrtnuté a pošle všem v organizaci
+upozornění v aplikaci a v telefonu. Dokud jsou AI připojení zapnutá, vlastník zkopíruje stejný text
+z karty AI tlačítkem „{{ui:aiSettings.card.copyNotice}}“.
+
+Přechod z {{ui:aiConnectionsSettings.card.levels.read}} na
+{{ui:aiConnectionsSettings.card.levels.write}} nové přijetí smlouvy nepotřebuje. Snížení na
+{{ui:aiConnectionsSettings.card.levels.read}} nebo vypnutí AI připojení musí vlastník nejdřív
+potvrdit, protože odpojí aplikace. Každá změna se zaznamená i s tím, kdo ji udělal a kdy.
 
 ## Připojení aplikace
 

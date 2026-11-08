@@ -3024,4 +3024,78 @@ export const cs: Dictionary = {
       failed: "Smlouvu se nepodařilo přijmout",
     },
   },
+  aiConnectionsSettings: {
+    card: {
+      title: "AI připojení",
+      levels: { off: "Vypnuto", read: "Jen čtení", write: "Čtení a zápis" },
+      offLead:
+        "Vypnuto. Členové si k Flexi Day nemůžou připojit AI aplikace, jako je Claude nebo ChatGPT.",
+      readLead: "AI aplikace členů čtou to, co člen vidí.",
+      writeLead: "AI aplikace členů čtou a mění vlastní žádosti a docházku člena.",
+      planLead: "Členové si k Flexi Day můžou připojit AI aplikace, jako je Claude nebo ChatGPT.",
+      comesWithPaid: "AI připojení jsou součástí každého placeného tarifu.",
+      raised: "AI připojení teď můžou číst i zapisovat",
+      raiseFailed: "AI připojení se nepodařilo změnit",
+    },
+    turnOn: {
+      title: (organization: string) => `Zapnout AI připojení pro ${organization}?`,
+      lead: "Než je zapnete, přečtěte si tohle. Vypnout je můžete kdykoli.",
+      facts: (
+        organization: string,
+        limits: { organization: string; member: string }
+      ): [string, string][] => [
+        [
+          "Co to dělá",
+          `Členové si ke svému účtu ve Flexi Day připojí AI aplikace, které už používají, třeba Claude nebo ChatGPT. Aplikace pracuje s oprávněními daného člena v organizaci ${organization}.`,
+        ],
+        [
+          "Co opouští Flexi Day",
+          "Co aplikace přečte, jde ke společnosti, která za ní stojí, podle vlastní smlouvy člena s ní. Flexi Day s těmito společnostmi žádnou smlouvu nemá. Jakmile data do aplikace dorazí, nakládá s nimi ta společnost, ne my.",
+        ],
+        [
+          "Které aplikace",
+          "Osobní účty AI aplikací si mohou přečtená data uchovat nebo na nich trénovat. Které aplikace mohou vaši lidé používat, určují pravidla vaší organizace.",
+        ],
+        [
+          "Jen čtení",
+          "Aplikace vidí to, co vidí člen: žádosti, zůstatky, kdo je pryč, docházku a adresář.",
+        ],
+        [
+          "Čtení a zápis",
+          "Aplikace navíc můžou vytvářet a rušit vlastní žádosti člena a zaznamenávat jeho příchod a odchod. Žádosti nikdy neschvalují ani nezamítají.",
+        ],
+        [
+          "Limity",
+          `${limits.organization} volání denně pro organizaci, ${limits.member} denně na člena. Nic navíc neplatíte.`,
+        ],
+      ],
+      startWith: "Začít s",
+      readHint: "Aplikace můžou jen vyhledávat. Bezpečný začátek.",
+      writeHint:
+        "Aplikace navíc můžou vytvářet a rušit vlastní žádosti člena a zaznamenávat příchod a odchod.",
+      turnOn: "Zapnout AI připojení",
+      working: "Zapínám…",
+      done: "AI připojení jsou zapnutá",
+      failed: "AI připojení se nepodařilo zapnout",
+      alreadyOn: "AI připojení už jsou zapnutá.",
+    },
+    lower: {
+      title: "Přepnout AI připojení na jen čtení?",
+      warning:
+        "Tím se hned odpojí všechny aplikace, které mají přístup k zápisu. Jejich členové se můžou znovu připojit s přístupem ke čtení.",
+      confirm: "Odpojit a přepnout",
+      working: "Přepínám…",
+      done: "AI připojení jsou jen pro čtení",
+      failed: "AI připojení se nepodařilo přepnout na jen čtení",
+    },
+    turnOff: {
+      title: "Vypnout AI připojení?",
+      warning:
+        "Tím se hned odpojí všechny připojené aplikace. Když AI připojení znovu zapnete, každý člen se bude muset připojit znovu.",
+      confirm: "Odpojit vše a vypnout",
+      working: "Vypínám…",
+      done: "AI připojení jsou vypnutá",
+      failed: "AI připojení se nepodařilo vypnout",
+    },
+  },
 };

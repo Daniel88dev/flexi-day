@@ -70,10 +70,14 @@ import {
 import { waitForPhotoUpload } from "@/lib/directory/profile-photo";
 import {
   acceptAiAgreement,
+  disableAiConnections,
   disableAssistant,
+  enableAiConnections,
   enableAssistant,
   getAiSettings,
+  setAiConnectionsLevel,
   type AiSettings,
+  type EnableAiConnectionsInput,
   type EnableAssistantInput,
 } from "./ai-settings";
 import {
@@ -2179,4 +2183,20 @@ export function useAcceptAiAgreement(organizationId: string | null) {
   return useAiSettingsMutation(organizationId, (id, agreementVersion: number) =>
     acceptAiAgreement(id, agreementVersion)
   );
+}
+
+export function useEnableAiConnections(organizationId: string | null) {
+  return useAiSettingsMutation(organizationId, (id, input: EnableAiConnectionsInput) =>
+    enableAiConnections(id, input)
+  );
+}
+
+export function useSetAiConnectionsLevel(organizationId: string | null) {
+  return useAiSettingsMutation(organizationId, (id, level: "read" | "write") =>
+    setAiConnectionsLevel(id, level)
+  );
+}
+
+export function useDisableAiConnections(organizationId: string | null) {
+  return useAiSettingsMutation<void>(organizationId, (id) => disableAiConnections(id));
 }

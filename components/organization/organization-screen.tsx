@@ -150,7 +150,7 @@ function OrganizationDetailView({
           organizationName={detail.organization.name}
         />
         {organizationId ? (
-          <AiFeatureGate feature="assistant" organizationId={organizationId}>
+          <AiFeatureGate feature={["assistant", "aiConnections"]} organizationId={organizationId}>
             <AiCard organizationId={organizationId} organizationName={detail.organization.name} />
           </AiFeatureGate>
         ) : null}
