@@ -24,6 +24,10 @@ export const cs: Dictionary = {
     dateLocale: "cs-CZ",
     loading: "Načítání…",
     accountDeleted: "Účet smazán",
+    channel: {
+      assistant: "přes Asistenta",
+      mcp: "přes AI aplikaci",
+    },
     personExport: {
       export: "Exportovat",
       exportFor: (name: string) => `Exportovat data: ${name}`,

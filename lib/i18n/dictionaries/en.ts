@@ -16,6 +16,11 @@ export const en = {
     loading: "Loading…",
     cancel: "Cancel",
     accountDeleted: "Account deleted",
+    /** What a timeline or Read log entry came through, for every channel but the app. */
+    channel: {
+      assistant: "through the Assistant",
+      mcp: "through an AI app",
+    },
     personExport: {
       export: "Export",
       exportFor: (name: string) => `Export ${name}'s data`,

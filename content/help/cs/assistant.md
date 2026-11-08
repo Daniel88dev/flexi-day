@@ -1,6 +1,6 @@
 ---
 id: assistant
-translatedFrom: "f32c5aa531a9"
+translatedFrom: "c586c36116ed"
 title: Co umí Asistent
 summary: Zeptej se Asistenta na Flexi Day vlastními slovy a nech ho připravit změny, které potvrdíš.
 keywords:
@@ -67,8 +67,8 @@ ani zamítnout.
 
 Asistent umí připravit změnu: vytvořit žádost, zrušit tvoji žádost, schválit nebo zamítnout žádost,
 zaznamenat příchod nebo odchod. Každá změna se ukáže jako karta s přesnými údaji. Nic se nezmění,
-dokud kartu nepotvrdíš. Volbou „Teď ne“ ji zahodíš. Změna provedená touto cestou je označená jako
-provedená přes Asistenta.
+dokud kartu nepotvrdíš. Volbou „Teď ne“ ji zahodíš. Změna provedená touto cestou má v historii
+žádosti nebo v historii docházky toho dne poznámku „{{ui:common.channel.assistant}}“.
 
 ## Týdenní limit
 

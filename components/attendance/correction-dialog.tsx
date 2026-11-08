@@ -130,6 +130,7 @@ function History({ sessionId, timezone }: { sessionId: string; timezone: string 
                   {/* The sweep and a deleted account read the same, because
                       neither is a person anyone can ask about it. */}
                   {event.user?.name ?? t.corrections.system}
+                  {event.channel !== "app" ? ` ${t.common.channel[event.channel]}` : null}
                 </span>
               </span>
             </li>

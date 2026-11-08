@@ -1,5 +1,6 @@
 import type {
   Attachment,
+  ChangeChannel,
   UserSummary,
   VacationDetail,
   VacationEvent,
@@ -22,6 +23,7 @@ export type TimelineEntry = {
   actor: TimelineActor;
   reason: string | null;
   fileName: string | null;
+  channel: ChangeChannel;
   createdAt: string;
 };
 
@@ -55,6 +57,7 @@ function fromEvent(event: VacationEvent): TimelineEntry {
     actor: event.actor ? { kind: "named", user: event.actor } : { kind: "gone" },
     reason: event.reason,
     fileName: null,
+    channel: event.channel,
     createdAt: event.createdAt,
   };
 }
@@ -70,6 +73,7 @@ function fromAttachment(
     actor: resolveActor(people, moment.by),
     reason: null,
     fileName: attachment.fileName,
+    channel: "app",
     createdAt: moment.at,
   };
 }

@@ -47,6 +47,10 @@ it can also create a request, cancel your own request, and clock you in or out. 
 reject requests (do that in Flexi Day, or ask [the Assistant](help:assistant)), and it can't change roles, billing or
 settings.
 
+A change the app makes reads "{{ui:common.channel.mcp}}" in the request's history or in the
+attendance history. When it opens a Sensitive section of someone's profile, the organization's Read
+log shows the read the same way.
+
 ## Limits
 
 Each organization has a daily AI connection limit: 5,000 calls a day on Pro and 20,000 on

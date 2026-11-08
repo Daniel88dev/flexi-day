@@ -73,8 +73,9 @@ someone's request.
 
 The Assistant can prepare a change: create a request, cancel one of your requests, approve or reject
 a request, clock in or clock out. Each change shows up as a card with the exact details. Nothing
-changes until you confirm the card. Choose "Not now" to drop it. A change made this way is marked
-as made through the Assistant.
+changes until you confirm the card. Choose "Not now" to drop it. A change made this way reads
+"{{ui:common.channel.assistant}}" in the request's history or in the attendance history of that
+day.
 
 ## Weekly limit
 

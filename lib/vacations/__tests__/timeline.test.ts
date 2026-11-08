@@ -46,6 +46,7 @@ const detail: VacationDetail = {
       eventType: "CREATED",
       actor: dana,
       reason: null,
+      channel: "app",
       createdAt: "2026-07-20T09:00:00.000Z",
     },
     {
@@ -54,6 +55,7 @@ const detail: VacationDetail = {
       eventType: "APPROVED",
       actor: ada,
       reason: null,
+      channel: "app",
       createdAt: "2026-08-01T09:00:00.000Z",
     },
   ],
@@ -110,6 +112,20 @@ describe("mergeTimeline", () => {
       fileName: "doctors-note.jpg",
       createdAt: "2026-08-02T09:00:00.000Z",
     });
+  });
+
+  it("keeps each event's channel, and files attachments under the app", () => {
+    const entries = mergeTimeline({
+      ...detail,
+      history: [{ ...detail.history[0]!, channel: "assistant" }, detail.history[1]!],
+      attachments: [note],
+    });
+
+    expect(entries.map((entry) => [entry.kind, entry.channel])).toEqual([
+      ["CREATED", "assistant"],
+      ["ATTACHMENT_ADDED", "app"],
+      ["APPROVED", "app"],
+    ]);
   });
 
   it("keeps a history event ahead of an attachment stamped at the same moment", () => {

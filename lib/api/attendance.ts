@@ -1,5 +1,5 @@
 import { api } from "./client";
-import type { Iso, UserSummary, UUID } from "./types";
+import type { ChangeChannel, Iso, UserSummary, UUID } from "./types";
 import type { SelfServiceWindow } from "@/lib/attendance/self-service";
 
 export type AttendanceClosedBy = "USER" | "ADMIN" | "SWEEP";
@@ -359,6 +359,7 @@ export type AttendanceEvent = {
   user: UserSummary | null;
   before: unknown;
   after: unknown;
+  channel: ChangeChannel;
   createdAt: Iso;
 };
 

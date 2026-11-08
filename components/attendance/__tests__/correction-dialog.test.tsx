@@ -1,7 +1,8 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { NO_SESSION_LOCATION, renderWithClient } from "@/lib/test-utils";
+import { I18nProvider } from "@/lib/i18n/i18n-provider";
 import { ApiError } from "@/lib/api/client";
 import type {
   AttendanceDaySessions,
@@ -502,6 +503,7 @@ describe("CorrectionDialog", () => {
         user: { id: "user-1", name: "Noah Weber", initials: "NW", avatarColor: "#000" },
         before: null,
         after: null,
+        channel: "app",
         createdAt: "2026-09-09T06:05:00.000Z",
       },
       {
@@ -511,6 +513,7 @@ describe("CorrectionDialog", () => {
         user: null,
         before: null,
         after: null,
+        channel: "app",
         createdAt: "2026-09-09T22:05:00.000Z",
       },
     ];
@@ -520,6 +523,69 @@ describe("CorrectionDialog", () => {
     expect(timeline).toHaveTextContent("Clocked in. Noah Weber");
     // A null actor is the sweep, and reads as the system rather than as nobody.
     expect(timeline).toHaveTextContent("Times corrected. System");
+  });
+
+  describe("the channel of each entry", () => {
+    const noah = { id: "user-1", name: "Noah Weber", initials: "NW", avatarColor: "#000" };
+    const throughAi: AttendanceEvent[] = [
+      {
+        id: "event-in",
+        sessionId: "session-1",
+        eventType: "CLOCK_IN",
+        user: noah,
+        before: null,
+        after: null,
+        channel: "assistant",
+        createdAt: "2026-09-09T06:05:00.000Z",
+      },
+      {
+        id: "event-out",
+        sessionId: "session-1",
+        eventType: "CLOCK_OUT",
+        user: noah,
+        before: null,
+        after: null,
+        channel: "mcp",
+        createdAt: "2026-09-09T15:10:00.000Z",
+      },
+    ];
+
+    afterEach(() => {
+      window.localStorage.removeItem("flexiday-locale");
+    });
+
+    it("marks entries made through the Assistant or an AI app", () => {
+      events.data = throughAi;
+      open();
+
+      const timeline = screen.getByTestId("correction-history");
+      expect(timeline).toHaveTextContent("Clocked in. Noah Weber through the Assistant");
+      expect(timeline).toHaveTextContent("Clocked out. Noah Weber through an AI app");
+    });
+
+    it("marks them in Czech", async () => {
+      window.localStorage.setItem("flexiday-locale", "cs");
+      events.data = throughAi;
+      renderWithClient(
+        <I18nProvider>
+          <CorrectionDialog
+            organizationId="org-1"
+            businessDate="2026-09-09"
+            open
+            onOpenChange={vi.fn()}
+          />
+        </I18nProvider>
+      );
+
+      await waitFor(() =>
+        expect(screen.getByTestId("correction-history")).toHaveTextContent(
+          "Noah Weber přes Asistenta"
+        )
+      );
+      expect(screen.getByTestId("correction-history")).toHaveTextContent(
+        "Noah Weber přes AI aplikaci"
+      );
+    });
   });
 
   it("names who added a break afterwards, with its times", () => {
@@ -535,6 +601,7 @@ describe("CorrectionDialog", () => {
           startedAt: "2026-09-09T13:00:00.000Z",
           endedAt: "2026-09-09T13:20:00.000Z",
         },
+        channel: "app",
         createdAt: "2026-09-10T06:52:00.000Z",
       },
     ];
@@ -558,6 +625,7 @@ describe("CorrectionDialog", () => {
         endedAt: "2026-09-09T15:10:00.000Z",
         origin: "ENTERED",
       },
+      channel: "app",
       createdAt: "2026-09-10T06:52:00.000Z",
     });
 
@@ -693,6 +761,7 @@ describe("CorrectionDialog", () => {
           user: { id: "owner", name: "Olivia Owner", initials: "OO", avatarColor: "#000" },
           before: { changedAfterDay: true },
           after: { changedAfterDay: false },
+          channel: "app",
           createdAt: "2026-09-11T07:00:00.000Z",
         },
       ];

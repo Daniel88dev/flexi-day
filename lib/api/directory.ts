@@ -1,7 +1,7 @@
 import type { Locale } from "@/lib/i18n/config";
 import { api } from "./client";
 import type { DirectoryEntryRef } from "./directory-lists";
-import type { UploadTarget } from "./types";
+import type { ChangeChannel, UploadTarget } from "./types";
 
 export type DirectoryAgreementState = {
   currentVersion: number;
@@ -510,6 +510,7 @@ export type ReadLogEntry = {
   /** Null on an export. */
   sections: ("CONTACT" | "PERSONAL")[] | null;
   audience: DirectoryAudience;
+  channel: ChangeChannel;
 };
 
 export type ReadLogPage = {

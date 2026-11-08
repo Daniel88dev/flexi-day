@@ -343,6 +343,7 @@ function Timeline({ entries, t }: { entries: TimelineEntry[]; t: Dictionary }) {
             : entry.actor.kind === "unnamed"
               ? t.vacationDetail.byAdmin
               : null;
+        const through = entry.channel === "app" ? "" : ` ${t.common.channel[entry.channel]}`;
         return (
           <li key={entry.id} className="flex gap-3">
             <span
@@ -357,7 +358,9 @@ function Timeline({ entries, t }: { entries: TimelineEntry[]; t: Dictionary }) {
             <div className="min-w-0 text-sm">
               <div>
                 <span className="font-medium">{t.vacationDetail.events[entry.kind]}</span>
-                {by ? <span className="text-muted-foreground">{by}</span> : null}
+                {by || through ? (
+                  <span className="text-muted-foreground">{`${by ?? ""}${through}`}</span>
+                ) : null}
               </div>
               <div className="text-muted-foreground text-xs">
                 {formatMoment(entry.createdAt, t.common.dateLocale)}

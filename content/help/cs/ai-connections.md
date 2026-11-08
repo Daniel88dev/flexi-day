@@ -1,6 +1,6 @@
 ---
 id: ai-connections
-translatedFrom: "5f1b6e838c67"
+translatedFrom: "7c58a7c96f0c"
 title: Připoj k Flexi Day AI aplikaci
 summary: Nech AI aplikaci, jako je Claude, ChatGPT nebo Cursor, číst tvoje údaje ve Flexi Day a dělat za tebe změny.
 keywords: [ai připojení, mcp, claude, chatgpt, cursor, konektor, připojit, odpojit, jen čtení]
@@ -42,6 +42,10 @@ připojením.
 vytvoří žádost, zruší tvoji žádost a zaznamená tvůj příchod nebo odchod. Žádosti schvalovat ani
 zamítat neumí (to udělej ve Flexi Day nebo požádej [Asistenta](help:assistant)) a nemění role, fakturaci ani
 nastavení.
+
+Změna, kterou aplikace provede, má v historii žádosti nebo v historii docházky poznámku
+„{{ui:common.channel.mcp}}“. Když otevře citlivou sekci něčího profilu, ukáže se toto čtení stejně
+i v Záznamu o čtení organizace.
 
 ## Limity
 
