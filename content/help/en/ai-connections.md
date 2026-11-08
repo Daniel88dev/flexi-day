@@ -74,10 +74,24 @@ first, because it disconnects apps. Every change is recorded with who made it an
 1. Open {{ui:nav.settings}} and find the AI connections card.
 2. Choose "Connect an AI app" and copy the server address, `https://api.flexi-day.com/mcp`.
 3. In your AI app, add a custom connector with that address.
-4. Sign in to Flexi Day when the app asks, pick the organization, and allow access.
+4. The app opens a Flexi Day page that names it. Sign in as usual. If you use two-factor
+   authentication, Flexi Day asks for your code. Nothing is shared until you allow it.
+5. Pick the organization the app should work in. Each one shows the access it allows.
+   Organizations whose owner hasn't turned on AI connections, or that are on the Free plan, are
+   listed with the reason. If none allows it, go back to the app.
+6. Check the consent page and choose "{{ui:aiConnect.consent.allow}}".
 
-If you belong to several organizations, each connection covers one of them. Connect again to add
-another.
+Each connection covers one organization, and you pick it every time you connect. Connect again to
+add another.
+
+### The consent page
+
+- When Flexi Day could check the app's address, the page says "Address checked" with it.
+  Otherwise it says "{{ui:aiConnect.consent.notVerified}}": the name is the app's own claim.
+- When the app is a program on your computer, such as Claude Code or Cursor, a warning asks you to
+  allow it only if you started connecting from it just now.
+- "{{ui:aiConnect.consent.read}}" is always part of the connection. "{{ui:aiConnect.consent.write}}"
+  is ticked; untick it to connect read only. On a Read only organization it isn't offered.
 
 ## What a connected app can do
 

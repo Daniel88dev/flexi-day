@@ -3080,6 +3080,80 @@ export const en = {
       failed: "Could not turn AI connections off",
     },
   },
+  aiConnect: {
+    loading: "Loading…",
+    invalid: {
+      title: "This link has expired",
+      body: "Connection links last 10 minutes. Start connecting again from your AI app.",
+    },
+    requester: (app: string, host: string) => `${app} · ${host}`,
+    signIn: {
+      title: (app: string) => `Sign in to connect ${app}`,
+      description: (app: string) =>
+        `${app} wants to use your Flexi Day account. Nothing is shared until you allow it on the next page.`,
+      noAccount: "No account yet?",
+      signUpElsewhere: "Create one in a new tab, then connect again from your app.",
+    },
+    picker: {
+      title: (app: string) => `Which organization should ${app} work in?`,
+      legend: "Organization",
+      access: { read: "Read only", write: "Read and write allowed" },
+      leftOut: {
+        TURNED_OFF: (organization: string) =>
+          `Not listed: ${organization}. Its owner hasn't turned on AI connections.`,
+        PLAN: (organization: string) =>
+          `Not listed: ${organization}. It's on the Free plan, which doesn't include AI connections.`,
+      },
+      oneOrganization: (app: string) =>
+        `${app} works in one organization. To use another, connect again.`,
+      continue: "Continue",
+      working: "Continuing…",
+      cancel: "Cancel",
+      failed: "Could not continue. Try again.",
+      notEligible: "This organization no longer allows AI connections. Pick another.",
+      signedOut: "You're signed out. Sign in again to continue.",
+      signInAgain: "Sign in",
+    },
+    none: {
+      title: (app: string) => `${app} can't connect yet`,
+      body: "None of your organizations allows AI connections. The owner turns them on in the organization's settings.",
+      owner: (organization: string, owner: string) => `${organization} · owner ${owner}`,
+      free: "Free organizations can't turn them on.",
+      goBack: (app: string) => `Go back to ${app}`,
+    },
+    consent: {
+      title: (app: string) => `Allow ${app} to use your Flexi Day account?`,
+      app: "App",
+      checked: (host: string) => `Address checked: ${host}`,
+      notVerified: "Name not verified",
+      organization: "Organization",
+      change: "Change",
+      afterwards: "Afterwards",
+      goesBackTo: (host: string) => `You go back to ${host}`,
+      localApp: (app: string) =>
+        `This sends your access to a program on this computer. Allow it only if you started connecting from ${app} just now.`,
+      ableTo: (app: string) => `${app} will be able to`,
+      read: "See what you can see",
+      readHint: "Your requests and balances, who is away, attendance, the directory.",
+      write: "Make changes for you",
+      writeHint: (app: string) =>
+        `Create and cancel your own requests, clock you in and out. Each change is marked as made through ${app}. It can't approve or reject.`,
+      readOnly: (organization: string, app: string) =>
+        `${organization} allows read only, so ${app} can't make changes.`,
+      permissions: (app: string) =>
+        `${app} works with your permissions, so it never sees more than you do. Disconnect it any time in Settings.`,
+      privacy: "Privacy policy",
+      terms: "Terms",
+      allow: "Allow",
+      working: "Allowing…",
+      cancel: "Cancel",
+      failed: "Could not allow access. Try again.",
+      notEligible: (app: string) =>
+        `This organization no longer allows AI connections, so ${app} can't connect to it.`,
+      noOrganization: "Pick the organization first.",
+      pickAgain: "Pick an organization",
+    },
+  },
 };
 
 export type Dictionary = typeof en;

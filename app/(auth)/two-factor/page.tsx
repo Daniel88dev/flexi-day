@@ -11,6 +11,7 @@ import { AuthCard, AuthError, AuthSuccess } from "@/components/auth/auth-card";
 import { FieldInput } from "@/components/auth/field-input";
 import { useTranslation } from "@/lib/i18n/use-translation";
 import { safeRedirect } from "@/lib/auth/safe-redirect";
+import { goTo } from "@/lib/api/oauth-connect";
 import {
   defaultTwoFactorMethod,
   isChallengeDead,
@@ -37,6 +38,9 @@ function TwoFactorForm() {
   const params = useSearchParams();
 
   const redirectTo = safeRedirect(params.get("redirect"));
+  // Set when an AI app's connect flow sent the user here: the verify call
+  // carries it, and the backend answers with the flow's next page.
+  const oauthQuery = params.get("oauth_query");
   const methods = parseTwoFactorMethods(params.get("methods"));
   const otpOffered = methods.includes("otp");
 
@@ -93,7 +97,11 @@ function TwoFactorForm() {
     setInfo(null);
     setLoading(true);
     try {
-      const body = { code: code.trim(), trustDevice };
+      const body = {
+        code: code.trim(),
+        trustDevice,
+        ...(oauthQuery ? { oauth_query: oauthQuery } : {}),
+      };
       const result =
         method === "totp"
           ? await authClient.twoFactor.verifyTotp(body)
@@ -110,6 +118,9 @@ function TwoFactorForm() {
           setError(t.auth.twoFactor.errors[key]);
         }
         if (isChallengeDead(key, method)) setDead(true);
+      } else if (oauthQuery) {
+        const next = result.data as { url?: unknown } | null;
+        if (typeof next?.url === "string") goTo(next.url);
       } else {
         router.replace(redirectTo);
         router.refresh();
@@ -134,7 +145,7 @@ function TwoFactorForm() {
       description={description}
       footer={
         <Link
-          href="/sign-in"
+          href={oauthQuery ? `/oauth/sign-in/?${oauthQuery}` : "/sign-in"}
           className="font-bold hover:underline"
           style={{ color: "var(--primary)" }}
         >

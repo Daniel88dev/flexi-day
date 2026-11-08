@@ -113,12 +113,14 @@ function SocialButton({
   icon,
   callbackURL = "/dashboard",
   onError,
+  oauthQuery,
 }: {
   provider: Provider;
   label: string;
   icon: React.ReactNode;
   callbackURL?: string;
   onError?: (message: string) => void;
+  oauthQuery?: string;
 }) {
   const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
@@ -150,11 +152,24 @@ function SocialButton({
       // {API}/api/auth/callback/{provider}; better-auth sets the session cookie
       // and then sends the browser to callbackURL. On success the page
       // navigates away, so we only reset loading if the redirect never happens.
-      const { error } = await authClient.signIn.social({
-        provider,
-        callbackURL: absoluteCallbackURL,
-        errorCallbackURL,
-      });
+      // Inside an AI connection's flow the signed query rides along: the backend
+      // keeps it through the provider round trip and continues to the
+      // organization picker instead of `callbackURL`.
+      const { error } = oauthQuery
+        ? await authClient.$fetch<{ url?: string }>("/sign-in/social", {
+            method: "POST",
+            body: {
+              provider,
+              callbackURL: absoluteCallbackURL,
+              errorCallbackURL,
+              oauth_query: oauthQuery,
+            },
+          })
+        : await authClient.signIn.social({
+            provider,
+            callbackURL: absoluteCallbackURL,
+            errorCallbackURL,
+          });
       if (error) {
         setLoading(false);
         // Deliberately not error.message: better-auth always sets one, so a
@@ -190,10 +205,12 @@ export function AppleButton({
   label,
   callbackURL,
   onError,
+  oauthQuery,
 }: {
   label: string;
   callbackURL?: string;
   onError?: (message: string) => void;
+  oauthQuery?: string;
 }) {
   return (
     <SocialButton
@@ -201,6 +218,7 @@ export function AppleButton({
       label={label}
       callbackURL={callbackURL}
       onError={onError}
+      oauthQuery={oauthQuery}
       icon={<AppleIcon />}
     />
   );
@@ -210,10 +228,12 @@ export function GoogleButton({
   label,
   callbackURL,
   onError,
+  oauthQuery,
 }: {
   label: string;
   callbackURL?: string;
   onError?: (message: string) => void;
+  oauthQuery?: string;
 }) {
   return (
     <SocialButton
@@ -221,6 +241,7 @@ export function GoogleButton({
       label={label}
       callbackURL={callbackURL}
       onError={onError}
+      oauthQuery={oauthQuery}
       icon={<GoogleIcon />}
     />
   );
@@ -230,10 +251,12 @@ export function MicrosoftButton({
   label,
   callbackURL,
   onError,
+  oauthQuery,
 }: {
   label: string;
   callbackURL?: string;
   onError?: (message: string) => void;
+  oauthQuery?: string;
 }) {
   return (
     <SocialButton
@@ -241,6 +264,7 @@ export function MicrosoftButton({
       label={label}
       callbackURL={callbackURL}
       onError={onError}
+      oauthQuery={oauthQuery}
       icon={<MicrosoftIcon />}
     />
   );

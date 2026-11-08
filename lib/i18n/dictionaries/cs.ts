@@ -3098,4 +3098,78 @@ export const cs: Dictionary = {
       failed: "AI připojení se nepodařilo vypnout",
     },
   },
+  aiConnect: {
+    loading: "Načítání…",
+    invalid: {
+      title: "Platnost odkazu vypršela",
+      body: "Odkaz pro připojení platí 10 minut. Začněte s připojením znovu ve své AI aplikaci.",
+    },
+    requester: (app: string, host: string) => `${app} · ${host}`,
+    signIn: {
+      title: (app: string) => `Přihlaste se a připojte ${app}`,
+      description: (app: string) =>
+        `${app} chce používat váš účet Flexi Day. Dokud to na další stránce nepovolíte, nic se nesdílí.`,
+      noAccount: "Ještě nemáte účet?",
+      signUpElsewhere: "Založte si ho v nové kartě a pak se připojte znovu ze své aplikace.",
+    },
+    picker: {
+      title: (app: string) => `Ve které organizaci má ${app} pracovat?`,
+      legend: "Organizace",
+      access: { read: "Jen čtení", write: "Povoleno čtení i zápis" },
+      leftOut: {
+        TURNED_OFF: (organization: string) =>
+          `Chybí ${organization}. Její vlastník AI připojení nezapnul.`,
+        PLAN: (organization: string) =>
+          `Chybí ${organization}. Má tarif Free, který AI připojení nezahrnuje.`,
+      },
+      oneOrganization: (app: string) =>
+        `${app} pracuje v jedné organizaci. Pro jinou se připojte znovu.`,
+      continue: "Pokračovat",
+      working: "Pokračuji…",
+      cancel: "Zrušit",
+      failed: "Pokračovat se nepodařilo. Zkuste to znovu.",
+      notEligible: "Tato organizace už AI připojení nepovoluje. Vyberte jinou.",
+      signedOut: "Jste odhlášeni. Pro pokračování se přihlaste znovu.",
+      signInAgain: "Přihlásit se",
+    },
+    none: {
+      title: (app: string) => `${app} se zatím nemůže připojit`,
+      body: "Žádná z vašich organizací AI připojení nepovoluje. Zapíná je vlastník v nastavení organizace.",
+      owner: (organization: string, owner: string) => `${organization} · vlastník ${owner}`,
+      free: "Organizace s tarifem Free je zapnout nemohou.",
+      goBack: (app: string) => `Zpět do ${app}`,
+    },
+    consent: {
+      title: (app: string) => `Povolit aplikaci ${app} používat váš účet Flexi Day?`,
+      app: "Aplikace",
+      checked: (host: string) => `Adresa ověřena: ${host}`,
+      notVerified: "Název není ověřený",
+      organization: "Organizace",
+      change: "Změnit",
+      afterwards: "Potom",
+      goesBackTo: (host: string) => `Vrátíte se na ${host}`,
+      localApp: (app: string) =>
+        `Tím předáte přístup programu v tomto počítači. Povolte to jen tehdy, když jste připojení z aplikace ${app} právě spustili.`,
+      ableTo: (app: string) => `${app} bude moct`,
+      read: "Vidět, co vidíte vy",
+      readHint: "Vaše žádosti a zůstatky, kdo je pryč, docházku, adresář.",
+      write: "Provádět změny za vás",
+      writeHint: (app: string) =>
+        `Vytvářet a rušit vaše vlastní žádosti, zaznamenat váš příchod a odchod. Každá změna je označená jako provedená přes ${app}. Schvalovat ani zamítat nemůže.`,
+      readOnly: (organization: string, app: string) =>
+        `${organization} povoluje jen čtení, takže ${app} nemůže nic měnit.`,
+      permissions: (app: string) =>
+        `${app} pracuje s vašimi oprávněními, takže nikdy neuvidí víc než vy. Odpojit ji můžete kdykoli v Nastavení.`,
+      privacy: "Zásady ochrany osobních údajů",
+      terms: "Podmínky",
+      allow: "Povolit",
+      working: "Povoluji…",
+      cancel: "Zrušit",
+      failed: "Přístup se nepodařilo povolit. Zkuste to znovu.",
+      notEligible: (app: string) =>
+        `Tato organizace už AI připojení nepovoluje, takže se k ní ${app} nemůže připojit.`,
+      noOrganization: "Nejdřív vyberte organizaci.",
+      pickAgain: "Vybrat organizaci",
+    },
+  },
 };

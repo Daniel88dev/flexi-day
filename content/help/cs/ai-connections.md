@@ -1,6 +1,6 @@
 ---
 id: ai-connections
-translatedFrom: "e14219c923d0"
+translatedFrom: "60ab9800a7db"
 title: Připoj k Flexi Day AI aplikaci
 summary: Nech AI aplikaci, jako je Claude, ChatGPT nebo Cursor, číst tvoje údaje ve Flexi Day a dělat za tebe změny.
 keywords:
@@ -70,10 +70,24 @@ potvrdit, protože odpojí aplikace. Každá změna se zaznamená i s tím, kdo 
 1. Otevři {{ui:nav.settings}} a najdi kartu AI připojení.
 2. Zvol „Připojit AI aplikaci“ a zkopíruj adresu serveru, `https://api.flexi-day.com/mcp`.
 3. V AI aplikaci přidej vlastní konektor s touto adresou.
-4. Když tě aplikace vyzve, přihlas se do Flexi Day, vyber organizaci a povol přístup.
+4. Aplikace otevře stránku Flexi Day, která ji jmenuje. Přihlas se jako obvykle. Pokud používáš
+   dvoufázové ověření, Flexi Day si řekne o kód. Dokud přístup nepovolíš, nic se nesdílí.
+5. Vyber organizaci, ve které má aplikace pracovat. U každé vidíš, jaký přístup povoluje.
+   Organizace, kde vlastník AI připojení nezapnul nebo které mají tarif Free, jsou uvedené i s
+   důvodem. Pokud to nepovoluje žádná, vrať se do aplikace.
+6. Zkontroluj stránku se souhlasem a zvol „{{ui:aiConnect.consent.allow}}“.
 
-Pokud patříš do více organizací, každé připojení platí pro jednu z nich. Další přidáš novým
+Každé připojení platí pro jednu organizaci a vybíráš ji při každém připojení. Další přidáš novým
 připojením.
+
+### Stránka se souhlasem
+
+- Když Flexi Day mohl adresu aplikace ověřit, stránka ukáže „Adresa ověřena“ i s adresou. Jinak
+  napíše „{{ui:aiConnect.consent.notVerified}}“: název uvádí sama aplikace.
+- Když je aplikace program v tvém počítači, třeba Claude Code nebo Cursor, upozornění tě požádá,
+  abys ji povolil jen tehdy, když jsi připojení z ní právě spustil.
+- „{{ui:aiConnect.consent.read}}“ je součástí každého připojení. „{{ui:aiConnect.consent.write}}“ je
+  zaškrtnuté; odškrtni ho a připojíš jen pro čtení. V organizaci s nastavením Jen čtení se nenabízí.
 
 ## Co připojená aplikace umí
 
