@@ -18,6 +18,12 @@ approval before starting any non-trivial implementation.
 server actions, no `next/image` optimisation, no middleware. Every request goes to `flexi-day-be`
 via `NEXT_PUBLIC_API_URL` (local: `http://localhost:8080`), in dev as well as production.
 
+One kind of route handler survives the export: a `GET` with `export const dynamic = "force-static"`
+that reads no request, which the build writes out as a file. `app/(help)/help/kb.json/route.ts` is
+the one there is: the knowledge base the backend fetches, built from `content/help/` at
+`out/help/kb.json` and served from the same path by `next dev`. Anything that reads the request or
+answers a method other than `GET` breaks the export, so it stays out.
+
 The bucket, the distribution and its redirect function are Terraform in `terraform/`, applied by
 hand. See [`docs/terraform.md`](docs/terraform.md).
 
