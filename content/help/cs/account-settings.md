@@ -1,6 +1,6 @@
 ---
 id: account-settings
-translatedFrom: "d6243685652f"
+translatedFrom: "e5904680af53"
 title: Změna nastavení
 summary: E-mailová oznámení, vzhled kalendáře na přehledu, jazyk a motiv, a kde najdeš ostatní nastavení účtu.
 keywords:
@@ -33,9 +33,10 @@ nastavení patří k tvému účtu, takže platí ve všech organizacích, kde p
 ## E-mailová oznámení
 
 „{{ui:settings.emailNotifications}}“ řídí e-maily, které Flexi Day posílá k žádostem: žádosti o
-schválení pro schvalovatele, rozhodnutí o tvých žádostech a zrušení schváleného volna. Když je
-vypneš, dostaneš tyto novinky jen v aplikaci, ve zvonečku v horní liště, a v iPhonu, pokud aplikaci
-používáš. E-maily k účtu, třeba potvrzení adresy nebo obnovení hesla, chodí vždy.
+schválení pro schvalovatele, rozhodnutí o tvých žádostech, zrušení a komentáře. Když je vypneš,
+dostaneš tyto novinky jen v aplikaci, ve zvonečku v horní liště, a v iPhonu, pokud aplikaci
+používáš. E-maily k účtu, třeba potvrzení adresy nebo obnovení hesla, chodí vždy. Viz
+[Oznámení a e-maily](help:notifications).
 
 ## Kalendář na přehledu
 
@@ -63,7 +64,8 @@ bys je změnil.
 
 ## Další nastavení na této stránce
 
-- **Narozeniny**: jestli tvoje skupiny uvidí tvoje narozeniny ve svém kalendáři.
+- **Narozeniny**: jestli tvoje skupiny uvidí tvoje narozeniny ve svém kalendáři. Viz
+  [Přidání narozenin a jejich sdílení](help:birthdays).
 - **{{ui:settings.connectedAccounts.title}}**, **{{ui:settings.changePassword}}** a
   **{{ui:settings.twoFactor.title}}**: viz [Přihlášení do Flexi Day](help:sign-in).
 - **{{ui:settings.yourData.title}}** a **{{ui:settings.deleteAccount.title}}**: viz

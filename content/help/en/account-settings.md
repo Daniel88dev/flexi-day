@@ -20,7 +20,7 @@ keywords:
     calendar layout,
     default group,
   ]
-related: [sign-in, delete-your-account, dashboard-calendar]
+related: [sign-in, delete-your-account, dashboard-calendar, notifications, birthdays]
 goldenQuestions:
   - question: How do I stop getting emails about requests?
     expectedArticles: [account-settings]
@@ -36,10 +36,10 @@ to your account, so they apply in every organization you work in.
 ## Email notifications
 
 "{{ui:settings.emailNotifications}}" controls the emails Flexi Day sends about requests: approval
-requests for approvers, decisions on your requests, and cancellations of approved time off. Turn it
-off and these updates reach you only in the app, in the bell in the top bar, and on your iPhone if
-you use the app. Account emails, such as confirming your address or resetting your password, always
-send.
+requests for approvers, decisions on your requests, cancellations, and comments. Turn it off and
+these updates reach you only in the app, in the bell in the top bar, and on your iPhone if you use
+the app. Account emails, such as confirming your address or resetting your password, always send. See
+[Notifications and emails](help:notifications).
 
 ## The dashboard calendar
 
@@ -66,7 +66,8 @@ yet.
 
 ## Other settings on this page
 
-- **Birthday**: whether your groups see your birthday on their calendar.
+- **Birthday**: whether your groups see your birthday on their calendar. See
+  [Add your birthday and share it](help:birthdays).
 - **{{ui:settings.connectedAccounts.title}}**, **{{ui:settings.changePassword}}** and
   **{{ui:settings.twoFactor.title}}**: see [Sign in to Flexi Day](help:sign-in).
 - **{{ui:settings.yourData.title}}** and **{{ui:settings.deleteAccount.title}}**: see
