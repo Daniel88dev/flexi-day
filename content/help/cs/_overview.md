@@ -1,5 +1,5 @@
 ---
-translatedFrom: "d5bdbf199991"
+translatedFrom: "b3b3f24ce6f0"
 ---
 
 Flexi Day je sdílený kalendář pro volno a docházku. Lidé patří do organizace, která má jednu nebo
@@ -14,8 +14,8 @@ více skupin. Každá skupina má vlastní pracovní dny, zemi svátků, členy 
   skupiny nebo člověka a nabízí export do Excelu.
 - **Synchronizace kalendáře.** Volno se může zobrazovat v kalendářích Google nebo Microsoft přes
   odběr nebo přímou synchronizaci.
-- **Docházka.** Pokud ji organizace zapne, lidé zaznamenávají příchod a odchod a schvalovatelé vidí
-  odpracovaný čas na stránce {{ui:nav.teamAttendance}}.
+- **Docházka.** Pokud ji organizace zapne, lidé zaznamenávají příchod a odchod a správci
+  skupin a správci organizace vidí odpracovaný čas na stránce {{ui:nav.teamAttendance}}.
 - **Adresář.** V tarifu Enterprise vede adresář lidí pracovní poměry a profily.
 - **Skupinové akce a narozeniny** se zobrazují v kalendáři vedle volna.
 

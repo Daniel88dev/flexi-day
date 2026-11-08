@@ -1,13 +1,1 @@
-[
-  "/calendar-sync",
-  "/directory",
-  "/directory/person",
-  "/directory/person/edit",
-  "/my-attendance",
-  "/report",
-  "/report/member",
-  "/support",
-  "/support/group",
-  "/support/organization",
-  "/team-attendance"
-]
+["/support", "/support/group", "/support/organization"]

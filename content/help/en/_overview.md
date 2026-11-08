@@ -11,8 +11,8 @@ approvers.
   time off for a group or a person, with an Excel export.
 - **Calendar sync.** Time off can appear in Google or Microsoft calendars through a feed or a
   direct sync.
-- **Attendance.** Where the organization turns it on, people clock in and out, and approvers see
-  worked time on {{ui:nav.teamAttendance}}.
+- **Attendance.** Where the organization turns it on, people clock in and out, and group admins
+  and organization administrators see worked time on {{ui:nav.teamAttendance}}.
 - **Directory.** On Enterprise, the people directory keeps employments and profiles.
 - **Group events and birthdays** show on the calendar beside time off.
 
