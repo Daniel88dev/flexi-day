@@ -1,6 +1,6 @@
 ---
 id: assistant
-translatedFrom: "c586c36116ed"
+translatedFrom: "d28b95a0fa16"
 title: Co umí Asistent
 summary: Zeptej se Asistenta na Flexi Day vlastními slovy a nech ho připravit změny, které potvrdíš.
 keywords:
@@ -17,6 +17,9 @@ keywords:
     zapnout,
     smlouva,
     dát vědět členům,
+    panel,
+    minulé chaty,
+    nový chat,
   ]
 goldenQuestions:
   - question: Může mi Asistent zadat den volna?
@@ -33,8 +36,26 @@ Asistent je chat ve webové aplikaci Flexi Day. Zeptej se ho česky nebo anglick
 ## Kdo ho může používat
 
 Asistent je součástí tarifu Enterprise. Je vypnutý, dokud ho vlastník nezapne v kartě AI na stránce
-{{ui:nav.organization}}. Jakmile je zapnutý, najde každý člen tlačítko Asistent v horní liště na
-každé stránce. Aplikace pro iPhone ho nemá.
+{{ui:nav.organization}}. Jakmile je zapnutý, najde každý člen tlačítko „{{ui:assistant.button}}“ v
+horní liště na každé stránce. Aplikace pro iPhone ho nemá.
+
+Do té doby členové tlačítko nevidí. Na tarifu bez Enterprise ho vidí jen vlastník a dozví se z něj,
+co Enterprise přidává. Na Enterprise s vypnutým Asistentem ho vidí vlastník a správci organizace, s
+odkazem na nastavení organizace.
+
+## Jak se panel používá
+
+Tlačítko otevře panel na pravé straně stránky, takže můžeš vedle něj dál pracovat. V telefonu
+zabere celou obrazovku. Nový chat ti nabídne pár otázek na začátek. Pokud má Asistenta víc tvých
+organizací, vyber organizaci před první zprávou: chat zůstává v té, ve které začal.
+
+Nad odpovědí vidíš každý krok, který Asistent udělal, třeba kontrolu zůstatku. Dokud se odpověď
+píše, další zprávu poslat nemůžeš. Když spojení vypadne, panel ukáže, že se odpověď ještě píše, a
+naváže na ni.
+
+„{{ui:assistant.pastChats}}“ ukazuje tvoje chaty v částech {{ui:assistant.history.today}},
+{{ui:assistant.history.thisWeek}} a {{ui:assistant.history.earlier}}. Chat tam můžeš smazat; vrátit
+ho nepůjde. „{{ui:assistant.newChat}}“ začne nový.
 
 ## Zapnutí a vypnutí
 

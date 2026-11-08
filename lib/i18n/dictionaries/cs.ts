@@ -3201,4 +3201,131 @@ export const cs: Dictionary = {
       offNone: "Teď není připojená žádná aplikace, takže se nic neodpojí.",
     },
   },
+  assistant: {
+    button: "Asistent",
+    close: "Zavřít Asistenta",
+    newChat: "Nový chat",
+    pastChats: "Tvoje chaty",
+    backToChat: "Zpět do chatu",
+    untitled: "Nový chat",
+    aiLine: "Asistent je AI. Může se mýlit. Nic se nezmění, dokud to nepotvrdíš.",
+    composer: {
+      label: "Napiš Asistentovi",
+      send: "Odeslat",
+    },
+    empty: {
+      title: "Ptej se na dovolenou, docházku nebo svůj tým",
+      introBefore: "Odpovědi pocházejí z nápovědy Flexi Day a z toho, co už vidíš v organizaci",
+      introAfter: ". Cokoli změní, čeká na tvoje potvrzení.",
+      suggestions: [
+        "Kdo je příští týden pryč?",
+        "Kolik dní dovolené mi zbývá?",
+        "Jaké mám letos žádosti?",
+      ],
+    },
+    picker: {
+      question: "V jaké organizaci se ptáš? Chat zůstává v té, ve které začal.",
+      needsEnterprise: (organization: string) =>
+        `${organization} tu není: Asistent potřebuje Enterprise.`,
+      turnedOff: (organization: string) => `${organization} tu není: Asistent je tam vypnutý.`,
+    },
+    thinking: "Připravuji odpověď",
+    stillWriting: "Odpověď se ještě píše. Celá se za chvíli objeví.",
+    tools: {
+      get_my_balances: {
+        running: "Kontroluje tvůj zůstatek",
+        done: "Zkontroloval tvůj zůstatek",
+        failed: "Zůstatek se nepodařilo zjistit",
+      },
+      list_my_requests: {
+        running: "Hledá tvoje žádosti",
+        done: "Našel tvoje žádosti",
+        failed: "Žádosti se nepodařilo najít",
+      },
+      list_who_is_away: {
+        running: "Zjišťuje, kdo je pryč",
+        done: "Zjistil, kdo je pryč",
+        failed: "Nepodařilo se zjistit, kdo je pryč",
+      },
+      get_my_attendance: {
+        running: "Kontroluje tvoji docházku",
+        done: "Zkontroloval tvoji docházku",
+        failed: "Docházku se nepodařilo zjistit",
+      },
+      get_my_worked_time: {
+        running: "Sčítá odpracovaný čas",
+        done: "Sečetl odpracovaný čas",
+        failed: "Odpracovaný čas se nepodařilo sečíst",
+      },
+      list_group_events: {
+        running: "Hledá skupinové události",
+        done: "Našel skupinové události",
+        failed: "Skupinové události se nepodařilo najít",
+      },
+      list_birthdays: {
+        running: "Hledá narozeniny",
+        done: "Našel narozeniny",
+        failed: "Narozeniny se nepodařilo najít",
+      },
+      list_directory_people: {
+        running: "Prohledává adresář",
+        done: "Prohledal adresář",
+        failed: "Adresář se nepodařilo prohledat",
+      },
+      get_directory_profile: {
+        running: "Otevírá profil",
+        done: "Otevřel profil",
+        failed: "Profil se nepodařilo otevřít",
+      },
+      show_directory_section: {
+        running: "Otevírá část profilu",
+        done: "Otevřel část profilu",
+        failed: "Část profilu se nepodařilo otevřít",
+      },
+      other: {
+        running: "Něco dohledává",
+        done: "Něco dohledal",
+        failed: "Nepodařilo se to dohledat",
+      },
+    },
+    notices: {
+      ASSISTANT_ERROR: "Něco se pokazilo a odpověď se zastavila. Zkus to znovu.",
+    },
+    sendErrors: {
+      ASSISTANT_TURN_RUNNING: "Ještě se píše jiná odpověď. Počkej, až skončí.",
+      AI_ORGANIZATION_NOT_ELIGIBLE:
+        "Tato organizace teď Asistenta nepovoluje. Chaty si můžeš dál číst.",
+      fallback: "Neodesláno. Zkontroluj připojení a zkus to znovu.",
+    },
+    history: {
+      empty: "Zatím žádné chaty. Chaty se uchovávají 180 dní.",
+      today: "Dnes",
+      thisWeek: "Tento týden",
+      earlier: "Dříve",
+      remove: (title: string) => `Smazat ${title}`,
+      confirm: (title: string) => `Smazat „${title}“? Nepůjde to vrátit.`,
+      confirmDelete: "Smazat",
+      keep: "Ponechat",
+      failed: "Chat se nepodařilo smazat. Zkus to znovu.",
+    },
+    loading: "Otevírám chat",
+    upgrade: {
+      title: "Asistent je součástí Enterprise",
+      body: (organization: string) =>
+        `S Enterprise se každý v organizaci ${organization} může v chatu česky nebo anglicky zeptat, kdo je pryč, zjistit zůstatek, poslat nebo schválit žádost a přihlásit se do práce. Každá změna čeká na jeho potvrzení.`,
+      points: [
+        "Zahrnuto každý týden, bez poplatku za zprávu",
+        "Vidí jen to, co každý člověk už vidí",
+        "Zapínáte ho vy a kdykoli ho můžete vypnout",
+      ],
+      cta: "Zobrazit Enterprise",
+      onlyYou: "Vidíte to jen vy. Členové Asistenta neuvidí, dokud ho nezapnete.",
+    },
+    off: {
+      title: (organization: string) => `Asistent je v organizaci ${organization} vypnutý`,
+      body: "Váš tarif ho zahrnuje. Zapněte ho a všichni se budou moct v chatu ptát na dovolenou a docházku. Odpovědi běží na Claude od společnosti Anthropic a chaty se uchovávají 180 dní.",
+      cta: "Otevřít nastavení organizace",
+      onlyAdmins: "Vidíte to jen vy a správci organizace.",
+    },
+  },
 };

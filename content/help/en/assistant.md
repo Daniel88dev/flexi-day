@@ -20,6 +20,9 @@ keywords:
     turn on,
     agreement,
     tell members,
+    panel,
+    past chats,
+    new chat,
   ]
 related: [ai-connections]
 goldenQuestions:
@@ -38,8 +41,27 @@ what you can see, nothing more.
 ## Who can use it
 
 The Assistant comes with the Enterprise plan. It is off until the owner turns it on in the AI card
-on the {{ui:nav.organization}} page. Once it is on, every member finds an Assistant button in the
-top bar on every page. The iPhone app doesn't have it.
+on the {{ui:nav.organization}} page. Once it is on, every member finds an "{{ui:assistant.button}}"
+button in the top bar on every page. The iPhone app doesn't have it.
+
+Until then, members don't see the button. On a plan without Enterprise only the owner sees it, and
+it explains what Enterprise adds. On Enterprise with the Assistant off, the owner and org admins see
+it, with a link to the organization settings.
+
+## Using the panel
+
+The button opens a panel on the right of the page, so you can keep working beside it. On a phone it
+fills the screen. A new chat suggests a few questions to start with. If more than one of your
+organizations has the Assistant, pick the organization before your first message: a chat stays in
+the one it starts in.
+
+You see each step the Assistant takes, such as checking your balance, above its answer. While an
+answer is being written you can't send another message. If the connection drops, the panel says the
+answer is still being written and picks it up again.
+
+"{{ui:assistant.pastChats}}" lists your chats under {{ui:assistant.history.today}},
+{{ui:assistant.history.thisWeek}} and {{ui:assistant.history.earlier}}. You can delete a chat there;
+it can't be brought back. "{{ui:assistant.newChat}}" starts a fresh one.
 
 ## Turning it on and off
 

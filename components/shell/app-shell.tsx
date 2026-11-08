@@ -5,6 +5,7 @@ import { BottomBar } from "@/components/shell/bottom-bar";
 import { TopBar } from "@/components/shell/top-bar";
 import { GraceBanner } from "@/components/billing/grace-banner";
 import { AiAgreementBanner } from "@/components/ai/ai-agreement-banner";
+import { AssistantPanel } from "@/components/assistant/assistant-panel";
 import { Footer } from "@/components/footer";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -28,6 +29,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <Footer containerClassName="max-w-[1340px] max-md:px-4" />
         </SidebarInset>
         <BottomBar />
+        <AssistantPanel />
       </SidebarProvider>
     </TooltipProvider>
   );

@@ -6,6 +6,7 @@ import { LocaleToggle } from "@/components/ui/LocaleToggle";
 import { ModeToggle } from "@/components/ui/ModeToggle";
 import { UserMenu } from "@/components/user-menu";
 import { NewMenu } from "./new-menu";
+import { AssistantButton } from "@/components/assistant/assistant-panel";
 import { useShellNav } from "@/lib/navigation/use-shell-nav";
 
 export function TopBar() {
@@ -44,6 +45,7 @@ export function TopBar() {
         <div className="flex-1" />
 
         <div className="flex items-center gap-2.5">
+          <AssistantButton />
           <div className="max-md:hidden">
             <NewMenu />
           </div>

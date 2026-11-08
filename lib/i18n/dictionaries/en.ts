@@ -3183,6 +3183,134 @@ export const en = {
       offNone: "No app is connected now, so nothing is disconnected.",
     },
   },
+  assistant: {
+    button: "Assistant",
+    close: "Close the Assistant",
+    newChat: "New chat",
+    pastChats: "Your chats",
+    backToChat: "Back to the chat",
+    untitled: "New chat",
+    aiLine: "The Assistant is an AI. Answers can be wrong. Nothing changes until you confirm it.",
+    composer: {
+      label: "Message the Assistant",
+      send: "Send",
+    },
+    empty: {
+      title: "Ask about time off, attendance or your team",
+      introBefore: "Answers come from Flexi Day's help and what you can already see in",
+      introAfter: ". Anything it changes waits for your OK.",
+      suggestions: [
+        "Who's away next week?",
+        "How many vacation days do I have left?",
+        "What requests do I have this year?",
+      ],
+    },
+    picker: {
+      question: "Ask in which organization? A chat stays in the one it starts in.",
+      needsEnterprise: (organization: string) =>
+        `${organization} isn't listed: the Assistant needs Enterprise.`,
+      turnedOff: (organization: string) =>
+        `${organization} isn't listed: the Assistant is off there.`,
+    },
+    thinking: "Working on it",
+    stillWriting: "Still writing. The full answer appears in a moment.",
+    tools: {
+      get_my_balances: {
+        running: "Checking your balance",
+        done: "Checked your balance",
+        failed: "Couldn't check your balance",
+      },
+      list_my_requests: {
+        running: "Looking up your requests",
+        done: "Looked up your requests",
+        failed: "Couldn't look up your requests",
+      },
+      list_who_is_away: {
+        running: "Looking up who's away",
+        done: "Looked up who's away",
+        failed: "Couldn't look up who's away",
+      },
+      get_my_attendance: {
+        running: "Checking your attendance",
+        done: "Checked your attendance",
+        failed: "Couldn't check your attendance",
+      },
+      get_my_worked_time: {
+        running: "Adding up your worked time",
+        done: "Added up your worked time",
+        failed: "Couldn't add up your worked time",
+      },
+      list_group_events: {
+        running: "Looking up group events",
+        done: "Looked up group events",
+        failed: "Couldn't look up group events",
+      },
+      list_birthdays: {
+        running: "Looking up birthdays",
+        done: "Looked up birthdays",
+        failed: "Couldn't look up birthdays",
+      },
+      list_directory_people: {
+        running: "Searching the directory",
+        done: "Searched the directory",
+        failed: "Couldn't search the directory",
+      },
+      get_directory_profile: {
+        running: "Opening a profile",
+        done: "Opened a profile",
+        failed: "Couldn't open the profile",
+      },
+      show_directory_section: {
+        running: "Opening a profile section",
+        done: "Opened a profile section",
+        failed: "Couldn't open the profile section",
+      },
+      other: {
+        running: "Looking something up",
+        done: "Looked something up",
+        failed: "Couldn't look it up",
+      },
+    },
+    notices: {
+      ASSISTANT_ERROR: "Something went wrong and the answer stopped. Try again.",
+    },
+    sendErrors: {
+      ASSISTANT_TURN_RUNNING: "Another answer is still being written. Wait for it to finish.",
+      AI_ORGANIZATION_NOT_ELIGIBLE:
+        "This organization doesn't allow the Assistant right now. Your chats stay here to read.",
+      fallback: "Not sent. Check your connection and try again.",
+    },
+    history: {
+      empty: "No chats yet. Chats are kept for 180 days.",
+      today: "Today",
+      thisWeek: "This week",
+      earlier: "Earlier",
+      remove: (title: string) => `Delete ${title}`,
+      confirm: (title: string) => `Delete “${title}”? It can't be brought back.`,
+      confirmDelete: "Delete",
+      keep: "Keep",
+      failed: "Couldn't delete the chat. Try again.",
+    },
+    loading: "Opening chat",
+    upgrade: {
+      title: "The Assistant comes with Enterprise",
+      body: (organization: string) =>
+        `On Enterprise, everyone in ${organization} can ask who's away, check a balance, send or approve a request and clock in by chat, in English or Czech. Each change waits for their confirmation.`,
+      points: [
+        "Included each week, with no per-message charge",
+        "It sees only what each person can already see",
+        "You turn it on, and you can turn it off at any time",
+      ],
+      cta: "See Enterprise",
+      onlyYou: "Only you see this. Members don't see the Assistant until it's on.",
+    },
+    off: {
+      title: (organization: string) => `The Assistant is off for ${organization}`,
+      body: "Your plan includes it. Turn it on to let everyone ask about time off and attendance by chat. Answers run on Anthropic's Claude, and chats are kept for 180 days.",
+      cta: "Open organization settings",
+      onlyAdmins: "Only you and org admins see this.",
+    },
+  },
 };
 
 export type Dictionary = typeof en;
