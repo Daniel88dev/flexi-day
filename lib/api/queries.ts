@@ -247,6 +247,7 @@ import {
   syncCalendarNow,
   type CalendarProviderSlug,
 } from "./calendar-connections";
+import { getAiAvailability } from "./ai-features";
 import { browserTimezone } from "@/lib/attendance/timezones";
 import type {
   CreateGroupInput,
@@ -413,6 +414,7 @@ export const qk = {
   supportOrganization: (organizationId: string) =>
     ["support-organization", organizationId] as const,
   supportGroup: (groupId: string) => ["support-group", groupId] as const,
+  aiAvailability: () => ["ai-availability"] as const,
 };
 
 function invalidateVacationDependants(qc: ReturnType<typeof useQueryClient>) {
@@ -2117,5 +2119,14 @@ export function useAcceptDirectoryAgreement(organizationId: string | null) {
       qc.setQueryData(qk.directoryState(organizationId), state);
       qc.invalidateQueries({ queryKey: ["directory"] });
     },
+  });
+}
+
+/** The kill switches and preview list change only on a deploy, so one answer serves the session. */
+export function useAiAvailability() {
+  return useQuery({
+    queryKey: qk.aiAvailability(),
+    queryFn: getAiAvailability,
+    staleTime: Infinity,
   });
 }
