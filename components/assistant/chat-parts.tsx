@@ -4,11 +4,14 @@ import { useState, type ReactNode } from "react";
 import Link from "next/link";
 import { ArrowUp, Check, ChevronDown, Loader2, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { formatUsd } from "@/lib/api/ai-settings";
 import {
   chatGroup,
+  weeklyResetLabel,
   type AssistantChat,
   type AssistantOrganization,
   type DisplayMessage,
+  type WeeklyLimitState,
 } from "@/lib/api/assistant";
 import { useTranslation } from "@/lib/i18n/use-translation";
 import { cn } from "@/lib/utils";
@@ -19,13 +22,17 @@ type Translations = ReturnType<typeof useTranslation>["t"];
 type Copy = Translations["assistant"];
 type ToolName = Exclude<keyof Copy["tools"], "other">;
 
+/** A tool line whose result the Weekly limit kept from being sent; the notice after it says why. */
+const TOOL_STOPPED = "stopped";
+
 export function toolLine(copy: Copy, name: string | null, status: LiveTool["status"]): string {
   const forms = name && name in copy.tools ? copy.tools[name as ToolName] : copy.tools.other;
   return forms[status];
 }
 
 /** The fixed words of a notice the backend records or streams by code; never model output. */
-export function noticeText(t: Translations, code: string | null): string {
+export function noticeText(t: Translations, code: string | null, organizationName: string): string {
+  if (code === "ASSISTANT_WEEKLY_LIMIT_REACHED") return t.assistant.limit.stopped(organizationName);
   const fixed: Record<string, string> = { ...t.assistant.notices, ...t.assistantBoundary.notices };
   return (code ? fixed[code] : undefined) ?? t.assistant.notices.ASSISTANT_ERROR;
 }
@@ -114,7 +121,7 @@ function Notice({ text }: { text: string }) {
   );
 }
 
-function LiveTurnView({ turn }: { turn: LiveTurn }) {
+function LiveTurnView({ turn, organizationName }: { turn: LiveTurn; organizationName: string }) {
   const { t } = useTranslation();
   const copy = t.assistant;
   const done = turn.tools.filter((tool) => tool.status !== "running");
@@ -131,7 +138,7 @@ function LiveTurnView({ turn }: { turn: LiveTurn }) {
           style={{ background: "var(--primary)" }}
         />
       ) : null}
-      {turn.notice ? <Notice text={noticeText(t, turn.notice)} /> : null}
+      {turn.notice ? <Notice text={noticeText(t, turn.notice, organizationName)} /> : null}
       {turn.phase === "reconnecting" ? (
         <StatusLine>{copy.stillWriting}</StatusLine>
       ) : running ? (
@@ -152,12 +159,14 @@ export function MessageList({
   live,
   failed,
   onResend,
+  organizationName,
 }: {
   messages: DisplayMessage[];
   live: LiveTurn | null;
   failed: FailedSend | null;
   /** Sends a message that wasn't sent again, as it was. */
   onResend?: (text: string) => void;
+  organizationName: string;
 }) {
   const { t } = useTranslation();
   const copy = t.assistant;
@@ -170,6 +179,7 @@ export function MessageList({
 
   for (const message of messages) {
     if (message.kind === "tool") {
+      if (message.toolOutcome === TOOL_STOPPED) continue;
       const status = message.toolOutcome && message.toolOutcome !== "ok" ? "failed" : "done";
       steps.push(toolLine(copy, message.toolName, status));
       continue;
@@ -194,7 +204,7 @@ export function MessageList({
         />
       );
     } else {
-      rows.push(<Notice key={message.id} text={noticeText(t, message.code)} />);
+      rows.push(<Notice key={message.id} text={noticeText(t, message.code, organizationName)} />);
     }
   }
   flushSteps("steps-end");
@@ -227,7 +237,7 @@ export function MessageList({
       {live?.userText && !(lastMessage?.kind === "user" && lastMessage.text === live.userText) ? (
         <UserBubble text={live.userText} />
       ) : null}
-      {live ? <LiveTurnView turn={live} /> : null}
+      {live ? <LiveTurnView turn={live} organizationName={organizationName} /> : null}
       {failed ? <UserBubble text={failed.text} error={sendError} retry={retry} /> : null}
     </div>
   );
@@ -287,6 +297,108 @@ export function Composer({ busy, onSend }: { busy: boolean; onSend: (text: strin
       <p className="px-2 text-[12.5px]" style={{ color: "var(--text-faint)" }}>
         {copy.aiLine}
       </p>
+    </div>
+  );
+}
+
+/* ---------------------------------------------------------------- Weekly limit */
+
+/**
+ * From 80% of the Weekly limit, under the composer: a bar at the true ratio and
+ * the reset in the viewer's time zone. Owners and org admins also see the
+ * amounts; members see the percentage only.
+ */
+export function NearLimit({
+  organizationName,
+  limit,
+}: {
+  organizationName: string;
+  limit: WeeklyLimitState;
+}) {
+  const { t, locale } = useTranslation();
+  const copy = t.assistant.limit;
+  const reset = weeklyResetLabel(limit.resetsAt, t.common.dateLocale);
+  const text =
+    limit.usedMicroUsd !== null && limit.limitMicroUsd !== null
+      ? copy.nearAmounts(
+          organizationName,
+          formatUsd(locale, limit.usedMicroUsd),
+          formatUsd(locale, limit.limitMicroUsd),
+          limit.percent,
+          reset
+        )
+      : copy.near(organizationName, limit.percent, reset);
+  return (
+    <div
+      data-testid="assistant-near-limit"
+      className="flex items-center gap-2.5 px-2 text-[12.5px]"
+      style={{ color: "var(--text-muted)" }}
+    >
+      <span
+        className="relative h-1 w-14 shrink-0 overflow-hidden rounded-full"
+        style={{ background: "var(--border-soft)" }}
+        role="progressbar"
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={limit.percent}
+        aria-label={text}
+      >
+        <span
+          className="absolute inset-y-0 left-0 rounded-full"
+          style={{ width: `${limit.percent}%`, background: "var(--warm)" }}
+        />
+      </span>
+      <span>{text}</span>
+    </div>
+  );
+}
+
+/** Replaces the composer while the organization's Weekly limit is reached. */
+export function LimitReached({
+  organizationName,
+  limit,
+  canSeeUsage,
+}: {
+  organizationName: string;
+  limit: WeeklyLimitState;
+  canSeeUsage: boolean;
+}) {
+  const { t } = useTranslation();
+  const copy = t.assistant.limit;
+  return (
+    <div
+      role="status"
+      className="rounded-[var(--radius-lg)] px-4 py-3"
+      style={{ background: "var(--warm-soft)" }}
+    >
+      <div className="text-[14px] leading-[1.5]">
+        <span className="font-semibold">
+          {copy.paused(weeklyResetLabel(limit.resetsAt, t.common.dateLocale))}
+        </span>{" "}
+        {copy.pausedBody(organizationName)}
+      </div>
+      {canSeeUsage ? (
+        <Link
+          href="/ai-usage/"
+          className="mt-1 inline-block text-[13.5px] font-semibold underline-offset-2 hover:underline"
+        >
+          {copy.seeUsage}
+        </Link>
+      ) : null}
+    </div>
+  );
+}
+
+/** Replaces the composer while Anthropic refuses for its spend limit or credits. */
+export function AssistantUnavailable() {
+  const { t } = useTranslation();
+  return (
+    <div
+      role="status"
+      className="rounded-[var(--radius-lg)] px-4 py-3 text-[14px] leading-[1.5]"
+      style={{ background: "var(--surface-2)" }}
+    >
+      {t.assistant.unavailable}
     </div>
   );
 }

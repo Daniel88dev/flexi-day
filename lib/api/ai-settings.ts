@@ -23,7 +23,13 @@ export type AiSettings = {
   isOwner: boolean;
   ownerName: string;
   plan: AiPlan;
-  assistant: { enabled: boolean; enabledAt: string | null; planAllows: boolean };
+  assistant: {
+    enabled: boolean;
+    enabledAt: string | null;
+    planAllows: boolean;
+    /** The organization's Weekly limit on Assistant Usage, in micro-USD. */
+    weeklyLimitMicroUsd: number;
+  };
   /**
    * `planAllows`: any Paid plan, so the owner may raise it. `grants`: every AI
    * connection in the organization, which the lower and off dialogs name.
@@ -126,4 +132,11 @@ export function nextWeeklyReset(now: Date): Date {
   const daysToMonday = (8 - reset.getUTCDay()) % 7 || 7;
   reset.setUTCDate(reset.getUTCDate() + daysToMonday);
   return reset;
+}
+
+/** Dollars as the app writes them: "$10" and "$4.30" in English, "10 $" and "4,30 $" in Czech. */
+export function formatUsd(locale: "en" | "cs", microUsd: number): string {
+  const cents = Math.round(microUsd / 10_000);
+  const amount = (cents / 100).toFixed(cents % 100 === 0 ? 0 : 2);
+  return locale === "cs" ? `${amount.replace(".", ",")} $` : `$${amount}`;
 }

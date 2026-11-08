@@ -12,7 +12,42 @@ export type AssistantOrganization = {
   /** The plan includes the Assistant (Enterprise or Custom). */
   planAllows: boolean;
   role: "owner" | "admin" | "member";
+  /** This week's Usage against the Weekly limit; null where the caller can't chat. */
+  weeklyLimit: WeeklyLimitState | null;
 };
+
+/**
+ * An organization's Weekly limit as the panel shows it. "Used" is settled plus
+ * reserved; the amounts are null for members, who see the percentage only.
+ */
+export type WeeklyLimitState = {
+  percent: number;
+  /** No turn can start until `resetsAt`. */
+  reached: boolean;
+  resetsAt: string;
+  usedMicroUsd: number | null;
+  limitMicroUsd: number | null;
+};
+
+export type AssistantOrganizations = {
+  organizations: AssistantOrganization[];
+  /** Anthropic refused for its spend limit or credits a moment ago: the Assistant is out for everyone. */
+  providerUnavailable: boolean;
+};
+
+/** The near-limit bar shows from this share of the Weekly limit. */
+export const NEAR_LIMIT_PERCENT = 80;
+
+/** The reset as the viewer's own weekday, date and time, such as "Monday 16 Nov, 01:00". */
+export function weeklyResetLabel(resetsAt: string, dateLocale: string): string {
+  return new Intl.DateTimeFormat(dateLocale, {
+    weekday: "long",
+    day: "numeric",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(resetsAt));
+}
 
 export type AssistantChat = {
   id: string;
@@ -36,10 +71,8 @@ export type DisplayMessage = {
 
 export type AssistantChatDetail = { chat: AssistantChat; messages: DisplayMessage[] };
 
-export function getAssistantOrganizations(): Promise<AssistantOrganization[]> {
-  return api<{ organizations: AssistantOrganization[] }>("/api/assistant/organizations").then(
-    (r) => r.organizations
-  );
+export function getAssistantOrganizations(): Promise<AssistantOrganizations> {
+  return api<AssistantOrganizations>("/api/assistant/organizations");
 }
 
 export function getAssistantChats(): Promise<AssistantChat[]> {

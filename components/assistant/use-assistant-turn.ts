@@ -106,9 +106,11 @@ export function useAssistantTurn(args: {
 
   const finish = useCallback(
     async (chatId: string) => {
+      // The organizations carry the Weekly limit, which the answer just used.
       await Promise.all([
         qc.invalidateQueries({ queryKey: assistantKeys.chat(chatId) }),
         qc.invalidateQueries({ queryKey: assistantKeys.chats() }),
+        qc.invalidateQueries({ queryKey: assistantKeys.organizations() }),
       ]);
       update(null);
     },
@@ -161,6 +163,7 @@ export function useAssistantTurn(args: {
         update(null);
         setFailed({ text, code: errorCode(error) ?? null });
         if (chatId) void qc.invalidateQueries({ queryKey: assistantKeys.chat(chatId) });
+        void qc.invalidateQueries({ queryKey: assistantKeys.organizations() });
       }
     },
     [args, finish, follow, onEvent, qc, update]

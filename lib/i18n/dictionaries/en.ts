@@ -2947,7 +2947,7 @@ export const en = {
     turnOn: {
       title: (organization: string) => `Turn on the Assistant for ${organization}?`,
       lead: "Read this before you turn it on. You can turn it off any time.",
-      facts: (organization: string, reset: string): [string, string][] => [
+      facts: (organization: string, reset: string, limit: string): [string, string][] => [
         [
           "What it does",
           "Members ask it about their time off, attendance and colleagues, and ask it to make changes. It's an AI, so answers can be wrong. Every change waits for the member to confirm it.",
@@ -2966,7 +2966,7 @@ export const en = {
         ],
         [
           "What it costs",
-          `Nothing extra on Enterprise. The organization gets a Weekly limit of $10 of AI use. When it runs out, the Assistant pauses for everyone until ${reset}.`,
+          `Nothing extra on Enterprise. The organization gets a Weekly limit of ${limit} of AI use. When it runs out, the Assistant pauses for everyone until ${reset}.`,
         ],
         [
           "What you see",
@@ -3293,13 +3293,38 @@ export const en = {
     },
     notices: {
       ASSISTANT_ERROR: "Something went wrong and the answer stopped. Try again.",
+      ASSISTANT_STEP_LIMIT:
+        "Stopped here: this answer needed too many steps. Try asking in smaller parts.",
+      ASSISTANT_UNAVAILABLE: "The Assistant is unavailable right now. Try again later.",
     },
     sendErrors: {
       ASSISTANT_TURN_RUNNING: "Another answer is still being written. Wait for it to finish.",
       AI_ORGANIZATION_NOT_ELIGIBLE:
         "This organization doesn't allow the Assistant right now. Your chats stay here to read.",
       fallback: "Not sent. Check your connection and try again.",
+      ASSISTANT_WEEKLY_LIMIT_REACHED:
+        "Not sent: the Assistant is paused until this week's limit resets.",
+      ASSISTANT_UNAVAILABLE: "Not sent. The Assistant is unavailable right now. Try again later.",
     },
+    limit: {
+      near: (organization: string, percent: number, reset: string) =>
+        `${organization} has used ${percent}% of this week's Assistant limit. It resets ${reset}.`,
+      nearAmounts: (
+        organization: string,
+        used: string,
+        limit: string,
+        percent: number,
+        reset: string
+      ) =>
+        `${organization} has used ${used} of its ${limit} Assistant limit this week (${percent}%). It resets ${reset}.`,
+      paused: (reset: string) => `The Assistant is paused until ${reset}.`,
+      pausedBody: (organization: string) =>
+        `${organization} reached this week's limit. Your chats stay here to read, and requests already shown can still be sent.`,
+      seeUsage: "See usage",
+      stopped: (organization: string) =>
+        `Stopped here: ${organization} reached this week's Assistant limit.`,
+    },
+    unavailable: "The Assistant is unavailable right now. Try again later.",
     history: {
       empty: "No chats yet. Chats are kept for 180 days.",
       today: "Today",

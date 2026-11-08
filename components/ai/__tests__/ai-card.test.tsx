@@ -53,7 +53,7 @@ const aiSettings = (overrides: Partial<AiSettings> = {}): AiSettings => ({
   isOwner: true,
   ownerName: "Olga Owner",
   plan: "ENTERPRISE",
-  assistant: { enabled: false, enabledAt: null, planAllows: true },
+  assistant: { enabled: false, enabledAt: null, planAllows: true, weeklyLimitMicroUsd: 10_000_000 },
   aiConnections: { level: "off", planAllows: true, grants: [] },
   agreement: {
     currentVersion: 1,
@@ -84,7 +84,14 @@ describe("AiCard", () => {
     settings = aiSettings();
     enable.mockReset();
     enable.mockResolvedValue(
-      aiSettings({ assistant: { enabled: true, enabledAt: null, planAllows: true } })
+      aiSettings({
+        assistant: {
+          enabled: true,
+          enabledAt: null,
+          planAllows: true,
+          weeklyLimitMicroUsd: 10_000_000,
+        },
+      })
     );
     disable.mockReset();
     disable.mockResolvedValue(aiSettings());
@@ -196,7 +203,12 @@ describe("AiCard", () => {
 
   it("turns it off through the confirm dialog, and copies the members' notice while it is on", async () => {
     settings = aiSettings({
-      assistant: { enabled: true, enabledAt: "2026-11-02T09:00:00Z", planAllows: true },
+      assistant: {
+        enabled: true,
+        enabledAt: "2026-11-02T09:00:00Z",
+        planAllows: true,
+        weeklyLimitMicroUsd: 10_000_000,
+      },
       agreement: accepted,
     });
     const user = userEvent.setup();
@@ -225,7 +237,12 @@ describe("AiCard", () => {
   it("tells a Pro owner the Assistant comes with Enterprise", () => {
     settings = aiSettings({
       plan: "PRO",
-      assistant: { enabled: false, enabledAt: null, planAllows: false },
+      assistant: {
+        enabled: false,
+        enabledAt: null,
+        planAllows: false,
+        weeklyLimitMicroUsd: 10_000_000,
+      },
     });
     renderCard();
 
@@ -241,7 +258,12 @@ describe("AiCard", () => {
   it("sends a Free owner to the plans, without See AI usage", () => {
     settings = aiSettings({
       plan: "FREE",
-      assistant: { enabled: false, enabledAt: null, planAllows: false },
+      assistant: {
+        enabled: false,
+        enabledAt: null,
+        planAllows: false,
+        weeklyLimitMicroUsd: 10_000_000,
+      },
     });
     renderCard();
 
@@ -261,7 +283,12 @@ describe("AiCard", () => {
   it("speaks Czech and copies the Czech notice", async () => {
     window.localStorage.setItem("flexiday-locale", "cs");
     settings = aiSettings({
-      assistant: { enabled: true, enabledAt: null, planAllows: true },
+      assistant: {
+        enabled: true,
+        enabledAt: null,
+        planAllows: true,
+        weeklyLimitMicroUsd: 10_000_000,
+      },
       agreement: accepted,
     });
     const user = userEvent.setup();

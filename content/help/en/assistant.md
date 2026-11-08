@@ -28,14 +28,11 @@ keywords:
     not sent,
     try again,
   ]
-related: [ai-connections]
+related: [ai-connections, assistant-weekly-limit]
 goldenQuestions:
   - question: Can the Assistant book a day off for me?
     expectedArticles: [assistant]
     mustMention: [you confirm the card, nothing changes before you confirm]
-  - question: Why did the Assistant stop answering for our organization this week?
-    expectedArticles: [assistant]
-    mustMention: [Weekly limit, resets on Monday]
   - question: Why did the Assistant refuse my question?
     expectedArticles: [assistant]
     mustMention: [Flexi Day questions only, the message isn't sent]
@@ -126,10 +123,9 @@ day.
 
 ## Weekly limit
 
-Each organization has a Weekly limit on the Assistant's usage. It resets every Monday at 00:00
-UTC, shown in your own time zone. When the limit is reached, the Assistant stops answering until
-the reset. Owners and org admins see the organization's usage, person by person, on the AI usage
-page.
+Each organization has a Weekly limit on the Assistant's Usage, shared by everyone in it. It resets
+every Monday at 00:00 UTC. The "Weekly limit and Usage" article explains what counts and what you
+see as the limit nears.
 
 ## Chats
 

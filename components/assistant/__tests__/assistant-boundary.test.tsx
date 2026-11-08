@@ -83,16 +83,20 @@ beforeEach(() => {
   act(() => setAssistantOpen(false));
   vi.clearAllMocks();
   mocked.getAssistantChats.mockResolvedValue([]);
-  mocked.getAssistantOrganizations.mockResolvedValue([
-    {
-      organizationId: "org-acme",
-      organizationName: "Acme",
-      eligible: true,
-      reason: null,
-      planAllows: true,
-      role: "member",
-    },
-  ]);
+  mocked.getAssistantOrganizations.mockResolvedValue({
+    organizations: [
+      {
+        organizationId: "org-acme",
+        organizationName: "Acme",
+        eligible: true,
+        reason: null,
+        planAllows: true,
+        role: "member",
+        weeklyLimit: null,
+      },
+    ],
+    providerUnavailable: false,
+  });
   mocked.createAssistantChat.mockResolvedValue(chat());
 });
 
@@ -174,6 +178,7 @@ describe("MessageList", () => {
         ]}
         live={null}
         failed={null}
+        organizationName="Acme"
       />
     );
     expect(
@@ -190,13 +195,16 @@ describe("noticeText", () => {
       "ASSISTANT_ERROR",
       "ASSISTANT_TOPIC_REFUSAL",
       "ASSISTANT_MODEL_REFUSAL",
+      "ASSISTANT_WEEKLY_LIMIT_REACHED",
+      "ASSISTANT_STEP_LIMIT",
+      "ASSISTANT_UNAVAILABLE",
     ] as const;
     for (const code of codes) {
-      expect(noticeText(en, code)).toBeTruthy();
-      expect(noticeText(cs, code)).toBeTruthy();
-      expect(noticeText(cs, code)).not.toBe(noticeText(en, code));
+      expect(noticeText(en, code, "Acme")).toBeTruthy();
+      expect(noticeText(cs, code, "Acme")).toBeTruthy();
+      expect(noticeText(cs, code, "Acme")).not.toBe(noticeText(en, code, "Acme"));
     }
-    expect(noticeText(en, "SOMETHING_NEW")).toBe(en.assistant.notices.ASSISTANT_ERROR);
+    expect(noticeText(en, "SOMETHING_NEW", "Acme")).toBe(en.assistant.notices.ASSISTANT_ERROR);
     expect(cs.assistantBoundary.notices.ASSISTANT_TOPIC_REFUSAL).toContain("Flexi Day");
     expect([cs.assistantBoundary.tryAgain, cs.assistantBoundary.sendAgain]).toEqual([
       "Zkusit znovu",

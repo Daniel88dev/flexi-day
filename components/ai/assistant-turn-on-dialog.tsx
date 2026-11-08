@@ -15,7 +15,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { pushToast } from "@/components/toast";
 import { errorCopy } from "@/lib/api/client";
-import { nextWeeklyReset, type AiSettings } from "@/lib/api/ai-settings";
+import { formatUsd, nextWeeklyReset, type AiSettings } from "@/lib/api/ai-settings";
 import { useEnableAssistant } from "@/lib/api/queries";
 import { formatDate } from "@/lib/directory/format";
 import { useTranslation } from "@/lib/i18n/use-translation";
@@ -92,12 +92,18 @@ export function AssistantTurnOnDialog({
         </DialogHeader>
 
         <dl className="grid gap-x-6 gap-y-3 sm:grid-cols-[170px_1fr]">
-          {copy.facts(organizationName, resetLabel(t.common.dateLocale)).map(([term, text]) => (
-            <div key={term} className="contents">
-              <dt className="text-sm font-semibold">{term}</dt>
-              <dd className="text-sm leading-relaxed">{text}</dd>
-            </div>
-          ))}
+          {copy
+            .facts(
+              organizationName,
+              resetLabel(t.common.dateLocale),
+              formatUsd(locale, settings.assistant.weeklyLimitMicroUsd)
+            )
+            .map(([term, text]) => (
+              <div key={term} className="contents">
+                <dt className="text-sm font-semibold">{term}</dt>
+                <dd className="text-sm leading-relaxed">{text}</dd>
+              </div>
+            ))}
         </dl>
 
         <div className="bg-muted/50 space-y-2 rounded-[var(--radius-sm)] p-3 text-sm">

@@ -1,6 +1,6 @@
 ---
 id: assistant
-translatedFrom: "403d6417920e"
+translatedFrom: "e8b283fc913c"
 title: Co umí Asistent
 summary: Zeptej se Asistenta na Flexi Day vlastními slovy a nech ho připravit změny, které potvrdíš.
 keywords:
@@ -29,9 +29,6 @@ goldenQuestions:
   - question: Může mi Asistent zadat den volna?
     expectedArticles: [assistant]
     mustMention: [kartu potvrdíš, nic se nezmění před potvrzením]
-  - question: Proč nám Asistent tento týden přestal odpovídat?
-    expectedArticles: [assistant]
-    mustMention: [Týdenní limit, obnoví se v pondělí]
   - question: Proč Asistent odmítl moji otázku?
     expectedArticles: [assistant]
     mustMention: [jen otázky k Flexi Day, zpráva se neodešle]
@@ -118,9 +115,9 @@ dokud kartu nepotvrdíš. Volbou „Teď ne“ ji zahodíš. Změna provedená t
 
 ## Týdenní limit
 
-Každá organizace má na využití Asistenta Týdenní limit. Obnoví se každé pondělí v 00:00 UTC,
-zobrazeno ve tvém časovém pásmu. Když organizace limit vyčerpá, Asistent do obnovení neodpovídá.
-Vlastník a správci organizace vidí využití organizace po jednotlivých lidech na stránce Využití AI.
+Každá organizace má na využití Asistenta Týdenní limit, společný pro všechny její členy. Obnoví se
+každé pondělí v 00:00 UTC. Článek „Týdenní limit a využití“ vysvětluje, co se počítá a co uvidíš,
+když se limit blíží.
 
 ## Chaty
 

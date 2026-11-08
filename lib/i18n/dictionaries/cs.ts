@@ -2963,7 +2963,7 @@ export const cs: Dictionary = {
     turnOn: {
       title: (organization: string) => `Zapnout Asistenta pro ${organization}?`,
       lead: "Než ho zapnete, přečtěte si tohle. Vypnout ho můžete kdykoli.",
-      facts: (_organization: string, reset: string): [string, string][] => [
+      facts: (_organization: string, reset: string, limit: string): [string, string][] => [
         [
           "Co dělá",
           "Členové se ho ptají na svou dovolenou, docházku a kolegy a žádají ho o změny. Je to AI, takže se může mýlit. Každá změna čeká, až ji člen potvrdí.",
@@ -2982,7 +2982,7 @@ export const cs: Dictionary = {
         ],
         [
           "Kolik to stojí",
-          `Na tarifu Enterprise nic navíc. Organizace má Týdenní limit 10 $ na používání AI. Když se vyčerpá, Asistent se pro všechny pozastaví do ${reset}.`,
+          `Na tarifu Enterprise nic navíc. Organizace má Týdenní limit ${limit} na používání AI. Když se vyčerpá, Asistent se pro všechny pozastaví do ${reset}.`,
         ],
         [
           "Co uvidíte",
@@ -3310,13 +3310,38 @@ export const cs: Dictionary = {
     },
     notices: {
       ASSISTANT_ERROR: "Něco se pokazilo a odpověď se zastavila. Zkus to znovu.",
+      ASSISTANT_STEP_LIMIT:
+        "Odpověď skončila tady: potřebovala příliš mnoho kroků. Zkus se zeptat po částech.",
+      ASSISTANT_UNAVAILABLE: "Asistent teď není k dispozici. Zkus to později.",
     },
     sendErrors: {
       ASSISTANT_TURN_RUNNING: "Ještě se píše jiná odpověď. Počkej, až skončí.",
       AI_ORGANIZATION_NOT_ELIGIBLE:
         "Tato organizace teď Asistenta nepovoluje. Chaty si můžeš dál číst.",
       fallback: "Neodesláno. Zkontroluj připojení a zkus to znovu.",
+      ASSISTANT_WEEKLY_LIMIT_REACHED:
+        "Neodesláno: Asistent je pozastavený, dokud se neobnoví Týdenní limit.",
+      ASSISTANT_UNAVAILABLE: "Neodesláno. Asistent teď není k dispozici. Zkus to později.",
     },
+    limit: {
+      near: (organization: string, percent: number, reset: string) =>
+        `Organizace ${organization} vyčerpala ${percent} % Týdenního limitu Asistenta. Obnoví se ${reset}.`,
+      nearAmounts: (
+        organization: string,
+        used: string,
+        limit: string,
+        percent: number,
+        reset: string
+      ) =>
+        `Organizace ${organization} tento týden využila ${used} z Týdenního limitu Asistenta ${limit} (${percent} %). Obnoví se ${reset}.`,
+      paused: (reset: string) => `Asistent je pozastavený do ${reset}.`,
+      pausedBody: (organization: string) =>
+        `Organizace ${organization} vyčerpala Týdenní limit. Chaty si můžeš dál číst a žádosti, které už vidíš, můžeš odeslat.`,
+      seeUsage: "Zobrazit využití",
+      stopped: (organization: string) =>
+        `Odpověď skončila tady: organizace ${organization} vyčerpala Týdenní limit Asistenta.`,
+    },
+    unavailable: "Asistent teď není k dispozici. Zkus to později.",
     history: {
       empty: "Zatím žádné chaty. Chaty se uchovávají 180 dní.",
       today: "Dnes",

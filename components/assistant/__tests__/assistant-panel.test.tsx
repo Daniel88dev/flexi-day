@@ -43,7 +43,13 @@ const organization = (overrides: Partial<AssistantOrganization>): AssistantOrgan
   reason: null,
   planAllows: true,
   role: "member",
+  weeklyLimit: null,
   ...overrides,
+});
+
+const orgs = (...organizations: AssistantOrganization[]) => ({
+  organizations,
+  providerUnavailable: false,
 });
 
 const acme = organization({});
@@ -142,10 +148,12 @@ afterEach(() => {
 
 describe("AssistantButton", () => {
   it("should stay hidden from a member when no organization offers the Assistant", async () => {
-    mocked.getAssistantOrganizations.mockResolvedValue([
-      { ...beta, role: "member" },
-      organization({ eligible: false, reason: "TURNED_OFF", role: "member" }),
-    ]);
+    mocked.getAssistantOrganizations.mockResolvedValue(
+      orgs(
+        { ...beta, role: "member" },
+        organization({ eligible: false, reason: "TURNED_OFF", role: "member" })
+      )
+    );
     renderAssistant();
     await waitFor(() => expect(mocked.getAssistantOrganizations).toHaveBeenCalled());
     await act(async () => {});
@@ -154,7 +162,7 @@ describe("AssistantButton", () => {
 
   it("should stay hidden while the Assistant is switched off, without asking for organizations", async () => {
     available = false;
-    mocked.getAssistantOrganizations.mockResolvedValue([acme]);
+    mocked.getAssistantOrganizations.mockResolvedValue(orgs(acme));
     renderAssistant();
     await act(async () => {});
     expect(screen.queryByRole("button", { name: "Assistant" })).toBeNull();
@@ -162,7 +170,7 @@ describe("AssistantButton", () => {
   });
 
   it("should open the upgrade prompt for an owner without Enterprise", async () => {
-    mocked.getAssistantOrganizations.mockResolvedValue([{ ...beta, role: "owner" }]);
+    mocked.getAssistantOrganizations.mockResolvedValue(orgs({ ...beta, role: "owner" }));
     renderAssistant();
     const panel = await openPanel();
     expect(
@@ -174,14 +182,16 @@ describe("AssistantButton", () => {
   });
 
   it("should tell an org admin the Assistant is off, with the way to the settings", async () => {
-    mocked.getAssistantOrganizations.mockResolvedValue([
-      organization({
-        organizationName: "Gamma",
-        eligible: false,
-        reason: "TURNED_OFF",
-        role: "admin",
-      }),
-    ]);
+    mocked.getAssistantOrganizations.mockResolvedValue(
+      orgs(
+        organization({
+          organizationName: "Gamma",
+          eligible: false,
+          reason: "TURNED_OFF",
+          role: "admin",
+        })
+      )
+    );
     renderAssistant();
     const panel = await openPanel();
     expect(
@@ -195,7 +205,7 @@ describe("AssistantButton", () => {
 
 describe("AssistantPanel", () => {
   beforeEach(() => {
-    mocked.getAssistantOrganizations.mockResolvedValue([acme, beta]);
+    mocked.getAssistantOrganizations.mockResolvedValue(orgs(acme, beta));
   });
 
   it("should show loading while the organizations load", async () => {

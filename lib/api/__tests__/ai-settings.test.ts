@@ -10,6 +10,7 @@ import {
   disableAssistant,
   enableAiConnections,
   enableAssistant,
+  formatUsd,
   setAiConnectionsLevel,
   getAiSettings,
   memberNoticeText,
@@ -113,5 +114,14 @@ describe("nextWeeklyReset", () => {
     expect(nextWeeklyReset(new Date("2026-11-09T00:00:00Z")).toISOString()).toBe(
       "2026-11-16T00:00:00.000Z"
     );
+  });
+});
+
+describe("formatUsd", () => {
+  it("writes whole dollars without cents and the rest with two decimals, per language", () => {
+    expect(formatUsd("en", 10_000_000)).toBe("$10");
+    expect(formatUsd("en", 8_604_999)).toBe("$8.60");
+    expect(formatUsd("cs", 10_000_000)).toBe("10 $");
+    expect(formatUsd("cs", 4_300_000)).toBe("4,30 $");
   });
 });

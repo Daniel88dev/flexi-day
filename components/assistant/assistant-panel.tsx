@@ -3,7 +3,11 @@
 import { useState, type ReactNode } from "react";
 import { ChevronLeft, History, MessagesSquare, Plus, X } from "lucide-react";
 import { AiFeatureGate } from "@/components/ai/ai-feature-gate";
-import { assistantEntry, type AssistantOrganization } from "@/lib/api/assistant";
+import {
+  assistantEntry,
+  NEAR_LIMIT_PERCENT,
+  type AssistantOrganization,
+} from "@/lib/api/assistant";
 import {
   useAssistantChat,
   useAssistantChats,
@@ -14,11 +18,14 @@ import { useTranslation } from "@/lib/i18n/use-translation";
 import { cn } from "@/lib/utils";
 import { setAssistantOpen, useAssistantOpen } from "./assistant-store";
 import {
+  AssistantUnavailable,
   ChatList,
   Composer,
   EmptyChat,
+  LimitReached,
   LoadingChat,
   MessageList,
+  NearLimit,
   OffGate,
   OrgPicker,
   UpgradeGate,
@@ -61,7 +68,7 @@ function AssistantButtonInner() {
   const { t } = useTranslation();
   const open = useAssistantOpen();
   const { data } = useAssistantOrganizations();
-  if (assistantEntry(data).mode === "hidden") return null;
+  if (assistantEntry(data?.organizations).mode === "hidden") return null;
   return (
     <button
       type="button"
@@ -100,7 +107,7 @@ function PanelFrame() {
   const { t } = useTranslation();
   const copy = t.assistant;
   const organizations = useAssistantOrganizations();
-  const entry = assistantEntry(organizations.data);
+  const entry = assistantEntry(organizations.data?.organizations);
   const [history, setHistory] = useState(false);
   const [chatId, setChatId] = useState<string | null>(null);
   const [picked, setPicked] = useState<string | null>(null);
@@ -154,6 +161,7 @@ function PanelFrame() {
             onChatCreated={setChatId}
             onHistory={() => setHistory(true)}
             onNewChat={startNewChat}
+            providerUnavailable={organizations.data?.providerUnavailable ?? false}
           />
         )
       ) : (
@@ -264,6 +272,7 @@ function ChatView({
   onChatCreated,
   onHistory,
   onNewChat,
+  providerUnavailable,
 }: {
   chatId: string | null;
   organizations: AssistantOrganization[];
@@ -273,6 +282,7 @@ function ChatView({
   onChatCreated: (chatId: string) => void;
   onHistory: () => void;
   onNewChat: () => void;
+  providerUnavailable: boolean;
 }) {
   const { t } = useTranslation();
   const copy = t.assistant;
@@ -295,6 +305,11 @@ function ChatView({
     organizations.find((o) => o.organizationId === organizationId)?.organizationName ??
     "";
   const title = chat?.title ?? turn.live?.userText ?? turn.failed?.text ?? copy.untitled;
+  const organization = organizations.find(
+    (o) => o.organizationId === (chat?.organizationId ?? organizationId)
+  );
+  const limit = organization?.weeklyLimit ?? null;
+  const canSeeUsage = organization?.role === "owner" || organization?.role === "admin";
 
   const picker = (
     <OrgPicker
@@ -307,7 +322,10 @@ function ChatView({
     />
   );
 
+  // The paused and unavailable notices replace the composer; the suggestions stop too.
+  const blocked = providerUnavailable || (limit?.reached ?? false);
   const send = (text: string) => {
+    if (blocked) return;
     if (organizationId || ownChatId) void turn.send(text, organizationId ?? "");
   };
 
@@ -330,11 +348,27 @@ function ChatView({
             live={turn.live}
             failed={turn.failed}
             onResend={send}
+            organizationName={organizationName}
           />
         )}
       </div>
-      <div className="shrink-0 px-4 pt-2 pb-4">
-        <Composer busy={turn.busy} onSend={send} />
+      <div className="shrink-0 space-y-2 px-4 pt-2 pb-4">
+        {providerUnavailable ? (
+          <AssistantUnavailable />
+        ) : limit?.reached && !turn.live ? (
+          <LimitReached
+            organizationName={organizationName}
+            limit={limit}
+            canSeeUsage={canSeeUsage}
+          />
+        ) : (
+          <>
+            <Composer busy={turn.busy} onSend={send} />
+            {limit && limit.percent >= NEAR_LIMIT_PERCENT ? (
+              <NearLimit organizationName={organizationName} limit={limit} />
+            ) : null}
+          </>
+        )}
       </div>
     </>
   );

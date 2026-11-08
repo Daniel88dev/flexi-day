@@ -3,6 +3,7 @@ import {
   assistantEntry,
   chatGroup,
   createStreamParser,
+  weeklyResetLabel,
   type AssistantOrganization,
   type ChatStreamEvent,
 } from "../assistant";
@@ -14,6 +15,7 @@ const org = (overrides: Partial<AssistantOrganization>): AssistantOrganization =
   reason: "TURNED_OFF",
   planAllows: true,
   role: "member",
+  weeklyLimit: null,
   ...overrides,
 });
 
@@ -99,5 +101,13 @@ describe("createStreamParser", () => {
     const { events, parser } = collect();
     parser.push("event: ping\ndata: {}\n\nevent: done\ndata: {}\n\n");
     expect(events.map((e) => e.event)).toEqual(["done"]);
+  });
+});
+
+describe("weeklyResetLabel", () => {
+  // The suite runs in America/Los_Angeles, eight hours behind UTC in November.
+  it("returns Monday 00:00 UTC as the viewer's own weekday, date and time", () => {
+    expect(weeklyResetLabel("2026-11-16T00:00:00.000Z", "en-GB")).toBe("Sunday 15 Nov, 16:00");
+    expect(weeklyResetLabel("2026-11-16T00:00:00.000Z", "cs-CZ")).toBe("neděle 15. 11. 16:00");
   });
 });
