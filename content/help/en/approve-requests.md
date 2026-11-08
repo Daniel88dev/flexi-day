@@ -5,6 +5,7 @@ summary: Where approvers find waiting requests, how to approve or decline with a
 module: leave
 roles: [approver, manager, group-admin, org-admin]
 routes: [/requests, /dashboard]
+tools: [list_requests_to_approve, approve_request, reject_request]
 keywords:
   [
     approve,

@@ -287,3 +287,151 @@ describe("ConfirmCard in Czech", () => {
     unmount();
   });
 });
+
+const DECISION = {
+  requestId: "r2",
+  requester: { id: "u-ann", name: "Ann Member" },
+  group: { id: "g1", name: "Acme Team" },
+  type: "VACATION",
+  firstDay: "2027-06-07",
+  lastDay: "2027-06-08",
+  decidedDays: ["2027-06-07", "2027-06-08"],
+  days: 2,
+  note: "Family trip, back on Wednesday",
+  noteAuthor: "Ann Member",
+  reason: null,
+};
+
+const APPROVE: CardPreview = {
+  action: "approve_request",
+  ...DECISION,
+  balances: [
+    { year: 2027, type: "VACATION", allocated: 20, remainingBefore: 16, remainingAfter: 14 },
+  ],
+};
+
+const REJECT: CardPreview = {
+  action: "reject_request",
+  ...DECISION,
+  reason: "Too short notice",
+  balances: [
+    { year: 2027, type: "VACATION", allocated: 20, remainingBefore: 16, remainingAfter: 16 },
+  ],
+};
+
+describe("Approve and reject cards in English", () => {
+  beforeEach(() => {
+    czech = false;
+  });
+
+  it("shows the request with its note under its author, and approves only on confirm", async () => {
+    const decided = card(APPROVE, { status: "confirmed", result: { status: "approved" } });
+    mocked.decideAssistantCard.mockResolvedValue({ card: decided, turnRunning: true });
+    show(card(APPROVE, { authorNames: ["Ann Member"] }));
+
+    const open = theCard();
+    expect(within(open).getByText("Approve this request?")).toBeInTheDocument();
+    expect(within(open).getByText("Requester").nextSibling).toHaveTextContent("Ann Member");
+    expect(within(open).getByText("Mon 7 Jun – Tue 8 Jun")).toBeInTheDocument();
+    expect(within(open).getByText("Working days").nextSibling).toHaveTextContent("2");
+    expect(within(open).getByText("Balance").nextSibling).toHaveTextContent("16 → 14");
+    expect(within(open).getByText("Ann Member's note, word for word")).toBeInTheDocument();
+    expect(within(open).getByText("“Family trip, back on Wednesday”")).toBeInTheDocument();
+    expect(within(open).getByRole("note")).toHaveTextContent(
+      "Before suggesting this, the Assistant read a note written by Ann Member."
+    );
+    expect(within(open).queryByRole("textbox")).not.toBeInTheDocument();
+
+    await userEvent.click(within(open).getByRole("button", { name: "Approve" }));
+    expect(mocked.decideAssistantCard).toHaveBeenCalledWith("card-approve_request", "confirm");
+    expect(await screen.findByText("Approved. Ann Member was notified.", { exact: false }));
+    expect(screen.getByRole("link", { name: "Open" })).toHaveAttribute("href", "/requests");
+  });
+
+  it("lets the approver write the reason for the requester before rejecting", async () => {
+    const decided = card(REJECT, { status: "confirmed", result: { status: "rejected" } });
+    mocked.decideAssistantCard.mockResolvedValue({ card: decided, turnRunning: true });
+    show(card(REJECT));
+
+    const open = theCard();
+    expect(within(open).getByText("Reject this request?")).toBeInTheDocument();
+    expect(within(open).getByText("Balance").nextSibling).toHaveTextContent(/^16$/);
+    const reason = within(open).getByRole("textbox", { name: "Reason for Ann Member, optional" });
+    expect(reason).toHaveValue("Too short notice");
+    await userEvent.clear(reason);
+    await userEvent.type(reason, "The team is short that week");
+
+    await userEvent.click(within(open).getByRole("button", { name: "Reject" }));
+    expect(mocked.decideAssistantCard).toHaveBeenCalledWith(
+      "card-reject_request",
+      "confirm",
+      "The team is short that week"
+    );
+    expect(await screen.findByText("Rejected. Ann Member was notified.", { exact: false }));
+  });
+
+  it("shows the guard's refusal in red and keeps the card open", async () => {
+    mocked.decideAssistantCard.mockResolvedValue({
+      card: card(APPROVE, {
+        error: {
+          message: "You are not allowed to approve one or more of these requests",
+          code: null,
+        },
+      }),
+      turnRunning: false,
+    });
+    show(card(APPROVE));
+    await userEvent.click(screen.getByRole("button", { name: "Approve" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "You are not allowed to approve one or more of these requests"
+    );
+    expect(theCard()).toHaveAttribute("data-status", "failed");
+    expect(screen.getByRole("button", { name: "Try again" })).toBeInTheDocument();
+  });
+
+  it("declines with Not now and sends no reason", async () => {
+    mocked.decideAssistantCard.mockResolvedValue({
+      card: card(REJECT, { status: "declined" }),
+      turnRunning: true,
+    });
+    show(card(REJECT));
+    await userEvent.click(screen.getByRole("button", { name: "Not now" }));
+    expect(mocked.decideAssistantCard).toHaveBeenCalledWith("card-reject_request", "decline");
+    expect(await screen.findByText("Not done. Nothing changed.", { exact: false }));
+  });
+});
+
+describe("Approve and reject cards in Czech", () => {
+  beforeEach(() => {
+    czech = true;
+    window.localStorage.setItem("flexiday-locale", "cs");
+  });
+
+  it("shows open approve and reject cards", async () => {
+    show(card(APPROVE));
+    expect(await screen.findByText("Schválit tuto žádost?")).toBeInTheDocument();
+    expect(screen.getByText("Žadatel").nextSibling).toHaveTextContent("Ann Member");
+    expect(screen.getByText("Poznámka, kterou napsal(a) Ann Member, doslovně")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Schválit" })).toBeInTheDocument();
+  });
+
+  it("shows the reject reason field", async () => {
+    show(card(REJECT));
+    expect(await screen.findByText("Zamítnout tuto žádost?")).toBeInTheDocument();
+    expect(
+      screen.getByRole("textbox", { name: "Důvod, který uvidí Ann Member (nepovinné)" })
+    ).toHaveValue("Too short notice");
+    expect(screen.getByRole("button", { name: "Zamítnout" })).toBeInTheDocument();
+  });
+
+  it("shows settled approve and reject cards", async () => {
+    show(card(APPROVE, { status: "confirmed", result: { status: "approved" } }));
+    expect(await screen.findByText("Schváleno. Ann Member už o tom ví.", { exact: false }));
+  });
+
+  it("shows a settled reject card", async () => {
+    show(card(REJECT, { status: "confirmed", result: { status: "rejected" } }));
+    expect(await screen.findByText("Zamítnuto. Ann Member už o tom ví.", { exact: false }));
+  });
+});

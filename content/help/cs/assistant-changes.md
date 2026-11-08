@@ -1,8 +1,8 @@
 ---
 id: assistant-changes
-translatedFrom: "030d2101b081"
+translatedFrom: "28826ee17975"
 title: Potvrzení změn, které připraví Asistent
-summary: Jak fungují potvrzovací karty Asistenta a co se stane, když kartu potvrdíš, odmítneš nebo napíšeš dál.
+summary: Jak fungují potvrzovací karty Asistenta, u tvých změn i u schvalování a zamítání žádostí, a co se stane, když kartu potvrdíš, odmítneš nebo napíšeš dál.
 keywords:
   [
     asistent,
@@ -19,6 +19,10 @@ keywords:
     odchod,
     poznámka,
     upozornění,
+    schválit,
+    zamítnout,
+    čeká na schválení,
+    důvod,
   ]
 goldenQuestions:
   - question: Může mi Asistent zadat den volna?
@@ -27,10 +31,14 @@ goldenQuestions:
   - question: Proč karta píše, že Asistent četl poznámku od někoho jiného?
     expectedArticles: [assistant-changes]
     mustMention: [zkontroluj, že karta odpovídá tomu, o co jsi žádal(a)]
+  - question: Může za mě Asistent schválit žádost?
+    expectedArticles: [assistant-changes, approve-requests]
+    mustMention: [karta pro schválení nebo zamítnutí, nikdy nedoporučuje]
 ---
 
 Požádej Asistenta, ať ti zadá volno, zruší některou z tvých žádostí nebo zaznamená příchod či
-odchod, a on změnu připraví jako kartu v chatu. Nic se nezmění, dokud kartu nepotvrdíš.
+odchod, a on změnu připraví jako kartu v chatu. Schvalovatelé takhle můžou i schvalovat a zamítat
+žádosti. Nic se nezmění, dokud kartu nepotvrdíš.
 
 ## Co karta ukazuje
 
@@ -62,6 +70,22 @@ druhé. Psát pokračuje, až rozhodneš všechny.
 Změna provedená touto cestou má v historii žádosti nebo v historii docházky toho dne poznámku
 „{{ui:common.channel.assistant}}“. Schvalovatelé dostanou stejná upozornění jako u žádosti z
 aplikace.
+
+## Schválit, nebo zamítnout žádost
+
+Když schvaluješ volno, zeptej se „Co čeká na moje schválení?“ a Asistent vypíše žádosti, které čekají
+na tebe. Požádej ho, ať některou schválí nebo zamítne, a dostaneš kartu se žadatelem, typem,
+termínem, pracovními dny, jeho zůstatkem před a po, skupinou a vlastní poznámkou žádosti doslovně, s
+tím, kdo ji napsal. Asistent nikdy nedoporučuje schválit ani zamítnout; rozhodnutí je na tobě.
+
+- „{{ui:assistant.cards.confirm.approve_request}}“ schválí všechny dny žádosti, které ještě čekají.
+- „{{ui:assistant.cards.confirm.reject_request}}“ je zamítne. Na kartě je pole pro důvod, který si
+  žadatel přečte; když ho necháš prázdné, žádost se zamítne bez důvodu.
+
+Žadatel dostane upozornění jako při rozhodnutí v aplikaci a historie žádosti uvede
+„{{ui:common.channel.assistant}}“. Platí stejná pravidla jako v aplikaci: rozhoduješ jen ve
+skupinách, kde schvaluješ, a schválení se musí vejít do nároku žadatele. Schvalování a zamítání
+funguje jen v Asistentovi, ne v AI aplikacích, které připojíš.
 
 ## Poznámka od někoho jiného
 

@@ -84,6 +84,15 @@ export type AllowanceChange = {
   availableAfter: number;
 };
 
+/** The requester's balance as the app shows it (allocated minus approved), before and after a decision. */
+export type BalanceChange = {
+  year: number;
+  type: string;
+  allocated: number;
+  remainingBefore: number;
+  remainingAfter: number;
+};
+
 /** The write's dry run, as the backend's `WritePreview`: the card's only content. */
 export type CardPreview =
   | {
@@ -111,6 +120,23 @@ export type CardPreview =
       note: string | null;
       reason: string | null;
       allowances: AllowanceChange[];
+    }
+  | {
+      action: "approve_request" | "reject_request";
+      requestId: string;
+      requester: { id: string; name: string };
+      group: { id: string; name: string };
+      type: string;
+      firstDay: string;
+      lastDay: string;
+      decidedDays: string[];
+      days: number;
+      /** The request's own note and who wrote it. */
+      note: string | null;
+      noteAuthor: string | null;
+      /** Reject only: the reason the Assistant proposed. */
+      reason: string | null;
+      balances: BalanceChange[];
     }
   | { action: "clock_in"; at: string; businessDate: string; timezone: string }
   | {
@@ -142,13 +168,15 @@ export type PendingCard = {
 
 export type CardDecision = { card: PendingCard; turnRunning: boolean };
 
+/** `reason`: a reject card's reason for the requester, as the user left it (confirm only). */
 export function decideAssistantCard(
   cardId: string,
-  decision: "confirm" | "decline"
+  decision: "confirm" | "decline",
+  reason?: string
 ): Promise<CardDecision> {
   return api<CardDecision>(
     `/api/assistant/pending-actions/${encodeURIComponent(cardId)}/${decision}`,
-    { method: "POST", body: {} }
+    { method: "POST", body: reason === undefined ? {} : { reason } }
   );
 }
 

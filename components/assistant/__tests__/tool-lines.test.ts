@@ -32,6 +32,22 @@ describe("toolLine", () => {
     );
   });
 
+  it("names the approval steps in English and Czech", () => {
+    expect(
+      ["list_requests_to_approve", "approve_request", "reject_request"].map((name) =>
+        toolLine(en.assistant, name, "running")
+      )
+    ).toEqual([
+      "Looking for requests waiting for you",
+      "Preparing the approval",
+      "Preparing the rejection",
+    ]);
+    expect(toolLine(en.assistant, "approve_request", "done")).toBe("Approved the request");
+    expect(toolLine(cs.assistant, "reject_request", "failed")).toBe(
+      "Žádost se nepodařilo zamítnout"
+    );
+  });
+
   it("names the help lookups in English and Czech", () => {
     expect(toolLine(en.assistant, "search_docs", "running")).toBe("Searching the help");
     expect(toolLine(en.assistant, "read_doc", "done")).toBe("Read a help article");

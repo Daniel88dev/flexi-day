@@ -1,13 +1,16 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useId, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { Check, Loader2 } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   decideAssistantCard,
   type AllowanceChange,
+  type BalanceChange,
   type CardDecision,
   type CardPreview,
   type PendingCard,
@@ -110,6 +113,35 @@ function Balance({
   ));
 }
 
+/** The requester's balance as the app shows it; a decision that leaves it alone shows one number. */
+function RemainingBalance({
+  balances,
+  locale,
+  copy,
+}: {
+  balances: BalanceChange[];
+  locale: string;
+  copy: Copy;
+}) {
+  return balances.map((balance) => (
+    <Row
+      key={`${balance.year}-${balance.type}`}
+      label={balances.length > 1 ? copy.rows.balanceIn(balance.year) : copy.rows.balance}
+    >
+      {balance.remainingBefore === balance.remainingAfter ? (
+        number(locale, balance.remainingAfter)
+      ) : (
+        <>
+          <span style={{ color: "var(--text-muted)" }}>
+            {number(locale, balance.remainingBefore)} →{" "}
+          </span>
+          {number(locale, balance.remainingAfter)}
+        </>
+      )}
+    </Row>
+  ));
+}
+
 function Details({ preview, locale, copy }: { preview: CardPreview; locale: string; copy: Copy }) {
   switch (preview.action) {
     case "create_request":
@@ -140,6 +172,26 @@ function Details({ preview, locale, copy }: { preview: CardPreview; locale: stri
           <Balance allowances={preview.allowances} locale={locale} copy={copy} />
           {preview.note ? <Quoted who={copy.requestNote} text={preview.note} /> : null}
           {preview.reason ? <Quoted who={copy.yourReason} text={preview.reason} /> : null}
+        </>
+      );
+    case "approve_request":
+    case "reject_request":
+      return (
+        <>
+          <Row label={copy.rows.requester}>{preview.requester.name}</Row>
+          <Row label={copy.rows.type}>
+            <TypeDot type={preview.type} />
+          </Row>
+          <Row label={copy.rows.dates}>{dates(locale, preview.firstDay, preview.lastDay)}</Row>
+          <Row label={copy.rows.workingDays}>{number(locale, preview.days)}</Row>
+          <RemainingBalance balances={preview.balances} locale={locale} copy={copy} />
+          <Row label={copy.rows.group}>{preview.group.name}</Row>
+          {preview.note ? (
+            <Quoted
+              who={copy.noteBy(preview.noteAuthor ?? preview.requester.name)}
+              text={preview.note}
+            />
+          ) : null}
         </>
       );
     case "clock_in":
@@ -183,6 +235,9 @@ function settledText(card: PendingCard, locale: string, copy: Copy): string {
       return copy.settled.clock_in(time("startedAt"));
     case "clock_out":
       return copy.settled.clock_out(time("endedAt"));
+    case "approve_request":
+    case "reject_request":
+      return copy.settled[preview.action](preview.requester.name);
   }
 }
 
@@ -192,6 +247,10 @@ function summary(card: PendingCard, locale: string, copy: Copy, t: Translations)
     const type = recordTypeLabel(t.calendarRecordTypes, preview.type as WireRecordType);
     return `${type}, ${dates(locale, preview.firstDay, preview.lastDay)}`;
   }
+  if (preview.action === "approve_request" || preview.action === "reject_request") {
+    const type = recordTypeLabel(t.calendarRecordTypes, preview.type as WireRecordType);
+    return `${preview.requester.name}, ${type}, ${dates(locale, preview.firstDay, preview.lastDay)}`;
+  }
   return copy.confirm[preview.action];
 }
 
@@ -200,6 +259,8 @@ const OPEN_HREF: Record<PendingCard["tool"], string> = {
   cancel_my_request: "/requests",
   clock_in: "/my-attendance",
   clock_out: "/my-attendance",
+  approve_request: "/requests",
+  reject_request: "/requests",
 };
 
 /**
@@ -224,8 +285,15 @@ export function ConfirmCard({
     setSeen(card);
     setCurrent(card);
   }
+  const [reason, setReason] = useState(
+    card.preview.action === "reject_request" ? (card.preview.reason ?? "") : ""
+  );
+  const reasonId = useId();
   const decide = useMutation({
-    mutationFn: (decision: "confirm" | "decline") => decideAssistantCard(current.id, decision),
+    mutationFn: (decision: "confirm" | "decline") =>
+      decision === "confirm" && current.tool === "reject_request"
+        ? decideAssistantCard(current.id, decision, reason)
+        : decideAssistantCard(current.id, decision),
     onSuccess: (decision) => {
       setCurrent(decision.card);
       onDecided?.(decision);
@@ -272,6 +340,7 @@ export function ConfirmCard({
   const working = decide.isPending;
   const error = current.error?.message ?? (decide.isError ? copy.decideFailed : null);
   const isCancel = current.tool === "cancel_my_request";
+  const { preview } = current;
 
   return (
     <div
@@ -293,8 +362,23 @@ export function ConfirmCard({
         </p>
       ) : null}
       <div className="mt-2">
-        <Details preview={current.preview} locale={locale} copy={copy} />
+        <Details preview={preview} locale={locale} copy={copy} />
       </div>
+      {preview.action === "reject_request" ? (
+        <div className="mt-3 grid gap-1.5">
+          <Label htmlFor={reasonId} className="text-[13px] font-normal">
+            {copy.reasonFor(preview.requester.name)}
+          </Label>
+          <Textarea
+            id={reasonId}
+            value={reason}
+            maxLength={1000}
+            rows={2}
+            disabled={working}
+            onChange={(event) => setReason(event.target.value)}
+          />
+        </div>
+      ) : null}
       {error ? (
         <div
           role="alert"
@@ -307,7 +391,7 @@ export function ConfirmCard({
       <div className="mt-3.5 flex flex-wrap items-center gap-2">
         <Button
           size="sm"
-          variant={isCancel ? "destructive" : "default"}
+          variant={isCancel || current.tool === "reject_request" ? "destructive" : "default"}
           disabled={working}
           onClick={() => decide.mutate("confirm")}
         >

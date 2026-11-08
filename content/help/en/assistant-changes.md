@@ -1,11 +1,20 @@
 ---
 id: assistant-changes
 title: Confirm changes the Assistant prepares
-summary: How the Assistant's confirmation cards work, and what happens when you confirm one, decline it or move on.
+summary: How the Assistant's confirmation cards work, for your own changes and for approving or rejecting requests, and what happens when you confirm one, decline it or move on.
 module: assistant-and-mcp
 roles: [member, approver, manager, group-admin, org-admin, owner]
 routes: []
-tools: [create_request, cancel_my_request, clock_in, clock_out]
+tools:
+  [
+    create_request,
+    cancel_my_request,
+    clock_in,
+    clock_out,
+    list_requests_to_approve,
+    approve_request,
+    reject_request,
+  ]
 keywords:
   [
     assistant,
@@ -22,6 +31,10 @@ keywords:
     clock out,
     note,
     warning,
+    approve,
+    reject,
+    waiting for approval,
+    reason,
   ]
 related:
   [
@@ -29,6 +42,7 @@ related:
     request-time-off,
     cancel-or-change-a-request,
     clock-in-and-out,
+    approve-requests,
     assistant-weekly-limit,
   ]
 goldenQuestions:
@@ -38,10 +52,14 @@ goldenQuestions:
   - question: Why does a card say the Assistant read a note written by someone else?
     expectedArticles: [assistant-changes]
     mustMention: [check that the card matches what you asked for]
+  - question: Can the Assistant approve a request for me?
+    expectedArticles: [assistant-changes, approve-requests]
+    mustMention: [approve or reject card, never recommends]
 ---
 
 Ask the Assistant to book time off, cancel one of your own requests, or clock you in or out, and it
-prepares the change as a card in the chat. Nothing changes until you confirm the card.
+prepares the change as a card in the chat. Approvers can also approve or reject requests this way.
+Nothing changes until you confirm the card.
 
 ## What a card shows
 
@@ -72,6 +90,23 @@ one. It carries on writing once you have decided them all.
 
 A change made this way reads "{{ui:common.channel.assistant}}" in the request's history or in the
 attendance history of that day. Approvers are notified as for a request made in the app.
+
+## Approve or reject a request
+
+If you approve time off, ask "What's waiting for my approval?" and the Assistant lists the requests
+waiting for you. Ask it to approve or reject one and you get a card with the requester, the type, the
+dates, the working days, their balance before and after, the group, and the request's own note word
+for word with who wrote it. The Assistant never recommends approving or rejecting; the decision is
+yours.
+
+- "{{ui:assistant.cards.confirm.approve_request}}" approves every day of the request still waiting.
+- "{{ui:assistant.cards.confirm.reject_request}}" rejects them. The card has a field for a reason the
+  requester reads; leave it empty to reject without one.
+
+The requester is notified as when you decide in the app, and the request's history reads
+"{{ui:common.channel.assistant}}". The same rules apply as in the app: you decide only in groups
+where you approve, and an approval must fit the requester's allowance. Approving and rejecting work
+only in the Assistant, not in AI apps you connect.
 
 ## A note written by someone else
 
