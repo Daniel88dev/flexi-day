@@ -25,15 +25,32 @@ const settled = (client: QueryClient, status: "success" | "error" = "success") =
 const NEITHER: AiAvailability = {
   assistant: false,
   aiConnections: false,
-  organizations: [{ organizationId: "org-1", assistant: false, aiConnections: false }],
+  organizations: [
+    {
+      organizationId: "org-1",
+      assistant: false,
+      aiConnections: false,
+      newAgreementVersionReady: false,
+    },
+  ],
 };
 
 const PREVIEW_ONLY: AiAvailability = {
   assistant: true,
   aiConnections: true,
   organizations: [
-    { organizationId: "org-1", assistant: false, aiConnections: false },
-    { organizationId: "org-preview", assistant: true, aiConnections: true },
+    {
+      organizationId: "org-1",
+      assistant: false,
+      aiConnections: false,
+      newAgreementVersionReady: false,
+    },
+    {
+      organizationId: "org-preview",
+      assistant: true,
+      aiConnections: true,
+      newAgreementVersionReady: false,
+    },
   ],
 };
 

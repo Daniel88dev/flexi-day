@@ -2918,6 +2918,91 @@ export const en = {
       slate: "Slate",
     } as Record<string, string>,
   },
+  aiSettings: {
+    card: {
+      title: "AI",
+      seeUsage: "See AI usage",
+      assistant: "Assistant",
+      onLead: "On. Every member can open it from the top bar.",
+      offLead:
+        "Off. Members don't see it. Turn it on to let them ask questions and make changes in chat.",
+      planLead: "An in-app chat that answers questions and makes changes for members.",
+      comesWithEnterprise: "The Assistant comes with Enterprise.",
+      seeEnterprise: "See Enterprise",
+      seePlans: "See plans",
+      ownerOnly: (owner: string) => `Only ${owner}, the owner, can change this.`,
+      copyNotice: "Copy the members' notice",
+      copied: "Members' notice copied",
+      loadFailed: "Couldn't load the AI settings.",
+    },
+    accepted: (version: number, name: string | null, date: string) =>
+      name
+        ? `AI features agreement version ${version}, accepted by ${name} on ${date}`
+        : `AI features agreement version ${version}, accepted on ${date}`,
+    turnOn: {
+      title: (organization: string) => `Turn on the Assistant for ${organization}?`,
+      lead: "Read this before you turn it on. You can turn it off any time.",
+      facts: (organization: string, reset: string): [string, string][] => [
+        [
+          "What it does",
+          "Members ask it about their time off, attendance and colleagues, and ask it to make changes. It's an AI, so answers can be wrong. Every change waits for the member to confirm it.",
+        ],
+        [
+          "What leaves Flexi Day",
+          "Each message, the member's name and role, and the Flexi Day data the Assistant reads to answer go to Anthropic, our AI provider, which stores them in the United States and may process them in other countries where it runs its models. It reads only what the member asking can already see.",
+        ],
+        [
+          "How long it's kept",
+          "Flexi Day keeps chats for 180 days, and members can delete their own. Anthropic deletes a chat 30 days after its last message, or at once when it's deleted here. It keeps a message its safety systems flag for up to 2 years, and never trains models on your data.",
+        ],
+        [
+          "When someone leaves",
+          `Their chats are deleted when they leave ${organization} or delete their account.`,
+        ],
+        [
+          "What it costs",
+          `Nothing extra on Enterprise. The organization gets a Weekly limit of $10 of AI use. When it runs out, the Assistant pauses for everyone until ${reset}.`,
+        ],
+        [
+          "What you see",
+          "You and org admins see each person's usage and how many of their messages were refused, never what anyone wrote.",
+        ],
+      ],
+      subProcessor: "This adds Anthropic as a sub-processor under the AI features agreement.",
+      readAgreement: "Read the AI features agreement",
+      accept: (organization: string) => `I accept the AI features agreement for ${organization}.`,
+      recordHint: "We record who accepted, when, and which version.",
+      tellMembers: "Tell members",
+      tellMembersHint: "Everyone here gets a notice in the app and on their phone.",
+      cancel: "Cancel",
+      acceptAndTurnOn: "Accept and turn on",
+      turnOn: "Turn on the Assistant",
+      working: "Turning on…",
+      done: "The Assistant is on",
+      failed: "Could not turn the Assistant on",
+      stale:
+        "The agreement has changed. Close this dialog and open it again to read the current version.",
+      alreadyOn: "The Assistant is already on.",
+    },
+    turnOff: {
+      title: "Turn off the Assistant?",
+      body: "Members lose the Assistant at once. Their chats stay readable until they are 180 days old.",
+      keepOn: "Keep it on",
+      confirm: "Turn off",
+      working: "Turning off…",
+      done: "The Assistant is off",
+      failed: "Could not turn the Assistant off",
+    },
+    banner: {
+      title: (version: number) => `Version ${version} of the AI features agreement is ready.`,
+      body: "Read it and accept it for your organization. The Assistant and AI connections keep working meanwhile.",
+      read: "Read the agreement",
+      accept: (version: number) => `Accept version ${version}`,
+      accepting: "Accepting…",
+      done: "Agreement accepted",
+      failed: "Could not accept the agreement",
+    },
+  },
 };
 
 export type Dictionary = typeof en;

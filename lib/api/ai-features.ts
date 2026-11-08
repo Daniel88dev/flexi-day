@@ -6,6 +6,8 @@ export type OrganizationAiAvailability = {
   organizationId: string;
   assistant: boolean;
   aiConnections: boolean;
+  /** The caller owns it and has a raised AI features agreement version to accept. */
+  newAgreementVersionReady: boolean;
 };
 
 /** Whether the backend's kill switches and preview list leave each AI feature open to the caller. */

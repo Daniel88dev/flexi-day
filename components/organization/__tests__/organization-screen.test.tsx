@@ -4,6 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { OrganizationScreen } from "../organization-screen";
 import { renderWithClient } from "@/lib/test-utils";
 import type { OrganizationDetail, OrganizationSummary } from "@/lib/api/organization";
+import type { AiAvailability } from "@/lib/api/ai-features";
 
 let organizations: OrganizationSummary[];
 let organizationsError: Error | null;
@@ -13,6 +14,7 @@ let detailsById: Record<string, OrganizationDetail> | null;
 let candidates: { userId: string; user: { name: string }; groupNames: string[] }[];
 
 let search = new URLSearchParams();
+let availability: AiAvailability | undefined;
 
 vi.mock("next/navigation", () => ({
   useSearchParams: () => search,
@@ -59,6 +61,11 @@ vi.mock("@/lib/api/queries", () => ({
   useSetRetentionHold: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useEnableDirectory: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useAcceptDirectoryAgreement: () => ({ mutateAsync: vi.fn(), isPending: false }),
+  useAiAvailability: () => ({ data: availability }),
+  // The AI card has its own suite.
+  useAiSettings: () => ({ data: undefined, isLoading: true }),
+  useEnableAssistant: () => ({ mutateAsync: vi.fn(), isPending: false }),
+  useDisableAssistant: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useAddOrganizationAdmin: () => ({ mutateAsync: addAdmin, isPending: false }),
   useRemoveOrganizationAdmin: () => ({ mutateAsync: removeAdmin, isPending: false }),
 }));
@@ -103,6 +110,7 @@ describe("OrganizationScreen", () => {
     detail = baseDetail();
     detailsById = null;
     search = new URLSearchParams();
+    availability = undefined;
     candidates = [
       { userId: "cand-1", user: { name: "Cody Candidate" }, groupNames: ["Engineering"] },
     ];
@@ -188,6 +196,29 @@ describe("OrganizationScreen", () => {
     expect(screen.getByText("5 groups · 25 people per group")).toBeInTheDocument();
     expect(screen.getByText("Engineering")).toBeInTheDocument();
     expect(screen.getByText(/4 members/)).toBeInTheDocument();
+  });
+
+  it("shows the AI card only where the Assistant is available", () => {
+    const aiOrg = (assistant: boolean) => ({
+      assistant,
+      aiConnections: false,
+      organizations: [
+        {
+          organizationId: "org-1",
+          assistant,
+          aiConnections: false,
+          newAgreementVersionReady: false,
+        },
+      ],
+    });
+    availability = aiOrg(false);
+    const { unmount } = renderWithClient(<OrganizationScreen />);
+    expect(screen.queryByRole("heading", { name: "AI" })).toBeNull();
+    unmount();
+
+    availability = aiOrg(true);
+    renderWithClient(<OrganizationScreen />);
+    expect(screen.getByRole("heading", { name: "AI" })).toBeInTheDocument();
   });
 
   it("hides the switcher for a single organization", () => {

@@ -1,9 +1,23 @@
 ---
 id: assistant
-translatedFrom: "20144645dbb8"
+translatedFrom: "f32c5aa531a9"
 title: Co umí Asistent
 summary: Zeptej se Asistenta na Flexi Day vlastními slovy a nech ho připravit změny, které potvrdíš.
-keywords: [asistent, chat, ai, zeptat, otázka, týdenní limit, využití, potvrdit, karta]
+keywords:
+  [
+    asistent,
+    chat,
+    ai,
+    zeptat,
+    otázka,
+    týdenní limit,
+    využití,
+    potvrdit,
+    karta,
+    zapnout,
+    smlouva,
+    dát vědět členům,
+  ]
 goldenQuestions:
   - question: Může mi Asistent zadat den volna?
     expectedArticles: [assistant]
@@ -21,6 +35,21 @@ Asistent je chat ve webové aplikaci Flexi Day. Zeptej se ho česky nebo anglick
 Asistent je součástí tarifu Enterprise. Je vypnutý, dokud ho vlastník nezapne v kartě AI na stránce
 {{ui:nav.organization}}. Jakmile je zapnutý, najde každý člen tlačítko Asistent v horní liště na
 každé stránce. Aplikace pro iPhone ho nemá.
+
+## Zapnutí a vypnutí
+
+Asistenta může zapnout nebo vypnout jen vlastník, přepínačem v kartě AI na stránce
+{{ui:nav.organization}}. Správci organizace přepínač vidí, ale nemůžou ho změnit. Než se Asistent
+zapne, přečte si vlastník, co Asistent dělá a co opouští Flexi Day. Napoprvé přijme za organizaci
+Smlouvu o funkcích AI a Flexi Day zaznamená, kdo ji přijal, kdy a kterou verzi.
+
+Volba „{{ui:aiSettings.turnOn.tellMembers}}“ je ve výchozím stavu zaškrtnutá a pošle všem v
+organizaci upozornění v aplikaci a v telefonu. Stejný text si vlastník zkopíruje v kartě AI tlačítkem
+„{{ui:aiSettings.card.copyNotice}}“, třeba do vašich vnitřních pravidel.
+
+Když vyjde nová verze smlouvy, uvidí vlastník na každé stránce banner, dokud ji nepřijme. Asistent
+mezitím funguje dál. Vypnutím o Asistenta členové hned přijdou; jejich chaty zůstanou čitelné, dokud
+nebudou 180 dní staré.
 
 ## Na co se můžeš ptát
 

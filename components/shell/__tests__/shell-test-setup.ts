@@ -98,4 +98,6 @@ export const queryMocks = () => ({
   useClockOut: () => ({ mutate: () => {}, isPending: false, error: null }),
   useStartBreak: () => ({ mutate: () => {}, isPending: false, error: null }),
   useEndBreak: () => ({ mutate: () => {}, isPending: false, error: null }),
+  useAiAvailability: () => ({ data: undefined }),
+  useAcceptAiAgreement: () => ({ mutateAsync: async () => {}, isPending: false }),
 });

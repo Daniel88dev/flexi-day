@@ -2935,4 +2935,89 @@ export const cs: Dictionary = {
       slate: "Břidlicová",
     } as Record<string, string>,
   },
+  aiSettings: {
+    card: {
+      title: "AI",
+      seeUsage: "Zobrazit využití AI",
+      assistant: "Asistent",
+      onLead: "Zapnutý. Každý člen ho otevře z horní lišty.",
+      offLead:
+        "Vypnutý. Členové ho nevidí. Zapněte ho, aby se ho mohli ptát a provádět změny v chatu.",
+      planLead: "Chat v aplikaci, který členům odpovídá na otázky a provádí za ně změny.",
+      comesWithEnterprise: "Asistent je součástí tarifu Enterprise.",
+      seeEnterprise: "Zobrazit Enterprise",
+      seePlans: "Zobrazit tarify",
+      ownerOnly: (owner: string) => `Změnit to může jen vlastník organizace, ${owner}.`,
+      copyNotice: "Zkopírovat upozornění pro členy",
+      copied: "Upozornění pro členy zkopírováno",
+      loadFailed: "Nastavení AI se nepodařilo načíst.",
+    },
+    accepted: (version: number, name: string | null, date: string) =>
+      name
+        ? `Smlouva o funkcích AI verze ${version}, přijato ${date} (${name})`
+        : `Smlouva o funkcích AI verze ${version}, přijato ${date}`,
+    turnOn: {
+      title: (organization: string) => `Zapnout Asistenta pro ${organization}?`,
+      lead: "Než ho zapnete, přečtěte si tohle. Vypnout ho můžete kdykoli.",
+      facts: (_organization: string, reset: string): [string, string][] => [
+        [
+          "Co dělá",
+          "Členové se ho ptají na svou dovolenou, docházku a kolegy a žádají ho o změny. Je to AI, takže se může mýlit. Každá změna čeká, až ji člen potvrdí.",
+        ],
+        [
+          "Co opouští Flexi Day",
+          "Každá zpráva, jméno a role člena a data z Flexi Day, která Asistent čte, aby odpověděl, jdou ke společnosti Anthropic, našemu poskytovateli AI, která je ukládá ve Spojených státech a zpracovávat je může i v dalších zemích, kde provozuje své modely. Asistent čte jen to, co tazatel sám vidí.",
+        ],
+        [
+          "Jak dlouho se uchovává",
+          "Flexi Day uchovává chaty 180 dní a členové mohou ty své smazat. Anthropic chat smaže 30 dní po poslední zprávě, nebo hned, když se smaže tady. Zprávu, kterou označí jeho bezpečnostní systémy, uchová až 2 roky. Na vašich datech nikdy netrénuje modely.",
+        ],
+        [
+          "Když někdo odejde",
+          "Jeho chaty se smažou, když z organizace odejde nebo smaže svůj účet.",
+        ],
+        [
+          "Kolik to stojí",
+          `Na tarifu Enterprise nic navíc. Organizace má Týdenní limit 10 $ na používání AI. Když se vyčerpá, Asistent se pro všechny pozastaví do ${reset}.`,
+        ],
+        [
+          "Co uvidíte",
+          "Vy a správci organizace vidíte, kolik kdo Asistenta používá a kolik jeho zpráv bylo odmítnuto, nikdy ne to, co kdo napsal.",
+        ],
+      ],
+      subProcessor: "Tím se Anthropic stává dalším zpracovatelem podle Smlouvy o funkcích AI.",
+      readAgreement: "Přečíst Smlouvu o funkcích AI",
+      accept: (organization: string) => `Přijímám Smlouvu o funkcích AI za ${organization}.`,
+      recordHint: "Zaznamenáme, kdo smlouvu přijal, kdy a kterou verzi.",
+      tellMembers: "Dát vědět členům",
+      tellMembersHint: "Každý tady dostane upozornění v aplikaci a v telefonu.",
+      cancel: "Zrušit",
+      acceptAndTurnOn: "Přijmout a zapnout",
+      turnOn: "Zapnout Asistenta",
+      working: "Zapínám…",
+      done: "Asistent je zapnutý",
+      failed: "Asistenta se nepodařilo zapnout",
+      stale:
+        "Smlouva se změnila. Zavřete tento dialog a otevřete ho znovu, abyste si přečetli aktuální verzi.",
+      alreadyOn: "Asistent už je zapnutý.",
+    },
+    turnOff: {
+      title: "Vypnout Asistenta?",
+      body: "Členové o Asistenta hned přijdou. Jejich chaty zůstanou čitelné, dokud nebudou 180 dní staré.",
+      keepOn: "Nechat zapnutý",
+      confirm: "Vypnout",
+      working: "Vypínám…",
+      done: "Asistent je vypnutý",
+      failed: "Asistenta se nepodařilo vypnout",
+    },
+    banner: {
+      title: (version: number) => `Je připravena verze ${version} Smlouvy o funkcích AI.`,
+      body: "Přečtěte si ji a přijměte ji za svou organizaci. Asistent a AI připojení mezitím fungují dál.",
+      read: "Přečíst smlouvu",
+      accept: (version: number) => `Přijmout verzi ${version}`,
+      accepting: "Přijímám…",
+      done: "Smlouva přijata",
+      failed: "Smlouvu se nepodařilo přijmout",
+    },
+  },
 };

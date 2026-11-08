@@ -4,6 +4,7 @@ import { AppSidebar } from "@/components/shell/app-sidebar";
 import { BottomBar } from "@/components/shell/bottom-bar";
 import { TopBar } from "@/components/shell/top-bar";
 import { GraceBanner } from "@/components/billing/grace-banner";
+import { AiAgreementBanner } from "@/components/ai/ai-agreement-banner";
 import { Footer } from "@/components/footer";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -20,6 +21,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <SidebarInset className="min-w-0 max-md:pb-[calc(72px+env(safe-area-inset-bottom))]">
           <TopBar />
           <GraceBanner />
+          <AiAgreementBanner />
           <div className="mx-auto w-full max-w-[1340px] flex-1 px-7 py-8 max-md:px-4">
             {children}
           </div>

@@ -6,7 +6,21 @@ module: assistant-and-mcp
 roles: [member, approver, manager, group-admin, org-admin, owner]
 routes: [/organization]
 tools: [search_docs, read_doc]
-keywords: [assistant, chat, ai, ask, question, weekly limit, usage, confirm, card]
+keywords:
+  [
+    assistant,
+    chat,
+    ai,
+    ask,
+    question,
+    weekly limit,
+    usage,
+    confirm,
+    card,
+    turn on,
+    agreement,
+    tell members,
+  ]
 related: [ai-connections]
 goldenQuestions:
   - question: Can the Assistant book a day off for me?
@@ -26,6 +40,22 @@ what you can see, nothing more.
 The Assistant comes with the Enterprise plan. It is off until the owner turns it on in the AI card
 on the {{ui:nav.organization}} page. Once it is on, every member finds an Assistant button in the
 top bar on every page. The iPhone app doesn't have it.
+
+## Turning it on and off
+
+Only the owner can turn the Assistant on or off, with the switch in the AI card on the
+{{ui:nav.organization}} page. Org admins see the switch but can't change it. Before it turns on, the
+owner reads what the Assistant does and what leaves Flexi Day. The first time, they accept the AI
+features agreement for the organization, and Flexi Day records who accepted, when, and which
+version.
+
+"{{ui:aiSettings.turnOn.tellMembers}}" is ticked by default and sends everyone in the organization a
+notice in the app and on their phone. The owner can copy the same text from the AI card with
+"{{ui:aiSettings.card.copyNotice}}", for example into your own policy.
+
+When a new version of the agreement comes out, the owner sees a banner on every page until they
+accept it. The Assistant keeps working meanwhile. Turning the Assistant off takes it away from
+members at once; their chats stay readable until they are 180 days old.
 
 ## What you can ask
 

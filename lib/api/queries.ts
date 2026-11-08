@@ -69,6 +69,14 @@ import {
 } from "./directory-lists";
 import { waitForPhotoUpload } from "@/lib/directory/profile-photo";
 import {
+  acceptAiAgreement,
+  disableAssistant,
+  enableAssistant,
+  getAiSettings,
+  type AiSettings,
+  type EnableAssistantInput,
+} from "./ai-settings";
+import {
   approveVacation,
   approveVacations,
   cancelVacations,
@@ -415,6 +423,8 @@ export const qk = {
     ["support-organization", organizationId] as const,
   supportGroup: (groupId: string) => ["support-group", groupId] as const,
   aiAvailability: () => ["ai-availability"] as const,
+  aiSettings: (organizationId?: string | null) =>
+    ["ai-settings", organizationId ?? "none"] as const,
 };
 
 function invalidateVacationDependants(qc: ReturnType<typeof useQueryClient>) {
@@ -2129,4 +2139,44 @@ export function useAiAvailability() {
     queryFn: getAiAvailability,
     staleTime: Infinity,
   });
+}
+
+/** Owner and org admins: the AI card. */
+export function useAiSettings(organizationId: string | null) {
+  return useQuery({
+    queryKey: qk.aiSettings(organizationId),
+    queryFn: () => getAiSettings(organizationId!),
+    enabled: !!organizationId,
+  });
+}
+
+function useAiSettingsMutation<TInput>(
+  organizationId: string | null,
+  mutationFn: (organizationId: string, input: TInput) => Promise<AiSettings>
+) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: TInput) => mutationFn(organizationId!, input),
+    onSuccess: (settings) => {
+      qc.setQueryData(qk.aiSettings(organizationId), settings);
+      // The shell banner reads the agreement state from the availability answer.
+      qc.invalidateQueries({ queryKey: qk.aiAvailability() });
+    },
+  });
+}
+
+export function useEnableAssistant(organizationId: string | null) {
+  return useAiSettingsMutation(organizationId, (id, input: EnableAssistantInput) =>
+    enableAssistant(id, input)
+  );
+}
+
+export function useDisableAssistant(organizationId: string | null) {
+  return useAiSettingsMutation<void>(organizationId, (id) => disableAssistant(id));
+}
+
+export function useAcceptAiAgreement(organizationId: string | null) {
+  return useAiSettingsMutation(organizationId, (id, agreementVersion: number) =>
+    acceptAiAgreement(id, agreementVersion)
+  );
 }

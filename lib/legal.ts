@@ -37,8 +37,12 @@ export const LEGAL = {
 /** Matches `DIRECTORY_AGREEMENT_VERSION` in the backend. */
 export const DIRECTORY_AGREEMENT_VERSION = 2;
 
+/** Matches `AI_AGREEMENT_VERSION` in the backend. */
+export const AI_AGREEMENT_VERSION = 1;
+
 /** The legal pages that have a Czech twin under `/cs/`. */
-export type TranslatedLegalPage = "privacy" | "terms" | "dpa" | "directory-agreement";
+export type TranslatedLegalPage =
+  "privacy" | "terms" | "dpa" | "directory-agreement" | "ai-agreement";
 
 export function legalHref(page: TranslatedLegalPage, locale: Locale): string {
   return locale === "cs" ? `/cs/${page}/` : `/${page}/`;

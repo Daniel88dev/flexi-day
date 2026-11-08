@@ -305,6 +305,83 @@ describe("Directory agreement page", () => {
   });
 });
 
+describe("AI features agreement page", () => {
+  const load = async () => (await import("../ai-agreement/page")).default;
+  const loadCs = async () => (await import("../cs/ai-agreement/page")).default;
+
+  it("renders the agreement with its version and its Czech link", async () => {
+    const Page = await load();
+    render(<Page />);
+    expect(
+      screen.getByRole("heading", { level: 1, name: "AI features agreement" })
+    ).toBeInTheDocument();
+    expect(screen.getByText(/^Version 1\./)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Data Processing Agreement" })).toHaveAttribute(
+      "href",
+      "/dpa/"
+    );
+    expect(screen.getByRole("link", { name: "Česká verze" })).toHaveAttribute(
+      "href",
+      "/cs/ai-agreement/"
+    );
+  });
+
+  it("covers every content point the spec lists", async () => {
+    const Page = await load();
+    render(<Page />);
+    const text = document.body.textContent!.replace(/\s+/g, " ");
+    const points = [
+      /What the AI features are for|purpose/i,
+      /chats/,
+      /display record/i,
+      /usage records/i,
+      /connection records/i,
+      /Anthropic, PBC/,
+      /sub-processor/,
+      /stores .* in the United States/,
+      /any country where Anthropic runs its models/,
+      /Standard Contractual Clauses.*Module 3/,
+      /not certified under the EU-U\.S\. Data Privacy Framework/,
+      /flag.* up to 2 years/,
+      /15 days/,
+      /180 days/,
+      /30 days after (its|the) last message/,
+      /leaves the organization/,
+      /organization data/,
+      /refused/,
+      /owner and org admins/,
+      /AI connections/,
+      /documented instruction/,
+      /responsibility ends/i,
+      /never trains? (models|AI models)/,
+    ];
+    for (const point of points) expect(text).toMatch(point);
+    expect(screen.getByRole("heading", { name: /Versions/ })).toBeInTheDocument();
+  });
+
+  it("names the same points in Czech", async () => {
+    const Page = await loadCs();
+    render(<Page />);
+    expect(
+      screen.getByRole("heading", { level: 1, name: "Smlouva o funkcích AI" })
+    ).toBeInTheDocument();
+    const text = document.body.textContent!.replace(/\s+/g, " ");
+    for (const point of [
+      /Verze 1\./,
+      /Anthropic, PBC/,
+      /další zpracovatel/,
+      /Spojených státech/,
+      /standardní smluvní doložky EU, modul 3/,
+      /2 roky/,
+      /15 dní/,
+      /180 dní/,
+      /AI připojení/,
+    ]) {
+      expect(text).toMatch(point);
+    }
+  });
+});
+
 describe("Czech legal pages", () => {
   const pairs = [
     {
@@ -318,6 +395,11 @@ describe("Czech legal pages", () => {
       name: "directory-agreement",
       en: () => import("../directory-agreement/page"),
       cs: () => import("../cs/directory-agreement/page"),
+    },
+    {
+      name: "ai-agreement",
+      en: () => import("../ai-agreement/page"),
+      cs: () => import("../cs/ai-agreement/page"),
     },
   ];
 

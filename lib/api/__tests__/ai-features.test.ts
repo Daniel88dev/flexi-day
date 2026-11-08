@@ -9,8 +9,18 @@ const PREVIEW: AiAvailability = {
   assistant: true,
   aiConnections: true,
   organizations: [
-    { organizationId: "org-preview", assistant: true, aiConnections: true },
-    { organizationId: "org-other", assistant: false, aiConnections: false },
+    {
+      organizationId: "org-preview",
+      assistant: true,
+      aiConnections: true,
+      newAgreementVersionReady: false,
+    },
+    {
+      organizationId: "org-other",
+      assistant: false,
+      aiConnections: false,
+      newAgreementVersionReady: false,
+    },
   ],
 };
 
