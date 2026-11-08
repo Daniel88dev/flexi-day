@@ -3265,6 +3265,16 @@ export const en = {
         done: "Opened a profile section",
         failed: "Couldn't open the profile section",
       },
+      search_docs: {
+        running: "Searching the help",
+        done: "Searched the help",
+        failed: "Couldn't search the help",
+      },
+      read_doc: {
+        running: "Reading a help article",
+        done: "Read a help article",
+        failed: "Couldn't open the help article",
+      },
       create_request: {
         running: "Booking your time off",
         done: "Booked your time off",

@@ -3282,6 +3282,16 @@ export const cs: Dictionary = {
         done: "Otevřel část profilu",
         failed: "Část profilu se nepodařilo otevřít",
       },
+      search_docs: {
+        running: "Prohledává nápovědu",
+        done: "Prohledal nápovědu",
+        failed: "Nápovědu se nepodařilo prohledat",
+      },
+      read_doc: {
+        running: "Čte článek nápovědy",
+        done: "Přečetl článek nápovědy",
+        failed: "Článek nápovědy se nepodařilo otevřít",
+      },
       create_request: {
         running: "Zadává tvoji žádost o volno",
         done: "Zadal tvoji žádost o volno",

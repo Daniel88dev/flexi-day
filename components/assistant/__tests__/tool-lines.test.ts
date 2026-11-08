@@ -18,4 +18,13 @@ describe("toolLine", () => {
     expect(toolLine(cs.assistant, "clock_out", "failed")).toBe("Odchod se nepodařilo zaznamenat");
     expect(toolLine(cs.assistant, "create_request", "running")).toBe("Zadává tvoji žádost o volno");
   });
+
+  it("names the help lookups in English and Czech", () => {
+    expect(toolLine(en.assistant, "search_docs", "running")).toBe("Searching the help");
+    expect(toolLine(en.assistant, "read_doc", "done")).toBe("Read a help article");
+    expect(toolLine(cs.assistant, "search_docs", "done")).toBe("Prohledal nápovědu");
+    expect(toolLine(cs.assistant, "read_doc", "failed")).toBe(
+      "Článek nápovědy se nepodařilo otevřít"
+    );
+  });
 });
