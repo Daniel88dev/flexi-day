@@ -5,7 +5,6 @@ vi.mock("../client", () => ({ api: (...args: unknown[]) => apiMock(...args) }));
 
 import {
   acceptAiAgreement,
-  dailyAiConnectionLimit,
   disableAiConnections,
   disableAssistant,
   enableAiConnections,
@@ -81,14 +80,6 @@ describe("AI connections API", () => {
       "/api/organization/ai/connections/disable?organizationId=org-1",
       { method: "POST" }
     );
-  });
-});
-
-describe("dailyAiConnectionLimit", () => {
-  it("returns 5,000 on Pro and 20,000 on Enterprise and Custom", () => {
-    expect(dailyAiConnectionLimit("PRO")).toBe(5000);
-    expect(dailyAiConnectionLimit("ENTERPRISE")).toBe(20000);
-    expect(dailyAiConnectionLimit("CUSTOM")).toBe(20000);
   });
 });
 

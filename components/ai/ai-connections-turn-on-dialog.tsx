@@ -15,7 +15,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { pushToast } from "@/components/toast";
 import { errorCopy } from "@/lib/api/client";
-import { dailyAiConnectionLimit, MEMBER_DAILY_LIMIT, type AiSettings } from "@/lib/api/ai-settings";
+import type { AiSettings } from "@/lib/api/ai-settings";
 import { useEnableAiConnections } from "@/lib/api/queries";
 import { formatDate } from "@/lib/directory/format";
 import { useTranslation } from "@/lib/i18n/use-translation";
@@ -50,8 +50,8 @@ export function AiConnectionsTurnOnDialog({
   const [error, setError] = useState<string | null>(null);
   const count = new Intl.NumberFormat(t.common.dateLocale);
   const limits = {
-    organization: count.format(dailyAiConnectionLimit(settings.plan)),
-    member: count.format(MEMBER_DAILY_LIMIT),
+    organization: count.format(settings.aiConnections.dailyLimit),
+    member: count.format(settings.aiConnections.memberDailyLimit),
   };
 
   function reset() {

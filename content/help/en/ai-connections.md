@@ -24,7 +24,7 @@ keywords:
     agreement,
     tell members,
   ]
-related: [assistant]
+related: [assistant, ai-connection-limits]
 goldenQuestions:
   - question: How do I connect ChatGPT to Flexi Day?
     expectedArticles: [ai-connections]
@@ -111,9 +111,9 @@ log shows the read the same way.
 
 ## Limits
 
-Each organization has a daily AI connection limit: 5,000 calls a day on Pro and 20,000 on
-Enterprise. Each person also has a member daily limit of 1,000 calls. Both reset at midnight UTC.
-When a limit is reached, the app gets a message saying which limit and when it resets.
+Each organization has a daily AI connection limit, each person a member daily limit, and each app
+limits of its own. [Limits on AI connections](help:ai-connection-limits) has the numbers and what
+the app hears when it reaches one.
 
 ## Your connections and Disconnect
 

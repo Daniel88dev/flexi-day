@@ -1,6 +1,6 @@
 ---
 id: ai-connections
-translatedFrom: "a8d3f6628a48"
+translatedFrom: "ddcd923f9dac"
 title: Připoj k Flexi Day AI aplikaci
 summary: Nech AI aplikaci, jako je Claude, ChatGPT nebo Cursor, číst tvoje údaje ve Flexi Day a dělat za tebe změny.
 keywords:
@@ -106,9 +106,9 @@ i v Záznamu o čtení organizace.
 
 ## Limity
 
-Každá organizace má denní limit AI připojení: 5 000 volání denně v tarifu Pro a 20 000 v tarifu
-Enterprise. Každý člověk má navíc denní limit člena 1 000 volání. Oba se obnovují o půlnoci UTC.
-Když aplikace limit vyčerpá, dostane zprávu, o který limit jde a kdy se obnoví.
+Každá organizace má denní limit AI připojení, každý člověk denní limit člena a každá aplikace navíc
+vlastní limity. V článku [Limity AI připojení](help:ai-connection-limits) najdeš čísla a co
+aplikace uslyší, když některý vyčerpá.
 
 ## Tvoje připojení a odpojení
 

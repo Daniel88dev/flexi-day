@@ -31,12 +31,16 @@ export type AiSettings = {
     weeklyLimitMicroUsd: number;
   };
   /**
-   * `planAllows`: any Paid plan, so the owner may raise it. `grants`: every AI
-   * connection in the organization, which the lower and off dialogs name.
+   * `planAllows`: any Paid plan, so the owner may raise it. `dailyLimit`: the
+   * daily AI connection limit for this plan (0 on Free). `memberDailyLimit`:
+   * calls per member per UTC day. `grants`: every AI connection in the
+   * organization, which the lower and off dialogs name.
    */
   aiConnections: {
     level: AiConnectionsLevel;
     planAllows: boolean;
+    dailyLimit: number;
+    memberDailyLimit: number;
     grants: OrganizationAiConnection[];
   };
   agreement: AiAgreementState;
@@ -112,14 +116,6 @@ export function disableAiConnections(organizationId: string): Promise<AiSettings
     method: "POST",
   });
 }
-
-/** The daily AI connection limit per organization (Pro 5,000, Enterprise and Custom 20,000). */
-export function dailyAiConnectionLimit(plan: AiPlan): number {
-  return plan === "PRO" ? 5_000 : 20_000;
-}
-
-/** The member daily limit: AI connection calls per member per UTC day. */
-export const MEMBER_DAILY_LIMIT = 1_000;
 
 /** The notice as one paragraph, the way an owner pastes it into their own policy. */
 export function memberNoticeText(notice: NoticeText): string {
