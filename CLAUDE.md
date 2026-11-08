@@ -44,6 +44,15 @@ reach `out/`.
   with `// @vitest-environment jsdom`.
 - CI runs `pnpm run test` on every PR. Keep it green before merging.
 
+## Help articles
+
+`content/help/{en,cs}/` holds the help articles the Assistant and AI connections answer from. A
+change users can see or do updates its articles in both languages in the same ticket, and a new
+page under `app/(app)/` goes into an article's `routes` or `content/help/uncovered-routes.json`.
+Read the workspace `help-article` skill before editing one (`.claude/skills/help-article/SKILL.md`
+in the workspace root, which a session started here doesn't load). `pnpm run help:check` runs the
+checks CI runs.
+
 ## Formatting is automatic
 
 `.claude/settings.json` runs `prettier --write` after every Write and Edit, so files reformat
