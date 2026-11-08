@@ -20,7 +20,8 @@ keywords:
     calendar layout,
     default group,
   ]
-related: [sign-in, delete-your-account, dashboard-calendar, notifications, birthdays]
+related:
+  [sign-in, delete-your-account, dashboard-calendar, notifications, birthdays, ai-connections]
 goldenQuestions:
   - question: How do I stop getting emails about requests?
     expectedArticles: [account-settings]
@@ -70,5 +71,7 @@ yet.
   [Add your birthday and share it](help:birthdays).
 - **{{ui:settings.connectedAccounts.title}}**, **{{ui:settings.changePassword}}** and
   **{{ui:settings.twoFactor.title}}**: see [Sign in to Flexi Day](help:sign-in).
+- **{{ui:aiConnectionGrants.settings.title}}**: the AI apps you connected, with Disconnect. See
+  [Connect an AI app to Flexi Day](help:ai-connections).
 - **{{ui:settings.yourData.title}}** and **{{ui:settings.deleteAccount.title}}**: see
   [Download your data or delete your account](help:delete-your-account).

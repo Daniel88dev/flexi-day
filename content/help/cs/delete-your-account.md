@@ -1,6 +1,6 @@
 ---
 id: delete-your-account
-translatedFrom: "e86818ecc69a"
+translatedFrom: "59b63c935fb1"
 title: Stažení dat a smazání účtu
 summary: Stáhni si kopii dat svého účtu nebo toho, co o tobě vede organizace, a smaž účet natrvalo.
 keywords:
@@ -42,7 +42,7 @@ Obojí najdeš dole v {{ui:nav.settings}}: „{{ui:settings.yourData.title}}“ 
 ## Co smazání účtu odstraní
 
 Smazání natrvalo odstraní tvoje přihlášení a osobní údaje: účet a jeho způsoby přihlášení,
-nastavení, oznámení, propojení kalendářů a narozeniny. Nelze to vrátit.
+nastavení, oznámení, propojení kalendářů, narozeniny a AI připojení. Nelze to vrátit.
 
 Organizace, ve kterých pracuješ, si ponechají své záznamy o tvém volnu, docházce a kvótách i s
 historií, dokud neukončí tvoje zaměstnání nebo ty záznamy nevymažou.

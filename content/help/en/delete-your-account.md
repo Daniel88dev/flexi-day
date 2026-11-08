@@ -45,7 +45,8 @@ data, and "{{ui:settings.deleteAccount.title}}".
 ## What deleting your account removes
 
 Deleting removes your sign-in and your personal data for good: your account and its sign-in
-methods, your settings, notifications, calendar connections and birthday. It can't be undone.
+methods, your settings, notifications, calendar connections, birthday and AI connections. It can't be
+undone.
 
 The organizations you work in keep their records of your leave, attendance and quotas, with their
 history, until they end your employment or erase those records.

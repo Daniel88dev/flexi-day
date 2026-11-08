@@ -1,4 +1,5 @@
 import { api } from "./client";
+import type { OrganizationAiConnection } from "./ai-connections";
 
 export type NoticeText = { title: string; body: string };
 
@@ -23,8 +24,15 @@ export type AiSettings = {
   ownerName: string;
   plan: AiPlan;
   assistant: { enabled: boolean; enabledAt: string | null; planAllows: boolean };
-  /** `planAllows`: any Paid plan, so the owner may raise it. */
-  aiConnections: { level: AiConnectionsLevel; planAllows: boolean };
+  /**
+   * `planAllows`: any Paid plan, so the owner may raise it. `grants`: every AI
+   * connection in the organization, which the lower and off dialogs name.
+   */
+  aiConnections: {
+    level: AiConnectionsLevel;
+    planAllows: boolean;
+    grants: OrganizationAiConnection[];
+  };
   agreement: AiAgreementState;
   /** The texts "Tell members" sends, in both languages, so the AI card copies the same words. */
   memberNotice: {

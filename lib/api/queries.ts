@@ -260,6 +260,7 @@ import {
   type CalendarProviderSlug,
 } from "./calendar-connections";
 import { getAiAvailability } from "./ai-features";
+import { disconnectAiConnection, getMyAiConnections } from "./ai-connections";
 import { browserTimezone } from "@/lib/attendance/timezones";
 import type {
   CreateGroupInput,
@@ -429,6 +430,7 @@ export const qk = {
   aiAvailability: () => ["ai-availability"] as const,
   aiSettings: (organizationId?: string | null) =>
     ["ai-settings", organizationId ?? "none"] as const,
+  myAiConnections: () => ["my-ai-connections"] as const,
 };
 
 function invalidateVacationDependants(qc: ReturnType<typeof useQueryClient>) {
@@ -2165,6 +2167,8 @@ function useAiSettingsMutation<TInput>(
       qc.setQueryData(qk.aiSettings(organizationId), settings);
       // The shell banner reads the agreement state from the availability answer.
       qc.invalidateQueries({ queryKey: qk.aiAvailability() });
+      // Lowering or turning off can end the owner's own connections.
+      qc.invalidateQueries({ queryKey: qk.myAiConnections() });
     },
   });
 }
@@ -2199,4 +2203,17 @@ export function useSetAiConnectionsLevel(organizationId: string | null) {
 
 export function useDisableAiConnections(organizationId: string | null) {
   return useAiSettingsMutation<void>(organizationId, (id) => disableAiConnections(id));
+}
+
+/** The caller's AI connections, for the Settings card. */
+export function useMyAiConnections() {
+  return useQuery({ queryKey: qk.myAiConnections(), queryFn: getMyAiConnections });
+}
+
+export function useDisconnectAiConnection() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (grantId: string) => disconnectAiConnection(grantId),
+    onSuccess: () => qc.invalidateQueries({ queryKey: qk.myAiConnections() }),
+  });
 }

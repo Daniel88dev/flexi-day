@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { BirthdayCard } from "@/components/settings/birthday-card";
+import { GatedAiConnectionsCard } from "@/components/settings/ai-connections-card";
 import { ConnectedAccountsCard } from "@/components/settings/connected-accounts-card";
 import { DeleteAccountCard } from "@/components/settings/delete-account-card";
 import { TwoFactorCard } from "@/components/settings/two-factor-card";
@@ -105,6 +106,8 @@ export default function SettingsPage() {
       {/* Same gate as the password card: 2FA only ever challenges password
           sign-in, so a social-only account has nothing to enable. */}
       {offerPasswordChange ? <TwoFactorCard /> : null}
+
+      <GatedAiConnectionsCard />
 
       <YourDataCard>
         <OrganizationDataExports />

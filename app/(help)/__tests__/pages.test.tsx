@@ -27,7 +27,9 @@ describe("help article pages", () => {
       screen.getByRole("heading", { level: 1, name: "Connect an AI app to Flexi Day" })
     ).toBeInTheDocument();
     expect(screen.getByRole("heading", { level: 2, name: "Connect an app" })).toBeInTheDocument();
-    expect(screen.getByText(/Open Settings and find the AI connections card/)).toBeInTheDocument();
+    expect(
+      screen.getByText(/Open Settings and find the "AI connections" card/)
+    ).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Česká verze" })).toHaveAttribute(
       "href",
       "/cs/help/ai-connections/"
@@ -43,7 +45,7 @@ describe("help article pages", () => {
     expect(
       screen.getByRole("heading", { level: 1, name: "Připoj k Flexi Day AI aplikaci" })
     ).toBeInTheDocument();
-    expect(screen.getByText(/Otevři Nastavení a najdi kartu AI připojení/)).toBeInTheDocument();
+    expect(screen.getByText(/Otevři Nastavení a najdi kartu „AI připojení“/)).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "English version" })).toHaveAttribute(
       "href",
       "/help/ai-connections/"

@@ -54,7 +54,7 @@ const aiSettings = (overrides: Partial<AiSettings> = {}): AiSettings => ({
   ownerName: "Olga Owner",
   plan: "ENTERPRISE",
   assistant: { enabled: false, enabledAt: null, planAllows: true },
-  aiConnections: { level: "off", planAllows: true },
+  aiConnections: { level: "off", planAllows: true, grants: [] },
   agreement: {
     currentVersion: 1,
     acceptedVersion: null,

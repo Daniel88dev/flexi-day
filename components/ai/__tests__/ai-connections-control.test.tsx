@@ -50,7 +50,7 @@ const aiSettings = (overrides: Partial<AiSettings> = {}): AiSettings => ({
   ownerName: "Olga Owner",
   plan: "PRO",
   assistant: { enabled: false, enabledAt: null, planAllows: false },
-  aiConnections: { level: "off", planAllows: true },
+  aiConnections: { level: "off", planAllows: true, grants: [] },
   agreement: {
     currentVersion: 1,
     acceptedVersion: null,
@@ -190,7 +190,7 @@ describe("AiCard: AI connections", () => {
 
   it("raises Read only to Read and write with no dialog", async () => {
     settings = aiSettings({
-      aiConnections: { level: "read", planAllows: true },
+      aiConnections: { level: "read", planAllows: true, grants: [] },
       agreement: ACCEPTED,
     });
     const user = userEvent.setup();
@@ -207,7 +207,7 @@ describe("AiCard: AI connections", () => {
 
   it("warns before lowering to Read only", async () => {
     settings = aiSettings({
-      aiConnections: { level: "write", planAllows: true },
+      aiConnections: { level: "write", planAllows: true, grants: [] },
       agreement: ACCEPTED,
     });
     const user = userEvent.setup();
@@ -229,7 +229,7 @@ describe("AiCard: AI connections", () => {
 
   it("warns before turning off, and copies the members' notice while on", async () => {
     settings = aiSettings({
-      aiConnections: { level: "read", planAllows: true },
+      aiConnections: { level: "read", planAllows: true, grants: [] },
       agreement: ACCEPTED,
     });
     const user = userEvent.setup();
@@ -255,8 +255,76 @@ describe("AiCard: AI connections", () => {
     expect(disableConnections).toHaveBeenCalled();
   });
 
+  const GRANTS: AiSettings["aiConnections"]["grants"] = [
+    {
+      grantId: "g-1",
+      app: {
+        clientId: "https://claude.ai/meta",
+        name: "Claude",
+        verified: true,
+        host: "claude.ai",
+      },
+      userId: "u-1",
+      personName: "Jana Novák",
+      access: "write",
+    },
+    {
+      grantId: "g-2",
+      app: { clientId: "abc", name: null, verified: false, host: "localhost:8787" },
+      userId: "u-2",
+      personName: "Petr Svoboda",
+      access: "read",
+    },
+  ];
+
+  const affectedIn = (dialog: HTMLElement) =>
+    within(within(dialog).getByRole("list", { name: "Apps it disconnects" }))
+      .getAllByRole("listitem")
+      .map((item) => item.textContent);
+
+  it("names the write apps lowering disconnects, and every app turning off does", async () => {
+    settings = aiSettings({
+      aiConnections: { level: "write", planAllows: true, grants: GRANTS },
+      agreement: ACCEPTED,
+    });
+    const user = userEvent.setup();
+    renderCard();
+
+    await user.click(level("Read only"));
+    const lower = await screen.findByRole("dialog", {
+      name: "Switch AI connections to read only?",
+    });
+    expect(affectedIn(lower)).toEqual(["ClaudeJana Novák"]);
+    await user.click(within(lower).getByRole("button", { name: "Cancel" }));
+
+    await user.click(level("Off"));
+    const off = await screen.findByRole("dialog", { name: "Turn off AI connections?" });
+    expect(affectedIn(off)).toEqual(["ClaudeJana Novák", "localhost:8787Petr Svoboda"]);
+  });
+
+  it("says when lowering disconnects nothing", async () => {
+    settings = aiSettings({
+      aiConnections: { level: "write", planAllows: true, grants: [GRANTS[1]!] },
+      agreement: ACCEPTED,
+    });
+    const user = userEvent.setup();
+    renderCard();
+
+    await user.click(level("Read only"));
+    const dialog = await screen.findByRole("dialog", {
+      name: "Switch AI connections to read only?",
+    });
+    expect(
+      within(dialog).getByText("No app has write access now, so nothing is disconnected.")
+    ).toBeInTheDocument();
+    expect(within(dialog).queryByRole("list")).toBeNull();
+  });
+
   it("sends a Free owner to the plans", () => {
-    settings = aiSettings({ plan: "FREE", aiConnections: { level: "off", planAllows: false } });
+    settings = aiSettings({
+      plan: "FREE",
+      aiConnections: { level: "off", planAllows: false, grants: [] },
+    });
     renderCard();
 
     for (const name of ["Off", "Read only", "Read and write"]) {
@@ -270,7 +338,10 @@ describe("AiCard: AI connections", () => {
   });
 
   it("lets a lapsed owner lower or turn off but not raise", () => {
-    settings = aiSettings({ plan: "FREE", aiConnections: { level: "read", planAllows: false } });
+    settings = aiSettings({
+      plan: "FREE",
+      aiConnections: { level: "read", planAllows: false, grants: [] },
+    });
     renderCard();
 
     expect(level("Off")).toBeEnabled();
@@ -280,7 +351,7 @@ describe("AiCard: AI connections", () => {
   it("shows an org admin the setting read-only, naming the owner", () => {
     settings = aiSettings({
       isOwner: false,
-      aiConnections: { level: "read", planAllows: true },
+      aiConnections: { level: "read", planAllows: true, grants: [] },
     });
     renderCard();
 

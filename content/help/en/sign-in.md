@@ -43,14 +43,16 @@ connected one of them to your account.
 3. Follow the link in the email and set a new password of at least 8 characters. The link is valid
    for one hour.
 
-Setting a new password signs you out everywhere else, including your phone. If you never confirmed
-your email address, the reset confirms it.
+Setting a new password signs you out everywhere else, including your phone, and disconnects every AI
+app you connected ([AI connections](help:ai-connections)). If you never confirmed your email address,
+the reset confirms it.
 
 ## Change your password
 
 When you know your current password, change it in the "{{ui:settings.changePassword}}" card in
 {{ui:nav.settings}}. An account that only ever signed in with Google, Microsoft or Apple has no
-password. To add one, sign out and use "{{ui:auth.signIn.forgot}}"; the link sets it.
+password. To add one, sign out and use "{{ui:auth.signIn.forgot}}"; the link sets it. Changing it
+signs you out everywhere else and disconnects your AI apps, like a reset.
 
 ## Sign in with Google, Microsoft or Apple
 

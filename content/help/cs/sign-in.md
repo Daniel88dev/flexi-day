@@ -1,6 +1,6 @@
 ---
 id: sign-in
-translatedFrom: "5c3916ba6520"
+translatedFrom: "fd4c2c927f8c"
 title: Přihlášení, obnovení hesla a dvoufázové ověření
 summary: Přihlas se heslem nebo přes Google, Microsoft či Apple, obnov zapomenuté heslo a přidej druhý krok.
 keywords:
@@ -39,14 +39,16 @@ máš některého z nich k účtu připojeného.
 2. Zadej svůj e-mail a stiskni „{{ui:auth.forgot.submit}}“.
 3. Klikni na odkaz v e-mailu a nastav nové heslo o délce aspoň 8 znaků. Odkaz platí jednu hodinu.
 
-Nastavením nového hesla se odhlásíš všude jinde, i v telefonu. Pokud jsi nikdy nepotvrdil svou
-e-mailovou adresu, obnovení hesla ji potvrdí.
+Nastavením nového hesla se odhlásíš všude jinde, i v telefonu, a odpojí se všechny AI aplikace, které
+jsi připojil ([AI připojení](help:ai-connections)). Pokud jsi nikdy nepotvrdil svou e-mailovou
+adresu, obnovení hesla ji potvrdí.
 
 ## Změna hesla
 
 Když znáš současné heslo, změníš ho v kartě „{{ui:settings.changePassword}}“ v
 {{ui:nav.settings}}. Účet, který se vždy přihlašoval jen přes Google, Microsoft nebo Apple, heslo
-nemá. Chceš-li ho přidat, odhlas se a použij „{{ui:auth.signIn.forgot}}“; odkaz ti heslo nastaví.
+nemá. Chceš-li ho přidat, odhlas se a použij „{{ui:auth.signIn.forgot}}“; odkaz ti heslo nastaví. Změna hesla tě
+stejně jako obnovení odhlásí všude jinde a odpojí tvoje AI aplikace.
 
 ## Přihlášení přes Google, Microsoft nebo Apple
 

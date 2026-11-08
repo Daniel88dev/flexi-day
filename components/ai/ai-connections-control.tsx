@@ -147,6 +147,7 @@ export function AiConnectionsControl({
               if (!open) setLowerTo(null);
             }}
             organizationId={settings.organizationId}
+            grants={settings.aiConnections.grants}
           />
         </>
       ) : null}

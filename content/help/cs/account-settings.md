@@ -1,6 +1,6 @@
 ---
 id: account-settings
-translatedFrom: "e5904680af53"
+translatedFrom: "0b23a5dcc3d1"
 title: Změna nastavení
 summary: E-mailová oznámení, vzhled kalendáře na přehledu, jazyk a motiv, a kde najdeš ostatní nastavení účtu.
 keywords:
@@ -68,5 +68,7 @@ bys je změnil.
   [Přidání narozenin a jejich sdílení](help:birthdays).
 - **{{ui:settings.connectedAccounts.title}}**, **{{ui:settings.changePassword}}** a
   **{{ui:settings.twoFactor.title}}**: viz [Přihlášení do Flexi Day](help:sign-in).
+- **{{ui:aiConnectionGrants.settings.title}}**: AI aplikace, které jsi připojil, s odpojením. Viz
+  [Připoj k Flexi Day AI aplikaci](help:ai-connections).
 - **{{ui:settings.yourData.title}}** a **{{ui:settings.deleteAccount.title}}**: viz
   [Stažení dat a smazání účtu](help:delete-your-account).

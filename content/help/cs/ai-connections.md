@@ -1,6 +1,6 @@
 ---
 id: ai-connections
-translatedFrom: "60ab9800a7db"
+translatedFrom: "dddf9974e342"
 title: Připoj k Flexi Day AI aplikaci
 summary: Nech AI aplikaci, jako je Claude, ChatGPT nebo Cursor, číst tvoje údaje ve Flexi Day a dělat za tebe změny.
 keywords:
@@ -13,6 +13,8 @@ keywords:
     konektor,
     připojit,
     odpojit,
+    odebrat,
+    naposledy použito,
     jen čtení,
     čtení a zápis,
     zapnout,
@@ -63,12 +65,14 @@ z karty AI tlačítkem „{{ui:aiSettings.card.copyNotice}}“.
 Přechod z {{ui:aiConnectionsSettings.card.levels.read}} na
 {{ui:aiConnectionsSettings.card.levels.write}} nové přijetí smlouvy nepotřebuje. Snížení na
 {{ui:aiConnectionsSettings.card.levels.read}} nebo vypnutí AI připojení musí vlastník nejdřív
-potvrdit, protože odpojí aplikace. Každá změna se zaznamená i s tím, kdo ji udělal a kdy.
+potvrdit a dialog vyjmenuje aplikace a lidi, které odpojí. Každá změna se zaznamená i s tím, kdo ji
+udělal a kdy.
 
 ## Připojení aplikace
 
-1. Otevři {{ui:nav.settings}} a najdi kartu AI připojení.
-2. Zvol „Připojit AI aplikaci“ a zkopíruj adresu serveru, `https://api.flexi-day.com/mcp`.
+1. Otevři {{ui:nav.settings}} a najdi kartu „{{ui:aiConnectionGrants.settings.title}}“.
+2. V části „{{ui:aiConnectionGrants.settings.connectTitle}}“ zkopíruj adresu serveru,
+   `https://api.flexi-day.com/mcp`.
 3. V AI aplikaci přidej vlastní konektor s touto adresou.
 4. Aplikace otevře stránku Flexi Day, která ji jmenuje. Přihlas se jako obvykle. Pokud používáš
    dvoufázové ověření, Flexi Day si řekne o kód. Dokud přístup nepovolíš, nic se nesdílí.
@@ -106,9 +110,26 @@ Každá organizace má denní limit AI připojení: 5 000 volání denně v tari
 Enterprise. Každý člověk má navíc denní limit člena 1 000 volání. Oba se obnovují o půlnoci UTC.
 Když aplikace limit vyčerpá, dostane zprávu, o který limit jde a kdy se obnoví.
 
-## Odpojení
+## Tvoje připojení a odpojení
 
-V kartě AI připojení zvol u aplikace „Odpojit“. Aplikace se odpojí také, když si obnovíš heslo,
-když smažeš svůj účet a když vlastník AI připojení vypne. Snížení nastavení na Jen čtení odebere
-přístup k zápisu. Vlastník a správci organizace vidí aplikace každého člověka na stránce Využití AI
-a můžou je tam odebrat.
+Karta „{{ui:aiConnectionGrants.settings.title}}“ v {{ui:nav.settings}} ukazuje každou aplikaci,
+kterou jsi připojil: její adresu, nebo „{{ui:aiConnectionGrants.settings.notVerified}}“, když ji
+Flexi Day nemohl ověřit, organizaci, přístup a kdy byla naposledy použita. Poslední použití je chvíle,
+kdy si aplikace naposledy vzala nový token, a používaná aplikace to dělá aspoň jednou za hodinu.
+
+Připojení ukončíš tak, že u aplikace zvolíš „{{ui:aiConnectionGrants.settings.disconnect}}“ a
+potvrdíš to. Aplikace přestane fungovat při svém dalším volání. Pokud ji chceš používat znovu,
+připoj ji znovu.
+
+### Co dalšího aplikace odpojí
+
+- Obnovení hesla odpojí všechny aplikace, které jsi připojil, ve všech organizacích.
+- Změna hesla v {{ui:nav.settings}} udělá totéž, protože tě zároveň odhlásí všude jinde.
+- Smazání účtu je odpojí všechny.
+- Když vlastník AI připojení vypne, odpojí se všechny aplikace v organizaci. Když nastavení sníží na
+  {{ui:aiConnectionsSettings.card.levels.read}}, odpojí se aplikace s přístupem k zápisu; novým
+  připojením získáš přístup ke čtení.
+- Vlastník a správci organizace vidí aplikace každého člověka na stránce Využití AI a můžou je tam
+  odebrat.
+
+Odhlášení, zapnutí dvoufázového ověření ani propadlý tarif tvoje připojení nezruší. Dokud je tarif propadlý, aplikace dostává na svá volání odmítnutí.

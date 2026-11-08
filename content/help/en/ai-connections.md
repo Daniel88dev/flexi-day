@@ -16,6 +16,8 @@ keywords:
     connector,
     connect,
     disconnect,
+    revoke,
+    last used,
     read only,
     read and write,
     turn on,
@@ -67,12 +69,14 @@ from the AI card with "{{ui:aiSettings.card.copyNotice}}".
 Going from {{ui:aiConnectionsSettings.card.levels.read}} to
 {{ui:aiConnectionsSettings.card.levels.write}} needs no new acceptance. Lowering to
 {{ui:aiConnectionsSettings.card.levels.read}} or turning AI connections off asks the owner to confirm
-first, because it disconnects apps. Every change is recorded with who made it and when.
+first and names the apps and people it disconnects. Every change is recorded with who made it and
+when.
 
 ## Connect an app
 
-1. Open {{ui:nav.settings}} and find the AI connections card.
-2. Choose "Connect an AI app" and copy the server address, `https://api.flexi-day.com/mcp`.
+1. Open {{ui:nav.settings}} and find the "{{ui:aiConnectionGrants.settings.title}}" card.
+2. Under "{{ui:aiConnectionGrants.settings.connectTitle}}", copy the server address,
+   `https://api.flexi-day.com/mcp`.
 3. In your AI app, add a custom connector with that address.
 4. The app opens a Flexi Day page that names it. Sign in as usual. If you use two-factor
    authentication, Flexi Day asks for your code. Nothing is shared until you allow it.
@@ -110,9 +114,25 @@ Each organization has a daily AI connection limit: 5,000 calls a day on Pro and 
 Enterprise. Each person also has a member daily limit of 1,000 calls. Both reset at midnight UTC.
 When a limit is reached, the app gets a message saying which limit and when it resets.
 
-## Disconnect
+## Your connections and Disconnect
 
-In the AI connections card, choose "Disconnect" next to the app. Apps are also disconnected when
-you reset your password, when you delete your account, and when the owner turns AI connections off.
-Lowering the setting to Read only removes write access. Owners and org admins see each person's
-apps on the AI usage page and can revoke them there.
+The "{{ui:aiConnectionGrants.settings.title}}" card in {{ui:nav.settings}} lists each app you
+connected: its address, or "{{ui:aiConnectionGrants.settings.notVerified}}" when Flexi Day couldn't
+check it, the organization, its access, and when it was last used. Last use is when the app last got
+a fresh token, which an app in use does at least once an hour.
+
+To end one, choose "{{ui:aiConnectionGrants.settings.disconnect}}" next to the app and confirm. The
+app stops at its next call. To use it again, connect it again.
+
+### What else disconnects apps
+
+- Resetting your password disconnects every app you connected, in every organization.
+- Changing your password in {{ui:nav.settings}} does the same, because it also signs you out
+  everywhere else.
+- Deleting your account disconnects them all.
+- The owner turning AI connections off disconnects every app in the organization. Lowering it to
+  {{ui:aiConnectionsSettings.card.levels.read}} disconnects the apps that have write access; connect
+  again to get read access.
+- Owners and org admins see each person's apps on the AI usage page and can revoke them there.
+
+Signing out, turning on two-factor authentication and a lapsed plan keep your connections. While the plan is lapsed, the app's calls are refused.

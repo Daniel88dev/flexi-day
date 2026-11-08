@@ -3154,6 +3154,35 @@ export const en = {
       pickAgain: "Pick an organization",
     },
   },
+  aiConnectionGrants: {
+    settings: {
+      title: "AI connections",
+      lead: "AI apps you allowed to use Flexi Day for you. Each one works in one organization, with your permissions there.",
+      empty: "You haven't connected an AI app.",
+      loadFailed: "Could not load your AI connections.",
+      notVerified: "name not verified",
+      access: { read: "Read only", write: "Read and write" },
+      lastUsed: (when: string) => `last used ${when}`,
+      organizationGone: "Organization removed",
+      disconnect: "Disconnect",
+      disconnectApp: (app: string) => `Disconnect ${app}`,
+      confirm: (app: string) => `Disconnect ${app}? It stops at its next call.`,
+      keep: "Keep",
+      disconnecting: "Disconnecting…",
+      disconnected: (app: string) => `${app} is disconnected`,
+      disconnectFailed: "Could not disconnect the app",
+      connectTitle: "Connect an AI app",
+      connectLead:
+        "In Claude, ChatGPT or another app that takes MCP connectors, add Flexi Day with this address. Your organization's owner has to turn on AI connections first.",
+      copy: "Copy the address",
+      copied: "Address copied",
+    },
+    ownerDialog: {
+      listLabel: "Apps it disconnects",
+      lowerNone: "No app has write access now, so nothing is disconnected.",
+      offNone: "No app is connected now, so nothing is disconnected.",
+    },
+  },
 };
 
 export type Dictionary = typeof en;

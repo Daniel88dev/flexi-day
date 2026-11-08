@@ -3172,4 +3172,33 @@ export const cs: Dictionary = {
       pickAgain: "Vybrat organizaci",
     },
   },
+  aiConnectionGrants: {
+    settings: {
+      title: "AI připojení",
+      lead: "AI aplikace, kterým jste povolili používat Flexi Day za vás. Každá pracuje v jedné organizaci s vašimi oprávněními v ní.",
+      empty: "Nemáte připojenou žádnou AI aplikaci.",
+      loadFailed: "AI připojení se nepodařilo načíst.",
+      notVerified: "název neověřen",
+      access: { read: "Jen čtení", write: "Čtení a zápis" },
+      lastUsed: (when: string) => `naposledy použito ${when}`,
+      organizationGone: "Organizace odstraněna",
+      disconnect: "Odpojit",
+      disconnectApp: (app: string) => `Odpojit ${app}`,
+      confirm: (app: string) => `Odpojit ${app}? Přestane fungovat při dalším volání.`,
+      keep: "Ponechat",
+      disconnecting: "Odpojuji…",
+      disconnected: (app: string) => `Aplikace ${app} je odpojená`,
+      disconnectFailed: "Aplikaci se nepodařilo odpojit",
+      connectTitle: "Připojit AI aplikaci",
+      connectLead:
+        "V Claude, ChatGPT nebo jiné aplikaci, která podporuje MCP konektory, přidejte Flexi Day s touto adresou. Vlastník vaší organizace musí AI připojení nejdřív zapnout.",
+      copy: "Zkopírovat adresu",
+      copied: "Adresa zkopírována",
+    },
+    ownerDialog: {
+      listLabel: "Odpojí se tyto aplikace",
+      lowerNone: "Žádná aplikace teď nemá přístup k zápisu, takže se nic neodpojí.",
+      offNone: "Teď není připojená žádná aplikace, takže se nic neodpojí.",
+    },
+  },
 };
