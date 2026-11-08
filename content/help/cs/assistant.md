@@ -1,6 +1,6 @@
 ---
 id: assistant
-translatedFrom: "d28b95a0fa16"
+translatedFrom: "403d6417920e"
 title: Co umí Asistent
 summary: Zeptej se Asistenta na Flexi Day vlastními slovy a nech ho připravit změny, které potvrdíš.
 keywords:
@@ -20,6 +20,10 @@ keywords:
     panel,
     minulé chaty,
     nový chat,
+    odmítnuto,
+    mimo téma,
+    neodesláno,
+    zkusit znovu,
   ]
 goldenQuestions:
   - question: Může mi Asistent zadat den volna?
@@ -28,6 +32,9 @@ goldenQuestions:
   - question: Proč nám Asistent tento týden přestal odpovídat?
     expectedArticles: [assistant]
     mustMention: [Týdenní limit, obnoví se v pondělí]
+  - question: Proč Asistent odmítl moji otázku?
+    expectedArticles: [assistant]
+    mustMention: [jen otázky k Flexi Day, zpráva se neodešle]
 ---
 
 Asistent je chat ve webové aplikaci Flexi Day. Zeptej se ho česky nebo anglicky a odpoví ti z
@@ -80,9 +87,27 @@ nebudou 180 dní staré.
   byla žádost schválená, kolik jsi tento týden odpracoval.
 - Schvalovatelé se můžou ptát na podrobnosti žádosti, která čeká na rozhodnutí.
 
-Asistent odpovídá jen na otázky k Flexi Day. Neradí v právních otázkách (obrať se na personální
-oddělení nebo zaměstnavatele), nepíše za tebe volný text a nikdy nedoporučuje cizí žádost schválit
-ani zamítnout.
+Můžeš se ho zeptat i na to, co umí, prohodit pár slov nebo se zeptat na tarify a ceny.
+
+## Na co neodpoví
+
+Asistent odpovídá jen na otázky k Flexi Day. Každá zpráva se zkontroluje dřív, než ji Asistent
+uvidí. Zpráva o něčem jiném nebo zpráva, která se snaží změnit pravidla Asistenta, se neodešle:
+zůstane v chatu s označením „{{ui:assistantBoundary.rejected}}“ a pod ní krátká pevná odpověď, s
+čím Asistent pomáhá. Vlastník a správci organizace vidí, kolik zpráv kterého člověka bylo tento
+týden odmítnuto, nikdy ne to, co kdo napsal.
+
+Když selže samotná kontrola, nic se neodešle a „{{ui:assistantBoundary.tryAgain}}“ zprávu pošle
+znovu, stejně jako „{{ui:assistantBoundary.sendAgain}}“ po výpadku připojení.
+
+- Neradí v právních otázkách. Obrať se na personální oddělení nebo zaměstnavatele.
+- Nepíše e-maily ani dopisy. Místo toho nabídne, že vytvoří žádost s krátkou poznámkou.
+- Nikdy nedoporučuje cizí žádost schválit ani zamítnout. Ukáže fakta a rozhodne schvalovatel.
+- Lidé, které ve Flexi Day nevidíš, se v jeho odpovědích neobjeví.
+- Poznámku nebo jméno, které někdo napsal a které se tváří jako pokyn pro Asistenta, před ním
+  skryje.
+- V odpovědích odkazuje jen na stránky Flexi Day a články nápovědy. Jiné odkazy se ukážou jako
+  prostý text a obrázky se nezobrazí nikdy.
 
 ## Změny, které potvrdíš
 

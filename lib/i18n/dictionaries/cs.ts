@@ -3348,4 +3348,17 @@ export const cs: Dictionary = {
       onlyAdmins: "Vidíte to jen vy a správci organizace.",
     },
   },
+  assistantBoundary: {
+    notices: {
+      ASSISTANT_TOPIC_REFUSAL:
+        "Pomůžu ti jen s Flexi Day: s dovolenou, docházkou, tvým týmem a tím, jak aplikace funguje. S právními a personálními otázkami se obrať na personální oddělení nebo zaměstnavatele.",
+      ASSISTANT_MODEL_REFUSAL:
+        "Na tohle Asistent neodpoví. Zeptej se na dovolenou, docházku nebo svůj tým.",
+    },
+    rejected: "Asistentovi neodesláno",
+    screenFailed: "Tvou zprávu se nepodařilo zkontrolovat, takže se neodeslala.",
+    tryAgain: "Zkusit znovu",
+    sendAgain: "Odeslat znovu",
+    unavailable: "Asistent teď není k dispozici. Zkus to později.",
+  },
 };

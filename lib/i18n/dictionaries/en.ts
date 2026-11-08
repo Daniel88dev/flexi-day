@@ -3331,6 +3331,19 @@ export const en = {
       onlyAdmins: "Only you and org admins see this.",
     },
   },
+  assistantBoundary: {
+    notices: {
+      ASSISTANT_TOPIC_REFUSAL:
+        "I can only help with Flexi Day: time off, attendance, your team and how the app works. For legal or HR questions, ask your HR team or employer.",
+      ASSISTANT_MODEL_REFUSAL:
+        "The Assistant can't answer that. Ask about time off, attendance or your team.",
+    },
+    rejected: "Not sent to the Assistant",
+    screenFailed: "Your message couldn't be checked, so it wasn't sent.",
+    tryAgain: "Try again",
+    sendAgain: "Send again",
+    unavailable: "The Assistant is unavailable right now. Try again later.",
+  },
 };
 
 export type Dictionary = typeof en;

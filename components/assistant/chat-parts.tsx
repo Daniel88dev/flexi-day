@@ -15,7 +15,8 @@ import { cn } from "@/lib/utils";
 import { RichText } from "./rich-text";
 import type { FailedSend, LiveTool, LiveTurn } from "./use-assistant-turn";
 
-type Copy = ReturnType<typeof useTranslation>["t"]["assistant"];
+type Translations = ReturnType<typeof useTranslation>["t"];
+type Copy = Translations["assistant"];
 type ToolName = Exclude<keyof Copy["tools"], "other">;
 
 export function toolLine(copy: Copy, name: string | null, status: LiveTool["status"]): string {
@@ -23,21 +24,57 @@ export function toolLine(copy: Copy, name: string | null, status: LiveTool["stat
   return forms[status];
 }
 
+/** The fixed words of a notice the backend records or streams by code; never model output. */
+export function noticeText(t: Translations, code: string | null): string {
+  const fixed: Record<string, string> = { ...t.assistant.notices, ...t.assistantBoundary.notices };
+  return (code ? fixed[code] : undefined) ?? t.assistant.notices.ASSISTANT_ERROR;
+}
+
+/** A user row the screen rejected: the message never reached the Assistant. */
+const REJECTED = "REJECTED";
+
+/** Codes of a failed send that a plain resend can fix. */
+const RESENDABLE = new Set([null, "ASSISTANT_SCREEN_FAILED", "ASSISTANT_TURN_RUNNING"]);
+
 /* ---------------------------------------------------------------- messages */
 
-function UserBubble({ text, error }: { text: string; error?: string | null }) {
+function UserBubble({
+  text,
+  error,
+  rejected,
+  retry,
+}: {
+  text: string;
+  error?: string | null;
+  rejected?: boolean;
+  retry?: { label: string; onClick: () => void } | null;
+}) {
+  const { t } = useTranslation();
   return (
     <div className="flex flex-col items-end gap-1">
       <div
-        className="max-w-[85%] rounded-[18px] rounded-br-[6px] px-3.5 py-2.5 text-[15px] leading-[1.5] whitespace-pre-line"
+        className={cn(
+          "max-w-[85%] rounded-[18px] rounded-br-[6px] px-3.5 py-2.5 text-[15px] leading-[1.5] whitespace-pre-line",
+          rejected && "opacity-60"
+        )}
         style={{ background: "var(--surface-2)" }}
       >
         {text}
       </div>
+      {rejected ? (
+        <div className="text-[12.5px]" style={{ color: "var(--text-faint)" }}>
+          {t.assistantBoundary.rejected}
+        </div>
+      ) : null}
       {error ? (
-        <div role="alert" className="text-[13px]" style={{ color: "var(--danger)" }}>
+        <div role="alert" className="text-right text-[13px]" style={{ color: "var(--danger)" }}>
           {error}
         </div>
+      ) : null}
+      {retry ? (
+        <Button size="xs" variant="outline" onClick={retry.onClick}>
+          {retry.label}
+        </Button>
       ) : null}
     </div>
   );
@@ -94,7 +131,7 @@ function LiveTurnView({ turn }: { turn: LiveTurn }) {
           style={{ background: "var(--primary)" }}
         />
       ) : null}
-      {turn.notice ? <Notice text={copy.notices.ASSISTANT_ERROR} /> : null}
+      {turn.notice ? <Notice text={noticeText(t, turn.notice)} /> : null}
       {turn.phase === "reconnecting" ? (
         <StatusLine>{copy.stillWriting}</StatusLine>
       ) : running ? (
@@ -114,10 +151,13 @@ export function MessageList({
   messages,
   live,
   failed,
+  onResend,
 }: {
   messages: DisplayMessage[];
   live: LiveTurn | null;
   failed: FailedSend | null;
+  /** Sends a message that wasn't sent again, as it was. */
+  onResend?: (text: string) => void;
 }) {
   const { t } = useTranslation();
   const copy = t.assistant;
@@ -146,17 +186,37 @@ export function MessageList({
     }
     flushSteps(`steps-${message.id}`);
     if (message.kind === "user") {
-      rows.push(<UserBubble key={message.id} text={message.text ?? ""} />);
+      rows.push(
+        <UserBubble
+          key={message.id}
+          text={message.text ?? ""}
+          rejected={message.code === REJECTED}
+        />
+      );
     } else {
-      rows.push(<Notice key={message.id} text={copy.notices.ASSISTANT_ERROR} />);
+      rows.push(<Notice key={message.id} text={noticeText(t, message.code)} />);
     }
   }
   flushSteps("steps-end");
 
+  const sendErrors: Record<string, string> = {
+    ...copy.sendErrors,
+    ASSISTANT_SCREEN_FAILED: t.assistantBoundary.screenFailed,
+    ASSISTANT_UNAVAILABLE: t.assistantBoundary.unavailable,
+  };
   const sendError = failed
-    ? ((failed.code ? (copy.sendErrors as Record<string, string>)[failed.code] : undefined) ??
-      copy.sendErrors.fallback)
+    ? ((failed.code ? sendErrors[failed.code] : undefined) ?? copy.sendErrors.fallback)
     : null;
+  const retry =
+    failed && onResend && RESENDABLE.has(failed.code)
+      ? {
+          label:
+            failed.code === "ASSISTANT_SCREEN_FAILED"
+              ? t.assistantBoundary.tryAgain
+              : t.assistantBoundary.sendAgain,
+          onClick: () => onResend(failed.text),
+        }
+      : null;
 
   // A chat created by this message may already list it.
   const lastMessage = messages.at(-1);
@@ -168,7 +228,7 @@ export function MessageList({
         <UserBubble text={live.userText} />
       ) : null}
       {live ? <LiveTurnView turn={live} /> : null}
-      {failed ? <UserBubble text={failed.text} error={sendError} /> : null}
+      {failed ? <UserBubble text={failed.text} error={sendError} retry={retry} /> : null}
     </div>
   );
 }

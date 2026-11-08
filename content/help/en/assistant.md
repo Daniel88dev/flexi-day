@@ -23,6 +23,10 @@ keywords:
     panel,
     past chats,
     new chat,
+    refused,
+    off topic,
+    not sent,
+    try again,
   ]
 related: [ai-connections]
 goldenQuestions:
@@ -32,6 +36,9 @@ goldenQuestions:
   - question: Why did the Assistant stop answering for our organization this week?
     expectedArticles: [assistant]
     mustMention: [Weekly limit, resets on Monday]
+  - question: Why did the Assistant refuse my question?
+    expectedArticles: [assistant]
+    mustMention: [Flexi Day questions only, the message isn't sent]
 ---
 
 The Assistant is a chat in the Flexi Day web app. Ask it a question in English or Czech and it
@@ -87,9 +94,27 @@ members at once; their chats stay readable until they are 180 days old.
   is away next week, whether a request was approved, how much you worked this week.
 - For approvers, the details of a request waiting for a decision.
 
-The Assistant answers Flexi Day questions only. It doesn't give legal advice (ask your HR team or
-your employer), doesn't write free text for you, and never recommends approving or rejecting
-someone's request.
+Small talk, "what can you do" and questions about plans and pricing are fine too.
+
+## What it won't answer
+
+The Assistant answers Flexi Day questions only. Every message is checked before the Assistant sees
+it. A message about anything else, or one that tries to change the Assistant's rules, isn't sent:
+it stays in the chat marked "{{ui:assistantBoundary.rejected}}", followed by a short fixed reply
+saying what the Assistant helps with. Owners and org admins see how many of each person's messages
+were refused this week, never what anyone wrote.
+
+If the check itself fails, nothing is sent and "{{ui:assistantBoundary.tryAgain}}" sends the message
+again, as "{{ui:assistantBoundary.sendAgain}}" does after a dropped connection.
+
+- It doesn't give legal advice. Ask your HR team or your employer.
+- It doesn't write emails or letters. It offers to create the request with a short note instead.
+- It never recommends approving or rejecting someone's request. It shows the facts, and the approver
+  decides.
+- People you can't see in Flexi Day don't appear in its answers.
+- A note or name someone wrote that reads like instructions to the Assistant is hidden from it.
+- Its answers link only to Flexi Day pages and help articles. Other links show as plain text, and
+  images never show.
 
 ## Changes you confirm
 

@@ -329,6 +329,7 @@ function ChatView({
             messages={detail.data?.messages ?? []}
             live={turn.live}
             failed={turn.failed}
+            onResend={send}
           />
         )}
       </div>
