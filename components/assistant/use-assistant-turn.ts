@@ -167,8 +167,8 @@ export function useAssistantTurn(args: {
           turnChatRef.current = chatId;
           args.onChatCreated(chatId);
         }
-        let done = await sendAssistantMessage(chatId, text, onEvent, controller.signal);
-        if (!done) done = await follow(chatId, controller, "reconnecting");
+        const done = await sendAssistantMessage(chatId, text, onEvent, controller.signal);
+        if (!done) await follow(chatId, controller, "reconnecting");
         if (controller.signal.aborted) return;
         await finish(chatId);
       } catch (error) {
