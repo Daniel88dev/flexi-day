@@ -259,7 +259,7 @@ import {
   syncCalendarNow,
   type CalendarProviderSlug,
 } from "./calendar-connections";
-import { getAiAvailability } from "./ai-features";
+import { dismissPrivacyBanner, getAiAvailability, getPrivacyBanner } from "./ai-features";
 import { disconnectAiConnection, getMyAiConnections } from "./ai-connections";
 import { browserTimezone } from "@/lib/attendance/timezones";
 import type {
@@ -431,6 +431,7 @@ export const qk = {
   aiSettings: (organizationId?: string | null) =>
     ["ai-settings", organizationId ?? "none"] as const,
   myAiConnections: () => ["my-ai-connections"] as const,
+  privacyBanner: () => ["privacy-banner"] as const,
 };
 
 function invalidateVacationDependants(qc: ReturnType<typeof useQueryClient>) {
@@ -2215,5 +2216,22 @@ export function useDisconnectAiConnection() {
   return useMutation({
     mutationFn: (grantId: string) => disconnectAiConnection(grantId),
     onSuccess: () => qc.invalidateQueries({ queryKey: qk.myAiConnections() }),
+  });
+}
+
+export function usePrivacyBanner() {
+  return useQuery({
+    queryKey: qk.privacyBanner(),
+    queryFn: getPrivacyBanner,
+    staleTime: Infinity,
+  });
+}
+
+/** Hides the banner at once; a failed save only brings it back on the next load. */
+export function useDismissPrivacyBanner() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: dismissPrivacyBanner,
+    onMutate: () => qc.setQueryData(qk.privacyBanner(), { show: false }),
   });
 }

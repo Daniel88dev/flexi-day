@@ -3,19 +3,22 @@
 // Have it reviewed by a qualified lawyer before relying on it.
 import type { Metadata } from "next";
 import { LegalShell } from "@/components/legal/legal-shell";
-import { AI_AGREEMENT_VERSION, LEGAL } from "@/lib/legal";
+import { AI_AGREEMENT_VERSION, aiTextsPublished, aiTextsUpdated, LEGAL } from "@/lib/legal";
 
-export const metadata: Metadata = {
-  title: "Smlouva o funkcích AI · flexiday",
-  description:
-    "Smlouva, kterou organizace přijímá, když její vlastník poprvé zapne Asistenta nebo AI připojení. Doplňuje smlouvu o zpracování osobních údajů.",
-};
+export function generateMetadata(): Metadata {
+  return {
+    title: "Smlouva o funkcích AI · flexiday",
+    description:
+      "Smlouva, kterou organizace přijímá, když její vlastník poprvé zapne Asistenta nebo AI připojení. Doplňuje smlouvu o zpracování osobních údajů.",
+    ...(aiTextsPublished() ? {} : { robots: { index: false, follow: false } }),
+  };
+}
 
 export default function CsAiAgreementPage() {
   return (
     <LegalShell
       title="Smlouva o funkcích AI"
-      updated={LEGAL.cs.updated}
+      updated={aiTextsUpdated("cs")}
       locale="cs"
       intro={`Verze ${AI_AGREEMENT_VERSION}. Vlastník organizace ji přijímá jménem organizace, když poprvé zapne Asistenta nebo AI připojení.`}
       translatedPage="ai-agreement"
@@ -88,6 +91,11 @@ export default function CsAiAgreementPage() {
         o nich své lidi, jak vyžaduje článek 13 GDPR. Volba &bdquo;Dát vědět členům&ldquo; pošle
         všem upozornění v aplikaci a v telefonu; nenahrazuje vlastní informace, které Správce svým
         lidem dává.
+      </p>
+      <p>
+        Pro vlastní posouzení vlivu na ochranu osobních údajů najde Správce tok dat, další
+        zpracovatele, dobu uchování a záruky na stránce{" "}
+        <a href="/cs/ai-dpia/">Podklady pro posouzení vlivu (DPIA)</a>.
       </p>
 
       <h2>5. Anthropic jako další zpracovatel</h2>

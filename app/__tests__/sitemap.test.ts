@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import sitemap from "../sitemap";
 import { SITE_URL } from "@/lib/site";
 
@@ -39,5 +39,28 @@ describe("sitemap", () => {
 
   it("should not list help article pages", () => {
     expect(entries.some((entry) => entry.url.includes("/help/"))).toBe(false);
+  });
+
+  describe("AI texts", () => {
+    const aiPaths = ["/ai-agreement/", "/ai-dpia/", "/cs/ai-agreement/", "/cs/ai-dpia/"];
+
+    afterEach(() => {
+      vi.unstubAllEnvs();
+    });
+
+    it("should leave out the AI pages while the AI texts are dark", () => {
+      vi.stubEnv("NEXT_PUBLIC_AI_TEXTS_PUBLISHED", "");
+      const urls = sitemap().map((entry) => entry.url);
+      for (const path of aiPaths) expect(urls).not.toContain(`${SITE_URL}${path}`);
+    });
+
+    it("should list the AI features agreement and the DPIA page once published", () => {
+      vi.stubEnv("NEXT_PUBLIC_AI_TEXTS_PUBLISHED", "2026-12-01");
+      expect(
+        sitemap()
+          .map((entry) => entry.url)
+          .sort()
+      ).toEqual([...PUBLIC_PATHS, ...aiPaths].map((path) => `${SITE_URL}${path}`).sort());
+    });
   });
 });

@@ -1,9 +1,10 @@
 // NOTE: The Czech Data Processing Agreement. Keep it in step with
 // app/(legal)/dpa/page.tsx; a test fails when their sections drift apart. Have it
-// reviewed by a qualified lawyer before publication.
+// reviewed by a qualified lawyer before publication. The AI passages show only in a
+// build with NEXT_PUBLIC_AI_TEXTS_PUBLISHED set (lib/legal.ts).
 import type { Metadata } from "next";
 import { LegalShell } from "@/components/legal/legal-shell";
-import { LEGAL } from "@/lib/legal";
+import { aiTextsPublished, aiTextsUpdated, LEGAL } from "@/lib/legal";
 
 export const metadata: Metadata = {
   title: "Smlouva o zpracování osobních údajů — flexiday",
@@ -12,10 +13,11 @@ export const metadata: Metadata = {
 };
 
 export default function CsDpaPage() {
+  const ai = aiTextsPublished();
   return (
     <LegalShell
       title="Smlouva o zpracování osobních údajů"
-      updated={LEGAL.cs.updated}
+      updated={aiTextsUpdated("cs")}
       locale="cs"
       intro="Tato smlouva stanoví, jak flexiday zpracovává osobní údaje pro organizaci. Je součástí obchodních podmínek."
       translatedPage="dpa"
@@ -47,6 +49,14 @@ export default function CsDpaPage() {
           nepřítomností, vedení nároků, evidence docházky, vedení záznamu změn, zobrazování toho
           všeho lidem, kterým to dovolují nastavení a role Správce, zasílání souvisejících oznámení
           a vytváření exportů.
+          {ai ? (
+            <>
+              {" "}
+              Pokud je Správce zapne, zahrnuje také Asistenta a AI připojení, které popisuje{" "}
+              <a href="/cs/ai-agreement/">Smlouva o funkcích AI</a>; ta tuto Smlouvu pro ně
+              doplňuje.
+            </>
+          ) : null}
         </li>
         <li>
           <strong>Povaha.</strong> Shromažďování, ukládání, uspořádání, vyhledávání, zobrazení,
@@ -71,6 +81,14 @@ export default function CsDpaPage() {
         poznámkami; nároky; záznam změn; přílohy žádostí; časy docházky a, pokud to Správce zapne,
         poloha zaznamenaná při příchodu a odchodu; a pokud je zapnutý adresář lidí, jeho profilová
         pole.
+        {ai ? (
+          <>
+            {" "}
+            Pokud Správce zapne Asistenta nebo AI připojení, také chaty s Asistentem, záznamy o
+            používání obou funkcí a záznamy o AI připojeních členů, jak je uvádí{" "}
+            <a href="/cs/ai-agreement/">Smlouva o funkcích AI</a>.
+          </>
+        ) : null}
       </p>
       <p>
         Nepřítomnost z důvodu nemoci a přílohy žádostí, jako je potvrzení od lékaře, mohou prozradit
@@ -84,7 +102,8 @@ export default function CsDpaPage() {
         předání mimo EHP, ledaže nám zpracování ukládá právo EU nebo České republiky; v takovém
         případě Správce předem informujeme, pokud to toto právo nezakazuje. Pokyny Správce jsou
         Obchodní podmínky, tato Smlouva a způsob, jakým Správce Službu používá a nastavuje. Ukončení
-        pracovního poměru, výmaz záznamů člověka, změna nastavení uchování a smazání organizace jsou
+        pracovního poměru, výmaz záznamů člověka, změna nastavení uchování
+        {ai ? ", zapnutí nebo vypnutí Asistenta či AI připojení" : ""} a smazání organizace jsou
         pokyny dané prostřednictvím Služby. Pokud se domníváme, že pokyn porušuje GDPR nebo jiné
         předpisy o ochraně osobních údajů, neprodleně to Správci sdělíme.
       </p>
@@ -131,7 +150,12 @@ export default function CsDpaPage() {
           </tr>
           <tr>
             <td>Functional Software, Inc. (Sentry)</td>
-            <td>Sledování chyb a diagnostika výkonu</td>
+            <td>
+              Sledování chyb a diagnostika výkonu
+              {ai
+                ? ", včetně metadat o Asistentovi a AI připojeních od nás a z exportu společnosti Anthropic: pseudonymní identifikátory a časy, nikdy text chatů, argumenty ani výsledky nástrojů"
+                : ""}
+            </td>
             <td>Region EU (Frankfurt, Německo); společnost sídlí ve Spojených státech</td>
           </tr>
           <tr>
@@ -142,6 +166,23 @@ export default function CsDpaPage() {
             </td>
             <td>Spojené státy</td>
           </tr>
+          {ai ? (
+            <tr>
+              <td>Anthropic, PBC</td>
+              <td>
+                Provoz Asistenta, jen pro organizace, které ho zapnou. Metadata o svém zpracování,
+                nikdy obsah chatů, exportuje do našeho Sentry. Jeho vlastní další zpracovatelé jsou
+                na{" "}
+                <a href="https://trust.anthropic.com/subprocessors">
+                  seznamu společnosti Anthropic
+                </a>
+              </td>
+              <td>
+                Spojené státy (uložení); zpracování v kterékoli zemi, kde Anthropic provozuje své
+                modely
+              </td>
+            </tr>
+          ) : null}
         </tbody>
       </table>
       <p>
@@ -152,13 +193,33 @@ export default function CsDpaPage() {
         nabude účinnosti. Každý další zpracovatel je smluvně vázán stejnými povinnostmi k ochraně
         osobních údajů jako tato Smlouva a za jeho činnost Správci odpovídáme.
       </p>
+      {ai ? (
+        <p>
+          Anthropic nám změny svých vlastních dalších zpracovatelů oznamuje 15 dní předem, tedy v
+          kratší lhůtě než 30 dní výše. Každou takovou změnu Správci předáme, jakmile ji dostaneme,
+          e-mailem vlastníkovi, a Správce může vznést námitku jako výše nebo Asistenta vypnout.
+        </p>
+      ) : null}
 
       <h2>8. Předávání mimo EHP</h2>
-      <p>
-        Údaje organizace jsou uloženy v Evropské unii. Pokud je další zpracovatel zpracovává mimo
-        Evropský hospodářský prostor, opíráme se o rozhodnutí o odpovídající ochraně nebo o
-        standardní smluvní doložky Evropské komise podle kapitoly V GDPR.
-      </p>
+      {ai ? (
+        <p>
+          Údaje organizace jsou uloženy v Evropské unii, s výjimkou chatů s Asistentem: u
+          organizací, které Asistenta zapnou, je Anthropic ukládá ve Spojených státech a zpracovávat
+          je může v kterékoli zemi, kde provozuje své modely. Pokud další zpracovatel zpracovává
+          údaje organizace mimo Evropský hospodářský prostor, opíráme se o rozhodnutí o odpovídající
+          ochraně nebo o standardní smluvní doložky Evropské komise podle kapitoly V GDPR. U
+          společnosti Anthropic, která není certifikována podle rámce EU-USA pro ochranu osobních
+          údajů (Data Privacy Framework), jsou to standardní smluvní doložky, modul 3 (zpracovatel
+          zpracovateli).
+        </p>
+      ) : (
+        <p>
+          Údaje organizace jsou uloženy v Evropské unii. Pokud je další zpracovatel zpracovává mimo
+          Evropský hospodářský prostor, opíráme se o rozhodnutí o odpovídající ochraně nebo o
+          standardní smluvní doložky Evropské komise podle kapitoly V GDPR.
+        </p>
+      )}
 
       <h2>9. Pomoc s žádostmi lidí</h2>
       <p>
@@ -198,6 +259,9 @@ export default function CsDpaPage() {
         stáhnout export jejích údajů. Po smazání organizace její údaje okamžitě odstraníme z
         provozních systémů a z našich záloh zmizí do sedmi dnů, ledaže nám jejich uchování ukládá
         právo EU nebo České republiky.
+        {ai
+          ? " Pokud Správce zapnul Asistenta, smažeme ve stejnou chvíli i chaty organizace u společnosti Anthropic."
+          : ""}
       </p>
 
       <h2>13. Audity</h2>

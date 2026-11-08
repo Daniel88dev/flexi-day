@@ -64,6 +64,7 @@ export const shellState = {
   clock: undefined as typeof clockState | undefined,
   groupEventGroups: groupEventGroups.none,
   directoryOrganizations: undefined as DirectoryOrganization[] | undefined,
+  privacyBanner: undefined as { show: boolean } | undefined,
 };
 
 export function resetShellState() {
@@ -74,6 +75,7 @@ export function resetShellState() {
   shellState.clock = undefined;
   shellState.groupEventGroups = groupEventGroups.none;
   shellState.directoryOrganizations = undefined;
+  shellState.privacyBanner = undefined;
 }
 
 /** What the header widgets pull from the queries module; none of it matters to the shell. */
@@ -100,4 +102,6 @@ export const queryMocks = () => ({
   useEndBreak: () => ({ mutate: () => {}, isPending: false, error: null }),
   useAiAvailability: () => ({ data: undefined }),
   useAcceptAiAgreement: () => ({ mutateAsync: async () => {}, isPending: false }),
+  usePrivacyBanner: () => ({ data: shellState.privacyBanner }),
+  useDismissPrivacyBanner: () => ({ mutate: () => {} }),
 });

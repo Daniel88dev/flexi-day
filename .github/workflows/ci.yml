@@ -124,6 +124,8 @@ jobs:
           NEXT_PUBLIC_API_URL: ${{ vars.NEXT_PUBLIC_API_URL }}
           NEXT_PUBLIC_PADDLE_CLIENT_TOKEN: ${{ vars.NEXT_PUBLIC_PADDLE_CLIENT_TOKEN }}
           NEXT_PUBLIC_PADDLE_ENV: ${{ vars.NEXT_PUBLIC_PADDLE_ENV }}
+          # Day 0 of the AI launch (YYYY-MM-DD). Unset, the legal pages keep their pre-AI wording.
+          NEXT_PUBLIC_AI_TEXTS_PUBLISHED: ${{ vars.NEXT_PUBLIC_AI_TEXTS_PUBLISHED }}
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
 
       - name: Configure AWS credentials (OIDC)

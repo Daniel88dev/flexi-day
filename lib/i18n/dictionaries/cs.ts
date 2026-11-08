@@ -3546,4 +3546,9 @@ export const cs: Dictionary = {
       loadFailed: "Týden se nepodařilo načíst.",
     },
   },
+  privacyBanner: {
+    text: "Upravili jsme Zásady ochrany osobních údajů kvůli novým funkcím AI.",
+    read: "Přečíst, co se změnilo",
+    dismiss: "Zavřít",
+  },
 };

@@ -3530,6 +3530,11 @@ export const en = {
       loadFailed: "Could not load this week.",
     },
   },
+  privacyBanner: {
+    text: "We've updated our Privacy Policy for the new AI features.",
+    read: "Read what changed",
+    dismiss: "Dismiss",
+  },
 };
 
 export type Dictionary = typeof en;

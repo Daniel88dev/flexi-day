@@ -1,4 +1,5 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { Metadata } from "next";
 import { render, screen } from "@testing-library/react";
 import PrivacyPage from "../privacy/page";
 import TermsPage from "../terms/page";
@@ -458,5 +459,277 @@ describe("Czech legal pages", () => {
     );
     expect(text).toMatch(/Nikdy nespouštíme rozpoznávání obličejů/);
     expect(text).toMatch(/Nevytváříme biometrické šablony/);
+  });
+});
+
+describe("AI texts", () => {
+  const text = () => document.body.textContent!.replace(/\s+/g, " ");
+  const pages = {
+    privacy: () => import("../privacy/page"),
+    csPrivacy: () => import("../cs/privacy/page"),
+    dpa: () => import("../dpa/page"),
+    csDpa: () => import("../cs/dpa/page"),
+    security: () => import("../security/page"),
+    dpia: () => import("../ai-dpia/page"),
+    csDpia: () => import("../cs/ai-dpia/page"),
+    agreement: () => import("../ai-agreement/page"),
+    csAgreement: () => import("../cs/ai-agreement/page"),
+  };
+  const renderPage = async (page: keyof typeof pages) => {
+    const { default: Page } = await pages[page]();
+    return render(<Page />);
+  };
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  describe("while dark", () => {
+    beforeEach(() => {
+      vi.stubEnv("NEXT_PUBLIC_AI_TEXTS_PUBLISHED", "");
+    });
+
+    for (const page of ["privacy", "csPrivacy", "dpa", "csDpa", "security"] as const) {
+      it(`keeps the ${page} page free of the AI wording`, async () => {
+        await renderPage(page);
+        expect(text()).not.toMatch(/Anthropic|Assistant|Asistent|AI connections|AI připojení/);
+        expect(document.getElementById("what-changed")).toBeNull();
+        expect(text()).toMatch(/28 October 2026|28\. října 2026/);
+      });
+    }
+
+    it("keeps the Security page's EU sentence", async () => {
+      await renderPage("security");
+      expect(text()).toMatch(/Your data stays within the European Union\./);
+    });
+
+    it("keeps the DPA's EU storage sentence", async () => {
+      await renderPage("dpa");
+      const s8 = sectionText(screen.getByRole("heading", { name: /^8\. Transfers/ }));
+      expect(s8).toMatch(/^ Organization data is stored in the European Union\. Where/);
+    });
+
+    it("keeps the agreement and DPIA pages out of search", async () => {
+      for (const page of ["agreement", "csAgreement", "dpia", "csDpia"] as const) {
+        const mod = (await pages[page]()) as { generateMetadata: () => Metadata };
+        expect(mod.generateMetadata().robots).toEqual({ index: false, follow: false });
+      }
+    });
+  });
+
+  describe("once published", () => {
+    beforeEach(() => {
+      vi.stubEnv("NEXT_PUBLIC_AI_TEXTS_PUBLISHED", "2026-12-01");
+    });
+
+    it("dates every changed page on the publication day", async () => {
+      for (const page of ["privacy", "dpa", "security", "dpia", "agreement"] as const) {
+        const view = await renderPage(page);
+        expect(screen.getByText("Last updated: 1 December 2026")).toBeInTheDocument();
+        view.unmount();
+      }
+      for (const page of ["csPrivacy", "csDpa", "csDpia", "csAgreement"] as const) {
+        const view = await renderPage(page);
+        expect(screen.getByText("Poslední aktualizace: 1. prosince 2026")).toBeInTheDocument();
+        view.unmount();
+      }
+    });
+
+    it("lets the agreement and DPIA pages be indexed", async () => {
+      for (const page of ["agreement", "csAgreement", "dpia", "csDpia"] as const) {
+        const mod = (await pages[page]()) as { generateMetadata: () => Metadata };
+        expect(mod.generateMetadata().robots).toBeUndefined();
+      }
+    });
+
+    it("covers the DPA's content points", async () => {
+      await renderPage("dpa");
+      const section = (name: RegExp) => sectionText(screen.getByRole("heading", { name }));
+      expect(section(/^2\. Subject matter/)).toMatch(/Assistant and AI connections/);
+      expect(screen.getAllByRole("link", { name: "AI features agreement" })[0]).toHaveAttribute(
+        "href",
+        "/ai-agreement/"
+      );
+      expect(section(/^3\. People/)).toMatch(/chats with the Assistant.*AI features agreement/);
+      const s7 = section(/^7\. Sub-processors/);
+      expect(s7).toMatch(/Anthropic, PBC/);
+      expect(s7).toMatch(/only for organizations that turn it on/);
+      expect(s7).toMatch(/United States \(storage\); processing in any country where Anthropic/);
+      expect(screen.getByRole("link", { name: "Anthropic’s list" })).toHaveAttribute(
+        "href",
+        "https://trust.anthropic.com/subprocessors"
+      );
+      expect(s7).toMatch(
+        /pseudonymous ids and timings, never chat text, tool arguments or results/
+      );
+      expect(s7).toMatch(/exported by Anthropic/);
+      expect(s7).toMatch(
+        /Exports metadata about its processing, never chat content, to our Sentry/
+      );
+      expect(s7).toMatch(/15 days ahead.*as soon as we receive it/);
+      const s8 = section(/^8\. Transfers/);
+      expect(s8).not.toMatch(/^ Organization data is stored in the European Union\. Where/);
+      expect(s8).toMatch(/except chats with the Assistant/);
+      expect(s8).toMatch(/Module 3/);
+      expect(section(/^12\. End of the service/)).toMatch(/chats at Anthropic/);
+    });
+
+    it("covers the DPA's content points in Czech", async () => {
+      await renderPage("csDpa");
+      const t = text();
+      for (const point of [
+        /Asistenta a AI připojení/,
+        /Anthropic, PBC/,
+        /jen pro organizace, které ho zapnou/,
+        /pseudonymní identifikátory a časy/,
+        /15 dní předem/,
+        /s výjimkou chatů s Asistentem/,
+        /modul 3/,
+        /chaty organizace u společnosti Anthropic/,
+      ]) {
+        expect(t).toMatch(point);
+      }
+    });
+
+    it("covers the Privacy Policy's content points", async () => {
+      await renderPage("privacy");
+      const section = (name: RegExp) => sectionText(screen.getByRole("heading", { name }));
+      expect(document.getElementById("what-changed")).not.toBeNull();
+      const s3 = section(/^3\. What data we collect/);
+      expect(s3).toMatch(/Chats with the Assistant/);
+      expect(s3).toMatch(/AI usage records/);
+      expect(s3).toMatch(/AI connections: if you connect an AI app/);
+      const s4 = section(/^4\. Why we use/);
+      expect(s4).toMatch(/Chats with the Assistant and AI usage records are organization data/);
+      expect(s4).toMatch(/Run the AI connections you set up.*Performance of a contract \(b\)/);
+      expect(section(/^5\. Who we share/)).toMatch(/Anthropic, PBC.*United States \(storage\)/);
+      const s7 = section(/^7\. AI connections/);
+      expect(s7).toMatch(/app’s name and address, the organization you connected it to/);
+      expect(s7).toMatch(/access you granted and when the app last used it/);
+      expect(s7).toMatch(/Art\. 6\(1\)\(b\)/);
+      expect(s7).toMatch(/disconnect an app in Settings/);
+      expect(s7).toMatch(/not our processor/);
+      const s8 = section(/^8\. International transfers/);
+      expect(s8).toMatch(/stores them in the United States and may process them in other/);
+      expect(s8).toMatch(/Standard Contractual Clauses, Module 3/);
+      const s9 = section(/^9\. How long we keep it/);
+      expect(s9).toMatch(/180 days after its last message/);
+      expect(s9).toMatch(/30 days after its last message, or at once when you delete the chat/);
+      expect(s9).toMatch(/up to 2 years/);
+      expect(s9).toMatch(/AI usage records are kept for 90 days/);
+      expect(screen.getByRole("heading", { name: "15. Contact" })).toBeInTheDocument();
+    });
+
+    it("keeps the Czech Privacy Policy's sections in step", async () => {
+      const en = await renderPage("privacy");
+      const enHeadings = [...en.container.querySelectorAll("h2, h3")].length;
+      en.unmount();
+      const cs = await renderPage("csPrivacy");
+      expect([...cs.container.querySelectorAll("h2, h3")].length).toBe(enHeadings);
+      const t = text();
+      for (const point of [
+        /Co se změnilo:/,
+        /Chaty s Asistentem/,
+        /Záznamy o používání AI/,
+        /7\. AI připojení/,
+        /čl\. 6 odst\. 1 písm\. b\)/,
+        /Anthropic, PBC/,
+        /modul 3/,
+        /180 dní po jeho poslední zprávě/,
+        /až 2 roky/,
+      ]) {
+        expect(t).toMatch(point);
+      }
+    });
+
+    it("keeps the Czech DPA and DPIA pages' sections in step", async () => {
+      for (const [enPage, csPage] of [
+        ["dpa", "csDpa"],
+        ["dpia", "csDpia"],
+        ["agreement", "csAgreement"],
+      ] as const) {
+        const en = await renderPage(enPage);
+        const counts = [
+          en.container.querySelectorAll("h2").length,
+          en.container.querySelectorAll("tr").length,
+        ];
+        en.unmount();
+        const cs = await renderPage(csPage);
+        expect([
+          cs.container.querySelectorAll("h2").length,
+          cs.container.querySelectorAll("tr").length,
+        ]).toEqual(counts);
+        cs.unmount();
+      }
+    });
+
+    it("lists Anthropic in the Privacy Policy as well as the DPA", async () => {
+      const firstCells = (container: HTMLElement) =>
+        [...container.querySelectorAll("tbody tr td:first-child")].map((td) => td.textContent);
+      const dpa = await renderPage("dpa");
+      const subProcessors = firstCells(dpa.container);
+      dpa.unmount();
+      const privacy = await renderPage("privacy");
+      expect(subProcessors).toContain("Anthropic, PBC");
+      expect(firstCells(privacy.container)).toEqual(expect.arrayContaining(subProcessors));
+    });
+
+    it("qualifies the Security page's EU sentence and adds the Assistant", async () => {
+      await renderPage("security");
+      expect(text()).toContain(
+        "Flexi Day stores your data in the EU (AWS Frankfurt). If your organization turns on the Assistant, chats are kept by Anthropic in the US and may be processed in other countries; see the AI features agreement."
+      );
+      expect(text()).not.toMatch(/Your data stays within the European Union/);
+      expect(sectionText(screen.getByRole("heading", { name: "Sub-processors" }))).toMatch(
+        /The Assistant runs on Anthropic, PBC, only for organizations that turn it on/
+      );
+      expect(sectionText(screen.getByRole("heading", { name: "Deletion" }))).toMatch(
+        /180 days after its last message.*30 days after its last message/
+      );
+    });
+
+    it("renders the DPIA page in both languages with every content point", async () => {
+      const en = await renderPage("dpia");
+      expect(
+        screen.getByRole("heading", { level: 1, name: "AI features: information for your DPIA" })
+      ).toBeInTheDocument();
+      const headings = screen.getAllByRole("heading", { level: 2 }).map((h) => h.textContent);
+      for (const topic of [/Data flow/, /Sub-processors/, /Retention/, /Safeguards/, /SOC 2/]) {
+        expect(headings.some((h) => topic.test(h ?? ""))).toBe(true);
+      }
+      expect(text()).toMatch(/write to daniel@hrynusiw\.cz/);
+      expect(screen.getByRole("link", { name: "Česká verze" })).toHaveAttribute(
+        "href",
+        "/cs/ai-dpia/"
+      );
+      en.unmount();
+      await renderPage("csDpia");
+      expect(
+        screen.getByRole("heading", {
+          level: 1,
+          name: "Funkce AI: podklady pro posouzení vlivu (DPIA)",
+        })
+      ).toBeInTheDocument();
+      for (const point of [/Tok dat/, /Další zpracovatelé/, /Doba uchování/, /Záruky/, /SOC 2/]) {
+        expect(text()).toMatch(point);
+      }
+      expect(screen.getByRole("link", { name: "English version" })).toHaveAttribute(
+        "href",
+        "/ai-dpia/"
+      );
+    });
+  });
+
+  it("links the DPIA page from the agreement in both languages", async () => {
+    const en = await renderPage("agreement");
+    expect(screen.getByRole("link", { name: "DPIA information page" })).toHaveAttribute(
+      "href",
+      "/ai-dpia/"
+    );
+    en.unmount();
+    await renderPage("csAgreement");
+    expect(
+      screen.getByRole("link", { name: "Podklady pro posouzení vlivu (DPIA)" })
+    ).toHaveAttribute("href", "/cs/ai-dpia/");
   });
 });

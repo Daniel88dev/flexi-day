@@ -34,3 +34,14 @@ export function isAiFeatureAvailable(
     availability.organizations.find((o) => o.organizationId === organizationId)?.[feature] ?? false
   );
 }
+
+/** The Privacy Policy update banner: Day 0 of the AI launch, 30 days, dismissible per user. */
+export type PrivacyBannerState = { show: boolean };
+
+export function getPrivacyBanner(): Promise<PrivacyBannerState> {
+  return api<PrivacyBannerState>("/api/ai-features/privacy-banner");
+}
+
+export function dismissPrivacyBanner(): Promise<void> {
+  return api<void>("/api/ai-features/privacy-banner/dismiss", { method: "POST" });
+}

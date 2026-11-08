@@ -4,19 +4,23 @@
 // lib/legal.ts with every change of substance.
 import type { Metadata } from "next";
 import { LegalShell } from "@/components/legal/legal-shell";
-import { AI_AGREEMENT_VERSION, LEGAL } from "@/lib/legal";
+import { AI_AGREEMENT_VERSION, aiTextsPublished, aiTextsUpdated, LEGAL } from "@/lib/legal";
 
-export const metadata: Metadata = {
-  title: "AI features agreement · flexiday",
-  description:
-    "The agreement an organization accepts when its owner first turns on the Assistant or AI connections. It adds to the Data Processing Agreement.",
-};
+// Reachable before Day 0 for the preview organizations, but kept out of search until then.
+export function generateMetadata(): Metadata {
+  return {
+    title: "AI features agreement · flexiday",
+    description:
+      "The agreement an organization accepts when its owner first turns on the Assistant or AI connections. It adds to the Data Processing Agreement.",
+    ...(aiTextsPublished() ? {} : { robots: { index: false, follow: false } }),
+  };
+}
 
 export default function AiAgreementPage() {
   return (
     <LegalShell
       title="AI features agreement"
-      updated={LEGAL.updated}
+      updated={aiTextsUpdated("en")}
       intro={`Version ${AI_AGREEMENT_VERSION}. The owner of an organization accepts it on the organization’s behalf the first time they turn on the Assistant or AI connections.`}
       translatedPage="ai-agreement"
     >
@@ -90,6 +94,11 @@ export default function AiAgreementPage() {
         people&rsquo;s data, and tells its people about them as Article 13 GDPR requires. The
         &ldquo;Tell members&rdquo; option sends everyone a notice in the app and on their phone; it
         does not replace the Controller&rsquo;s own information to its people.
+      </p>
+      <p>
+        For its own data protection impact assessment, the Controller finds the data flow,
+        sub-processors, retention and safeguards on the{" "}
+        <a href="/ai-dpia/">DPIA information page</a>.
       </p>
 
       <h2>5. Anthropic as a sub-processor</h2>

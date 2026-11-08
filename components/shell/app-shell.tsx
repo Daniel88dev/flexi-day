@@ -5,6 +5,7 @@ import { BottomBar } from "@/components/shell/bottom-bar";
 import { TopBar } from "@/components/shell/top-bar";
 import { GraceBanner } from "@/components/billing/grace-banner";
 import { AiAgreementBanner } from "@/components/ai/ai-agreement-banner";
+import { PrivacyBanner } from "@/components/ai/privacy-banner";
 import { AssistantPanel } from "@/components/assistant/assistant-panel";
 import { Footer } from "@/components/footer";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
@@ -23,6 +24,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <TopBar />
           <GraceBanner />
           <AiAgreementBanner />
+          <PrivacyBanner />
           <div className="mx-auto w-full max-w-[1340px] flex-1 px-7 py-8 max-md:px-4">
             {children}
           </div>
