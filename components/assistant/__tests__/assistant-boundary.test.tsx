@@ -46,6 +46,7 @@ const chat = (overrides: Partial<AssistantChat> = {}): AssistantChat => ({
 
 const row = (overrides: Partial<DisplayMessage>): DisplayMessage => ({
   id: "m",
+  card: null,
   kind: "user",
   text: null,
   toolName: null,

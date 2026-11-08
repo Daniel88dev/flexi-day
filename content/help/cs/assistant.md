@@ -1,6 +1,6 @@
 ---
 id: assistant
-translatedFrom: "e8b283fc913c"
+translatedFrom: "f55df2409d99"
 title: Co umí Asistent
 summary: Zeptej se Asistenta na Flexi Day vlastními slovy a nech ho připravit změny, které potvrdíš.
 keywords:
@@ -26,9 +26,6 @@ keywords:
     zkusit znovu,
   ]
 goldenQuestions:
-  - question: Může mi Asistent zadat den volna?
-    expectedArticles: [assistant]
-    mustMention: [kartu potvrdíš, nic se nezmění před potvrzením]
   - question: Proč Asistent odmítl moji otázku?
     expectedArticles: [assistant]
     mustMention: [jen otázky k Flexi Day, zpráva se neodešle]
@@ -108,10 +105,9 @@ znovu, stejně jako „{{ui:assistantBoundary.sendAgain}}“ po výpadku připoj
 
 ## Změny, které potvrdíš
 
-Asistent umí připravit změnu: vytvořit žádost, zrušit tvoji žádost, schválit nebo zamítnout žádost,
-zaznamenat příchod nebo odchod. Každá změna se ukáže jako karta s přesnými údaji. Nic se nezmění,
-dokud kartu nepotvrdíš. Volbou „Teď ne“ ji zahodíš. Změna provedená touto cestou má v historii
-žádosti nebo v historii docházky toho dne poznámku „{{ui:common.channel.assistant}}“.
+Asistent umí připravit změnu, třeba žádost nebo příchod, jako kartu s přesnými údaji. Nic se
+nezmění, dokud kartu nepotvrdíš. Karty vysvětluje článek
+[Potvrzení změn, které připraví Asistent](help:assistant-changes).
 
 ## Týdenní limit
 

@@ -16,7 +16,20 @@ describe("toolLine", () => {
       "Clocked you out",
     ]);
     expect(toolLine(cs.assistant, "clock_out", "failed")).toBe("Odchod se nepodařilo zaznamenat");
-    expect(toolLine(cs.assistant, "create_request", "running")).toBe("Zadává tvoji žádost o volno");
+    // A write only prepares its card while it runs; nothing changes before the user confirms.
+    expect(
+      ["create_request", "cancel_my_request", "clock_in", "clock_out"].map((name) =>
+        toolLine(en.assistant, name, "running")
+      )
+    ).toEqual([
+      "Preparing your request",
+      "Preparing the cancellation",
+      "Preparing your clock-in",
+      "Preparing your clock-out",
+    ]);
+    expect(toolLine(cs.assistant, "create_request", "running")).toBe(
+      "Připravuje tvoji žádost o volno"
+    );
   });
 
   it("names the help lookups in English and Czech", () => {

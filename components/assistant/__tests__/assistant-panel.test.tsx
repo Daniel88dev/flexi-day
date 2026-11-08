@@ -82,6 +82,7 @@ const answered: AssistantChatDetail = {
       toolName: null,
       toolOutcome: null,
       code: null,
+      card: null,
       createdAt: "2026-11-11T10:00:00.000Z",
     },
     {
@@ -91,6 +92,7 @@ const answered: AssistantChatDetail = {
       toolName: "get_my_balances",
       toolOutcome: "ok",
       code: null,
+      card: null,
       createdAt: "2026-11-11T10:00:01.000Z",
     },
     {
@@ -100,6 +102,7 @@ const answered: AssistantChatDetail = {
       toolName: null,
       toolOutcome: null,
       code: null,
+      card: null,
       createdAt: "2026-11-11T10:00:02.000Z",
     },
   ],

@@ -10,11 +10,13 @@ import {
   weeklyResetLabel,
   type AssistantChat,
   type AssistantOrganization,
+  type CardDecision,
   type DisplayMessage,
   type WeeklyLimitState,
 } from "@/lib/api/assistant";
 import { useTranslation } from "@/lib/i18n/use-translation";
 import { cn } from "@/lib/utils";
+import { ConfirmCard } from "./confirm-card";
 import { RichText } from "./rich-text";
 import type { FailedSend, LiveTool, LiveTurn } from "./use-assistant-turn";
 
@@ -121,11 +123,22 @@ function Notice({ text }: { text: string }) {
   );
 }
 
-function LiveTurnView({ turn, organizationName }: { turn: LiveTurn; organizationName: string }) {
+function LiveTurnView({
+  turn,
+  organizationName,
+  onCardDecided,
+}: {
+  turn: LiveTurn;
+  organizationName: string;
+  onCardDecided?: (decision: CardDecision) => void;
+}) {
   const { t } = useTranslation();
   const copy = t.assistant;
-  const done = turn.tools.filter((tool) => tool.status !== "running");
-  const running = turn.tools.find((tool) => tool.status === "running");
+  // A write's tool line becomes its card.
+  const carded = new Set(turn.cards.map((card) => card.toolUseId));
+  const tools = turn.tools.filter((tool) => !carded.has(tool.eventId));
+  const done = tools.filter((tool) => tool.status !== "running");
+  const running = tools.find((tool) => tool.status === "running");
   const written = [...turn.texts, turn.partial].filter((text) => text.length > 0).join("\n\n");
   return (
     <div>
@@ -138,12 +151,19 @@ function LiveTurnView({ turn, organizationName }: { turn: LiveTurn; organization
           style={{ background: "var(--primary)" }}
         />
       ) : null}
+      {turn.cards.length > 0 ? (
+        <div className="mt-3 space-y-3">
+          {turn.cards.map((card) => (
+            <ConfirmCard key={card.id} card={card} onDecided={onCardDecided} />
+          ))}
+        </div>
+      ) : null}
       {turn.notice ? <Notice text={noticeText(t, turn.notice, organizationName)} /> : null}
       {turn.phase === "reconnecting" ? (
         <StatusLine>{copy.stillWriting}</StatusLine>
       ) : running ? (
         <StatusLine>{toolLine(copy, running.name, "running")}</StatusLine>
-      ) : !written ? (
+      ) : !written && turn.cards.length === 0 ? (
         <StatusLine>{copy.thinking}</StatusLine>
       ) : null}
     </div>
@@ -159,6 +179,7 @@ export function MessageList({
   live,
   failed,
   onResend,
+  onCardDecided,
   organizationName,
 }: {
   messages: DisplayMessage[];
@@ -166,6 +187,8 @@ export function MessageList({
   failed: FailedSend | null;
   /** Sends a message that wasn't sent again, as it was. */
   onResend?: (text: string) => void;
+  /** A card was confirmed or declined; the Assistant may write on. */
+  onCardDecided?: (decision: CardDecision) => void;
   organizationName: string;
 }) {
   const { t } = useTranslation();
@@ -178,6 +201,11 @@ export function MessageList({
   };
 
   for (const message of messages) {
+    if (message.kind === "tool" && message.card) {
+      flushSteps(`steps-${message.id}`);
+      rows.push(<ConfirmCard key={message.id} card={message.card} onDecided={onCardDecided} />);
+      continue;
+    }
     if (message.kind === "tool") {
       if (message.toolOutcome === TOOL_STOPPED) continue;
       const status = message.toolOutcome && message.toolOutcome !== "ok" ? "failed" : "done";
@@ -237,7 +265,13 @@ export function MessageList({
       {live?.userText && !(lastMessage?.kind === "user" && lastMessage.text === live.userText) ? (
         <UserBubble text={live.userText} />
       ) : null}
-      {live ? <LiveTurnView turn={live} organizationName={organizationName} /> : null}
+      {live ? (
+        <LiveTurnView
+          turn={live}
+          organizationName={organizationName}
+          onCardDecided={onCardDecided}
+        />
+      ) : null}
       {failed ? <UserBubble text={failed.text} error={sendError} retry={retry} /> : null}
     </div>
   );

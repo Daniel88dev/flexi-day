@@ -66,8 +66,91 @@ export type DisplayMessage = {
   toolName: string | null;
   toolOutcome: string | null;
   code: string | null;
+  /** A write's confirmation card, on its tool line. */
+  card: PendingCard | null;
   createdAt: string;
 };
+
+export type CardStatus = "open" | "confirmed" | "declined" | "not_taken";
+
+/** Where one allowance stands before and after the write. */
+export type AllowanceChange = {
+  year: number;
+  type: string;
+  allocated: number;
+  approved: number;
+  pending: number;
+  availableBefore: number;
+  availableAfter: number;
+};
+
+/** The write's dry run, as the backend's `WritePreview`: the card's only content. */
+export type CardPreview =
+  | {
+      action: "create_request";
+      group: { id: string; name: string };
+      type: string;
+      firstDay: string;
+      lastDay: string;
+      halfDay: boolean;
+      bookedDays: string[];
+      days: number;
+      note: string | null;
+      allowances: AllowanceChange[];
+    }
+  | {
+      action: "cancel_my_request";
+      requestId: string;
+      group: { id: string; name: string };
+      type: string;
+      status: "pending" | "approved" | "partly_approved";
+      firstDay: string;
+      lastDay: string;
+      cancelledDays: string[];
+      days: number;
+      note: string | null;
+      reason: string | null;
+      allowances: AllowanceChange[];
+    }
+  | { action: "clock_in"; at: string; businessDate: string; timezone: string }
+  | {
+      action: "clock_out";
+      at: string;
+      startedAt: string;
+      businessDate: string;
+      timezone: string;
+      onBreak: boolean;
+      sessionMinutes: number;
+    };
+
+/** A confirmation card: a write the Assistant asked for, waiting on the user. */
+export type PendingCard = {
+  id: string;
+  chatId: string;
+  toolUseId: string;
+  tool: CardPreview["action"];
+  status: CardStatus;
+  preview: CardPreview;
+  /** People other than the user whose notes the Assistant read before suggesting it. */
+  authorNames: string[];
+  result: Record<string, unknown> | null;
+  /** Why the last confirm was refused; the card stays open. */
+  error: { message: string; code: string | null } | null;
+  createdAt: string;
+  decidedAt: string | null;
+};
+
+export type CardDecision = { card: PendingCard; turnRunning: boolean };
+
+export function decideAssistantCard(
+  cardId: string,
+  decision: "confirm" | "decline"
+): Promise<CardDecision> {
+  return api<CardDecision>(
+    `/api/assistant/pending-actions/${encodeURIComponent(cardId)}/${decision}`,
+    { method: "POST", body: {} }
+  );
+}
 
 export type AssistantChatDetail = { chat: AssistantChat; messages: DisplayMessage[] };
 
@@ -152,7 +235,7 @@ export type ChatStreamEvent =
       id: string | null;
       data: { eventId: string; name: string | null; status: ToolStatus };
     }
-  | { event: "card"; id: string | null; data: Record<string, unknown> }
+  | { event: "card"; id: string | null; data: PendingCard }
   | { event: "error"; id: string | null; data: { code: string } }
   | { event: "done"; id: string | null; data: Record<string, never> };
 

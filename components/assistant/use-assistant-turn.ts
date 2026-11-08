@@ -7,6 +7,7 @@ import {
   reconnectAssistantStream,
   sendAssistantMessage,
   type ChatStreamEvent,
+  type PendingCard,
   type ToolStatus,
 } from "@/lib/api/assistant";
 import { assistantKeys } from "@/lib/api/assistant-queries";
@@ -20,6 +21,8 @@ export type LiveTurn = {
   userText: string | null;
   phase: "streaming" | "reconnecting";
   tools: LiveTool[];
+  /** Confirmation cards the turn stopped for. */
+  cards: PendingCard[];
   /** Finished Assistant messages of this turn. */
   texts: string[];
   /** Text arriving now; dropped on reconnect. */
@@ -37,6 +40,7 @@ const startTurn = (userText: string | null, phase: LiveTurn["phase"]): LiveTurn 
   userText,
   phase,
   tools: [],
+  cards: [],
   texts: [],
   partial: "",
   notice: null,
@@ -64,6 +68,11 @@ export function applyStreamEvent(turn: LiveTurn, event: ChatStreamEvent): LiveTu
           : [...next.tools, { eventId, name, status }],
       };
     }
+    case "card":
+      return {
+        ...next,
+        cards: [...next.cards.filter((card) => card.id !== event.data.id), event.data],
+      };
     case "error":
       return { ...next, notice: event.data.code };
     default:
@@ -118,10 +127,14 @@ export function useAssistantTurn(args: {
   );
 
   const follow = useCallback(
-    async (chatId: string, controller: AbortController) => {
+    async (chatId: string, controller: AbortController, firstPhase: LiveTurn["phase"]) => {
       for (let attempt = 0; attempt < RECONNECT_ATTEMPTS; attempt++) {
         if (controller.signal.aborted) return false;
-        update({ ...turnRef.current!, phase: "reconnecting", partial: "" });
+        update({
+          ...turnRef.current!,
+          phase: attempt === 0 ? firstPhase : "reconnecting",
+          partial: "",
+        });
         try {
           const done = await reconnectAssistantStream(
             chatId,
@@ -155,7 +168,7 @@ export function useAssistantTurn(args: {
           args.onChatCreated(chatId);
         }
         let done = await sendAssistantMessage(chatId, text, onEvent, controller.signal);
-        if (!done) done = await follow(chatId, controller);
+        if (!done) done = await follow(chatId, controller, "reconnecting");
         if (controller.signal.aborted) return;
         await finish(chatId);
       } catch (error) {
@@ -186,13 +199,24 @@ export function useAssistantTurn(args: {
     const controller = new AbortController();
     abortRef.current = controller;
     update(startTurn(null, "reconnecting"));
-    void follow(chatId, controller).then(() => {
+    void follow(chatId, controller, "reconnecting").then(() => {
       if (!controller.signal.aborted) void finish(chatId);
     });
   }, [chatId, turnRunning, finish, follow, update]);
 
+  /** Follows the answer a card decision started. */
+  const resume = useCallback(() => {
+    if (!chatId || turnRef.current) return;
+    const controller = new AbortController();
+    abortRef.current = controller;
+    update(startTurn(null, "streaming"));
+    void follow(chatId, controller, "streaming").then(() => {
+      if (!controller.signal.aborted) void finish(chatId);
+    });
+  }, [chatId, finish, follow, update]);
+
   // Closing the panel stops reading too.
   useEffect(() => () => abortRef.current?.abort(), []);
 
-  return { live, failed, busy: live !== null || turnRunning, send };
+  return { live, failed, busy: live !== null || turnRunning, send, resume, finish };
 }

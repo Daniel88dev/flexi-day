@@ -28,11 +28,8 @@ keywords:
     not sent,
     try again,
   ]
-related: [ai-connections, assistant-weekly-limit]
+related: [ai-connections, assistant-weekly-limit, assistant-changes]
 goldenQuestions:
-  - question: Can the Assistant book a day off for me?
-    expectedArticles: [assistant]
-    mustMention: [you confirm the card, nothing changes before you confirm]
   - question: Why did the Assistant refuse my question?
     expectedArticles: [assistant]
     mustMention: [Flexi Day questions only, the message isn't sent]
@@ -115,11 +112,9 @@ again, as "{{ui:assistantBoundary.sendAgain}}" does after a dropped connection.
 
 ## Changes you confirm
 
-The Assistant can prepare a change: create a request, cancel one of your requests, approve or reject
-a request, clock in or clock out. Each change shows up as a card with the exact details. Nothing
-changes until you confirm the card. Choose "Not now" to drop it. A change made this way reads
-"{{ui:common.channel.assistant}}" in the request's history or in the attendance history of that
-day.
+The Assistant can prepare a change, such as a request or a clock-in, as a card with the exact
+details. Nothing changes until you confirm the card.
+[Confirm changes the Assistant prepares](help:assistant-changes) explains the cards.
 
 ## Weekly limit
 

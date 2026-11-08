@@ -348,6 +348,10 @@ function ChatView({
             live={turn.live}
             failed={turn.failed}
             onResend={send}
+            onCardDecided={(decision) => {
+              if (decision.turnRunning) turn.resume();
+              else if (ownChatId) void turn.finish(ownChatId);
+            }}
             organizationName={organizationName}
           />
         )}
