@@ -8,6 +8,8 @@ export const dynamic = "force-static";
 // Everything under app/(app)/ and app/(auth)/ — nothing behind a session or an
 // auth flow belongs in a search index. Bare paths prefix-match their
 // trailing-slash variants, so `/dashboard` also covers `/dashboard/`.
+// Help pages under /help/ stay crawlable so crawlers can read their noindex; only
+// the knowledge base bundle is kept out.
 const DISALLOWED_PATHS = [
   "/billing",
   "/calendar-sync",
@@ -15,6 +17,7 @@ const DISALLOWED_PATHS = [
   "/email-verified",
   "/forgot-password",
   "/groups",
+  "/help/kb.json",
   "/organization",
   "/report",
   "/requests",

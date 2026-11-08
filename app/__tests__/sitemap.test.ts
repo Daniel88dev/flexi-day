@@ -36,4 +36,8 @@ describe("sitemap", () => {
       expect(urls.some((url) => url.includes(blocked))).toBe(false);
     }
   });
+
+  it("should not list help article pages", () => {
+    expect(entries.some((entry) => entry.url.includes("/help/"))).toBe(false);
+  });
 });

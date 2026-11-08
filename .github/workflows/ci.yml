@@ -30,6 +30,11 @@ jobs:
       - name: Format
         run: pnpm run format:check
 
+      # Labels and prices resolve, Czech hashes match, length cap, links between articles,
+      # and every signed-in route is covered or on content/help/uncovered-routes.json.
+      - name: Help articles
+        run: pnpm run help:check
+
       # `next build` type-checks too, but only over the files it decides to include —
       # that scope has changed between minor releases. This checks the whole tsconfig.
       - name: Typecheck
