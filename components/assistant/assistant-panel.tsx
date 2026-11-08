@@ -6,6 +6,7 @@ import { AiFeatureGate } from "@/components/ai/ai-feature-gate";
 import {
   assistantEntry,
   NEAR_LIMIT_PERCENT,
+  type AssistantGate,
   type AssistantOrganization,
 } from "@/lib/api/assistant";
 import {
@@ -20,6 +21,7 @@ import { setAssistantOpen, useAssistantOpen } from "./assistant-store";
 import {
   AssistantUnavailable,
   ChatList,
+  ClosedChat,
   Composer,
   EmptyChat,
   LimitReached,
@@ -28,6 +30,7 @@ import {
   NearLimit,
   OffGate,
   OrgPicker,
+  ReadOnlyChat,
   UpgradeGate,
 } from "./chat-parts";
 import { useAssistantTurn } from "./use-assistant-turn";
@@ -156,6 +159,7 @@ function PanelFrame() {
             chatId={chatId}
             organizations={chatMode.organizations}
             leftOut={chatMode.leftOut}
+            gate={chatMode.gate}
             organizationId={organizationId}
             onOrganization={setPicked}
             onChatCreated={setChatId}
@@ -267,6 +271,7 @@ function ChatView({
   chatId,
   organizations,
   leftOut,
+  gate,
   organizationId,
   onOrganization,
   onChatCreated,
@@ -277,6 +282,7 @@ function ChatView({
   chatId: string | null;
   organizations: AssistantOrganization[];
   leftOut: AssistantOrganization[];
+  gate: AssistantGate | null;
   organizationId: string | null;
   onOrganization: (organizationId: string) => void;
   onChatCreated: (chatId: string) => void;
@@ -309,6 +315,17 @@ function ChatView({
     (o) => o.organizationId === (chat?.organizationId ?? organizationId)
   );
   const limit = organization?.weeklyLimit ?? null;
+  const chatOrganization = chat
+    ? leftOut.find((o) => o.organizationId === chat.organizationId)
+    : undefined;
+  // A chat stays readable where the organization takes no new messages; a new one has nowhere to go.
+  const readOnly =
+    chatOrganization?.reason === "TURNED_OFF" || chatOrganization?.reason === "PLAN"
+      ? copy.readOnly[chatOrganization.reason](organizationName)
+      : !chat && organizations.length === 0
+        ? copy.readOnly.none
+        : null;
+  const closed = chat?.closed ?? null;
   const canSeeUsage = organization?.role === "owner" || organization?.role === "admin";
 
   const picker = (
@@ -323,7 +340,7 @@ function ChatView({
   );
 
   // The paused and unavailable notices replace the composer; the suggestions stop too.
-  const blocked = providerUnavailable || (limit?.reached ?? false);
+  const blocked = !!closed || !!readOnly || providerUnavailable || (limit?.reached ?? false);
   const send = (text: string) => {
     if (blocked) return;
     if (organizationId || ownChatId) void turn.send(text, organizationId ?? "");
@@ -333,13 +350,19 @@ function ChatView({
     <>
       <Header
         title={started ? title : copy.newChat}
-        subtitle={<div>{picker}</div>}
+        subtitle={organizations.length > 0 || started ? <div>{picker}</div> : undefined}
         onHistory={onHistory}
         onNewChat={onNewChat}
       />
       <div className="flex-1 overflow-y-auto px-5 py-5">
         {ownChatId && detail.isPending ? (
           <LoadingChat />
+        ) : !started && organizations.length === 0 ? (
+          gate?.mode === "upgrade" ? (
+            <UpgradeGate organization={gate.organization} />
+          ) : gate?.mode === "off" ? (
+            <OffGate organization={gate.organization} />
+          ) : null
         ) : !started ? (
           <EmptyChat picker={picker} onPick={send} />
         ) : (
@@ -357,7 +380,11 @@ function ChatView({
         )}
       </div>
       <div className="shrink-0 space-y-2 px-4 pt-2 pb-4">
-        {providerUnavailable ? (
+        {closed ? (
+          <ClosedChat reason={closed} onNewChat={onNewChat} />
+        ) : readOnly ? (
+          <ReadOnlyChat text={readOnly} />
+        ) : providerUnavailable ? (
           <AssistantUnavailable />
         ) : limit?.reached && !turn.live ? (
           <LimitReached

@@ -12,6 +12,7 @@ import {
   type AssistantChat,
   type AssistantOrganization,
   type CardDecision,
+  type ChatClosedReason,
   type DisplayMessage,
   type WeeklyLimitState,
 } from "@/lib/api/assistant";
@@ -436,6 +437,47 @@ export function AssistantUnavailable() {
       style={{ background: "var(--surface-2)" }}
     >
       {t.assistant.unavailable}
+    </div>
+  );
+}
+
+/** Replaces the composer in a chat that takes no more messages; it stays readable. */
+export function ClosedChat({
+  reason,
+  onNewChat,
+}: {
+  reason: ChatClosedReason;
+  onNewChat: () => void;
+}) {
+  const { t } = useTranslation();
+  const copy = t.assistant.closed;
+  return (
+    <div
+      role="status"
+      data-testid="assistant-chat-closed"
+      className="rounded-[var(--radius-lg)] px-4 py-3"
+      style={{ background: "var(--surface-2)" }}
+    >
+      <div className="text-[14px] leading-[1.5]">
+        <span className="font-semibold">{copy.title}</span> {copy[reason]}
+      </div>
+      <Button size="sm" className="mt-2" onClick={onNewChat}>
+        {t.assistant.newChat}
+      </Button>
+    </div>
+  );
+}
+
+/** Replaces the composer where the organization takes no new messages: plan lapse or the Assistant off. */
+export function ReadOnlyChat({ text }: { text: string }) {
+  return (
+    <div
+      role="status"
+      data-testid="assistant-read-only"
+      className="rounded-[var(--radius-lg)] px-4 py-3 text-[14px] leading-[1.5]"
+      style={{ background: "var(--surface-2)" }}
+    >
+      {text}
     </div>
   );
 }

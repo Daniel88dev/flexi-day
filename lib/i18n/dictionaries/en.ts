@@ -3331,6 +3331,19 @@ export const en = {
       ASSISTANT_WEEKLY_LIMIT_REACHED:
         "Not sent: the Assistant is paused until this week's limit resets.",
       ASSISTANT_UNAVAILABLE: "Not sent. The Assistant is unavailable right now. Try again later.",
+      ASSISTANT_CHAT_CLOSED: "Not sent: this chat is closed. Start a new chat to keep going.",
+    },
+    closed: {
+      title: "This chat is closed.",
+      length: "It reached its length limit. It stays here to read.",
+      idle: "Nobody wrote in it for 30 days. It stays here to read.",
+    },
+    readOnly: {
+      TURNED_OFF: (organization: string) =>
+        `The Assistant is off for ${organization}. This chat stays here to read.`,
+      PLAN: (organization: string) =>
+        `${organization}'s plan no longer includes the Assistant. This chat stays here to read.`,
+      none: "None of your organizations can start a chat right now. Your chats stay here to read.",
     },
     limit: {
       near: (organization: string, percent: number, reset: string) =>

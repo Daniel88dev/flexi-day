@@ -15,6 +15,7 @@ const org = (overrides: Partial<AssistantOrganization>): AssistantOrganization =
   reason: "TURNED_OFF",
   planAllows: true,
   role: "member",
+  hasChats: false,
   weeklyLimit: null,
   ...overrides,
 });
@@ -27,7 +28,34 @@ describe("assistantEntry", () => {
       mode: "chat",
       organizations: [acme],
       leftOut: [beta],
+      gate: null,
     });
+  });
+
+  it("keeps the panel for past chats where no organization takes new messages", () => {
+    const lapsed = org({ reason: "PLAN", planAllows: false, role: "member", hasChats: true });
+    expect(assistantEntry([lapsed])).toEqual({
+      mode: "chat",
+      organizations: [],
+      leftOut: [lapsed],
+      gate: null,
+    });
+    expect(assistantEntry([{ ...lapsed, hasChats: false }])).toEqual({ mode: "hidden" });
+  });
+
+  it("carries the owner's prompt beside past chats, for the new chat view", () => {
+    const off = org({ reason: "TURNED_OFF", planAllows: true, role: "owner", hasChats: true });
+    expect(assistantEntry([off])).toEqual({
+      mode: "chat",
+      organizations: [],
+      leftOut: [off],
+      gate: { mode: "off", organization: off },
+    });
+  });
+
+  it("never opens the panel for chats in an organization the user has left", () => {
+    const left = org({ reason: "NO_STANDING", hasChats: true });
+    expect(assistantEntry([left])).toEqual({ mode: "hidden" });
   });
 
   it("returns the upgrade prompt only for an owner without Enterprise", () => {

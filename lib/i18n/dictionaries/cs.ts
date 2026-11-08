@@ -3348,6 +3348,19 @@ export const cs: Dictionary = {
       ASSISTANT_WEEKLY_LIMIT_REACHED:
         "Neodesláno: Asistent je pozastavený, dokud se neobnoví Týdenní limit.",
       ASSISTANT_UNAVAILABLE: "Neodesláno. Asistent teď není k dispozici. Zkus to později.",
+      ASSISTANT_CHAT_CLOSED: "Neodesláno: tento chat je uzavřený. Pokračuj v novém chatu.",
+    },
+    closed: {
+      title: "Tento chat je uzavřený.",
+      length: "Dosáhl maximální délky. Číst si ho můžeš dál.",
+      idle: "30 dní do něj nikdo nenapsal. Číst si ho můžeš dál.",
+    },
+    readOnly: {
+      TURNED_OFF: (organization: string) =>
+        `Asistent je v organizaci ${organization} vypnutý. Tento chat si můžeš dál číst.`,
+      PLAN: (organization: string) =>
+        `Tarif organizace ${organization} už Asistenta nezahrnuje. Tento chat si můžeš dál číst.`,
+      none: "Teď nemůžeš začít chat v žádné své organizaci. Chaty si můžeš dál číst.",
     },
     limit: {
       near: (organization: string, percent: number, reset: string) =>

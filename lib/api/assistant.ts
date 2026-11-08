@@ -12,6 +12,8 @@ export type AssistantOrganization = {
   /** The plan includes the Assistant (Enterprise or Custom). */
   planAllows: boolean;
   role: "owner" | "admin" | "member";
+  /** The caller has chats here, readable even while the organization takes no new messages. */
+  hasChats: boolean;
   /** This week's Usage against the Weekly limit; null where the caller can't chat. */
   weeklyLimit: WeeklyLimitState | null;
 };
@@ -57,7 +59,11 @@ export type AssistantChat = {
   createdAt: string;
   lastMessageAt: string;
   turnRunning: boolean;
+  /** Why the chat takes no more messages: its length limit, or 30 days without one. */
+  closed: ChatClosedReason | null;
 };
+
+export type ChatClosedReason = "length" | "idle";
 
 export type DisplayMessage = {
   id: string;
@@ -211,29 +217,45 @@ export function deleteAssistantChat(chatId: string): Promise<void> {
  * organization that the Assistant is off; else show an owner without
  * Enterprise the upgrade prompt; else nothing.
  */
+/** The owner's prompt when no organization can chat: turn it on, or upgrade. */
+export type AssistantGate = {
+  mode: "off" | "upgrade";
+  organization: AssistantOrganization;
+};
+
 export type AssistantEntry =
-  | { mode: "chat"; organizations: AssistantOrganization[]; leftOut: AssistantOrganization[] }
-  | { mode: "off"; organization: AssistantOrganization }
-  | { mode: "upgrade"; organization: AssistantOrganization }
+  | {
+      mode: "chat";
+      organizations: AssistantOrganization[];
+      leftOut: AssistantOrganization[];
+      /** Set when no organization can chat and the panel opens only for past chats. */
+      gate: AssistantGate | null;
+    }
+  | AssistantGate
   | { mode: "hidden" };
 
-export function assistantEntry(organizations: AssistantOrganization[] | undefined): AssistantEntry {
-  if (!organizations) return { mode: "hidden" };
-  const eligible = organizations.filter((o) => o.eligible);
-  if (eligible.length > 0) {
-    return {
-      mode: "chat",
-      organizations: eligible,
-      leftOut: organizations.filter((o) => !o.eligible && o.reason !== "NO_STANDING"),
-    };
-  }
+function gateOf(organizations: AssistantOrganization[]): AssistantGate | null {
   const off = organizations.find(
     (o) => o.reason === "TURNED_OFF" && o.planAllows && (o.role === "owner" || o.role === "admin")
   );
   if (off) return { mode: "off", organization: off };
   const upgrade = organizations.find((o) => !o.planAllows && o.role === "owner");
   if (upgrade) return { mode: "upgrade", organization: upgrade };
-  return { mode: "hidden" };
+  return null;
+}
+
+/**
+ * The button rules. Chats stay readable after a plan lapse or the Assistant
+ * going off, so anyone with chats in such an organization still gets the panel.
+ */
+export function assistantEntry(organizations: AssistantOrganization[] | undefined): AssistantEntry {
+  if (!organizations) return { mode: "hidden" };
+  const eligible = organizations.filter((o) => o.eligible);
+  const leftOut = organizations.filter((o) => !o.eligible && o.reason !== "NO_STANDING");
+  if (eligible.length > 0) return { mode: "chat", organizations: eligible, leftOut, gate: null };
+  const gate = gateOf(organizations);
+  if (leftOut.some((o) => o.hasChats)) return { mode: "chat", organizations: [], leftOut, gate };
+  return gate ?? { mode: "hidden" };
 }
 
 export type ChatGroup = "today" | "thisWeek" | "earlier";

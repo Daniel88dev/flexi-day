@@ -43,6 +43,7 @@ const acme: AssistantOrganization = {
   reason: null,
   planAllows: true,
   role: "member",
+  hasChats: false,
   weeklyLimit: null,
 };
 
@@ -54,6 +55,7 @@ const chat = (overrides: Partial<AssistantChat> = {}): AssistantChat => ({
   createdAt: "2026-11-11T10:00:00.000Z",
   lastMessageAt: "2026-11-11T10:00:00.000Z",
   turnRunning: false,
+  closed: null,
   ...overrides,
 });
 
