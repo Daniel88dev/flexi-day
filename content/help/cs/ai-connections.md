@@ -1,6 +1,6 @@
 ---
 id: ai-connections
-translatedFrom: "dddf9974e342"
+translatedFrom: "a8d3f6628a48"
 title: Připoj k Flexi Day AI aplikaci
 summary: Nech AI aplikaci, jako je Claude, ChatGPT nebo Cursor, číst tvoje údaje ve Flexi Day a dělat za tebe změny.
 keywords:
@@ -96,11 +96,11 @@ připojením.
 ## Co připojená aplikace umí
 
 Čte všechno, co ve Flexi Day vidíš ty, a hledá v nápovědě. Při nastavení Čtení a zápis navíc
-vytvoří žádost, zruší tvoji žádost a zaznamená tvůj příchod nebo odchod. Žádosti schvalovat ani
+vytvoří žádost, zruší tvoji žádost a zaznamená tvůj příchod nebo odchod, jen za tebe. Změna proběhne hned, podle pravidel aplikace. Žádosti schvalovat ani
 zamítat neumí (to udělej ve Flexi Day nebo požádej [Asistenta](help:assistant)) a nemění role, fakturaci ani
 nastavení.
 
-Změna, kterou aplikace provede, má v historii žádosti nebo v historii docházky poznámku
+Změna od aplikace má v historii žádosti nebo docházky poznámku
 „{{ui:common.channel.mcp}}“. Když otevře citlivou sekci něčího profilu, ukáže se toto čtení stejně
 i v Záznamu o čtení organizace.
 
@@ -114,8 +114,8 @@ Když aplikace limit vyčerpá, dostane zprávu, o který limit jde a kdy se obn
 
 Karta „{{ui:aiConnectionGrants.settings.title}}“ v {{ui:nav.settings}} ukazuje každou aplikaci,
 kterou jsi připojil: její adresu, nebo „{{ui:aiConnectionGrants.settings.notVerified}}“, když ji
-Flexi Day nemohl ověřit, organizaci, přístup a kdy byla naposledy použita. Poslední použití je chvíle,
-kdy si aplikace naposledy vzala nový token, a používaná aplikace to dělá aspoň jednou za hodinu.
+Flexi Day nemohl ověřit, organizaci, přístup a kdy byla naposledy použita. Poslední použití se u používané
+aplikace aktualizuje aspoň jednou za hodinu.
 
 Připojení ukončíš tak, že u aplikace zvolíš „{{ui:aiConnectionGrants.settings.disconnect}}“ a
 potvrdíš to. Aplikace přestane fungovat při svém dalším volání. Pokud ji chceš používat znovu,

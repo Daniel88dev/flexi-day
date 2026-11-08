@@ -3282,6 +3282,26 @@ export const cs: Dictionary = {
         done: "Otevřel část profilu",
         failed: "Část profilu se nepodařilo otevřít",
       },
+      create_request: {
+        running: "Zadává tvoji žádost o volno",
+        done: "Zadal tvoji žádost o volno",
+        failed: "Žádost o volno se nepodařilo zadat",
+      },
+      cancel_my_request: {
+        running: "Ruší tvoji žádost",
+        done: "Zrušil tvoji žádost",
+        failed: "Žádost se nepodařilo zrušit",
+      },
+      clock_in: {
+        running: "Zaznamenává tvůj příchod",
+        done: "Zaznamenal tvůj příchod",
+        failed: "Příchod se nepodařilo zaznamenat",
+      },
+      clock_out: {
+        running: "Zaznamenává tvůj odchod",
+        done: "Zaznamenal tvůj odchod",
+        failed: "Odchod se nepodařilo zaznamenat",
+      },
       other: {
         running: "Něco dohledává",
         done: "Něco dohledal",

@@ -5,7 +5,7 @@ summary: Let an AI app such as Claude, ChatGPT or Cursor read your Flexi Day dat
 module: assistant-and-mcp
 roles: [member, approver, manager, group-admin, org-admin, owner]
 routes: [/settings, /organization]
-tools: [search_docs, read_doc]
+tools: [search_docs, read_doc, create_request, cancel_my_request, clock_in, clock_out]
 keywords:
   [
     ai connections,
@@ -100,7 +100,8 @@ add another.
 ## What a connected app can do
 
 It can read whatever you can see in Flexi Day and look things up in the help. With Read and write
-it can also create a request, cancel your own request, and clock you in or out. It can't approve or
+it can also create a request, cancel your own request, and clock you in or out, only for you.
+Flexi Day makes the change at once, under the same rules as in the app. It can't approve or
 reject requests (do that in Flexi Day, or ask [the Assistant](help:assistant)), and it can't change roles, billing or
 settings.
 
@@ -118,8 +119,7 @@ When a limit is reached, the app gets a message saying which limit and when it r
 
 The "{{ui:aiConnectionGrants.settings.title}}" card in {{ui:nav.settings}} lists each app you
 connected: its address, or "{{ui:aiConnectionGrants.settings.notVerified}}" when Flexi Day couldn't
-check it, the organization, its access, and when it was last used. Last use is when the app last got
-a fresh token, which an app in use does at least once an hour.
+check it, the organization, its access, and when it was last used. Last use updates at least once an hour while the app is in use.
 
 To end one, choose "{{ui:aiConnectionGrants.settings.disconnect}}" next to the app and confirm. The
 app stops at its next call. To use it again, connect it again.

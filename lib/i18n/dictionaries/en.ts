@@ -3265,6 +3265,26 @@ export const en = {
         done: "Opened a profile section",
         failed: "Couldn't open the profile section",
       },
+      create_request: {
+        running: "Booking your time off",
+        done: "Booked your time off",
+        failed: "Couldn't book the time off",
+      },
+      cancel_my_request: {
+        running: "Cancelling your request",
+        done: "Cancelled your request",
+        failed: "Couldn't cancel the request",
+      },
+      clock_in: {
+        running: "Clocking you in",
+        done: "Clocked you in",
+        failed: "Couldn't clock you in",
+      },
+      clock_out: {
+        running: "Clocking you out",
+        done: "Clocked you out",
+        failed: "Couldn't clock you out",
+      },
       other: {
         running: "Looking something up",
         done: "Looked something up",

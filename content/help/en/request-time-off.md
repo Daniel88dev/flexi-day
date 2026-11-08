@@ -5,7 +5,7 @@ summary: Book vacation or other leave for a day or a range, and what happens aft
 module: leave
 roles: [member, approver, manager, group-admin, org-admin, owner]
 routes: [/dashboard, /requests]
-tools: [list_my_requests]
+tools: [list_my_requests, create_request]
 keywords:
   [
     book,
