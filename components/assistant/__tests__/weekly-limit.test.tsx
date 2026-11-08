@@ -203,7 +203,7 @@ describe("the Weekly limit in the Assistant panel", () => {
     const panel = await openPanel();
 
     const link = await within(panel).findByRole("link", { name: "See usage" });
-    expect(link.getAttribute("href")).toBe("/ai-usage");
+    expect(link.getAttribute("href")).toBe("/ai-usage?organizationId=org-acme");
   });
 
   it("should keep an answer stopped mid-way and end it with the fixed limit line", async () => {

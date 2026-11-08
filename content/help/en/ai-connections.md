@@ -24,7 +24,7 @@ keywords:
     agreement,
     tell members,
   ]
-related: [assistant, ai-connection-limits]
+related: [assistant, ai-connection-limits, ai-usage]
 goldenQuestions:
   - question: How do I connect ChatGPT to Flexi Day?
     expectedArticles: [ai-connections]

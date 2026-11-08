@@ -1,7 +1,12 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { useAttendanceState, useDirectoryOrganizations } from "@/lib/api/queries";
+import { isAiFeatureAvailable } from "@/lib/api/ai-features";
+import {
+  useAiAvailability,
+  useAttendanceState,
+  useDirectoryOrganizations,
+} from "@/lib/api/queries";
 import { directoryNavEntry } from "@/lib/directory/directory-access";
 import { useTranslation } from "@/lib/i18n/use-translation";
 import { useSupportAdmin } from "@/lib/support/use-support-admin";
@@ -31,6 +36,7 @@ export function useShellNav(): ShellNav {
   const { supportAdmin } = useSupportAdmin();
   const attendance = useAttendanceState();
   const directoryOrganizations = useDirectoryOrganizations();
+  const aiAvailability = useAiAvailability();
 
   const access = {
     rolesLoading: roles.isLoading,
@@ -39,6 +45,10 @@ export function useShellNav(): ShellNav {
     attendanceActive: attendance.data?.active ?? false,
     attendanceOpen: attendance.data?.openSession != null,
     directory: directoryNavEntry(directoryOrganizations.data),
+    aiUsage:
+      roles.isOrgAdmin &&
+      (isAiFeatureAvailable(aiAvailability.data, "assistant") ||
+        isAiFeatureAvailable(aiAvailability.data, "aiConnections")),
   };
   const sections = buildSections(t, access);
   const utility = buildUtilityLinks(t, access);

@@ -364,6 +364,7 @@ function ChatView({
             organizationName={organizationName}
             limit={limit}
             canSeeUsage={canSeeUsage}
+            organizationId={organization?.organizationId ?? null}
           />
         ) : (
           <>

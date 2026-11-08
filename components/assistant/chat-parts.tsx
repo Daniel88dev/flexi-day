@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ArrowUp, Check, ChevronDown, Loader2, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatUsd } from "@/lib/api/ai-settings";
+import { aiUsageHref } from "@/lib/api/ai-usage";
 import {
   chatGroup,
   weeklyResetLabel,
@@ -392,10 +393,12 @@ export function LimitReached({
   organizationName,
   limit,
   canSeeUsage,
+  organizationId,
 }: {
   organizationName: string;
   limit: WeeklyLimitState;
   canSeeUsage: boolean;
+  organizationId: string | null;
 }) {
   const { t } = useTranslation();
   const copy = t.assistant.limit;
@@ -413,7 +416,7 @@ export function LimitReached({
       </div>
       {canSeeUsage ? (
         <Link
-          href="/ai-usage/"
+          href={aiUsageHref(organizationId)}
           className="mt-1 inline-block text-[13.5px] font-semibold underline-offset-2 hover:underline"
         >
           {copy.seeUsage}

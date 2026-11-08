@@ -1,6 +1,6 @@
 ---
 id: assistant-weekly-limit
-translatedFrom: "d5bab59baec0"
+translatedFrom: "86e7d2f8ff19"
 title: Týdenní limit a využití
 summary: Jak se využití Asistenta počítá do Týdenního limitu tvé organizace a co se stane, když se limit blíží nebo je vyčerpaný.
 keywords:
@@ -39,7 +39,7 @@ vidí procenta, vlastník a správci organizace i částky.
 Asistent se pro celou organizaci pozastaví do obnovení a pole pro zprávu řekne, do kdy. Tvoje chaty
 zůstanou čitelné. Odpověď, která na limit narazí v polovině, si nechá, co už napsala, a skončí
 řádkem, že se zastavila. Vlastník a správci uvidí „{{ui:assistant.limit.seeUsage}}“, které otevře
-stránku Využití AI s využitím organizace po jednotlivých lidech.
+stránku [{{ui:nav.aiUsage}}](help:ai-usage) s využitím organizace po jednotlivých lidech.
 
 ## Asistent není k dispozici
 

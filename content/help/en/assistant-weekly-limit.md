@@ -8,7 +8,7 @@ routes: []
 tools: []
 keywords:
   [weekly limit, usage, limit reached, paused, reset, see usage, unavailable, assistant, cost]
-related: [assistant]
+related: [assistant, ai-usage]
 goldenQuestions:
   - question: Why did the Assistant stop answering for our organization this week?
     expectedArticles: [assistant-weekly-limit]
@@ -33,7 +33,8 @@ Members see the percentage; owners and org admins also see the amounts.
 The Assistant pauses for the whole organization until the reset, and the message box says until
 when. Your chats stay readable. An answer that reaches the limit halfway keeps what it wrote and
 ends with a line saying it stopped. Owners and org admins get "{{ui:assistant.limit.seeUsage}}",
-which opens the AI usage page with the organization's usage, person by person.
+which opens the [{{ui:nav.aiUsage}}](help:ai-usage) page with the organization's usage, person by
+person.
 
 ## Assistant unavailable
 

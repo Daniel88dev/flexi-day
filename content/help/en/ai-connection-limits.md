@@ -18,7 +18,7 @@ keywords:
     mcp,
     calls a day,
   ]
-related: [ai-connections]
+related: [ai-connections, ai-usage]
 goldenQuestions:
   - question: My AI app says Flexi Day's daily limit is reached. When can it call again?
     expectedArticles: [ai-connection-limits]

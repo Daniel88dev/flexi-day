@@ -9,6 +9,7 @@ import {
   LifeBuoy,
   RefreshCw,
   Settings,
+  Sparkles,
   Timer,
   Users,
   UsersRound,
@@ -48,6 +49,8 @@ export type ShellAccess = {
   attendanceOpen: boolean;
   /** The Directory entry of the People section, or null when the viewer gets none. */
   directory: DirectoryNavEntry | null;
+  /** The viewer is an org admin and an AI feature is available to them. */
+  aiUsage: boolean;
 };
 
 export const BOTTOM_BAR_CLOCK_INDEX = 2;
@@ -118,6 +121,9 @@ export function buildSections(t: Dictionary, access: ShellAccess): NavSection[] 
         ? [
             { href: "/organization", label: t.nav.organization, icon: Building2 },
             { href: "/billing", label: t.nav.billing, icon: CreditCard },
+            ...(access.aiUsage
+              ? [{ href: "/ai-usage", label: t.nav.aiUsage, icon: Sparkles }]
+              : []),
           ]
         : [],
     },

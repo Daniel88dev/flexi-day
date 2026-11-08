@@ -12,6 +12,7 @@ import { AssistantTurnOffDialog } from "@/components/ai/assistant-turn-off-dialo
 import { AiConnectionsControl } from "@/components/ai/ai-connections-control";
 import { AiFeatureGate } from "@/components/ai/ai-feature-gate";
 import { memberNoticeText, type AiSettings } from "@/lib/api/ai-settings";
+import { aiUsageHref } from "@/lib/api/ai-usage";
 import { useAiSettings } from "@/lib/api/queries";
 import { formatDate } from "@/lib/directory/format";
 import { useTranslation } from "@/lib/i18n/use-translation";
@@ -42,7 +43,7 @@ export function AiCard({
         </CardTitle>
         {settings && settings.plan !== "FREE" ? (
           <Button asChild size="sm" variant="outline">
-            <Link href="/ai-usage">{copy.seeUsage}</Link>
+            <Link href={aiUsageHref(organizationId)}>{copy.seeUsage}</Link>
           </Button>
         ) : null}
       </CardHeader>

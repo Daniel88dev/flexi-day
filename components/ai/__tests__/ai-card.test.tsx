@@ -108,7 +108,10 @@ describe("AiCard", () => {
   it("shows the Enterprise owner the switch off, with See AI usage in the header", () => {
     renderCard();
     expect(screen.getByRole("heading", { name: "AI" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "See AI usage" })).toHaveAttribute("href", "/ai-usage");
+    expect(screen.getByRole("link", { name: "See AI usage" })).toHaveAttribute(
+      "href",
+      "/ai-usage?organizationId=org-1"
+    );
     expect(assistantSwitch()).not.toBeChecked();
     expect(assistantSwitch()).toBeEnabled();
     expect(screen.getByText(/^Off\. Members don't see it\./)).toBeInTheDocument();
