@@ -13,7 +13,6 @@ machine and plans only run from that checkout, the same as `flexi-day-be/terrafo
 | Resource                                                  | Live object                                           |
 | --------------------------------------------------------- | ----------------------------------------------------- |
 | `aws_cloudfront_function.redirect`                        | `flexi-day-redirect`, code in `functions/redirect.js` |
-| `aws_cloudfront_response_headers_policy.site`             | `flexi-day-site-headers`, see below                   |
 | `aws_cloudfront_distribution.site`                        | `EQG4OWS15ZIN7`                                       |
 | `aws_cloudfront_origin_access_control.site`               | `E16SLUJTCTLL2C`                                      |
 | `aws_s3_bucket.site`                                      | `flexiday-frontend` (`eu-central-1`)                  |
@@ -29,10 +28,13 @@ directory-index lookup of its own. Paths under `/.well-known/` pass through unto
 association file reaches S3 under its own key. A missing key comes back from S3 as 403, and both
 403 and 404 serve `/404.html` with status 200.
 
-Every response carries the headers policy `flexi-day-site-headers`, which Terraform created rather
-than imported. It keeps the CORS of the `Managed-SimpleCORS` policy it replaced and adds
-`Content-Security-Policy: frame-ancestors 'none'` and `X-Frame-Options: DENY`, so no page, the
-OAuth consent page above all, loads inside another site's frame.
+Every response carries AWS's managed headers policy `Managed-CORS-and-SecurityHeadersPolicy`. It
+keeps the simple CORS of the `Managed-SimpleCORS` policy it replaced and adds
+`X-Frame-Options: SAMEORIGIN`, so no other site can load a page, the OAuth consent page above all,
+inside a frame. It also sends HSTS for a year (no subdomains), `X-Content-Type-Options: nosniff`
+and `Referrer-Policy: strict-origin-when-cross-origin`. The distribution is on CloudFront's Free
+pricing plan, which refuses custom headers policies, so `DENY` and a `frame-ancestors` CSP would
+need the Pro plan.
 
 ## What is still by hand
 
@@ -85,7 +87,6 @@ cd terraform
 terraform init
 terraform import aws_cloudfront_function.redirect flexi-day-redirect
 terraform import aws_cloudfront_origin_access_control.site E16SLUJTCTLL2C
-terraform import aws_cloudfront_response_headers_policy.site <id of flexi-day-site-headers>
 terraform import aws_cloudfront_distribution.site EQG4OWS15ZIN7
 terraform import aws_s3_bucket.site flexiday-frontend
 terraform import aws_s3_bucket_policy.site flexiday-frontend
