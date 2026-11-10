@@ -262,6 +262,7 @@ describe("DirectorySettings", () => {
             person: { employmentId: "emp-jana", name: "Jana Member" },
             sections: ["CONTACT"],
             audience: "HR",
+            channel: "app",
           },
           {
             id: "r2",
@@ -271,6 +272,7 @@ describe("DirectorySettings", () => {
             person: { employmentId: "emp-gone", name: null },
             sections: null,
             audience: "OWNER",
+            channel: "app",
           },
         ],
         nextBefore: null,

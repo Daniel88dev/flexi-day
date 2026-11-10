@@ -1,8 +1,9 @@
-import { describe, expect, it, vi, beforeEach } from "vitest";
-import { screen, within } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi, beforeEach } from "vitest";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { VacationDetailDialog } from "../vacation-detail-dialog";
 import { renderWithClient } from "@/lib/test-utils";
+import { I18nProvider } from "@/lib/i18n/i18n-provider";
 import { ApiError } from "@/lib/api/client";
 import { AWAY_RECORD_TYPE, CalendarRecordType, type VacationDetail } from "@/lib/api/types";
 
@@ -53,6 +54,7 @@ const detail: VacationDetail = {
       eventType: "CREATED",
       actor: { id: "u-1", name: "Dana Holt", initials: "DH", avatarColor: "hsl(270 60% 60%)" },
       reason: null,
+      channel: "app",
       createdAt: "2026-07-20T09:00:00.000Z",
     },
     {
@@ -61,6 +63,7 @@ const detail: VacationDetail = {
       eventType: "APPROVED",
       actor: { id: "u-2", name: "Ada Lovelace", initials: "AL", avatarColor: "hsl(10 60% 60%)" },
       reason: null,
+      channel: "app",
       createdAt: "2026-08-01T09:00:00.000Z",
     },
   ],
@@ -370,6 +373,47 @@ describe("VacationDetailDialog", () => {
     expect(screen.queryByLabelText("Add files")).not.toBeInTheDocument();
   });
 
+  describe("the channel of each entry", () => {
+    const throughAi: VacationDetail = {
+      ...detail,
+      history: [
+        { ...detail.history[0]!, channel: "assistant" },
+        { ...detail.history[1]!, channel: "mcp" },
+      ],
+    };
+
+    afterEach(() => {
+      window.localStorage.removeItem("flexiday-locale");
+    });
+
+    it("marks entries made through the Assistant or an AI app, and nothing on app entries", () => {
+      currentDetail = throughAi;
+      renderWithClient(<VacationDetailDialog vacationId="v-1" open onOpenChange={() => {}} />);
+
+      expect(screen.getByText(/by Dana Holt through the Assistant/)).toBeInTheDocument();
+      expect(screen.getByText(/by Ada Lovelace through an AI app/)).toBeInTheDocument();
+    });
+
+    it("says nothing about the channel of an entry made in the app", () => {
+      renderWithClient(<VacationDetailDialog vacationId="v-1" open onOpenChange={() => {}} />);
+
+      expect(screen.queryByText(/through/)).not.toBeInTheDocument();
+    });
+
+    it("marks them in Czech", async () => {
+      window.localStorage.setItem("flexiday-locale", "cs");
+      currentDetail = throughAi;
+      renderWithClient(
+        <I18nProvider>
+          <VacationDetailDialog vacationId="v-1" open onOpenChange={() => {}} />
+        </I18nProvider>
+      );
+
+      await waitFor(() => expect(screen.getByText(/Dana Holt přes Asistenta/)).toBeInTheDocument());
+      expect(screen.getByText(/Ada Lovelace přes AI aplikaci/)).toBeInTheDocument();
+    });
+  });
+
   it("renders UPDATED history events with their change summary", () => {
     currentDetail = {
       ...detail,
@@ -381,6 +425,7 @@ describe("VacationDetailDialog", () => {
           eventType: "UPDATED",
           actor: { id: "u-2", name: "Ada Lovelace", initials: "AL", avatarColor: "x" },
           reason: "Type: Vacation → Sick",
+          channel: "app",
           createdAt: "2026-08-03T09:00:00.000Z",
         },
       ],

@@ -16,6 +16,11 @@ export const en = {
     loading: "Loading…",
     cancel: "Cancel",
     accountDeleted: "Account deleted",
+    /** What a timeline or Read log entry came through, for every channel but the app. */
+    channel: {
+      assistant: "through the Assistant",
+      mcp: "through an AI app",
+    },
     personExport: {
       export: "Export",
       exportFor: (name: string) => `Export ${name}'s data`,
@@ -189,6 +194,7 @@ export const en = {
     enterpriseChip: "Enterprise",
     organization: "Organization",
     billing: "Billing",
+    aiUsage: "AI usage",
     settings: "Settings",
     more: "More",
     collapse: "Collapse sidebar",
@@ -2917,6 +2923,630 @@ export const en = {
       plum: "Plum",
       slate: "Slate",
     } as Record<string, string>,
+  },
+  aiSettings: {
+    card: {
+      title: "AI",
+      seeUsage: "See AI usage",
+      assistant: "Assistant",
+      onLead: "On. Every member can open it from the top bar.",
+      offLead:
+        "Off. Members don't see it. Turn it on to let them ask questions and make changes in chat.",
+      planLead: "An in-app chat that answers questions and makes changes for members.",
+      comesWithEnterprise: "The Assistant comes with Enterprise.",
+      seeEnterprise: "See Enterprise",
+      seePlans: "See plans",
+      ownerOnly: (owner: string) => `Only ${owner}, the owner, can change this.`,
+      copyNotice: "Copy the members' notice",
+      copied: "Members' notice copied",
+      loadFailed: "Couldn't load the AI settings.",
+    },
+    accepted: (version: number, name: string | null, date: string) =>
+      name
+        ? `AI features agreement version ${version}, accepted by ${name} on ${date}`
+        : `AI features agreement version ${version}, accepted on ${date}`,
+    turnOn: {
+      title: (organization: string) => `Turn on the Assistant for ${organization}?`,
+      lead: "Read this before you turn it on. You can turn it off any time.",
+      facts: (organization: string, reset: string, limit: string): [string, string][] => [
+        [
+          "What it does",
+          "Members ask it about their time off, attendance and colleagues, and ask it to make changes. It's an AI, so answers can be wrong. Every change waits for the member to confirm it.",
+        ],
+        [
+          "What leaves Flexi Day",
+          "Each message, the member's name and role, and the Flexi Day data the Assistant reads to answer go to Anthropic, our AI provider, which stores them in the United States and may process them in other countries where it runs its models. It reads only what the member asking can already see.",
+        ],
+        [
+          "How long it's kept",
+          "Flexi Day keeps chats for 180 days, and members can delete their own. Anthropic deletes a chat 30 days after its last message, or at once when it's deleted here. It keeps a message its safety systems flag for up to 2 years, and never trains models on your data.",
+        ],
+        [
+          "When someone leaves",
+          `Their chats are deleted when they leave ${organization} or delete their account.`,
+        ],
+        [
+          "What it costs",
+          `Nothing extra on Enterprise. The organization gets a Weekly limit of ${limit} of AI use. When it runs out, the Assistant pauses for everyone until ${reset}.`,
+        ],
+        [
+          "What you see",
+          "You and org admins see each person's usage and how many of their messages were refused, never what anyone wrote.",
+        ],
+      ],
+      subProcessor: "This adds Anthropic as a sub-processor under the AI features agreement.",
+      readAgreement: "Read the AI features agreement",
+      accept: (organization: string) => `I accept the AI features agreement for ${organization}.`,
+      recordHint: "We record who accepted, when, and which version.",
+      tellMembers: "Tell members",
+      tellMembersHint: "Everyone here gets a notice in the app and on their phone.",
+      cancel: "Cancel",
+      acceptAndTurnOn: "Accept and turn on",
+      turnOn: "Turn on the Assistant",
+      working: "Turning on…",
+      done: "The Assistant is on",
+      failed: "Could not turn the Assistant on",
+      stale:
+        "The agreement has changed. Close this dialog and open it again to read the current version.",
+      alreadyOn: "The Assistant is already on.",
+    },
+    turnOff: {
+      title: "Turn off the Assistant?",
+      body: "Members lose the Assistant at once. Their chats stay readable until they are 180 days old.",
+      keepOn: "Keep it on",
+      confirm: "Turn off",
+      working: "Turning off…",
+      done: "The Assistant is off",
+      failed: "Could not turn the Assistant off",
+    },
+    banner: {
+      title: (version: number) => `Version ${version} of the AI features agreement is ready.`,
+      body: "Read it and accept it for your organization. The Assistant and AI connections keep working meanwhile.",
+      read: "Read the agreement",
+      accept: (version: number) => `Accept version ${version}`,
+      accepting: "Accepting…",
+      done: "Agreement accepted",
+      failed: "Could not accept the agreement",
+    },
+  },
+  aiConnectionsSettings: {
+    card: {
+      title: "AI connections",
+      levels: { off: "Off", read: "Read only", write: "Read and write" },
+      offLead: "Off. Members can't connect AI apps such as Claude or ChatGPT to Flexi Day.",
+      readLead: "Members' AI apps can read what the member can see.",
+      writeLead: "Members' AI apps can read, and change the member's own requests and attendance.",
+      planLead: "Let members connect AI apps such as Claude or ChatGPT to Flexi Day.",
+      comesWithPaid: "AI connections come with every paid plan.",
+      raised: "AI connections can now read and write",
+      raiseFailed: "Could not change AI connections",
+    },
+    turnOn: {
+      title: (organization: string) => `Turn on AI connections for ${organization}?`,
+      lead: "Read this before you turn it on. You can turn it off any time.",
+      facts: (
+        organization: string,
+        limits: { organization: string; member: string }
+      ): [string, string][] => [
+        [
+          "What it does",
+          `Members connect AI apps they already use, such as Claude or ChatGPT, to their Flexi Day account. The app works with that member's own permissions in ${organization}.`,
+        ],
+        [
+          "What leaves Flexi Day",
+          "What the app reads goes to the company behind that app, under the member's own agreement with them. Flexi Day has no agreement with those companies. Once data reaches the app, that company handles it, not us.",
+        ],
+        [
+          "Which apps",
+          "Personal accounts of AI apps may keep what they read or train on it. Your organization's own policy decides which apps your people may use.",
+        ],
+        [
+          "Read only",
+          "Apps see what the member can see: requests, balances, who is away, attendance, the directory.",
+        ],
+        [
+          "Read and write",
+          "Apps can also create and cancel the member's own requests and clock them in and out. They never approve or reject requests.",
+        ],
+        [
+          "Limits",
+          `${limits.organization} calls a day for the organization, ${limits.member} a day per member. Nothing extra to pay.`,
+        ],
+      ],
+      startWith: "Start with",
+      readHint: "Apps can look things up. A safe way to start.",
+      writeHint: "Apps can also create and cancel the member's own requests and clock in and out.",
+      turnOn: "Turn on AI connections",
+      working: "Turning on…",
+      done: "AI connections are on",
+      failed: "Could not turn AI connections on",
+      alreadyOn: "AI connections are already on.",
+    },
+    lower: {
+      title: "Switch AI connections to read only?",
+      warning:
+        "This disconnects every app that has write access now. Their members can connect again with read access.",
+      confirm: "Disconnect and switch",
+      working: "Switching…",
+      done: "AI connections are read only",
+      failed: "Could not switch AI connections to read only",
+    },
+    turnOff: {
+      title: "Turn off AI connections?",
+      warning:
+        "This disconnects every connected app now. If you turn it on again, every member has to connect again.",
+      confirm: "Disconnect all and turn off",
+      working: "Turning off…",
+      done: "AI connections are off",
+      failed: "Could not turn AI connections off",
+    },
+  },
+  aiConnect: {
+    loading: "Loading…",
+    invalid: {
+      title: "This link has expired",
+      body: "Connection links last 10 minutes. Start connecting again from your AI app.",
+    },
+    requester: (app: string, host: string) => `${app} · ${host}`,
+    signIn: {
+      title: (app: string) => `Sign in to connect ${app}`,
+      description: (app: string) =>
+        `${app} wants to use your Flexi Day account. Nothing is shared until you allow it on the next page.`,
+      noAccount: "No account yet?",
+      signUpElsewhere: "Create one in a new tab, then connect again from your app.",
+    },
+    picker: {
+      title: (app: string) => `Which organization should ${app} work in?`,
+      legend: "Organization",
+      access: { read: "Read only", write: "Read and write allowed" },
+      leftOut: {
+        TURNED_OFF: (organization: string) =>
+          `Not listed: ${organization}. Its owner hasn't turned on AI connections.`,
+        PLAN: (organization: string) =>
+          `Not listed: ${organization}. It's on the Free plan, which doesn't include AI connections.`,
+      },
+      oneOrganization: (app: string) =>
+        `${app} works in one organization. To use another, connect again.`,
+      continue: "Continue",
+      working: "Continuing…",
+      cancel: "Cancel",
+      failed: "Could not continue. Try again.",
+      notEligible: "This organization no longer allows AI connections. Pick another.",
+      signedOut: "You're signed out. Sign in again to continue.",
+      signInAgain: "Sign in",
+    },
+    none: {
+      title: (app: string) => `${app} can't connect yet`,
+      body: "None of your organizations allows AI connections. The owner turns them on in the organization's settings.",
+      owner: (organization: string, owner: string) => `${organization} · owner ${owner}`,
+      free: "Free organizations can't turn them on.",
+      goBack: (app: string) => `Go back to ${app}`,
+    },
+    consent: {
+      title: (app: string) => `Allow ${app} to use your Flexi Day account?`,
+      app: "App",
+      checked: (host: string) => `Address checked: ${host}`,
+      notVerified: "Name not verified",
+      organization: "Organization",
+      change: "Change",
+      afterwards: "Afterwards",
+      goesBackTo: (host: string) => `You go back to ${host}`,
+      localApp: (app: string) =>
+        `This sends your access to a program on this computer. Allow it only if you started connecting from ${app} just now.`,
+      ableTo: (app: string) => `${app} will be able to`,
+      read: "See what you can see",
+      readHint: "Your requests and balances, who is away, attendance, the directory.",
+      write: "Make changes for you",
+      writeHint: (app: string) =>
+        `Create and cancel your own requests, clock you in and out. Each change is marked as made through ${app}. It can't approve or reject.`,
+      readOnly: (organization: string, app: string) =>
+        `${organization} allows read only, so ${app} can't make changes.`,
+      permissions: (app: string) =>
+        `${app} works with your permissions, so it never sees more than you do. Disconnect it any time in Settings.`,
+      privacy: "Privacy policy",
+      terms: "Terms",
+      allow: "Allow",
+      working: "Allowing…",
+      cancel: "Cancel",
+      failed: "Could not allow access. Try again.",
+      notEligible: (app: string) =>
+        `This organization no longer allows AI connections, so ${app} can't connect to it.`,
+      noOrganization: "Pick the organization first.",
+      pickAgain: "Pick an organization",
+    },
+  },
+  aiConnectionGrants: {
+    settings: {
+      title: "AI connections",
+      lead: "AI apps you allowed to use Flexi Day for you. Each one works in one organization, with your permissions there.",
+      empty: "You haven't connected an AI app.",
+      loadFailed: "Could not load your AI connections.",
+      notVerified: "name not verified",
+      access: { read: "Read only", write: "Read and write" },
+      lastUsed: (when: string) => `last used ${when}`,
+      organizationGone: "Organization removed",
+      disconnect: "Disconnect",
+      disconnectApp: (app: string) => `Disconnect ${app}`,
+      confirm: (app: string) => `Disconnect ${app}? It stops at its next call.`,
+      keep: "Keep",
+      disconnecting: "Disconnecting…",
+      disconnected: (app: string) => `${app} is disconnected`,
+      disconnectFailed: "Could not disconnect the app",
+      connectTitle: "Connect an AI app",
+      connectLead:
+        "In Claude, ChatGPT or another app that takes MCP connectors, add Flexi Day with this address. Your organization's owner has to turn on AI connections first.",
+      copy: "Copy the address",
+      copied: "Address copied",
+    },
+    ownerDialog: {
+      listLabel: "Apps it disconnects",
+      lowerNone: "No app has write access now, so nothing is disconnected.",
+      offNone: "No app is connected now, so nothing is disconnected.",
+    },
+  },
+  assistant: {
+    button: "Assistant",
+    close: "Close the Assistant",
+    newChat: "New chat",
+    pastChats: "Your chats",
+    backToChat: "Back to the chat",
+    untitled: "New chat",
+    aiLine: "The Assistant is an AI. Answers can be wrong. Nothing changes until you confirm it.",
+    composer: {
+      label: "Message the Assistant",
+      send: "Send",
+    },
+    empty: {
+      title: "Ask about time off, attendance or your team",
+      introBefore: "Answers come from Flexi Day's help and what you can already see in",
+      introAfter: ". Anything it changes waits for your OK.",
+      suggestions: [
+        "Who's away next week?",
+        "How many vacation days do I have left?",
+        "What requests do I have this year?",
+      ],
+    },
+    picker: {
+      question: "Ask in which organization? A chat stays in the one it starts in.",
+      needsEnterprise: (organization: string) =>
+        `${organization} isn't listed: the Assistant needs Enterprise.`,
+      turnedOff: (organization: string) =>
+        `${organization} isn't listed: the Assistant is off there.`,
+    },
+    thinking: "Working on it",
+    stillWriting: "Still writing. The full answer appears in a moment.",
+    tools: {
+      get_my_balances: {
+        running: "Checking your balance",
+        done: "Checked your balance",
+        failed: "Couldn't check your balance",
+      },
+      list_my_requests: {
+        running: "Looking up your requests",
+        done: "Looked up your requests",
+        failed: "Couldn't look up your requests",
+      },
+      list_who_is_away: {
+        running: "Looking up who's away",
+        done: "Looked up who's away",
+        failed: "Couldn't look up who's away",
+      },
+      get_my_attendance: {
+        running: "Checking your attendance",
+        done: "Checked your attendance",
+        failed: "Couldn't check your attendance",
+      },
+      get_my_worked_time: {
+        running: "Adding up your worked time",
+        done: "Added up your worked time",
+        failed: "Couldn't add up your worked time",
+      },
+      list_group_events: {
+        running: "Looking up group events",
+        done: "Looked up group events",
+        failed: "Couldn't look up group events",
+      },
+      list_birthdays: {
+        running: "Looking up birthdays",
+        done: "Looked up birthdays",
+        failed: "Couldn't look up birthdays",
+      },
+      list_directory_people: {
+        running: "Searching the directory",
+        done: "Searched the directory",
+        failed: "Couldn't search the directory",
+      },
+      get_directory_profile: {
+        running: "Opening a profile",
+        done: "Opened a profile",
+        failed: "Couldn't open the profile",
+      },
+      show_directory_section: {
+        running: "Opening a profile section",
+        done: "Opened a profile section",
+        failed: "Couldn't open the profile section",
+      },
+      search_docs: {
+        running: "Searching the help",
+        done: "Searched the help",
+        failed: "Couldn't search the help",
+      },
+      read_doc: {
+        running: "Reading a help article",
+        done: "Read a help article",
+        failed: "Couldn't open the help article",
+      },
+      create_request: {
+        running: "Preparing your request",
+        done: "Booked your time off",
+        failed: "Couldn't book the time off",
+      },
+      cancel_my_request: {
+        running: "Preparing the cancellation",
+        done: "Cancelled your request",
+        failed: "Couldn't cancel the request",
+      },
+      clock_in: {
+        running: "Preparing your clock-in",
+        done: "Clocked you in",
+        failed: "Couldn't clock you in",
+      },
+      clock_out: {
+        running: "Preparing your clock-out",
+        done: "Clocked you out",
+        failed: "Couldn't clock you out",
+      },
+      list_requests_to_approve: {
+        running: "Looking for requests waiting for you",
+        done: "Found the requests waiting for you",
+        failed: "Couldn't find the requests waiting for you",
+      },
+      approve_request: {
+        running: "Preparing the approval",
+        done: "Approved the request",
+        failed: "Couldn't approve the request",
+      },
+      reject_request: {
+        running: "Preparing the rejection",
+        done: "Rejected the request",
+        failed: "Couldn't reject the request",
+      },
+      other: {
+        running: "Looking something up",
+        done: "Looked something up",
+        failed: "Couldn't look it up",
+      },
+    },
+    notices: {
+      ASSISTANT_ERROR: "Something went wrong and the answer stopped. Try again.",
+      ASSISTANT_STEP_LIMIT:
+        "Stopped here: this answer needed too many steps. Try asking in smaller parts.",
+      ASSISTANT_UNAVAILABLE: "The Assistant is unavailable right now. Try again later.",
+    },
+    sendErrors: {
+      ASSISTANT_TURN_RUNNING: "Another answer is still being written. Wait for it to finish.",
+      AI_ORGANIZATION_NOT_ELIGIBLE:
+        "This organization doesn't allow the Assistant right now. Your chats stay here to read.",
+      fallback: "Not sent. Check your connection and try again.",
+      ASSISTANT_WEEKLY_LIMIT_REACHED:
+        "Not sent: the Assistant is paused until this week's limit resets.",
+      ASSISTANT_UNAVAILABLE: "Not sent. The Assistant is unavailable right now. Try again later.",
+      ASSISTANT_CHAT_CLOSED: "Not sent: this chat is closed. Start a new chat to keep going.",
+    },
+    closed: {
+      title: "This chat is closed.",
+      length: "It reached its length limit. It stays here to read.",
+      idle: "Nobody wrote in it for 30 days. It stays here to read.",
+    },
+    readOnly: {
+      TURNED_OFF: (organization: string) =>
+        `The Assistant is off for ${organization}. This chat stays here to read.`,
+      PLAN: (organization: string) =>
+        `${organization}'s plan no longer includes the Assistant. This chat stays here to read.`,
+      none: "None of your organizations can start a chat right now. Your chats stay here to read.",
+    },
+    limit: {
+      near: (organization: string, percent: number, reset: string) =>
+        `${organization} has used ${percent}% of this week's Assistant limit. It resets ${reset}.`,
+      nearAmounts: (
+        organization: string,
+        used: string,
+        limit: string,
+        percent: number,
+        reset: string
+      ) =>
+        `${organization} has used ${used} of its ${limit} Assistant limit this week (${percent}%). It resets ${reset}.`,
+      paused: (reset: string) => `The Assistant is paused until ${reset}.`,
+      pausedBody: (organization: string) =>
+        `${organization} reached this week's limit. Your chats stay here to read, and requests already shown can still be sent.`,
+      seeUsage: "See usage",
+      stopped: (organization: string) =>
+        `Stopped here: ${organization} reached this week's Assistant limit.`,
+    },
+    unavailable: "The Assistant is unavailable right now. Try again later.",
+    history: {
+      empty: "No chats yet. Chats are kept for 180 days.",
+      today: "Today",
+      thisWeek: "This week",
+      earlier: "Earlier",
+      remove: (title: string) => `Delete ${title}`,
+      confirm: (title: string) => `Delete “${title}”? It can't be brought back.`,
+      confirmDelete: "Delete",
+      keep: "Keep",
+      failed: "Couldn't delete the chat. Try again.",
+    },
+    loading: "Opening chat",
+    upgrade: {
+      title: "The Assistant comes with Enterprise",
+      body: (organization: string) =>
+        `On Enterprise, everyone in ${organization} can ask who's away, check a balance, send or approve a request and clock in by chat, in English or Czech. Each change waits for their confirmation.`,
+      points: [
+        "Included each week, with no per-message charge",
+        "It sees only what each person can already see",
+        "You turn it on, and you can turn it off at any time",
+      ],
+      cta: "See Enterprise",
+      onlyYou: "Only you see this. Members don't see the Assistant until it's on.",
+    },
+    off: {
+      title: (organization: string) => `The Assistant is off for ${organization}`,
+      body: "Your plan includes it. Turn it on to let everyone ask about time off and attendance by chat. Answers run on Anthropic's Claude, and chats are kept for 180 days.",
+      cta: "Open organization settings",
+      onlyAdmins: "Only you and org admins see this.",
+    },
+    cards: {
+      title: {
+        create_request: "Send this request?",
+        cancel_my_request: "Cancel this request?",
+        clock_in: "Clock in now?",
+        clock_out: "Clock out now?",
+        approve_request: "Approve this request?",
+        reject_request: "Reject this request?",
+      },
+      confirm: {
+        create_request: "Send request",
+        cancel_my_request: "Cancel request",
+        clock_in: "Clock in",
+        clock_out: "Clock out",
+        approve_request: "Approve",
+        reject_request: "Reject",
+      },
+      notNow: "Not now",
+      keepIt: "Keep it",
+      tryAgain: "Try again",
+      madeThrough: "Marked as made through the Assistant",
+      rows: {
+        type: "Type",
+        dates: "Dates",
+        workingDays: "Working days",
+        balance: "Balance",
+        balanceIn: (year: number) => `Balance ${year}`,
+        group: "Group",
+        status: "Status now",
+        time: "Time",
+        started: "Started",
+        workedSoFar: "Worked so far",
+        requester: "Requester",
+      },
+      halfDay: "half day",
+      statuses: {
+        pending: "Waiting for approval",
+        approved: "Approved",
+        partly_approved: "Partly approved",
+      },
+      yourNote: "Your note, word for word",
+      requestNote: "Your note on this request",
+      yourReason: "Your reason, word for word",
+      noteBy: (name: string) => `${name}'s note, word for word`,
+      reasonFor: (name: string) => `Reason for ${name}, optional`,
+      onBreak: "Your break ends too.",
+      marker: (names: string) =>
+        `Before suggesting this, the Assistant read a note written by ${names}. Check that this is what you asked for.`,
+      and: "and",
+      settled: {
+        create_request: "Request sent for approval",
+        cancel_my_request: "Request cancelled",
+        clock_in: (time: string) => `Clocked in at ${time}`,
+        clock_out: (time: string) => `Clocked out at ${time}`,
+        approve_request: (name: string) => `Approved. ${name} was notified.`,
+        reject_request: (name: string) => `Rejected. ${name} was notified.`,
+      },
+      declined: "Not done. Nothing changed.",
+      notTaken: "Not taken. Nothing changed.",
+      open: "Open",
+      decideFailed: "That didn't go through. Try again.",
+    },
+  },
+  assistantBoundary: {
+    notices: {
+      ASSISTANT_TOPIC_REFUSAL:
+        "I can only help with Flexi Day: time off, attendance, your team and how the app works. For legal or HR questions, ask your HR team or employer.",
+      ASSISTANT_MODEL_REFUSAL:
+        "The Assistant can't answer that. Ask about time off, attendance or your team.",
+    },
+    rejected: "Not sent to the Assistant",
+    screenFailed: "Your message couldn't be checked, so it wasn't sent.",
+    tryAgain: "Try again",
+    sendAgain: "Send again",
+    unavailable: "The Assistant is unavailable right now. Try again later.",
+  },
+  aiUsage: {
+    title: "AI usage",
+    lead: (organization: string) =>
+      `${organization} · the Assistant and members' connected AI apps`,
+    settings: "Settings",
+    loadFailed: "Could not load AI usage.",
+    empty: {
+      body: (organization: string) =>
+        `The Assistant and AI connections are both off in ${organization}, so there is nothing to show.`,
+      action: "Open organization settings",
+    },
+    assistant: {
+      title: "Assistant this week",
+      ofLimit: (limit: string, percent: number) => `of ${limit} Weekly limit · ${percent}%`,
+      resets: (when: string) => `Resets ${when}. Includes answers being written right now.`,
+      reached: "Weekly limit reached",
+      reachedOn: (at: string, until: string) =>
+        `on ${at}. The Assistant is paused for everyone until ${until}.`,
+      pausedUntil: (until: string) => `The Assistant is paused for everyone until ${until}.`,
+      off: "The Assistant is off.",
+      needsEnterprise: "The Assistant comes with Enterprise.",
+      chart: "Assistant usage per week",
+      thisWeek: "This week",
+      bar: (week: string, amount: string) => `${week}: ${amount}`,
+      barReached: (week: string, amount: string) => `${week}: ${amount}, limit reached`,
+    },
+    connections: {
+      title: "AI connections today",
+      ofLimit: (limit: string, reset: string) =>
+        `of ${limit} calls today, the daily AI connection limit · resets at ${reset}`,
+      off: "AI connections are off.",
+      chart: "Calls per day, last 14 days",
+      today: "Today",
+      dayReached: (day: string) => `${day}: limit reached`,
+      bar: (day: string, calls: string) => `${day}: ${calls} calls`,
+    },
+    people: {
+      title: "People",
+      lead: "Open a person to see the apps they connected and revoke one.",
+      person: "Person",
+      assistantWeek: "Assistant this week",
+      refused: "Refused",
+      refusedHint: "Messages refused as off topic or unsafe. What they said isn't kept.",
+      callsToday: "AI calls today",
+      apps: "Connected apps",
+      none: "None",
+      atLimit: (calls: string) => `${calls} · limit`,
+      deletedAccount: "Deleted account",
+      showApps: (person: string) => `Show the apps of ${person}`,
+      app: "App",
+      access: "Access",
+      connected: "Connected",
+      lastUsed: "Last used",
+      revoke: "Revoke",
+      revokeApp: (app: string) => `Revoke ${app}`,
+      stopsAtNextCall: "Stops at its next call",
+      keep: "Keep",
+      revoking: "Revoking…",
+      revoked: (app: string) => `${app} is revoked`,
+      revokeFailed: "Could not revoke the app",
+      noUsage: "No one has used the Assistant or connected an AI app yet.",
+    },
+    weeks: {
+      title: "Past weeks",
+      empty: "Past weeks appear here after the first Monday.",
+      limitReached: (at: string) => `Limit reached ${at}`,
+      kept: "Per-person usage is kept for 180 days.",
+      totalOnly: "This week is more than 180 days old, so only the organization total is kept.",
+      noOne: "No one used the Assistant that week.",
+      spend: "Assistant",
+      loadFailed: "Could not load this week.",
+    },
+  },
+  privacyBanner: {
+    text: "We've updated our Privacy Policy for the new AI features.",
+    read: "Read what changed",
+    dismiss: "Dismiss",
   },
 };
 

@@ -336,6 +336,18 @@ describe("AppShell", () => {
     });
   });
 
+  it("shows the Privacy banner above the page only while the backend says so", () => {
+    const { unmount } = renderWithClient(<AppShell>x</AppShell>);
+    expect(screen.queryByText(/updated our Privacy Policy/)).toBeNull();
+    unmount();
+
+    shellState.privacyBanner = { show: true };
+    renderWithClient(<AppShell>x</AppShell>);
+    expect(
+      screen.getByText("We've updated our Privacy Policy for the new AI features.")
+    ).toBeInTheDocument();
+  });
+
   it("carries the bottom bar, hidden by CSS from md up", () => {
     renderWithClient(<AppShell>x</AppShell>);
 

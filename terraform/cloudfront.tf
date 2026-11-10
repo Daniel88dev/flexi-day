@@ -22,8 +22,42 @@ data "aws_cloudfront_origin_request_policy" "cors_s3_origin" {
   name = "Managed-CORS-S3Origin"
 }
 
-data "aws_cloudfront_response_headers_policy" "simple_cors" {
-  name = "Managed-SimpleCORS"
+# Managed-SimpleCORS's CORS plus frame protection for every page. The OAuth consent page is what
+# must never load in a frame; a full CSP is out of scope. The managed policy lists no headers or
+# methods, but both only answer an OPTIONS preflight, which this GET/HEAD-only behaviour never
+# serves, so naming them here changes nothing a viewer sees.
+resource "aws_cloudfront_response_headers_policy" "site" {
+  name    = "flexi-day-site-headers"
+  comment = "Simple CORS plus frame-ancestors 'none' and X-Frame-Options DENY"
+
+  cors_config {
+    access_control_allow_credentials = false
+    origin_override                  = false
+
+    access_control_allow_origins {
+      items = ["*"]
+    }
+
+    access_control_allow_headers {
+      items = ["*"]
+    }
+
+    access_control_allow_methods {
+      items = ["GET", "HEAD"]
+    }
+  }
+
+  security_headers_config {
+    content_security_policy {
+      content_security_policy = "frame-ancestors 'none'"
+      override                = true
+    }
+
+    frame_options {
+      frame_option = "DENY"
+      override     = true
+    }
+  }
 }
 
 locals {
@@ -60,7 +94,7 @@ resource "aws_cloudfront_distribution" "site" {
     compress                   = true
     cache_policy_id            = data.aws_cloudfront_cache_policy.caching_optimized.id
     origin_request_policy_id   = data.aws_cloudfront_origin_request_policy.cors_s3_origin.id
-    response_headers_policy_id = data.aws_cloudfront_response_headers_policy.simple_cors.id
+    response_headers_policy_id = aws_cloudfront_response_headers_policy.site.id
 
     function_association {
       event_type   = "viewer-request"

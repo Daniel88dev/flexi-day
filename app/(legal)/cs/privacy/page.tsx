@@ -1,25 +1,59 @@
 // NOTE: The Czech Privacy Policy. Keep it in step with app/(legal)/privacy/page.tsx;
 // a test fails when their sections drift apart. Have it reviewed by a qualified
-// lawyer before publication.
+// lawyer before publication. The AI passages show only in a build with
+// NEXT_PUBLIC_AI_TEXTS_PUBLISHED set (lib/legal.ts).
 import type { Metadata } from "next";
 import { LegalShell } from "@/components/legal/legal-shell";
-import { LEGAL } from "@/lib/legal";
+import { aiTextsPublished, aiTextsUpdated, LEGAL } from "@/lib/legal";
 
 export const metadata: Metadata = {
   title: "Zásady ochrany osobních údajů — flexiday",
   description: "Jak flexiday shromažďuje, používá a chrání vaše osobní údaje podle GDPR.",
 };
 
+const SECTIONS = [
+  "who",
+  "scope",
+  "data",
+  "bases",
+  "sharing",
+  "calendar",
+  "aiConnections",
+  "transfers",
+  "retention",
+  "rights",
+  "cookies",
+  "children",
+  "security",
+  "changes",
+  "contact",
+] as const;
+
+type Section = (typeof SECTIONS)[number];
+
 export default function CsPrivacyPage() {
+  const ai = aiTextsPublished();
+  const shown = SECTIONS.filter((id) => ai || id !== "aiConnections");
+  const n = (id: Section) => shown.indexOf(id) + 1;
   return (
     <LegalShell
       title="Zásady ochrany osobních údajů"
-      updated={LEGAL.cs.updated}
+      updated={aiTextsUpdated("cs")}
       locale="cs"
       intro="Tyto zásady vysvětlují, jaké osobní údaje flexiday zpracovává, v jaké roli, proč, a jaká práva vám dává obecné nařízení o ochraně osobních údajů (GDPR)."
       translatedPage="privacy"
     >
-      <h2>1. Kdo jsme</h2>
+      {ai ? (
+        <p id="what-changed">
+          <strong>Co se změnilo:</strong> přibyly Asistent a AI připojení. Oddíly {n("data")} a{" "}
+          {n("bases")} popisují chaty, záznamy o používání a záznamy o připojeních, které vedeme,
+          oddíl {n("sharing")} přidává společnost Anthropic jako zpracovatele, oddíl{" "}
+          {n("aiConnections")} je nový a vysvětluje AI připojení, oddíl {n("transfers")} popisuje
+          předání chatů s Asistentem do Spojených států a oddíl {n("retention")} říká, jak dlouho to
+          vše uchováváme.
+        </p>
+      ) : null}
+      <h2>{n("who")}. Kdo jsme</h2>
       <p>
         Službu {LEGAL.product} provozuje <strong>{LEGAL.entity}</strong> (&bdquo;my&ldquo;), IČO{" "}
         {LEGAL.ico}, fyzická osoba podnikající se sídlem {LEGAL.cs.address}.
@@ -28,14 +62,15 @@ export default function CsPrivacyPage() {
       <ul>
         <li>
           Jsme <strong>správcem</strong> <strong>údajů vašeho účtu</strong>: přihlášení, nastavení,
-          oznámení, propojených kalendářů, registrací push oznámení a narozenin. O těchto údajích
-          rozhodujeme my a tyto zásady je popisují celé.
+          oznámení, propojených kalendářů, {ai ? "AI připojení, " : ""}registrací push oznámení a
+          narozenin. O těchto údajích rozhodujeme my a tyto zásady je popisují celé.
         </li>
         <li>
           Jsme <strong>zpracovatelem</strong> <strong>údajů organizace</strong>: toho, co organizace
-          vede o lidech, kteří v ní pracují, například pracovní poměry, skupiny, nepřítomnosti,
-          docházku a nároky. Jejich správcem je organizace (obvykle váš zaměstnavatel). Zpracováváme
-          je jen proto, abychom této organizaci poskytovali Službu, podle jejích pokynů a podle naší{" "}
+          vede o lidech, kteří v ní pracují, například pracovní poměry, skupiny, nepřítomnosti,{" "}
+          {ai ? "docházku, nároky a chaty s Asistentem" : "docházku a nároky"}. Jejich správcem je
+          organizace (obvykle váš zaměstnavatel). Zpracováváme je jen proto, abychom této organizaci
+          poskytovali Službu, podle jejích pokynů a podle naší{" "}
           <a href="/cs/dpa/">Smlouvy o zpracování osobních údajů</a>. Organizace rozhoduje, jak
           dlouho vaše záznamy uchovává, a odpovídá na vaše žádosti, které se jich týkají.
         </li>
@@ -46,14 +81,14 @@ export default function CsPrivacyPage() {
         jsme nejmenovali, protože nám to článek 37 GDPR neukládá.
       </p>
 
-      <h2>2. Rozsah</h2>
+      <h2>{n("scope")}. Rozsah</h2>
       <p>
         Tyto zásady se vztahují na webovou aplikaci flexiday a související služby (dále jen
         &bdquo;Služba&ldquo;), nástroj, ve kterém týmy žádají o volno, schvalují ho a sledují. Na
         weby třetích stran, na které případně odkazujeme, se nevztahují.
       </p>
 
-      <h2>3. Jaké údaje shromažďujeme</h2>
+      <h2>{n("data")}. Jaké údaje shromažďujeme</h2>
       <h3>Údaje účtu (jsme správcem)</h3>
       <ul>
         <li>
@@ -80,8 +115,15 @@ export default function CsPrivacyPage() {
           <strong>Propojení kalendáře</strong>: pokud k osobnímu kalendáři připojíte svůj kalendář
           Google nebo Microsoft, ukládáme přístupové tokeny, které poskytovatel vydá (šifrovaně),
           udělené oprávnění, zvolené časové pásmo a identifikátory událostí, které jsme vytvořili.
-          Podrobnosti jsou v oddílu 6.
+          Podrobnosti jsou v oddílu {n("calendar")}.
         </li>
+        {ai ? (
+          <li>
+            <strong>AI připojení</strong>: pokud ke svému účtu připojíte AI aplikaci, uchováváme
+            název a adresu aplikace, organizaci, ke které jste ji připojili, udělený přístup a kdy
+            ho aplikace naposledy použila. Podrobnosti jsou v oddílu {n("aiConnections")}.
+          </li>
+        ) : null}
       </ul>
       <h3>Údaje organizace (zpracováváme je pro vaši organizaci)</h3>
       <ul>
@@ -118,6 +160,23 @@ export default function CsPrivacyPage() {
           profil, který o vás organizace vede. Popisuje ho{" "}
           <a href="/cs/directory-agreement/">smlouva k adresáři lidí</a>.
         </li>
+        {ai ? (
+          <>
+            <li>
+              <strong>Chaty s Asistentem</strong>: pokud vaše organizace zapnula Asistenta, to, co
+              mu napíšete, jeho odpovědi, údaje ze Služby, které četl, aby odpověděl, jeho činnost s
+              nástroji, změny, které nabídl, a zda jste je potvrdili, a zprávy, které odmítl.
+              Asistent dostává také vaše jméno a roli. Popisuje je{" "}
+              <a href="/cs/ai-agreement/">Smlouva o funkcích AI</a>.
+            </li>
+            <li>
+              <strong>Záznamy o používání AI</strong>: u každého kroku chatu kdo, kdy, jaký model,
+              počet tokenů a cena, a u volání z AI aplikací denní počet na osobu. Neobsahují žádný
+              obsah. Vlastník a správci organizace vidí, kolik kdo používá Asistenta a AI aplikace a
+              kolik jeho zpráv Asistent odmítl, nikdy ne to, co kdo napsal.
+            </li>
+          </>
+        ) : null}
       </ul>
       <h3>Údaje, které shromažďujeme automaticky (jsme správcem)</h3>
       <ul>
@@ -127,7 +186,7 @@ export default function CsPrivacyPage() {
         </li>
         <li>
           <strong>Údaje o relaci</strong> — přihlašovací cookie a token v místním úložišti, díky
-          kterým zůstáváte přihlášeni (viz oddíl 10).
+          kterým zůstáváte přihlášeni (viz oddíl {n("cookies")}).
         </li>
         <li>
           <strong>Push token</strong> — adresa, kterou Apple přidělí vašemu iPhonu pro oznámení;
@@ -142,11 +201,14 @@ export default function CsPrivacyPage() {
         </li>
       </ul>
 
-      <h2>4. Proč údaje používáme a na jakém právním základě</h2>
+      <h2>{n("bases")}. Proč údaje používáme a na jakém právním základě</h2>
       <p>
         Tabulka se týká údajů, jejichž jsme správcem. U údajů organizace rozhoduje o účelu a právním
         základu zpracování organizace a za tuto volbu odpovídá. Údaje organizace zpracováváme jen
         proto, abychom jí poskytovali Službu.
+        {ai
+          ? " Chaty s Asistentem a záznamy o používání AI jsou údaje organizace: Asistenta zapíná organizace a ta také rozhoduje o právním základu jeho používání."
+          : ""}
       </p>
       <table>
         <thead>
@@ -167,6 +229,15 @@ export default function CsPrivacyPage() {
             </td>
             <td>Plnění smlouvy (b)</td>
           </tr>
+          {ai ? (
+            <tr>
+              <td>
+                Provoz AI připojení, která nastavíte, a záznam o každém z nich, abyste je viděli a
+                mohli odpojit
+              </td>
+              <td>Plnění smlouvy (b)</td>
+            </tr>
+          ) : null}
           <tr>
             <td>Zasílání transakčních e-mailů (např. ověření e-mailu, oznámení)</td>
             <td>Plnění smlouvy (b) / oprávněný zájem (f)</td>
@@ -190,7 +261,7 @@ export default function CsPrivacyPage() {
         </tbody>
       </table>
 
-      <h2>5. Komu údaje předáváme</h2>
+      <h2>{n("sharing")}. Komu údaje předáváme</h2>
       <p>
         Vaše osobní údaje neprodáváme. Uvnitř Služby vidí údaje organizace lidé ve vaší organizaci
         tak, jak to dovolují její nastavení a role, například váš tým a skupiny kvůli plánování
@@ -238,6 +309,19 @@ export default function CsPrivacyPage() {
             </td>
             <td>Spojené království / EU</td>
           </tr>
+          {ai ? (
+            <tr>
+              <td>Anthropic, PBC</td>
+              <td>
+                Provozuje Asistenta, jen pro organizace, které ho zapnou; vidí každou zprávu, jméno
+                a roli tazatele a údaje ze Služby, které Asistent čte, aby odpověděl
+              </td>
+              <td>
+                Spojené státy (uložení); zpracovávat je může i v dalších zemích, kde provozuje své
+                modely
+              </td>
+            </tr>
+          ) : null}
         </tbody>
       </table>
       <p>
@@ -245,12 +329,19 @@ export default function CsPrivacyPage() {
         Paddle vaše platební údaje podle svých vlastních zásad ochrany osobních údajů — úplné údaje
         vaší platební karty nikdy nedostáváme.
       </p>
+      {ai ? (
+        <p>
+          Anthropic na údajích, které pro nás zpracovává, nikdy netrénuje modely. AI aplikace,
+          kterou připojíte přes AI připojení, není naším zpracovatelem: oddíl {n("aiConnections")}{" "}
+          vysvětluje, kdo nakládá s tím, co přečte.
+        </p>
+      ) : null}
       <p>
         Údaje můžeme zpřístupnit také tehdy, když to vyžaduje zákon, když je to nutné k vymáhání
         našich Podmínek nebo k ochraně práv, bezpečnosti a zabezpečení našich uživatelů.
       </p>
 
-      <h2>6. Propojení kalendářů a uživatelská data Google</h2>
+      <h2>{n("calendar")}. Propojení kalendářů a uživatelská data Google</h2>
       <p>
         K osobnímu kalendáři můžete připojit svůj vlastní kalendář Google nebo Microsoft. flexiday
         pak do primárního kalendáře tohoto účtu zapisuje vaše schválené nepřítomnosti a udržuje je
@@ -304,14 +395,54 @@ export default function CsPrivacyPage() {
         můžete smazat sami a přístup flexiday odebrat v oprávněních svého účtu Google.
       </p>
 
-      <h2>7. Předávání mimo EU</h2>
+      {ai ? (
+        <>
+          <h2 id="ai-connections">{n("aiConnections")}. AI připojení</h2>
+          <p>
+            Pokud organizace, ve které pracujete, povoluje AI připojení, můžete si v Nastavení ke
+            svému účtu připojit AI aplikaci, kterou už používáte, například Claude nebo ChatGPT.
+            Aplikace pak čte to, co v této organizaci vidíte vy. Pokud organizace povoluje čtení i
+            změny, může také provádět změny, které byste mohli provést sami, například požádat o
+            vlastní volno nebo ho zrušit a zaznamenat příchod a odchod.
+          </p>
+          <h3>Co uchováváme</h3>
+          <p>
+            U každého připojení: název a adresu aplikace, organizaci, ke které jste ji připojili,
+            udělený přístup a kdy ho aplikace naposledy použila. Uchováváme je, abychom mohli
+            provozovat připojení, o které jste požádali, na základě naší smlouvy s vámi (čl. 6 odst.
+            1 písm. b) GDPR), a abyste ho viděli a mohli odpojit. Vlastník a správci této organizace
+            vidí, které aplikace jste připojili a kolik volání provádějí.
+          </p>
+          <h3>Kam údaje jdou</h3>
+          <p>
+            Co aplikace přečte, jde ke společnosti, která za ní stojí, podle vaší vlastní smlouvy s
+            ní. Tato společnost není naším zpracovatelem a žádnou smlouvu s ní nemáme. Jakmile data
+            do aplikace dorazí, nakládá s nimi ta společnost, ne my. Osobní účty AI aplikací si
+            mohou přečtená data uchovat nebo na nich trénovat, proto o tom, které aplikace smíte
+            používat, rozhodují pravidla vaší organizace.
+          </p>
+          <h3>Odpojení</h3>
+          <p>
+            Aplikaci můžete kdykoli odpojit v Nastavení a přístup ztratí při svém příštím volání.
+            Vaše připojení odstraníme také, když si obnovíte heslo, když ho změníte a odhlásíte
+            ostatní relace a když smažete svůj účet. Když vlastník organizace AI připojení vypne,
+            skončí všechna připojení k této organizaci, a když je omezí jen na čtení, skončí ta,
+            která smějí provádět změny.
+          </p>
+        </>
+      ) : null}
+
+      <h2>{n("transfers")}. Předávání mimo EU</h2>
       <p>
-        Vaše údaje jsou uloženy v Evropské unii ({LEGAL.cs.hosting}). Pokud dojde k předání mimo
-        Evropský hospodářský prostor, opíráme se o vhodné záruky, například o standardní smluvní
-        doložky Evropské komise.
+        Vaše údaje jsou uloženy v Evropské unii ({LEGAL.cs.hosting}).
+        {ai
+          ? " Pokud vaše organizace zapne Asistenta, její chaty jdou ke společnosti Anthropic, PBC, která je ukládá ve Spojených státech a zpracovávat je může i v dalších zemích, kde provozuje své modely. Toto předání se opírá o standardní smluvní doložky Evropské komise, modul 3 (zpracovatel zpracovateli); Anthropic není certifikován podle rámce EU-USA pro ochranu osobních údajů (Data Privacy Framework)."
+          : ""}{" "}
+        Pokud dojde k {ai ? "jinému " : ""}předání mimo Evropský hospodářský prostor, opíráme se o
+        vhodné záruky, například o standardní smluvní doložky Evropské komise.
       </p>
 
-      <h2>8. Jak dlouho údaje uchováváme</h2>
+      <h2>{n("retention")}. Jak dlouho údaje uchováváme</h2>
       <p>
         Údaje vašeho účtu uchováváme, dokud váš účet existuje. Účet můžete sami smazat v Nastavení,
         nebo nás požádat o výmaz údajů účtu. Údaje organizace zůstávají, dokud je organizace
@@ -321,8 +452,9 @@ export default function CsPrivacyPage() {
       <h3>Smazání účtu</h3>
       <p>
         Smazáním účtu okamžitě odstraníte údaje svého účtu z našich provozních systémů: způsoby
-        přihlášení, relace, nastavení, oznámení, propojení kalendářů (postupem z oddílu 6),
-        registrace push oznámení a narozeniny.
+        přihlášení, relace, nastavení, oznámení, propojení kalendářů (postupem z oddílu{" "}
+        {n("calendar")}), {ai ? "AI připojení, " : ""}registrace push oznámení a narozeniny.
+        {ai ? " Smažou se i vaše chaty s Asistentem, u nás i u společnosti Anthropic." : ""}
       </p>
       <p>
         Nesmažete tím záznamy, které o vás vedou organizace, ve kterých pracujete, protože patří
@@ -352,6 +484,35 @@ export default function CsPrivacyPage() {
         člověk smaže svůj účet, nebo u člověka, který účet nikdy neměl. Pokud chcete své záznamy v
         organizaci vymazat nebo opravit, obraťte se na tuto organizaci.
       </p>
+      {ai ? (
+        <>
+          <h3>Asistent a AI připojení</h3>
+          <ul>
+            <li>
+              Chat s Asistentem uchováváme 180 dní po jeho poslední zprávě a své chaty můžete smazat
+              i dříve.
+            </li>
+            <li>
+              Anthropic chat smaže 30 dní po jeho poslední zprávě, nebo hned, když chat smažete.
+              Zprávu, kterou označí jeho bezpečnostní systémy, uchová až 2 roky.
+            </li>
+            <li>
+              Když z organizace odejdete, jste z ní odebráni nebo smažete svůj účet, vaše chaty v
+              této organizaci se hned smažou, u nás i u společnosti Anthropic. Když se smaže
+              organizace, smažou se všechny její chaty.
+            </li>
+            <li>
+              Záznamy o používání AI uchováváme 90 dní. Každý týden se pak sloučí do součtu za
+              osobu, který uchováváme 180 dní, a poté do součtu za organizaci, který nikoho
+              nejmenuje.
+            </li>
+            <li>
+              Záznam o AI připojení uchováváme, dokud připojení neskončí, jak popisuje oddíl{" "}
+              {n("aiConnections")}.
+            </li>
+          </ul>
+        </>
+      ) : null}
       <h3>Zálohy a další lhůty</h3>
       <p>
         Naše databázové zálohy postupně vypršují, takže smazané údaje z nich zmizí do sedmi dnů.
@@ -364,7 +525,7 @@ export default function CsPrivacyPage() {
         bezpečnostních důvodů.
       </p>
 
-      <h2>9. Vaše práva</h2>
+      <h2>{n("rights")}. Vaše práva</h2>
       <p>Podle GDPR máte právo:</p>
       <ul>
         <li>na přístup k osobním údajům, které o vás vedeme;</li>
@@ -390,7 +551,7 @@ export default function CsPrivacyPage() {
         {LEGAL.cs.authority.address} (<a href={LEGAL.authority.url}>{LEGAL.authority.url}</a>).
       </p>
 
-      <h2>10. Cookies a místní úložiště</h2>
+      <h2>{n("cookies")}. Cookies a místní úložiště</h2>
       <p>
         Ukládáme jen to, co Služba potřebuje ke svému fungování, a proto nevidíte žádnou cookie
         lištu. Nic z toho, co ukládáme, vás neidentifikuje napříč návštěvami a neprobíhá žádná
@@ -403,8 +564,8 @@ export default function CsPrivacyPage() {
         </li>
         <li>
           <strong>Diagnostika.</strong> Náhodný identifikátor (<code>fd.sid</code>) v úložišti
-          relace vašeho prohlížeče, který seskupuje záznamy o chybách a výkonu popsané v oddílu 3.
-          Zahodí se, když kartu zavřete, a nikdy nespojuje dvě návštěvy.
+          relace vašeho prohlížeče, který seskupuje záznamy o chybách a výkonu popsané v oddílu{" "}
+          {n("data")}. Zahodí se, když kartu zavřete, a nikdy nespojuje dvě návštěvy.
         </li>
         <li>
           <strong>Předvolby.</strong> Vaše volba světlého nebo tmavého vzhledu, uložená ve vašem
@@ -418,25 +579,25 @@ export default function CsPrivacyPage() {
         </li>
       </ul>
 
-      <h2>11. Děti</h2>
+      <h2>{n("children")}. Děti</h2>
       <p>
         Služba není určena dětem. Vědomě neshromažďujeme osobní údaje nikoho mladšího 16 let. Pokud
         se domníváte, že nám údaje poskytlo dítě, kontaktujte nás a my je odstraníme.
       </p>
 
-      <h2>12. Zabezpečení</h2>
+      <h2>{n("security")}. Zabezpečení</h2>
       <p>
         K ochraně vašich údajů přijímáme vhodná technická a organizační opatření. Podrobnosti
         najdete na stránce <a href="/security/">Zabezpečení</a> (v angličtině).
       </p>
 
-      <h2>13. Změny těchto zásad</h2>
+      <h2>{n("changes")}. Změny těchto zásad</h2>
       <p>
         Tyto zásady můžeme čas od času aktualizovat. Změníme pak datum poslední aktualizace výše a u
         podstatných změn vás upozorníme výrazněji.
       </p>
 
-      <h2>14. Kontakt</h2>
+      <h2>{n("contact")}. Kontakt</h2>
       <p>
         {LEGAL.entity}
         <br />

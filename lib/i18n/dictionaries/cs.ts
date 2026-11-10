@@ -24,6 +24,10 @@ export const cs: Dictionary = {
     dateLocale: "cs-CZ",
     loading: "Načítání…",
     accountDeleted: "Účet smazán",
+    channel: {
+      assistant: "přes Asistenta",
+      mcp: "přes AI aplikaci",
+    },
     personExport: {
       export: "Exportovat",
       exportFor: (name: string) => `Exportovat data: ${name}`,
@@ -195,6 +199,7 @@ export const cs: Dictionary = {
     enterpriseChip: "Enterprise",
     organization: "Organizace",
     billing: "Fakturace",
+    aiUsage: "Využití AI",
     settings: "Nastavení",
     more: "Více",
     collapse: "Sbalit postranní panel",
@@ -2934,5 +2939,629 @@ export const cs: Dictionary = {
       plum: "Švestková",
       slate: "Břidlicová",
     } as Record<string, string>,
+  },
+  aiSettings: {
+    card: {
+      title: "AI",
+      seeUsage: "Zobrazit využití AI",
+      assistant: "Asistent",
+      onLead: "Zapnutý. Každý člen ho otevře z horní lišty.",
+      offLead:
+        "Vypnutý. Členové ho nevidí. Zapněte ho, aby se ho mohli ptát a provádět změny v chatu.",
+      planLead: "Chat v aplikaci, který členům odpovídá na otázky a provádí za ně změny.",
+      comesWithEnterprise: "Asistent je součástí tarifu Enterprise.",
+      seeEnterprise: "Zobrazit Enterprise",
+      seePlans: "Zobrazit tarify",
+      ownerOnly: (owner: string) => `Změnit to může jen vlastník organizace, ${owner}.`,
+      copyNotice: "Zkopírovat upozornění pro členy",
+      copied: "Upozornění pro členy zkopírováno",
+      loadFailed: "Nastavení AI se nepodařilo načíst.",
+    },
+    accepted: (version: number, name: string | null, date: string) =>
+      name
+        ? `Smlouva o funkcích AI verze ${version}, přijato ${date} (${name})`
+        : `Smlouva o funkcích AI verze ${version}, přijato ${date}`,
+    turnOn: {
+      title: (organization: string) => `Zapnout Asistenta pro ${organization}?`,
+      lead: "Než ho zapnete, přečtěte si tohle. Vypnout ho můžete kdykoli.",
+      facts: (_organization: string, reset: string, limit: string): [string, string][] => [
+        [
+          "Co dělá",
+          "Členové se ho ptají na svou dovolenou, docházku a kolegy a žádají ho o změny. Je to AI, takže se může mýlit. Každá změna čeká, až ji člen potvrdí.",
+        ],
+        [
+          "Co opouští Flexi Day",
+          "Každá zpráva, jméno a role člena a data z Flexi Day, která Asistent čte, aby odpověděl, jdou ke společnosti Anthropic, našemu poskytovateli AI, která je ukládá ve Spojených státech a zpracovávat je může i v dalších zemích, kde provozuje své modely. Asistent čte jen to, co tazatel sám vidí.",
+        ],
+        [
+          "Jak dlouho se uchovává",
+          "Flexi Day uchovává chaty 180 dní a členové mohou ty své smazat. Anthropic chat smaže 30 dní po poslední zprávě, nebo hned, když se smaže tady. Zprávu, kterou označí jeho bezpečnostní systémy, uchová až 2 roky. Na vašich datech nikdy netrénuje modely.",
+        ],
+        [
+          "Když někdo odejde",
+          "Jeho chaty se smažou, když z organizace odejde nebo smaže svůj účet.",
+        ],
+        [
+          "Kolik to stojí",
+          `Na tarifu Enterprise nic navíc. Organizace má Týdenní limit ${limit} na používání AI. Když se vyčerpá, Asistent se pro všechny pozastaví do ${reset}.`,
+        ],
+        [
+          "Co uvidíte",
+          "Vy a správci organizace vidíte, kolik kdo Asistenta používá a kolik jeho zpráv bylo odmítnuto, nikdy ne to, co kdo napsal.",
+        ],
+      ],
+      subProcessor: "Tím se Anthropic stává dalším zpracovatelem podle Smlouvy o funkcích AI.",
+      readAgreement: "Přečíst Smlouvu o funkcích AI",
+      accept: (organization: string) => `Přijímám Smlouvu o funkcích AI za ${organization}.`,
+      recordHint: "Zaznamenáme, kdo smlouvu přijal, kdy a kterou verzi.",
+      tellMembers: "Dát vědět členům",
+      tellMembersHint: "Každý tady dostane upozornění v aplikaci a v telefonu.",
+      cancel: "Zrušit",
+      acceptAndTurnOn: "Přijmout a zapnout",
+      turnOn: "Zapnout Asistenta",
+      working: "Zapínám…",
+      done: "Asistent je zapnutý",
+      failed: "Asistenta se nepodařilo zapnout",
+      stale:
+        "Smlouva se změnila. Zavřete tento dialog a otevřete ho znovu, abyste si přečetli aktuální verzi.",
+      alreadyOn: "Asistent už je zapnutý.",
+    },
+    turnOff: {
+      title: "Vypnout Asistenta?",
+      body: "Členové o Asistenta hned přijdou. Jejich chaty zůstanou čitelné, dokud nebudou 180 dní staré.",
+      keepOn: "Nechat zapnutý",
+      confirm: "Vypnout",
+      working: "Vypínám…",
+      done: "Asistent je vypnutý",
+      failed: "Asistenta se nepodařilo vypnout",
+    },
+    banner: {
+      title: (version: number) => `Je připravena verze ${version} Smlouvy o funkcích AI.`,
+      body: "Přečtěte si ji a přijměte ji za svou organizaci. Asistent a AI připojení mezitím fungují dál.",
+      read: "Přečíst smlouvu",
+      accept: (version: number) => `Přijmout verzi ${version}`,
+      accepting: "Přijímám…",
+      done: "Smlouva přijata",
+      failed: "Smlouvu se nepodařilo přijmout",
+    },
+  },
+  aiConnectionsSettings: {
+    card: {
+      title: "AI připojení",
+      levels: { off: "Vypnuto", read: "Jen čtení", write: "Čtení a zápis" },
+      offLead:
+        "Vypnuto. Členové si k Flexi Day nemůžou připojit AI aplikace, jako je Claude nebo ChatGPT.",
+      readLead: "AI aplikace členů čtou to, co člen vidí.",
+      writeLead: "AI aplikace členů čtou a mění vlastní žádosti a docházku člena.",
+      planLead: "Členové si k Flexi Day můžou připojit AI aplikace, jako je Claude nebo ChatGPT.",
+      comesWithPaid: "AI připojení jsou součástí každého placeného tarifu.",
+      raised: "AI připojení teď můžou číst i zapisovat",
+      raiseFailed: "AI připojení se nepodařilo změnit",
+    },
+    turnOn: {
+      title: (organization: string) => `Zapnout AI připojení pro ${organization}?`,
+      lead: "Než je zapnete, přečtěte si tohle. Vypnout je můžete kdykoli.",
+      facts: (
+        organization: string,
+        limits: { organization: string; member: string }
+      ): [string, string][] => [
+        [
+          "Co to dělá",
+          `Členové si ke svému účtu ve Flexi Day připojí AI aplikace, které už používají, třeba Claude nebo ChatGPT. Aplikace pracuje s oprávněními daného člena v organizaci ${organization}.`,
+        ],
+        [
+          "Co opouští Flexi Day",
+          "Co aplikace přečte, jde ke společnosti, která za ní stojí, podle vlastní smlouvy člena s ní. Flexi Day s těmito společnostmi žádnou smlouvu nemá. Jakmile data do aplikace dorazí, nakládá s nimi ta společnost, ne my.",
+        ],
+        [
+          "Které aplikace",
+          "Osobní účty AI aplikací si mohou přečtená data uchovat nebo na nich trénovat. Které aplikace mohou vaši lidé používat, určují pravidla vaší organizace.",
+        ],
+        [
+          "Jen čtení",
+          "Aplikace vidí to, co vidí člen: žádosti, zůstatky, kdo je pryč, docházku a adresář.",
+        ],
+        [
+          "Čtení a zápis",
+          "Aplikace navíc můžou vytvářet a rušit vlastní žádosti člena a zaznamenávat jeho příchod a odchod. Žádosti nikdy neschvalují ani nezamítají.",
+        ],
+        [
+          "Limity",
+          `${limits.organization} volání denně pro organizaci, ${limits.member} denně na člena. Nic navíc neplatíte.`,
+        ],
+      ],
+      startWith: "Začít s",
+      readHint: "Aplikace můžou jen vyhledávat. Bezpečný začátek.",
+      writeHint:
+        "Aplikace navíc můžou vytvářet a rušit vlastní žádosti člena a zaznamenávat příchod a odchod.",
+      turnOn: "Zapnout AI připojení",
+      working: "Zapínám…",
+      done: "AI připojení jsou zapnutá",
+      failed: "AI připojení se nepodařilo zapnout",
+      alreadyOn: "AI připojení už jsou zapnutá.",
+    },
+    lower: {
+      title: "Přepnout AI připojení na jen čtení?",
+      warning:
+        "Tím se hned odpojí všechny aplikace, které mají přístup k zápisu. Jejich členové se můžou znovu připojit s přístupem ke čtení.",
+      confirm: "Odpojit a přepnout",
+      working: "Přepínám…",
+      done: "AI připojení jsou jen pro čtení",
+      failed: "AI připojení se nepodařilo přepnout na jen čtení",
+    },
+    turnOff: {
+      title: "Vypnout AI připojení?",
+      warning:
+        "Tím se hned odpojí všechny připojené aplikace. Když AI připojení znovu zapnete, každý člen se bude muset připojit znovu.",
+      confirm: "Odpojit vše a vypnout",
+      working: "Vypínám…",
+      done: "AI připojení jsou vypnutá",
+      failed: "AI připojení se nepodařilo vypnout",
+    },
+  },
+  aiConnect: {
+    loading: "Načítání…",
+    invalid: {
+      title: "Platnost odkazu vypršela",
+      body: "Odkaz pro připojení platí 10 minut. Začněte s připojením znovu ve své AI aplikaci.",
+    },
+    requester: (app: string, host: string) => `${app} · ${host}`,
+    signIn: {
+      title: (app: string) => `Přihlaste se a připojte ${app}`,
+      description: (app: string) =>
+        `${app} chce používat váš účet Flexi Day. Dokud to na další stránce nepovolíte, nic se nesdílí.`,
+      noAccount: "Ještě nemáte účet?",
+      signUpElsewhere: "Založte si ho v nové kartě a pak se připojte znovu ze své aplikace.",
+    },
+    picker: {
+      title: (app: string) => `Ve které organizaci má ${app} pracovat?`,
+      legend: "Organizace",
+      access: { read: "Jen čtení", write: "Povoleno čtení i zápis" },
+      leftOut: {
+        TURNED_OFF: (organization: string) =>
+          `Chybí ${organization}. Její vlastník AI připojení nezapnul.`,
+        PLAN: (organization: string) =>
+          `Chybí ${organization}. Má tarif Free, který AI připojení nezahrnuje.`,
+      },
+      oneOrganization: (app: string) =>
+        `${app} pracuje v jedné organizaci. Pro jinou se připojte znovu.`,
+      continue: "Pokračovat",
+      working: "Pokračuji…",
+      cancel: "Zrušit",
+      failed: "Pokračovat se nepodařilo. Zkuste to znovu.",
+      notEligible: "Tato organizace už AI připojení nepovoluje. Vyberte jinou.",
+      signedOut: "Jste odhlášeni. Pro pokračování se přihlaste znovu.",
+      signInAgain: "Přihlásit se",
+    },
+    none: {
+      title: (app: string) => `${app} se zatím nemůže připojit`,
+      body: "Žádná z vašich organizací AI připojení nepovoluje. Zapíná je vlastník v nastavení organizace.",
+      owner: (organization: string, owner: string) => `${organization} · vlastník ${owner}`,
+      free: "Organizace s tarifem Free je zapnout nemohou.",
+      goBack: (app: string) => `Zpět do ${app}`,
+    },
+    consent: {
+      title: (app: string) => `Povolit aplikaci ${app} používat váš účet Flexi Day?`,
+      app: "Aplikace",
+      checked: (host: string) => `Adresa ověřena: ${host}`,
+      notVerified: "Název není ověřený",
+      organization: "Organizace",
+      change: "Změnit",
+      afterwards: "Potom",
+      goesBackTo: (host: string) => `Vrátíte se na ${host}`,
+      localApp: (app: string) =>
+        `Tím předáte přístup programu v tomto počítači. Povolte to jen tehdy, když jste připojení z aplikace ${app} právě spustili.`,
+      ableTo: (app: string) => `${app} bude moct`,
+      read: "Vidět, co vidíte vy",
+      readHint: "Vaše žádosti a zůstatky, kdo je pryč, docházku, adresář.",
+      write: "Provádět změny za vás",
+      writeHint: (app: string) =>
+        `Vytvářet a rušit vaše vlastní žádosti, zaznamenat váš příchod a odchod. Každá změna je označená jako provedená přes ${app}. Schvalovat ani zamítat nemůže.`,
+      readOnly: (organization: string, app: string) =>
+        `${organization} povoluje jen čtení, takže ${app} nemůže nic měnit.`,
+      permissions: (app: string) =>
+        `${app} pracuje s vašimi oprávněními, takže nikdy neuvidí víc než vy. Odpojit ji můžete kdykoli v Nastavení.`,
+      privacy: "Zásady ochrany osobních údajů",
+      terms: "Podmínky",
+      allow: "Povolit",
+      working: "Povoluji…",
+      cancel: "Zrušit",
+      failed: "Přístup se nepodařilo povolit. Zkuste to znovu.",
+      notEligible: (app: string) =>
+        `Tato organizace už AI připojení nepovoluje, takže se k ní ${app} nemůže připojit.`,
+      noOrganization: "Nejdřív vyberte organizaci.",
+      pickAgain: "Vybrat organizaci",
+    },
+  },
+  aiConnectionGrants: {
+    settings: {
+      title: "AI připojení",
+      lead: "AI aplikace, kterým jste povolili používat Flexi Day za vás. Každá pracuje v jedné organizaci s vašimi oprávněními v ní.",
+      empty: "Nemáte připojenou žádnou AI aplikaci.",
+      loadFailed: "AI připojení se nepodařilo načíst.",
+      notVerified: "název neověřen",
+      access: { read: "Jen čtení", write: "Čtení a zápis" },
+      lastUsed: (when: string) => `naposledy použito ${when}`,
+      organizationGone: "Organizace odstraněna",
+      disconnect: "Odpojit",
+      disconnectApp: (app: string) => `Odpojit ${app}`,
+      confirm: (app: string) => `Odpojit ${app}? Přestane fungovat při dalším volání.`,
+      keep: "Ponechat",
+      disconnecting: "Odpojuji…",
+      disconnected: (app: string) => `Aplikace ${app} je odpojená`,
+      disconnectFailed: "Aplikaci se nepodařilo odpojit",
+      connectTitle: "Připojit AI aplikaci",
+      connectLead:
+        "V Claude, ChatGPT nebo jiné aplikaci, která podporuje MCP konektory, přidejte Flexi Day s touto adresou. Vlastník vaší organizace musí AI připojení nejdřív zapnout.",
+      copy: "Zkopírovat adresu",
+      copied: "Adresa zkopírována",
+    },
+    ownerDialog: {
+      listLabel: "Odpojí se tyto aplikace",
+      lowerNone: "Žádná aplikace teď nemá přístup k zápisu, takže se nic neodpojí.",
+      offNone: "Teď není připojená žádná aplikace, takže se nic neodpojí.",
+    },
+  },
+  assistant: {
+    button: "Asistent",
+    close: "Zavřít Asistenta",
+    newChat: "Nový chat",
+    pastChats: "Tvoje chaty",
+    backToChat: "Zpět do chatu",
+    untitled: "Nový chat",
+    aiLine: "Asistent je AI. Může se mýlit. Nic se nezmění, dokud to nepotvrdíš.",
+    composer: {
+      label: "Napiš Asistentovi",
+      send: "Odeslat",
+    },
+    empty: {
+      title: "Ptej se na dovolenou, docházku nebo svůj tým",
+      introBefore: "Odpovědi pocházejí z nápovědy Flexi Day a z toho, co už vidíš v organizaci",
+      introAfter: ". Cokoli změní, čeká na tvoje potvrzení.",
+      suggestions: [
+        "Kdo je příští týden pryč?",
+        "Kolik dní dovolené mi zbývá?",
+        "Jaké mám letos žádosti?",
+      ],
+    },
+    picker: {
+      question: "V jaké organizaci se ptáš? Chat zůstává v té, ve které začal.",
+      needsEnterprise: (organization: string) =>
+        `${organization} tu není: Asistent potřebuje Enterprise.`,
+      turnedOff: (organization: string) => `${organization} tu není: Asistent je tam vypnutý.`,
+    },
+    thinking: "Připravuji odpověď",
+    stillWriting: "Odpověď se ještě píše. Celá se za chvíli objeví.",
+    tools: {
+      get_my_balances: {
+        running: "Kontroluje tvůj zůstatek",
+        done: "Zkontroloval tvůj zůstatek",
+        failed: "Zůstatek se nepodařilo zjistit",
+      },
+      list_my_requests: {
+        running: "Hledá tvoje žádosti",
+        done: "Našel tvoje žádosti",
+        failed: "Žádosti se nepodařilo najít",
+      },
+      list_who_is_away: {
+        running: "Zjišťuje, kdo je pryč",
+        done: "Zjistil, kdo je pryč",
+        failed: "Nepodařilo se zjistit, kdo je pryč",
+      },
+      get_my_attendance: {
+        running: "Kontroluje tvoji docházku",
+        done: "Zkontroloval tvoji docházku",
+        failed: "Docházku se nepodařilo zjistit",
+      },
+      get_my_worked_time: {
+        running: "Sčítá odpracovaný čas",
+        done: "Sečetl odpracovaný čas",
+        failed: "Odpracovaný čas se nepodařilo sečíst",
+      },
+      list_group_events: {
+        running: "Hledá skupinové události",
+        done: "Našel skupinové události",
+        failed: "Skupinové události se nepodařilo najít",
+      },
+      list_birthdays: {
+        running: "Hledá narozeniny",
+        done: "Našel narozeniny",
+        failed: "Narozeniny se nepodařilo najít",
+      },
+      list_directory_people: {
+        running: "Prohledává adresář",
+        done: "Prohledal adresář",
+        failed: "Adresář se nepodařilo prohledat",
+      },
+      get_directory_profile: {
+        running: "Otevírá profil",
+        done: "Otevřel profil",
+        failed: "Profil se nepodařilo otevřít",
+      },
+      show_directory_section: {
+        running: "Otevírá část profilu",
+        done: "Otevřel část profilu",
+        failed: "Část profilu se nepodařilo otevřít",
+      },
+      search_docs: {
+        running: "Prohledává nápovědu",
+        done: "Prohledal nápovědu",
+        failed: "Nápovědu se nepodařilo prohledat",
+      },
+      read_doc: {
+        running: "Čte článek nápovědy",
+        done: "Přečetl článek nápovědy",
+        failed: "Článek nápovědy se nepodařilo otevřít",
+      },
+      create_request: {
+        running: "Připravuje tvoji žádost o volno",
+        done: "Zadal tvoji žádost o volno",
+        failed: "Žádost o volno se nepodařilo zadat",
+      },
+      cancel_my_request: {
+        running: "Připravuje zrušení žádosti",
+        done: "Zrušil tvoji žádost",
+        failed: "Žádost se nepodařilo zrušit",
+      },
+      clock_in: {
+        running: "Připravuje záznam příchodu",
+        done: "Zaznamenal tvůj příchod",
+        failed: "Příchod se nepodařilo zaznamenat",
+      },
+      clock_out: {
+        running: "Připravuje záznam odchodu",
+        done: "Zaznamenal tvůj odchod",
+        failed: "Odchod se nepodařilo zaznamenat",
+      },
+      list_requests_to_approve: {
+        running: "Hledá žádosti, které čekají na tebe",
+        done: "Našel žádosti, které čekají na tebe",
+        failed: "Žádosti čekající na tebe se nepodařilo najít",
+      },
+      approve_request: {
+        running: "Připravuje schválení",
+        done: "Schválil žádost",
+        failed: "Žádost se nepodařilo schválit",
+      },
+      reject_request: {
+        running: "Připravuje zamítnutí",
+        done: "Zamítl žádost",
+        failed: "Žádost se nepodařilo zamítnout",
+      },
+      other: {
+        running: "Něco dohledává",
+        done: "Něco dohledal",
+        failed: "Nepodařilo se to dohledat",
+      },
+    },
+    notices: {
+      ASSISTANT_ERROR: "Něco se pokazilo a odpověď se zastavila. Zkus to znovu.",
+      ASSISTANT_STEP_LIMIT:
+        "Odpověď skončila tady: potřebovala příliš mnoho kroků. Zkus se zeptat po částech.",
+      ASSISTANT_UNAVAILABLE: "Asistent teď není k dispozici. Zkus to později.",
+    },
+    sendErrors: {
+      ASSISTANT_TURN_RUNNING: "Ještě se píše jiná odpověď. Počkej, až skončí.",
+      AI_ORGANIZATION_NOT_ELIGIBLE:
+        "Tato organizace teď Asistenta nepovoluje. Chaty si můžeš dál číst.",
+      fallback: "Neodesláno. Zkontroluj připojení a zkus to znovu.",
+      ASSISTANT_WEEKLY_LIMIT_REACHED:
+        "Neodesláno: Asistent je pozastavený, dokud se neobnoví Týdenní limit.",
+      ASSISTANT_UNAVAILABLE: "Neodesláno. Asistent teď není k dispozici. Zkus to později.",
+      ASSISTANT_CHAT_CLOSED: "Neodesláno: tento chat je uzavřený. Pokračuj v novém chatu.",
+    },
+    closed: {
+      title: "Tento chat je uzavřený.",
+      length: "Dosáhl maximální délky. Číst si ho můžeš dál.",
+      idle: "30 dní do něj nikdo nenapsal. Číst si ho můžeš dál.",
+    },
+    readOnly: {
+      TURNED_OFF: (organization: string) =>
+        `Asistent je v organizaci ${organization} vypnutý. Tento chat si můžeš dál číst.`,
+      PLAN: (organization: string) =>
+        `Tarif organizace ${organization} už Asistenta nezahrnuje. Tento chat si můžeš dál číst.`,
+      none: "Teď nemůžeš začít chat v žádné své organizaci. Chaty si můžeš dál číst.",
+    },
+    limit: {
+      near: (organization: string, percent: number, reset: string) =>
+        `Organizace ${organization} vyčerpala ${percent} % Týdenního limitu Asistenta. Obnoví se ${reset}.`,
+      nearAmounts: (
+        organization: string,
+        used: string,
+        limit: string,
+        percent: number,
+        reset: string
+      ) =>
+        `Organizace ${organization} tento týden využila ${used} z Týdenního limitu Asistenta ${limit} (${percent} %). Obnoví se ${reset}.`,
+      paused: (reset: string) => `Asistent je pozastavený do ${reset}.`,
+      pausedBody: (organization: string) =>
+        `Organizace ${organization} vyčerpala Týdenní limit. Chaty si můžeš dál číst a žádosti, které už vidíš, můžeš odeslat.`,
+      seeUsage: "Zobrazit využití",
+      stopped: (organization: string) =>
+        `Odpověď skončila tady: organizace ${organization} vyčerpala Týdenní limit Asistenta.`,
+    },
+    unavailable: "Asistent teď není k dispozici. Zkus to později.",
+    history: {
+      empty: "Zatím žádné chaty. Chaty se uchovávají 180 dní.",
+      today: "Dnes",
+      thisWeek: "Tento týden",
+      earlier: "Dříve",
+      remove: (title: string) => `Smazat ${title}`,
+      confirm: (title: string) => `Smazat „${title}“? Nepůjde to vrátit.`,
+      confirmDelete: "Smazat",
+      keep: "Ponechat",
+      failed: "Chat se nepodařilo smazat. Zkus to znovu.",
+    },
+    loading: "Otevírám chat",
+    upgrade: {
+      title: "Asistent je součástí Enterprise",
+      body: (organization: string) =>
+        `S Enterprise se každý v organizaci ${organization} může v chatu česky nebo anglicky zeptat, kdo je pryč, zjistit zůstatek, poslat nebo schválit žádost a přihlásit se do práce. Každá změna čeká na jeho potvrzení.`,
+      points: [
+        "Zahrnuto každý týden, bez poplatku za zprávu",
+        "Vidí jen to, co každý člověk už vidí",
+        "Zapínáte ho vy a kdykoli ho můžete vypnout",
+      ],
+      cta: "Zobrazit Enterprise",
+      onlyYou: "Vidíte to jen vy. Členové Asistenta neuvidí, dokud ho nezapnete.",
+    },
+    off: {
+      title: (organization: string) => `Asistent je v organizaci ${organization} vypnutý`,
+      body: "Váš tarif ho zahrnuje. Zapněte ho a všichni se budou moct v chatu ptát na dovolenou a docházku. Odpovědi běží na Claude od společnosti Anthropic a chaty se uchovávají 180 dní.",
+      cta: "Otevřít nastavení organizace",
+      onlyAdmins: "Vidíte to jen vy a správci organizace.",
+    },
+    cards: {
+      title: {
+        create_request: "Odeslat tuto žádost?",
+        cancel_my_request: "Zrušit tuto žádost?",
+        clock_in: "Zaznamenat příchod teď?",
+        clock_out: "Zaznamenat odchod teď?",
+        approve_request: "Schválit tuto žádost?",
+        reject_request: "Zamítnout tuto žádost?",
+      },
+      confirm: {
+        create_request: "Odeslat žádost",
+        cancel_my_request: "Zrušit žádost",
+        clock_in: "Zaznamenat příchod",
+        clock_out: "Zaznamenat odchod",
+        approve_request: "Schválit",
+        reject_request: "Zamítnout",
+      },
+      notNow: "Teď ne",
+      keepIt: "Ponechat",
+      tryAgain: "Zkusit znovu",
+      madeThrough: "Označeno jako provedené přes Asistenta",
+      rows: {
+        type: "Typ",
+        dates: "Termín",
+        workingDays: "Pracovní dny",
+        balance: "Zůstatek",
+        balanceIn: (year: number) => `Zůstatek ${year}`,
+        group: "Skupina",
+        status: "Stav teď",
+        time: "Čas",
+        started: "Začátek",
+        workedSoFar: "Zatím odpracováno",
+        requester: "Žadatel",
+      },
+      halfDay: "půl dne",
+      statuses: {
+        pending: "Čeká na schválení",
+        approved: "Schváleno",
+        partly_approved: "Částečně schváleno",
+      },
+      yourNote: "Tvoje poznámka, doslovně",
+      requestNote: "Tvoje poznámka u této žádosti",
+      yourReason: "Tvůj důvod, doslovně",
+      noteBy: (name: string) => `Poznámka, kterou napsal(a) ${name}, doslovně`,
+      reasonFor: (name: string) => `Důvod, který uvidí ${name} (nepovinné)`,
+      onBreak: "Ukončí se i tvoje přestávka.",
+      marker: (names: string) =>
+        `Než Asistent tohle navrhl, četl poznámku, kterou napsal(a) ${names}. Zkontroluj, že jde o to, o co jsi žádal(a).`,
+      and: "a",
+      settled: {
+        create_request: "Žádost odeslaná ke schválení",
+        cancel_my_request: "Žádost zrušená",
+        clock_in: (time: string) => `Příchod zaznamenán v ${time}`,
+        clock_out: (time: string) => `Odchod zaznamenán v ${time}`,
+        approve_request: (name: string) => `Schváleno. ${name} už o tom ví.`,
+        reject_request: (name: string) => `Zamítnuto. ${name} už o tom ví.`,
+      },
+      declined: "Neprovedeno. Nic se nezměnilo.",
+      notTaken: "Nepoužito. Nic se nezměnilo.",
+      open: "Otevřít",
+      decideFailed: "Nepodařilo se to. Zkus to znovu.",
+    },
+  },
+  assistantBoundary: {
+    notices: {
+      ASSISTANT_TOPIC_REFUSAL:
+        "Pomůžu ti jen s Flexi Day: s dovolenou, docházkou, tvým týmem a tím, jak aplikace funguje. S právními a personálními otázkami se obrať na personální oddělení nebo zaměstnavatele.",
+      ASSISTANT_MODEL_REFUSAL:
+        "Na tohle Asistent neodpoví. Zeptej se na dovolenou, docházku nebo svůj tým.",
+    },
+    rejected: "Asistentovi neodesláno",
+    screenFailed: "Tvou zprávu se nepodařilo zkontrolovat, takže se neodeslala.",
+    tryAgain: "Zkusit znovu",
+    sendAgain: "Odeslat znovu",
+    unavailable: "Asistent teď není k dispozici. Zkus to později.",
+  },
+  aiUsage: {
+    title: "Využití AI",
+    lead: (organization: string) => `${organization} · Asistent a AI aplikace připojené členy`,
+    settings: "Nastavení",
+    loadFailed: "Využití AI se nepodařilo načíst.",
+    empty: {
+      body: (organization: string) =>
+        `Asistent i AI připojení jsou v organizaci ${organization} vypnuté, takže tu nic není.`,
+      action: "Otevřít nastavení organizace",
+    },
+    assistant: {
+      title: "Asistent tento týden",
+      ofLimit: (limit: string, percent: number) => `z Týdenního limitu ${limit} · ${percent} %`,
+      resets: (when: string) => `Obnoví se ${when}. Zahrnuje i odpovědi, které se právě píšou.`,
+      reached: "Týdenní limit vyčerpán",
+      reachedOn: (at: string, until: string) =>
+        `${at}. Asistent je pozastavený pro všechny do ${until}.`,
+      pausedUntil: (until: string) => `Asistent je pozastavený pro všechny do ${until}.`,
+      off: "Asistent je vypnutý.",
+      needsEnterprise: "Asistent je součástí tarifu Enterprise.",
+      chart: "Využití Asistenta po týdnech",
+      thisWeek: "Tento týden",
+      bar: (week: string, amount: string) => `${week}: ${amount}`,
+      barReached: (week: string, amount: string) => `${week}: ${amount}, limit vyčerpán`,
+    },
+    connections: {
+      title: "AI připojení dnes",
+      ofLimit: (limit: string, reset: string) =>
+        `z ${limit} volání dnes, denní limit AI připojení · obnoví se v ${reset}`,
+      off: "AI připojení jsou vypnutá.",
+      chart: "Volání za den, posledních 14 dní",
+      today: "Dnes",
+      dayReached: (day: string) => `${day}: limit vyčerpán`,
+      bar: (day: string, calls: string) => `${day}: ${calls} volání`,
+    },
+    people: {
+      title: "Lidé",
+      lead: "Otevřete člověka a uvidíte aplikace, které připojil. Kteroukoli z nich můžete odvolat.",
+      person: "Člověk",
+      assistantWeek: "Asistent tento týden",
+      refused: "Odmítnuto",
+      refusedHint: "Zprávy odmítnuté jako mimo téma nebo nebezpečné. Co v nich stálo, se neukládá.",
+      callsToday: "AI volání dnes",
+      apps: "Připojené aplikace",
+      none: "Žádné",
+      atLimit: (calls: string) => `${calls} · limit`,
+      deletedAccount: "Deleted account",
+      showApps: (person: string) => `Zobrazit aplikace: ${person}`,
+      app: "Aplikace",
+      access: "Přístup",
+      connected: "Připojeno",
+      lastUsed: "Naposledy použito",
+      revoke: "Odvolat",
+      revokeApp: (app: string) => `Odvolat ${app}`,
+      stopsAtNextCall: "Přestane fungovat při dalším volání",
+      keep: "Ponechat",
+      revoking: "Odvolávám…",
+      revoked: (app: string) => `Aplikace ${app} je odvolaná`,
+      revokeFailed: "Aplikaci se nepodařilo odvolat",
+      noUsage: "Asistenta zatím nikdo nepoužil a nikdo nepřipojil AI aplikaci.",
+    },
+    weeks: {
+      title: "Předchozí týdny",
+      empty: "Předchozí týdny se tu objeví po prvním pondělí.",
+      limitReached: (at: string) => `Limit vyčerpán ${at}`,
+      kept: "Využití po lidech se uchovává 180 dní.",
+      totalOnly: "Týden je starší než 180 dní, takže se uchovává jen součet za organizaci.",
+      noOne: "Ten týden Asistenta nikdo nepoužil.",
+      spend: "Asistent",
+      loadFailed: "Týden se nepodařilo načíst.",
+    },
+  },
+  privacyBanner: {
+    text: "Upravili jsme Zásady ochrany osobních údajů kvůli novým funkcím AI.",
+    read: "Přečíst, co se změnilo",
+    dismiss: "Zavřít",
   },
 };

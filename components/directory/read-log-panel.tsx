@@ -105,7 +105,14 @@ export function ReadLogPanel({ organizationId }: { organizationId: string }) {
                   <TableCell className={cn(CELL, "text-muted-foreground text-xs")}>
                     <time dateTime={entry.at}>{when(entry.at)}</time>
                   </TableCell>
-                  <TableCell className={CELL}>{entry.reader.name ?? copy.unknownReader}</TableCell>
+                  <TableCell className={CELL}>
+                    {entry.reader.name ?? copy.unknownReader}
+                    {entry.channel !== "app" ? (
+                      <div className="text-muted-foreground text-xs">
+                        {t.common.channel[entry.channel]}
+                      </div>
+                    ) : null}
+                  </TableCell>
                   <TableCell className={CELL}>{entry.person.name ?? copy.erasedPerson}</TableCell>
                   <TableCell className={CELL}>
                     <What entry={entry} />

@@ -1,6 +1,7 @@
+// The AI passages show only in a build with NEXT_PUBLIC_AI_TEXTS_PUBLISHED set (lib/legal.ts).
 import type { Metadata } from "next";
 import { LegalShell } from "@/components/legal/legal-shell";
-import { LEGAL } from "@/lib/legal";
+import { aiTextsPublished, aiTextsUpdated, LEGAL } from "@/lib/legal";
 
 export const metadata: Metadata = {
   title: "Security — flexiday",
@@ -9,10 +10,11 @@ export const metadata: Metadata = {
 };
 
 export default function SecurityPage() {
+  const ai = aiTextsPublished();
   return (
     <LegalShell
       title="Security"
-      updated={LEGAL.updated}
+      updated={aiTextsUpdated("en")}
       intro="We take the security of your team's data seriously. This page summarises the measures we use to protect it."
     >
       <h2>Encryption</h2>
@@ -36,11 +38,21 @@ export default function SecurityPage() {
       </ul>
 
       <h2>Infrastructure and hosting</h2>
-      <p>
-        The Service is hosted on {LEGAL.hosting}. We rely on managed, industry-standard cloud
-        infrastructure with physical and network security maintained by our provider. Your data
-        stays within the European Union.
-      </p>
+      {ai ? (
+        <p>
+          The Service is hosted on {LEGAL.hosting}. We rely on managed, industry-standard cloud
+          infrastructure with physical and network security maintained by our provider. Flexi Day
+          stores your data in the EU (AWS Frankfurt). If your organization turns on the Assistant,
+          chats are kept by Anthropic in the US and may be processed in other countries; see the{" "}
+          <a href="/ai-agreement/">AI features agreement</a>.
+        </p>
+      ) : (
+        <p>
+          The Service is hosted on {LEGAL.hosting}. We rely on managed, industry-standard cloud
+          infrastructure with physical and network security maintained by our provider. Your data
+          stays within the European Union.
+        </p>
+      )}
 
       <h2>Access control and data isolation</h2>
       <ul>
@@ -49,6 +61,15 @@ export default function SecurityPage() {
           Within the product, time-off and profile data is scoped to your team and visible only to
           the relevant members.
         </li>
+        {ai ? (
+          <li>
+            The Assistant reads only what the person asking can already see, through the same
+            permission checks as the app, and every change it offers waits until that person
+            confirms it. An AI app connected through AI connections gets access to one organization,
+            with that person&rsquo;s permissions and the access the owner allows, and never sees a
+            password. It can be disconnected in Settings at any time.
+          </li>
+        ) : null}
       </ul>
 
       <h2>Attachments</h2>
@@ -70,6 +91,26 @@ export default function SecurityPage() {
         We use a small set of trusted sub-processors to run the Service. They are listed, along with
         their purpose and location, in our <a href="/privacy">Privacy Policy</a>.
       </p>
+      {ai ? (
+        <p>
+          The Assistant runs on Anthropic, PBC, only for organizations that turn it on. Anthropic
+          never trains models on that data. Our logs and error reports carry ids and timings for the
+          Assistant and AI connections, never chat text, tool arguments or results.
+        </p>
+      ) : null}
+
+      {ai ? (
+        <>
+          <h2>Deletion</h2>
+          <p>
+            Deleted data leaves our live systems at once and our backups within seven days. We keep
+            a chat with the Assistant for 180 days after its last message. Anthropic deletes it 30
+            days after its last message, or at once when the chat is deleted, when its author leaves
+            the organization or deletes their account, or when the organization is deleted.
+            Anthropic keeps a message its safety systems flag for up to 2 years.
+          </p>
+        </>
+      ) : null}
 
       <h2>Responsible disclosure</h2>
       <p>

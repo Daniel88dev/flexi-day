@@ -1,4 +1,5 @@
 import type { MetadataRoute } from "next";
+import { aiTextsPublished } from "@/lib/legal";
 import { SITE_URL } from "@/lib/site";
 
 // Required by output: "export" — metadata routes compile to route handlers,
@@ -20,8 +21,12 @@ const PUBLIC_PATHS = [
   "/cs/dpa/",
 ];
 
+// Published on Day 0 with the AI texts (lib/legal.ts); reachable but noindex before that.
+const AI_PATHS = ["/ai-agreement/", "/ai-dpia/", "/cs/ai-agreement/", "/cs/ai-dpia/"];
+
 export default function sitemap(): MetadataRoute.Sitemap {
-  return PUBLIC_PATHS.map((path) => ({
+  const paths = aiTextsPublished() ? [...PUBLIC_PATHS, ...AI_PATHS] : PUBLIC_PATHS;
+  return paths.map((path) => ({
     url: `${SITE_URL}${path}`,
   }));
 }

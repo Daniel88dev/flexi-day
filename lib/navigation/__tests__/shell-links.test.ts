@@ -17,6 +17,7 @@ const member: ShellAccess = {
   attendanceActive: false,
   attendanceOpen: false,
   directory: null,
+  aiUsage: false,
 };
 const admin: ShellAccess = { ...member, administersSomething: true };
 const loading: ShellAccess = { ...admin, rolesLoading: true };
@@ -92,6 +93,20 @@ describe("buildSections", () => {
       "Calendar sync",
     ]);
     expect(labels(sections[1]!.links)).toEqual(["Organization", "Billing"]);
+  });
+
+  it("adds AI usage under Organization for an org admin while an AI feature is available", () => {
+    const sections = buildSections(en, { ...admin, aiUsage: true });
+
+    const organization = sections.find((section) => section.id === "organization")!;
+    expect(labels(organization.links)).toEqual(["Organization", "Billing", "AI usage"]);
+    expect(organization.links[2]!.href).toBe("/ai-usage");
+  });
+
+  it("keeps AI usage out while roles are loading", () => {
+    expect(buildSections(en, { ...loading, aiUsage: true }).map((section) => section.id)).toEqual([
+      "timeOff",
+    ]);
   });
 
   it("returns only Time off for a plain member", () => {

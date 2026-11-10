@@ -18,6 +18,12 @@ approval before starting any non-trivial implementation.
 server actions, no `next/image` optimisation, no middleware. Every request goes to `flexi-day-be`
 via `NEXT_PUBLIC_API_URL` (local: `http://localhost:8080`), in dev as well as production.
 
+One kind of route handler survives the export: a `GET` with `export const dynamic = "force-static"`
+that reads no request, which the build writes out as a file. `app/(help)/help/kb.json/route.ts` is
+the one there is: the knowledge base the backend fetches, built from `content/help/` at
+`out/help/kb.json` and served from the same path by `next dev`. Anything that reads the request or
+answers a method other than `GET` breaks the export, so it stays out.
+
 The bucket, the distribution and its redirect function are Terraform in `terraform/`, applied by
 hand. See [`docs/terraform.md`](docs/terraform.md).
 
@@ -43,6 +49,15 @@ reach `out/`.
 - `.test.ts` files run in node, not jsdom. One that needs the DOM (`renderHook`, `window`) starts
   with `// @vitest-environment jsdom`.
 - CI runs `pnpm run test` on every PR. Keep it green before merging.
+
+## Help articles
+
+`content/help/{en,cs}/` holds the help articles the Assistant and AI connections answer from. A
+change users can see or do updates its articles in both languages in the same ticket, and a new
+page under `app/(app)/` goes into an article's `routes` or `content/help/uncovered-routes.json`.
+Read the workspace `help-article` skill before editing one (`.claude/skills/help-article/SKILL.md`
+in the workspace root, which a session started here doesn't load). `pnpm run help:check` runs the
+checks CI runs.
 
 ## Formatting is automatic
 

@@ -1,23 +1,57 @@
 // NOTE: This Privacy Policy is a good-faith GDPR-oriented draft. Have it reviewed
-// by a qualified lawyer before publication.
+// by a qualified lawyer before publication. The AI passages show only in a build with
+// NEXT_PUBLIC_AI_TEXTS_PUBLISHED set (lib/legal.ts).
 import type { Metadata } from "next";
 import { LegalShell } from "@/components/legal/legal-shell";
-import { LEGAL } from "@/lib/legal";
+import { aiTextsPublished, aiTextsUpdated, LEGAL } from "@/lib/legal";
 
 export const metadata: Metadata = {
   title: "Privacy Policy — flexiday",
   description: "How flexiday collects, uses and protects your personal data under the GDPR.",
 };
 
+const SECTIONS = [
+  "who",
+  "scope",
+  "data",
+  "bases",
+  "sharing",
+  "calendar",
+  "aiConnections",
+  "transfers",
+  "retention",
+  "rights",
+  "cookies",
+  "children",
+  "security",
+  "changes",
+  "contact",
+] as const;
+
+type Section = (typeof SECTIONS)[number];
+
 export default function PrivacyPage() {
+  const ai = aiTextsPublished();
+  const shown = SECTIONS.filter((id) => ai || id !== "aiConnections");
+  const n = (id: Section) => shown.indexOf(id) + 1;
   return (
     <LegalShell
       title="Privacy Policy"
-      updated={LEGAL.updated}
+      updated={aiTextsUpdated("en")}
       intro="This policy explains what personal data flexiday processes, in which role, why, and the rights you have under the General Data Protection Regulation (GDPR)."
       translatedPage="privacy"
     >
-      <h2>1. Who we are</h2>
+      {ai ? (
+        <p id="what-changed">
+          <strong>What changed:</strong> we added the Assistant and AI connections. Sections{" "}
+          {n("data")} and {n("bases")} cover the chats, usage records and connection records we
+          keep, section {n("sharing")} adds Anthropic as a processor, section {n("aiConnections")}{" "}
+          is new and explains AI connections, section {n("transfers")} covers the transfer of
+          Assistant chats to the United States, and section {n("retention")} says how long we keep
+          all of it.
+        </p>
+      ) : null}
+      <h2>{n("who")}. Who we are</h2>
       <p>
         {LEGAL.product} is operated by <strong>{LEGAL.entity}</strong> (&ldquo;we&rdquo;,
         &ldquo;us&rdquo;), company ID (IČO) {LEGAL.ico}, a sole trader established in the{" "}
@@ -27,16 +61,18 @@ export default function PrivacyPage() {
       <ul>
         <li>
           We are the <strong>data controller</strong> of your <strong>account data</strong>: your
-          sign-in, settings, notifications, calendar connections, push registrations and birthday.
-          We decide what happens to it, and this policy covers it in full.
+          sign-in, settings, notifications, calendar connections, {ai ? "AI connections, " : ""}push
+          registrations and birthday. We decide what happens to it, and this policy covers it in
+          full.
         </li>
         <li>
           We are a <strong>processor</strong> of <strong>organization data</strong>: what an
           organization keeps about the people who work in it, such as employments, groups, leave,
-          attendance and quotas. The organization (usually your employer) is its controller. We
-          process it only to provide the Service to that organization, on its instructions, under
-          our <a href="/dpa/">Data Processing Agreement</a>. The organization decides how long it
-          keeps your records and answers your requests about them.
+          attendance and quotas{ai ? ", and chats with the Assistant" : ""}. The organization
+          (usually your employer) is its controller. We process it only to provide the Service to
+          that organization, on its instructions, under our{" "}
+          <a href="/dpa/">Data Processing Agreement</a>. The organization decides how long it keeps
+          your records and answers your requests about them.
         </li>
       </ul>
       <p>
@@ -45,14 +81,14 @@ export default function PrivacyPage() {
         Officer, as we are not required to under Article 37 GDPR.
       </p>
 
-      <h2>2. Scope</h2>
+      <h2>{n("scope")}. Scope</h2>
       <p>
         This policy applies to the flexiday web application and related services (the
         &ldquo;Service&rdquo;), a tool that helps teams request, approve and track time off. It does
         not cover third-party websites we may link to.
       </p>
 
-      <h2>3. What data we collect</h2>
+      <h2>{n("data")}. What data we collect</h2>
       <h3>Account data (we are the controller)</h3>
       <ul>
         <li>
@@ -79,8 +115,15 @@ export default function PrivacyPage() {
           <strong>Calendar connection</strong>: if you connect your Google or Microsoft calendar to
           a personal calendar, we store the access tokens the provider issues (encrypted), the
           permission you granted, the time zone you chose, and the ids of the events we created.
-          Section 6 has the details.
+          Section {n("calendar")} has the details.
         </li>
+        {ai ? (
+          <li>
+            <strong>AI connections</strong>: if you connect an AI app to your account, we keep the
+            app&rsquo;s name and address, the organization you connected it to, the access you
+            granted and when the app last used it. Section {n("aiConnections")} has the details.
+          </li>
+        ) : null}
       </ul>
       <h3>Organization data (we process it for your organization)</h3>
       <ul>
@@ -118,6 +161,24 @@ export default function PrivacyPage() {
           turned the people directory on, the profile the organization keeps about you. The{" "}
           <a href="/directory-agreement/">People directory agreement</a> describes it.
         </li>
+        {ai ? (
+          <>
+            <li>
+              <strong>Chats with the Assistant</strong>: where your organization has turned the
+              Assistant on, what you write to it, its answers, the Service data it read to answer,
+              its tool activity, the changes it offered and whether you confirmed them, and the
+              messages it refused. The Assistant also receives your name and role. The{" "}
+              <a href="/ai-agreement/">AI features agreement</a> describes it.
+            </li>
+            <li>
+              <strong>AI usage records</strong>: for each step of a chat, who, when, which model,
+              the number of tokens and the cost, and for calls from AI apps, a daily count per
+              person. They hold no content. The organization&rsquo;s owner and admins see how much
+              each person uses the Assistant and AI apps and how many of their messages the
+              Assistant refused, never what anyone wrote.
+            </li>
+          </>
+        ) : null}
       </ul>
       <h3>Data we collect automatically (we are the controller)</h3>
       <ul>
@@ -127,7 +188,7 @@ export default function PrivacyPage() {
         </li>
         <li>
           <strong>Session data</strong> — an authentication cookie / local-storage token that keeps
-          you signed in (see section 10).
+          you signed in (see section {n("cookies")}).
         </li>
         <li>
           <strong>Push token</strong> — the address Apple gives your iPhone for notifications,
@@ -142,11 +203,14 @@ export default function PrivacyPage() {
         </li>
       </ul>
 
-      <h2>4. Why we use your data and our legal bases</h2>
+      <h2>{n("bases")}. Why we use your data and our legal bases</h2>
       <p>
         The table covers the data we control. For organization data, the organization decides why it
         is processed and on which legal basis, and it answers for that choice. We process
         organization data only to provide the Service to the organization.
+        {ai
+          ? " Chats with the Assistant and AI usage records are organization data: the organization turns the Assistant on and decides on the legal basis for using it."
+          : ""}
       </p>
       <table>
         <thead>
@@ -167,6 +231,15 @@ export default function PrivacyPage() {
             </td>
             <td>Performance of a contract (b)</td>
           </tr>
+          {ai ? (
+            <tr>
+              <td>
+                Run the AI connections you set up, and keep a record of each so you can see and
+                disconnect them
+              </td>
+              <td>Performance of a contract (b)</td>
+            </tr>
+          ) : null}
           <tr>
             <td>Send transactional emails (e.g. email verification, notifications)</td>
             <td>Performance of a contract (b) / legitimate interests (f)</td>
@@ -190,7 +263,7 @@ export default function PrivacyPage() {
         </tbody>
       </table>
 
-      <h2>5. Who we share it with</h2>
+      <h2>{n("sharing")}. Who we share it with</h2>
       <p>
         We do not sell your personal data. Within the Service, organization data is visible to the
         people in your organization as its settings and roles allow, for example to your team and
@@ -238,6 +311,20 @@ export default function PrivacyPage() {
             </td>
             <td>United Kingdom / EU</td>
           </tr>
+          {ai ? (
+            <tr>
+              <td>Anthropic, PBC</td>
+              <td>
+                Runs the Assistant, only for organizations that turn it on; sees each message, the
+                name and role of the person asking, and the Service data the Assistant reads to
+                answer
+              </td>
+              <td>
+                United States (storage); may process data in other countries where it runs its
+                models
+              </td>
+            </tr>
+          ) : null}
         </tbody>
       </table>
       <p>
@@ -245,12 +332,19 @@ export default function PrivacyPage() {
         processes your payment details under its own privacy policy — we never receive your full
         payment card details.
       </p>
+      {ai ? (
+        <p>
+          Anthropic never trains models on the data it processes for us. An AI app you connect
+          through AI connections is not our processor: section {n("aiConnections")} explains who
+          handles what it reads.
+        </p>
+      ) : null}
       <p>
         We may also disclose data where required by law, to enforce our Terms, or to protect the
         rights, safety and security of our users.
       </p>
 
-      <h2>6. Calendar connections and Google user data</h2>
+      <h2>{n("calendar")}. Calendar connections and Google user data</h2>
       <p>
         On a personal calendar you can connect your own Google or Microsoft calendar. flexiday then
         writes your approved absences into that account&rsquo;s primary calendar and keeps them up
@@ -304,14 +398,54 @@ export default function PrivacyPage() {
         event yourself and remove flexiday&rsquo;s access in your Google account permissions.
       </p>
 
-      <h2>7. International transfers</h2>
+      {ai ? (
+        <>
+          <h2 id="ai-connections">{n("aiConnections")}. AI connections</h2>
+          <p>
+            If an organization you work in allows AI connections, you can connect an AI app you
+            already use, such as Claude or ChatGPT, to your account in Settings. The app then reads
+            what you can see in that organization. If the organization allows read and write, it can
+            also make the changes you could make yourself, such as requesting or cancelling your own
+            leave and clocking in and out.
+          </p>
+          <h3>What we keep</h3>
+          <p>
+            For each connection: the app&rsquo;s name and address, the organization you connected it
+            to, the access you granted and when the app last used it. We keep this to run the
+            connection you asked for, on the basis of our contract with you (Art. 6(1)(b) GDPR), and
+            so you can see and disconnect it. The owner and admins of that organization see which
+            apps you have connected and how many calls they make.
+          </p>
+          <h3>Where the data goes</h3>
+          <p>
+            What the app reads goes to the company behind that app, under your own agreement with
+            them. That company is not our processor and we have no agreement with it. Once data
+            reaches the app, that company handles it, not us. Personal accounts of AI apps may keep
+            what they read or train on it, so your organization&rsquo;s own policy decides which
+            apps you may use.
+          </p>
+          <h3>Disconnecting</h3>
+          <p>
+            You can disconnect an app in Settings at any time, and it loses access at its next call.
+            We also remove your connections when you reset your password, when you change it and
+            sign out your other sessions, and when you delete your account. When the
+            organization&rsquo;s owner turns AI connections off, every connection to that
+            organization ends, and lowering them to read only ends the ones allowed to make changes.
+          </p>
+        </>
+      ) : null}
+
+      <h2>{n("transfers")}. International transfers</h2>
       <p>
-        Your data is hosted within the European Union ({LEGAL.hosting}). Where any transfer outside
-        the European Economic Area occurs, we rely on appropriate safeguards such as the European
-        Commission&rsquo;s Standard Contractual Clauses.
+        Your data is hosted within the European Union ({LEGAL.hosting}).
+        {ai
+          ? " If your organization turns on the Assistant, its chats go to Anthropic, PBC, which stores them in the United States and may process them in other countries where it runs its models. That transfer rests on the European Commission’s Standard Contractual Clauses, Module 3 (processor to processor); Anthropic is not certified under the EU-U.S. Data Privacy Framework."
+          : ""}{" "}
+        Where any {ai ? "other " : ""}transfer outside the European Economic Area occurs, we rely on
+        appropriate safeguards such as the European Commission&rsquo;s Standard Contractual Clauses.
       </p>
 
-      <h2>8. How long we keep it</h2>
+      <h2>{n("retention")}. How long we keep it</h2>
       <p>
         We keep your account data for as long as your account exists. You can delete your account
         yourself in Settings, or ask us to erase your account data. Organization data stays for as
@@ -321,8 +455,9 @@ export default function PrivacyPage() {
       <h3>Deleting your account</h3>
       <p>
         Deleting your account removes your account data from our live systems at once: your sign-in
-        methods, sessions, settings, notifications, calendar connections (handled as section 6
-        describes), push registrations and birthday.
+        methods, sessions, settings, notifications, calendar connections (handled as section{" "}
+        {n("calendar")} describes), {ai ? "AI connections, " : ""}push registrations and birthday.
+        {ai ? " Your chats with the Assistant are deleted too, here and at Anthropic." : ""}
       </p>
       <p>
         It does not delete the records the organizations you work in hold about you, because those
@@ -353,6 +488,34 @@ export default function PrivacyPage() {
         has deleted their account, or for a person who never had one. To have your records in an
         organization erased or corrected, ask that organization.
       </p>
+      {ai ? (
+        <>
+          <h3>The Assistant and AI connections</h3>
+          <ul>
+            <li>
+              We keep a chat with the Assistant for 180 days after its last message, and you can
+              delete your own chats sooner.
+            </li>
+            <li>
+              Anthropic deletes a chat 30 days after its last message, or at once when you delete
+              the chat. Anthropic keeps a message its safety systems flag for up to 2 years.
+            </li>
+            <li>
+              When you leave an organization, are removed from it or delete your account, your chats
+              in that organization are deleted at once, here and at Anthropic. When an organization
+              is deleted, all its chats are.
+            </li>
+            <li>
+              AI usage records are kept for 90 days. Each week then rolls into a total per person,
+              kept for 180 days, and after that into a total for the organization that names nobody.
+            </li>
+            <li>
+              We keep the record of an AI connection until it ends, as section {n("aiConnections")}{" "}
+              describes.
+            </li>
+          </ul>
+        </>
+      ) : null}
       <h3>Backups and other periods</h3>
       <p>
         Our database backups age out, so deleted data is gone from them within seven days. We delete
@@ -365,7 +528,7 @@ export default function PrivacyPage() {
         retained for a limited period for security purposes.
       </p>
 
-      <h2>9. Your rights</h2>
+      <h2>{n("rights")}. Your rights</h2>
       <p>Under the GDPR you have the right to:</p>
       <ul>
         <li>access the personal data we hold about you;</li>
@@ -392,7 +555,7 @@ export default function PrivacyPage() {
         {LEGAL.authority.address} (<a href={LEGAL.authority.url}>{LEGAL.authority.url}</a>).
       </p>
 
-      <h2>10. Cookies and local storage</h2>
+      <h2>{n("cookies")}. Cookies and local storage</h2>
       <p>
         We store only what the Service needs to work, which is why you see no cookie banner. Nothing
         we store identifies you across visits, and there is no analytics, advertising or cross-site
@@ -406,7 +569,8 @@ export default function PrivacyPage() {
         <li>
           <strong>Diagnostics.</strong> A random id (<code>fd.sid</code>) held in your
           browser&rsquo;s session storage, which groups the error and performance records described
-          in section 3. It is discarded when you close the tab and never links two visits together.
+          in section {n("data")}. It is discarded when you close the tab and never links two visits
+          together.
         </li>
         <li>
           <strong>Preferences.</strong> Your light/dark theme choice, stored in your browser.
@@ -418,26 +582,26 @@ export default function PrivacyPage() {
         </li>
       </ul>
 
-      <h2>11. Children</h2>
+      <h2>{n("children")}. Children</h2>
       <p>
         The Service is not directed at children. We do not knowingly collect personal data from
         anyone under 16. If you believe a child has provided us data, please contact us so we can
         remove it.
       </p>
 
-      <h2>12. Security</h2>
+      <h2>{n("security")}. Security</h2>
       <p>
         We take appropriate technical and organisational measures to protect your data. For details,
         see our <a href="/security">Security</a> page.
       </p>
 
-      <h2>13. Changes to this policy</h2>
+      <h2>{n("changes")}. Changes to this policy</h2>
       <p>
         We may update this policy from time to time. We will change the &ldquo;last updated&rdquo;
         date above and, for material changes, provide a more prominent notice.
       </p>
 
-      <h2>14. Contact</h2>
+      <h2>{n("contact")}. Contact</h2>
       <p>
         {LEGAL.entity}
         <br />

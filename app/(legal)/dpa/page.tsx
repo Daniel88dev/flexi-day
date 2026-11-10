@@ -1,9 +1,10 @@
 // NOTE: This Data Processing Agreement is a good-faith Article 28 GDPR draft.
 // Have it reviewed by a qualified lawyer before publication. Keep it in step with
-// app/(legal)/cs/dpa/page.tsx.
+// app/(legal)/cs/dpa/page.tsx. The AI passages show only in a build with
+// NEXT_PUBLIC_AI_TEXTS_PUBLISHED set (lib/legal.ts).
 import type { Metadata } from "next";
 import { LegalShell } from "@/components/legal/legal-shell";
-import { LEGAL } from "@/lib/legal";
+import { aiTextsPublished, aiTextsUpdated, LEGAL } from "@/lib/legal";
 
 export const metadata: Metadata = {
   title: "Data Processing Agreement — flexiday",
@@ -12,10 +13,11 @@ export const metadata: Metadata = {
 };
 
 export default function DpaPage() {
+  const ai = aiTextsPublished();
   return (
     <LegalShell
       title="Data Processing Agreement"
-      updated={LEGAL.updated}
+      updated={aiTextsUpdated("en")}
       intro="This agreement sets out how flexiday processes personal data on behalf of an organization. It forms part of the Terms of Service."
       translatedPage="dpa"
     >
@@ -46,6 +48,14 @@ export default function DpaPage() {
           recording and approving leave, keeping quotas, recording attendance, keeping the change
           log, showing all of it to the people the Controller&rsquo;s settings and roles allow,
           sending the notifications that go with it, and producing exports.
+          {ai ? (
+            <>
+              {" "}
+              Where the Controller turns them on, it also covers the Assistant and AI connections,
+              which the <a href="/ai-agreement/">AI features agreement</a> describes and which adds
+              to this DPA for them.
+            </>
+          ) : null}
         </li>
         <li>
           <strong>Nature.</strong> Collection, storage, organisation, retrieval, display,
@@ -69,6 +79,14 @@ export default function DpaPage() {
         and notes; quotas; the change log; request attachments; attendance times and, where the
         Controller turns it on, the location recorded at clock-in and clock-out; and, where the
         people directory is on, its profile fields.
+        {ai ? (
+          <>
+            {" "}
+            Where the Controller turns on the Assistant or AI connections, also chats with the
+            Assistant, the usage records of both features and the records of members&rsquo; AI
+            connections, as the <a href="/ai-agreement/">AI features agreement</a> lists them.
+          </>
+        ) : null}
       </p>
       <p>
         Sick leave bookings and request attachments such as a doctor&rsquo;s note can reveal health
@@ -82,7 +100,8 @@ export default function DpaPage() {
         including for transfers outside the EEA, unless EU or Czech law requires otherwise; in that
         case we tell the Controller first, unless that law forbids it. The Terms, this DPA, and the
         Controller&rsquo;s use and settings of the Service are its instructions. Ending an
-        employment, erasing a person&rsquo;s records, changing a retention setting and deleting the
+        employment, erasing a person&rsquo;s records, changing a retention setting
+        {ai ? ", turning the Assistant or AI connections on or off," : ""} and deleting the
         organization are instructions given through the Service. If we think an instruction breaks
         the GDPR or other data-protection law, we tell the Controller at once.
       </p>
@@ -129,7 +148,12 @@ export default function DpaPage() {
           </tr>
           <tr>
             <td>Functional Software, Inc. (Sentry)</td>
-            <td>Error monitoring and performance diagnostics</td>
+            <td>
+              Error monitoring and performance diagnostics
+              {ai
+                ? ", including metadata about the Assistant and AI connections, from us and exported by Anthropic: pseudonymous ids and timings, never chat text, tool arguments or results"
+                : ""}
+            </td>
             <td>EU region (Frankfurt, Germany); the company is based in the United States</td>
           </tr>
           <tr>
@@ -140,6 +164,19 @@ export default function DpaPage() {
             </td>
             <td>United States</td>
           </tr>
+          {ai ? (
+            <tr>
+              <td>Anthropic, PBC</td>
+              <td>
+                Runs the Assistant, only for organizations that turn it on. Exports metadata about
+                its processing, never chat content, to our Sentry. Its own sub-processors are on{" "}
+                <a href="https://trust.anthropic.com/subprocessors">Anthropic&rsquo;s list</a>
+              </td>
+              <td>
+                United States (storage); processing in any country where Anthropic runs its models
+              </td>
+            </tr>
+          ) : null}
         </tbody>
       </table>
       <p>
@@ -150,13 +187,33 @@ export default function DpaPage() {
         effect. Each sub-processor is bound by a contract with the same data-protection obligations
         as this DPA, and we remain responsible to the Controller for its work.
       </p>
+      {ai ? (
+        <p>
+          Anthropic tells us about changes to its own sub-processors 15 days ahead, which is less
+          than the 30 days above. We pass each such change on to the Controller as soon as we
+          receive it, by email to the owner, and the Controller may object as above or turn the
+          Assistant off.
+        </p>
+      ) : null}
 
       <h2>8. Transfers outside the EEA</h2>
-      <p>
-        Organization data is stored in the European Union. Where a sub-processor processes it
-        outside the European Economic Area, we rely on an adequacy decision or the European
-        Commission&rsquo;s Standard Contractual Clauses under Chapter V GDPR.
-      </p>
+      {ai ? (
+        <p>
+          Organization data is stored in the European Union, except chats with the Assistant: for
+          organizations that turn the Assistant on, Anthropic stores them in the United States and
+          may process them in any country where it runs its models. Where a sub-processor processes
+          organization data outside the European Economic Area, we rely on an adequacy decision or
+          the European Commission&rsquo;s Standard Contractual Clauses under Chapter V GDPR. For
+          Anthropic, which is not certified under the EU-U.S. Data Privacy Framework, that is the
+          Standard Contractual Clauses, Module 3 (processor to processor).
+        </p>
+      ) : (
+        <p>
+          Organization data is stored in the European Union. Where a sub-processor processes it
+          outside the European Economic Area, we rely on an adequacy decision or the European
+          Commission&rsquo;s Standard Contractual Clauses under Chapter V GDPR.
+        </p>
+      )}
 
       <h2>9. Help with requests from people</h2>
       <p>
@@ -196,6 +253,9 @@ export default function DpaPage() {
         the owner can download an organization export of its data. When the organization is deleted,
         we delete its data from our live systems at once, and our backups age out within seven days,
         unless EU or Czech law requires us to keep it.
+        {ai
+          ? " If the Controller turned the Assistant on, we delete the organization’s chats at Anthropic at the same time."
+          : ""}
       </p>
 
       <h2>13. Audits</h2>

@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { renderHook } from "@testing-library/react";
 import type { ViewerRoles } from "@/lib/viewer/use-viewer-roles";
 import type { DirectoryOrganization } from "@/lib/api/directory";
+import type { AiAvailability } from "@/lib/api/ai-features";
 
 const member: ViewerRoles = {
   isLoading: false,
@@ -21,6 +22,7 @@ const state = {
   roles: member,
   attendanceActive: false,
   directoryOrganizations: undefined as DirectoryOrganization[] | undefined,
+  aiAvailability: undefined as AiAvailability | undefined,
 };
 
 vi.mock("next/navigation", () => ({ usePathname: () => state.pathname }));
@@ -31,6 +33,7 @@ vi.mock("@/lib/viewer/use-viewer-roles", () => ({ useViewerRoles: () => state.ro
 vi.mock("@/lib/api/queries", () => ({
   useAttendanceState: () => ({ data: { active: state.attendanceActive } }),
   useDirectoryOrganizations: () => ({ data: state.directoryOrganizations }),
+  useAiAvailability: () => ({ data: state.aiAvailability }),
 }));
 
 import { useShellNav } from "../use-shell-nav";
@@ -44,6 +47,7 @@ describe("useShellNav", () => {
     state.roles = member;
     state.attendanceActive = false;
     state.directoryOrganizations = undefined;
+    state.aiAvailability = undefined;
   });
 
   it("adds the People section once a Directory organization answers", () => {
@@ -107,5 +111,19 @@ describe("useShellNav", () => {
 
     const attendance = result.current.sections.find((section) => section.id === "attendance");
     expect(labels(attendance?.links ?? [])).toEqual(["My attendance"]);
+  });
+
+  it("adds AI usage for an org admin while AI connections are available, and not for a group admin", () => {
+    state.aiAvailability = { assistant: false, aiConnections: true, organizations: [] };
+    state.roles = { ...member, isOrgAdmin: true };
+    const { result } = renderHook(() => useShellNav());
+    const organization = result.current.sections.find((section) => section.id === "organization");
+    expect(labels(organization?.links ?? [])).toEqual(["Organization", "Billing", "AI usage"]);
+
+    state.roles = { ...member, isGroupAdmin: true };
+    const groupAdmin = renderHook(() => useShellNav()).result.current.sections.find(
+      (section) => section.id === "organization"
+    );
+    expect(labels(groupAdmin?.links ?? [])).toEqual(["Organization", "Billing"]);
   });
 });

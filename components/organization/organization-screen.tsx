@@ -25,6 +25,8 @@ import { OrganizationExportCard } from "@/components/organization/organization-e
 import { DirectoryCard } from "@/components/organization/directory-card";
 import { DirectoryAgreementBanner } from "@/components/directory/directory-agreement-banner";
 import { AvatarBubble } from "@/components/brand/avatar-bubble";
+import { AiCard } from "@/components/ai/ai-card";
+import { AiFeatureGate } from "@/components/ai/ai-feature-gate";
 import { useTranslation } from "@/lib/i18n/use-translation";
 import { cn } from "@/lib/utils";
 
@@ -147,6 +149,11 @@ function OrganizationDetailView({
           organizationId={organizationId}
           organizationName={detail.organization.name}
         />
+        {organizationId ? (
+          <AiFeatureGate feature={["assistant", "aiConnections"]} organizationId={organizationId}>
+            <AiCard organizationId={organizationId} organizationName={detail.organization.name} />
+          </AiFeatureGate>
+        ) : null}
       </div>
       <AttendanceCard detail={detail} organizationId={organizationId} />
       <PeopleCard organizationId={organizationId} focusEmploymentId={focusEmploymentId} />

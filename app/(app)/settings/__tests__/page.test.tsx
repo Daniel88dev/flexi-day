@@ -51,6 +51,10 @@ vi.mock("@/lib/auth-client", () => ({
   },
 }));
 
+vi.mock("@/components/settings/ai-connections-card", () => ({
+  GatedAiConnectionsCard: () => <div data-testid="ai-connections-card" />,
+}));
+
 vi.mock("@/components/settings/birthday-card", () => ({
   BirthdayCard: () => <div data-testid="birthday-card" />,
 }));

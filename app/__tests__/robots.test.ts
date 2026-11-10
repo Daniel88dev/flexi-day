@@ -53,6 +53,18 @@ describe("robots", () => {
     }
   });
 
+  it("should keep help pages crawlable so crawlers read their noindex", () => {
+    for (const path of ["/help/assistant/", "/cs/help/assistant/"]) {
+      for (const blocked of disallow) {
+        expect(blocked && path.startsWith(blocked)).toBe(false);
+      }
+    }
+  });
+
+  it("should disallow the knowledge base bundle", () => {
+    expect(disallow).toContain("/help/kb.json");
+  });
+
   it("should point crawlers at the sitemap", () => {
     expect(result.sitemap).toBe("https://www.flexi-day.com/sitemap.xml");
   });

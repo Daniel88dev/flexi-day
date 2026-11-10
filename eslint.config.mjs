@@ -90,6 +90,14 @@ const eslintConfig = defineConfig([
     },
   },
 
+  {
+    // The chat panel handles chat text; nothing of it may reach the console (spec: never logged).
+    files: ["components/assistant/**", "lib/api/assistant.ts", "lib/api/assistant-queries.ts"],
+    rules: {
+      "no-console": "error",
+    },
+  },
+
   globalIgnores([
     // Inherited from eslint-config-next's defaults; ours to carry now.
     ".next/**",

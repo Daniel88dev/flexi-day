@@ -3,6 +3,9 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import TwoFactorPage from "../page";
 
+const goToMock = vi.fn();
+vi.mock("@/lib/api/oauth-connect", () => ({ goTo: (url: string) => goToMock(url) }));
+
 const replaceMock = vi.fn();
 const refreshMock = vi.fn();
 const verifyTotpMock = vi.fn();
@@ -64,6 +67,31 @@ describe("TwoFactorPage", () => {
     expect(verifyTotpMock).toHaveBeenCalledWith({ code: "123456", trustDevice: false });
     expect(replaceMock).toHaveBeenCalledWith("/settings/");
     expect(refreshMock).toHaveBeenCalled();
+  });
+
+  it("continues an AI app's connect flow with the signed query", async () => {
+    const oauthQuery = "client_id=abc&scope=flexiday.read&sig=s";
+    search = new URLSearchParams({ methods: "totp", oauth_query: oauthQuery });
+    verifyTotpMock.mockResolvedValue({
+      data: { redirect: true, url: "http://localhost:3000/oauth/organization/?x" },
+      error: null,
+    });
+    const user = userEvent.setup();
+    render(<TwoFactorPage />);
+    await user.type(screen.getByLabelText("Code"), "123456");
+    await user.click(screen.getByRole("button", { name: "Verify" }));
+
+    expect(verifyTotpMock).toHaveBeenCalledWith({
+      code: "123456",
+      trustDevice: false,
+      oauth_query: oauthQuery,
+    });
+    expect(goToMock).toHaveBeenCalledWith("http://localhost:3000/oauth/organization/?x");
+    expect(replaceMock).not.toHaveBeenCalled();
+    // Next's Link drops the trailing slash under jsdom.
+    expect(screen.getByRole("link", { name: /Back to sign in/i }).getAttribute("href")).toMatch(
+      /^\/oauth\/sign-in\/?\?client_id=abc&scope=flexiday\.read&sig=s$/
+    );
   });
 
   it("never follows an off-site redirect", async () => {

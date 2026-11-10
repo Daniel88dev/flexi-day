@@ -138,6 +138,9 @@ export type VacationListItem = Vacation & {
   canApprove: boolean;
 };
 
+/** What a change came through: the web or iPhone app, the Assistant, or an AI app over MCP. */
+export type ChangeChannel = "app" | "assistant" | "mcp";
+
 export type VacationEventKind =
   "CREATED" | "APPROVED" | "REJECTED" | "CANCELLED" | "COMMENT" | "UPDATED";
 
@@ -148,6 +151,7 @@ export type VacationEvent = {
   /** Null when the actor's account has since been removed. */
   actor: UserSummary | null;
   reason: string | null;
+  channel: ChangeChannel;
   createdAt: Iso;
 };
 
