@@ -3,7 +3,7 @@
 import { useId, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { Check, Loader2 } from "lucide-react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -15,6 +15,7 @@ import {
   type CardPreview,
   type PendingCard,
 } from "@/lib/api/assistant";
+import { assistantKeys } from "@/lib/api/assistant-queries";
 import { CALENDAR_RECORD_TYPE_COLORS, type WireRecordType } from "@/lib/api/types";
 import { recordTypeLabel } from "@/lib/i18n/record-type-label";
 import { useTranslation } from "@/lib/i18n/use-translation";
@@ -289,6 +290,7 @@ export function ConfirmCard({
     card.preview.action === "reject_request" ? (card.preview.reason ?? "") : ""
   );
   const reasonId = useId();
+  const qc = useQueryClient();
   const decide = useMutation({
     mutationFn: (decision: "confirm" | "decline") =>
       decision === "confirm" && current.tool === "reject_request"
@@ -296,6 +298,13 @@ export function ConfirmCard({
         : decideAssistantCard(current.id, decision),
     onSuccess: (decision) => {
       setCurrent(decision.card);
+      // A confirmed card wrote to the app, so everything the pages behind the
+      // panel have read may be stale; the Assistant's own queries follow the turn.
+      if (decision.card.status === "confirmed") {
+        void qc.invalidateQueries({
+          predicate: (query) => query.queryKey[0] !== assistantKeys.all[0],
+        });
+      }
       onDecided?.(decision);
     },
   });
