@@ -19,7 +19,7 @@ goldenQuestions:
     expectedArticles: [mirroring]
     mustMention: [záložka Zrcadlení, schvaluje se a počítá ve skupině, kde bylo zadané]
   - question: Proč nemůžu schválit žádost, která se ukazuje v mojí skupině?
-    expectedArticles: [mirroring]
+    expectedArticles: [mirroring, approve-requests]
     mustMention: [zrcadlené záznamy jsou jen pro čtení]
 ---
 

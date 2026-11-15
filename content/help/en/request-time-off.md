@@ -26,7 +26,7 @@ goldenQuestions:
     expectedArticles: [request-time-off]
     mustMention: [New Request, From and To, weekends and public holidays are skipped]
   - question: It says some days are already booked, what does that mean?
-    expectedArticles: [request-time-off]
+    expectedArticles: [request-time-off, cant-book-time-off]
     mustMention: [one booking per day, cancel the existing request first]
   - question: Can I book leave for someone in my team?
     expectedArticles: [request-time-off]

@@ -11,7 +11,7 @@ goldenQuestions:
     expectedArticles: [create-an-account]
     mustMention: [confirm your email address, link is valid for one hour]
   - question: Do I need a credit card to start using Flexi Day?
-    expectedArticles: [create-an-account]
+    expectedArticles: [create-an-account, plans-and-limits]
     mustMention: [Free plan, no credit card]
 ---
 

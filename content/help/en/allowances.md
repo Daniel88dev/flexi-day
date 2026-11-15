@@ -23,14 +23,14 @@ keywords:
   ]
 related: [year-rollover, types-of-time-off, request-time-off, sick-day-benefit]
 goldenQuestions:
-  - question: How many vacation days do I have left?
+  - question: I'm in two groups. Do they share one vacation allowance?
     expectedArticles: [allowances]
-    mustMention: [My balance on the Dashboard, your organization's allowance]
+    mustMention: [each group has its own allowances, time off draws on the group it is booked in]
   - question: How do I give one person more vacation days this year?
     expectedArticles: [allowances]
     mustMention: [Quotas tab of the group, Edit next to the member]
   - question: Why was my request refused for exceeding my allowance?
-    expectedArticles: [allowances]
+    expectedArticles: [allowances, cant-book-time-off]
     mustMention: [pending requests count too, ask a group admin]
 ---
 

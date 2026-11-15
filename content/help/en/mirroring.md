@@ -22,7 +22,7 @@ goldenQuestions:
     expectedArticles: [mirroring]
     mustMention: [Mirroring tab, approved and counted in the group it was booked in]
   - question: Why can't I approve a request that shows in my group?
-    expectedArticles: [mirroring]
+    expectedArticles: [mirroring, approve-requests]
     mustMention: [mirrored records are read-only]
 ---
 

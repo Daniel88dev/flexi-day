@@ -24,7 +24,7 @@ related:
   [sign-in, delete-your-account, dashboard-calendar, notifications, birthdays, ai-connections]
 goldenQuestions:
   - question: How do I stop getting emails about requests?
-    expectedArticles: [account-settings]
+    expectedArticles: [account-settings, notifications]
     mustMention: [Email notifications in Settings, notifications stay in the app]
   - question: Can I make the dashboard open on my team's calendar instead of just mine?
     expectedArticles: [account-settings]

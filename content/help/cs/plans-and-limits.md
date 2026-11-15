@@ -1,6 +1,6 @@
 ---
 id: plans-and-limits
-translatedFrom: "e3fc68622af2"
+translatedFrom: "81a369cab274"
 title: Tarify, ceny a limity
 summary: Co obsahují tarify Free, Pro a Enterprise, kolik stojí a jak fungují limity skupin a členů.
 keywords:
@@ -30,7 +30,7 @@ goldenQuestions:
     mustMention: [Pro nebo Enterprise]
 ---
 
-Každá organizace začíná na tarifu Free. Vlastník ji může převést na Pro nebo Enterprise na stránce
+Každá organizace začíná na tarifu Free, ke kterému platební karta není potřeba. Vlastník ji může převést na Pro nebo Enterprise na stránce
 {{ui:nav.billing}}. Ceny jsou bez DPH, které se připočte při platbě podle tvé země.
 
 ## Tarify
