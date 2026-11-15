@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { cs } from "@/lib/i18n/dictionaries/cs";
 import { en } from "@/lib/i18n/dictionaries/en";
-import { toolLine } from "../chat-parts";
+import { toolLine } from "../tool-lines";
 
 describe("toolLine", () => {
   it("names each write tool's step in English and Czech", () => {
