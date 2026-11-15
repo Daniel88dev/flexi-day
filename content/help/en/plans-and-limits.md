@@ -33,7 +33,7 @@ goldenQuestions:
     mustMention: [Pro or Enterprise]
 ---
 
-Every organization starts on the Free plan. The owner can move it to Pro or Enterprise on the
+Every organization starts on the Free plan, and no credit card is needed for it. The owner can move it to Pro or Enterprise on the
 {{ui:nav.billing}} page. Prices exclude VAT, which is added at checkout based on your country.
 
 ## The plans
