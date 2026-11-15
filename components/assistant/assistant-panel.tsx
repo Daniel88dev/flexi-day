@@ -18,21 +18,18 @@ import {
 import { useTranslation } from "@/lib/i18n/use-translation";
 import { cn } from "@/lib/utils";
 import { setAssistantOpen, useAssistantOpen } from "./assistant-store";
+import { ChatList } from "./chat-list";
+import { ClosedChat, EmptyChat, LoadingChat, ReadOnlyChat } from "./chat-states";
+import { Composer } from "./composer";
 import {
   AssistantUnavailable,
-  ChatList,
-  ClosedChat,
-  Composer,
-  EmptyChat,
   LimitReached,
-  LoadingChat,
-  MessageList,
   NearLimit,
   OffGate,
-  OrgPicker,
-  ReadOnlyChat,
   UpgradeGate,
-} from "./chat-parts";
+} from "./limits-and-gates";
+import { MessageList } from "./message-list";
+import { OrgPicker } from "./org-picker";
 import { useAssistantTurn } from "./use-assistant-turn";
 
 function IconButton({

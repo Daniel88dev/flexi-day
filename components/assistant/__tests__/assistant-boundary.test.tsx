@@ -9,7 +9,8 @@ import { cs } from "@/lib/i18n/dictionaries/cs";
 import { en } from "@/lib/i18n/dictionaries/en";
 import { AssistantButton, AssistantPanel } from "../assistant-panel";
 import { setAssistantOpen } from "../assistant-store";
-import { MessageList, noticeText } from "../chat-parts";
+import { MessageList } from "../message-list";
+import { noticeText } from "../notices";
 
 vi.mock("@/lib/api/queries", () => ({
   useAiAvailability: () => ({
