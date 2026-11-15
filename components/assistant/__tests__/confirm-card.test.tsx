@@ -1,15 +1,18 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { screen, within } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
+import { QueryClientProvider, useQuery } from "@tanstack/react-query";
 import userEvent from "@testing-library/user-event";
 import { renderWithClient } from "@/lib/test-utils";
 import { I18nProvider } from "@/lib/i18n/i18n-provider";
-import type { CardPreview, PendingCard } from "@/lib/api/assistant";
+import type { AssistantChatDetail, CardPreview, PendingCard } from "@/lib/api/assistant";
+import { useAssistantChat } from "@/lib/api/assistant-queries";
+import { ApiError } from "@/lib/api/client";
 import * as api from "@/lib/api/assistant";
 import { ConfirmCard } from "../confirm-card";
 
 vi.mock("@/lib/api/assistant", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/lib/api/assistant")>();
-  return { ...actual, decideAssistantCard: vi.fn() };
+  return { ...actual, decideAssistantCard: vi.fn(), getAssistantChat: vi.fn() };
 });
 
 const mocked = vi.mocked(api);
@@ -433,5 +436,125 @@ describe("Approve and reject cards in Czech", () => {
   it("shows a settled reject card", async () => {
     show(card(REJECT, { status: "confirmed", result: { status: "rejected" } }));
     expect(await screen.findByText("Zamítnuto. Ann Member už o tom ví.", { exact: false }));
+  });
+});
+
+describe("ConfirmCard after a decision whose answer was lost", () => {
+  const readRequests = vi.fn();
+
+  function RequestsBehind() {
+    useQuery({ queryKey: ["vacation", "mine"], queryFn: readRequests });
+    return null;
+  }
+
+  function CardInChat() {
+    const detail = useAssistantChat("chat-1");
+    const shown = detail.data?.messages.find((message) => message.card)?.card;
+    return shown ? <ConfirmCard card={shown} /> : null;
+  }
+
+  const chatWith = (value: PendingCard): AssistantChatDetail => ({
+    chat: {
+      id: "chat-1",
+      organizationId: "org-1",
+      organizationName: "Acme",
+      title: null,
+      createdAt: "2026-11-09T08:00:00.000Z",
+      lastMessageAt: "2026-11-09T08:00:00.000Z",
+      turnRunning: false,
+      closed: null,
+    },
+    messages: [
+      {
+        id: "m-1",
+        kind: "tool",
+        text: null,
+        toolName: value.tool,
+        toolOutcome: "card",
+        code: null,
+        card: value,
+        createdAt: "2026-11-09T08:00:00.000Z",
+      },
+    ],
+  });
+
+  /** The card beside a page, keeping the same query client across prop changes. */
+  const showBeside = (value: PendingCard) => {
+    const besidePage = (shown: PendingCard) => (
+      <>
+        <RequestsBehind />
+        <ConfirmCard card={shown} />
+      </>
+    );
+    const { client, rerender } = renderWithClient(besidePage(value));
+    return (next: PendingCard) =>
+      rerender(<QueryClientProvider client={client}>{besidePage(next)}</QueryClientProvider>);
+  };
+
+  const expectReadsStayAt = async (times: number) => {
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(readRequests).toHaveBeenCalledTimes(times);
+  };
+
+  const confirmed = () =>
+    card(CREATE, { status: "confirmed", result: { status: "pending" }, decidedAt: "x" });
+
+  beforeEach(() => {
+    czech = false;
+    readRequests.mockReset();
+    readRequests.mockResolvedValue([]);
+    mocked.getAssistantChat.mockReset();
+  });
+
+  it("refetches the chat after a 409 and shows the card as confirmed, with no Try again", async () => {
+    mocked.getAssistantChat
+      .mockResolvedValueOnce(chatWith(card(CREATE)))
+      .mockResolvedValue(chatWith(confirmed()));
+    mocked.decideAssistantCard.mockRejectedValue(
+      new ApiError(409, "This card was already decided", null, [
+        { message: "This card was already decided", context: { code: "PENDING_ACTION_SETTLED" } },
+      ])
+    );
+    renderWithClient(
+      <>
+        <RequestsBehind />
+        <CardInChat />
+      </>
+    );
+
+    await userEvent.click(await screen.findByRole("button", { name: "Send request" }));
+
+    await waitFor(() => expect(theCard()).toHaveAttribute("data-status", "confirmed"));
+    expect(screen.queryByRole("button", { name: "Try again" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    await waitFor(() => expect(readRequests).toHaveBeenCalledTimes(2));
+  });
+
+  it("refreshes the app's data once when a refetched card arrives confirmed", async () => {
+    const showCard = showBeside(card(CREATE));
+    await waitFor(() => expect(readRequests).toHaveBeenCalledTimes(1));
+
+    showCard(confirmed());
+    await waitFor(() => expect(readRequests).toHaveBeenCalledTimes(2));
+
+    showCard(confirmed());
+    await expectReadsStayAt(2);
+  });
+
+  it("refreshes the app's data once when a confirm answers and the chat then brings the same card", async () => {
+    mocked.decideAssistantCard.mockResolvedValue({ card: confirmed(), turnRunning: false });
+    const showCard = showBeside(card(CREATE));
+    await waitFor(() => expect(readRequests).toHaveBeenCalledTimes(1));
+
+    await userEvent.click(screen.getByRole("button", { name: "Send request" }));
+    await waitFor(() => expect(readRequests).toHaveBeenCalledTimes(2));
+    showCard(confirmed());
+    await expectReadsStayAt(2);
+  });
+
+  it("refreshes nothing for a card already confirmed when it appears", async () => {
+    showBeside(confirmed());
+    await waitFor(() => expect(readRequests).toHaveBeenCalledTimes(1));
+    await expectReadsStayAt(1);
   });
 });

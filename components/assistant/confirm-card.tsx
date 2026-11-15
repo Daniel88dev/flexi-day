@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { Check, Loader2 } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -298,16 +298,27 @@ export function ConfirmCard({
         : decideAssistantCard(current.id, decision),
     onSuccess: (decision) => {
       setCurrent(decision.card);
-      // A confirmed card wrote to the app, so everything the pages behind the
-      // panel have read may be stale; the Assistant's own queries follow the turn.
-      if (decision.card.status === "confirmed") {
-        void qc.invalidateQueries({
-          predicate: (query) => query.queryKey[0] !== assistantKeys.all[0],
-        });
-      }
       onDecided?.(decision);
     },
+    // Any failure may hide a decision that landed with only its answer lost
+    // (a 409 says so outright), so the chat shows what the card really is now.
+    onError: () => {
+      void qc.invalidateQueries({ queryKey: assistantKeys.chat(current.chatId) });
+    },
   });
+
+  // A card that becomes confirmed here, from the answer or a refetch, wrote to
+  // the app, so everything the pages behind the panel have read may be stale.
+  // The Assistant's own queries follow the turn.
+  const previousStatusRef = useRef(current.status);
+  useEffect(() => {
+    if (current.status === "confirmed" && previousStatusRef.current !== "confirmed") {
+      void qc.invalidateQueries({
+        predicate: (query) => query.queryKey[0] !== assistantKeys.all[0],
+      });
+    }
+    previousStatusRef.current = current.status;
+  }, [current.status, qc]);
 
   const status = current.status;
   if (status !== "open") {
