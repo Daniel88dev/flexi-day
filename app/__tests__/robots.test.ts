@@ -1,29 +1,18 @@
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
+import { listAppRoutes } from "@/lib/help/knowledge-base";
 import robots from "../robots";
 
 const PUBLIC_PATHS = ["/", "/contact", "/privacy", "/security", "/terms"];
 
-const APP_PATHS = [
-  "/billing",
-  "/calendar-sync",
-  "/dashboard",
-  "/groups",
-  "/organization",
-  "/report",
-  "/requests",
-  "/settings",
-  "/support",
-];
+// Derived from the folders so a new page fails this test until robots.ts lists it.
+function topLevelPaths(routeGroup: string): string[] {
+  const routes = listAppRoutes(join(process.cwd(), "app", routeGroup));
+  return [...new Set(routes.map((route) => `/${route.split("/")[1]}`))];
+}
 
-const AUTH_PATHS = [
-  "/email-verified",
-  "/forgot-password",
-  "/reset-password",
-  "/sign-in",
-  "/sign-up",
-  "/two-factor",
-  "/verify-email",
-];
+const APP_PATHS = topLevelPaths("(app)");
+const AUTH_PATHS = topLevelPaths("(auth)");
 
 describe("robots", () => {
   const result = robots();
@@ -59,6 +48,11 @@ describe("robots", () => {
         expect(blocked && path.startsWith(blocked)).toBe(false);
       }
     }
+  });
+
+  it("should leave the dev-only sign-in page out of the list", () => {
+    expect(AUTH_PATHS).not.toContain("/dev-sign-in");
+    expect(disallow).not.toContain("/dev-sign-in");
   });
 
   it("should disallow the knowledge base bundle", () => {
