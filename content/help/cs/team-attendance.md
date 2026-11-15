@@ -8,6 +8,8 @@ keywords:
     docházka týmu,
     kdo je v práci,
     kdo má zaznamenaný příchod,
+    teď v práci,
+    kdo je teď v práci,
     přehled docházky,
     výkaz práce,
     hodiny týmu,
