@@ -10,6 +10,8 @@ keywords:
     team attendance,
     who is in,
     who is clocked in,
+    in now,
+    who is at work right now,
     attendance dashboard,
     timesheet,
     team hours,
