@@ -18,14 +18,15 @@ keywords:
     překročený nárok,
   ]
 goldenQuestions:
-  - question: Kolik dní dovolené mi ještě zbývá?
+  - question: Jsem ve dvou skupinách. Mají společný nárok na dovolenou?
     expectedArticles: [allowances]
-    mustMention: [Můj zůstatek na Přehledu, nárok podle tvé organizace]
+    mustMention:
+      [každá skupina má vlastní nároky, volno zadané ve skupině čerpá z nároku této skupiny]
   - question: Jak dám jednomu člověku letos víc dní dovolené?
     expectedArticles: [allowances]
     mustMention: [záložka Kvóty ve skupině, Upravit u člena]
   - question: Proč mi aplikace odmítla žádost kvůli překročení nároku?
-    expectedArticles: [allowances]
+    expectedArticles: [allowances, cant-book-time-off]
     mustMention: [počítají se i čekající žádosti, požádej správce skupiny]
 ---
 

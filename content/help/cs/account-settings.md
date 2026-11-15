@@ -20,7 +20,7 @@ keywords:
   ]
 goldenQuestions:
   - question: Jak vypnu e-maily o žádostech?
-    expectedArticles: [account-settings]
+    expectedArticles: [account-settings, notifications]
     mustMention: [E-mailová oznámení v Nastavení, oznámení zůstanou v aplikaci]
   - question: Jde nastavit, aby se přehled otevíral s kalendářem celého týmu?
     expectedArticles: [account-settings]

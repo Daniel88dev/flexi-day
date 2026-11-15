@@ -20,7 +20,7 @@ goldenQuestions:
     expectedArticles: [request-time-off]
     mustMention: [Nová žádost, Od a Do, víkendy a státní svátky se přeskočí]
   - question: Píše mi to, že některé dny už jsou zadané. Co to znamená?
-    expectedArticles: [request-time-off]
+    expectedArticles: [request-time-off, cant-book-time-off]
     mustMention: [jeden záznam na den, nejdřív zruš původní žádost]
   - question: Můžu zadat volno za někoho z týmu?
     expectedArticles: [request-time-off]

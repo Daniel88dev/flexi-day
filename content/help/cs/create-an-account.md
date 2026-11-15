@@ -10,7 +10,7 @@ goldenQuestions:
     expectedArticles: [create-an-account]
     mustMention: [potvrď svou e-mailovou adresu, odkaz platí jednu hodinu]
   - question: Potřebuju platební kartu, abych mohl Flexi Day začít používat?
-    expectedArticles: [create-an-account]
+    expectedArticles: [create-an-account, plans-and-limits]
     mustMention: [tarif Free, bez platební karty]
 ---
 
